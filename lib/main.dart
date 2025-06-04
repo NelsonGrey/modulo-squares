@@ -9,6 +9,7 @@ import 'models/game_board.dart';
 import 'screens/game_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/leaderboard_screen.dart';
 import 'utils/game_utils.dart';
 import 'leaderboard_service.dart';
 import 'l10n/app_localizations.dart';
