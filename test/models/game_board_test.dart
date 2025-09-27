@@ -4,51 +4,65 @@ import 'package:modulo/models/game_board.dart';
 void main() {
   group('GameBoard', () {
     test('initializes with correct size and non-null values', () {
-      final board = GameBoard(rows: 4, cols: 4, maxValue: 10);
+      final board = GameBoard(level: 1);
       expect(board.grid.length, 4);
       expect(board.grid[0].length, 4);
-      expect(board.grid.expand((row) => row).where((cell) => cell != null).length, 16);
+      // All cells should be Tile, and most should have value != null
+      expect(board.grid.expand((row) => row).where((cell) => cell.value != null || cell.type != TileType.normal).length, 16);
     });
 
-    test('move returns false for out-of-bounds', () {
-      final board = GameBoard(rows: 4, cols: 4, maxValue: 10);
-      expect(board.move(-1, 0, 1, 0), false);
-      expect(board.move(0, -1, 0, 1), false);
-      expect(board.move(4, 0, 1, 0), false);
-      expect(board.move(0, 4, 0, 1), false);
+    test('move returns null for out-of-bounds', () {
+      final board = GameBoard(level: 1);
+      expect(board.move(-1, 0, 1, 0), null);
+      expect(board.move(0, -1, 0, 1), null);
+      expect(board.move(4, 0, 1, 0), null);
+      expect(board.move(0, 4, 0, 1), null);
     });
 
     test('reset clears score and reinitializes grid', () {
-      final board = GameBoard(rows: 4, cols: 4, maxValue: 10);
-      board.score = 5;
-      board.grid[0][0] = null;
-      board.reset();
+      var board = GameBoard(level: 1);
+      board = board.copyWith(score: 5);
+      board = board.reset();
       expect(board.score, 0);
-      expect(board.grid[0][0], isNotNull);
+      expect(board.grid.length, 4);
+      expect(board.grid[0].length, 4);
     });
 
-    test('isBoardClear returns true only if all cells are null', () {
-      final board = GameBoard(rows: 2, cols: 2, maxValue: 10);
-      board.grid = [
-        [null, null],
-        [null, null],
-      ];
+    test('isBoardClear returns true only if all cells are empty', () {
+      var board = GameBoard(level: 1);
+      board = board.copyWith(
+        grid: [
+          [const Tile(), const Tile()],
+          [const Tile(), const Tile()],
+        ],
+      );
       expect(board.isBoardClear(), true);
-      board.grid[0][0] = 1;
+
+      board = board.copyWith(
+        grid: [
+          [const Tile(value: 1), const Tile()],
+          [const Tile(), const Tile()],
+        ],
+      );
       expect(board.isBoardClear(), false);
     });
 
     test('hasMoves returns true if a move is possible', () {
-      final board = GameBoard(rows: 2, cols: 2, maxValue: 10);
-      board.grid = [
-        [2, 4],
-        [null, null],
-      ];
+      var board = GameBoard(level: 1);
+      board = board.copyWith(
+        grid: [
+          [const Tile(value: 4), const Tile(value: 2)],
+          [const Tile(), const Tile()],
+        ],
+      );
       expect(board.hasMoves(), true);
-      board.grid = [
-        [null, null],
-        [null, null],
-      ];
+
+      board = board.copyWith(
+        grid: [
+          [const Tile(value: 5), const Tile(value: 4)],
+          [const Tile(value: 3), const Tile(value: 2)],
+        ],
+      );
       expect(board.hasMoves(), false);
     });
   });

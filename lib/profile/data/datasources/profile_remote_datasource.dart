@@ -1,5 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_profile_model.dart';
-// ... (FirebaseFirestore import etc.)
 
 abstract class ProfileRemoteDataSource {
   Future<UserProfileModel?> getUserProfile(String userId);
@@ -7,7 +7,6 @@ abstract class ProfileRemoteDataSource {
 }
 
 class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
-  // ... (implementation as shown before)
   final FirebaseFirestore _firestore;
 
   ProfileRemoteDataSourceImpl({FirebaseFirestore? firestore})

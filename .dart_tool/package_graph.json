@@ -13,6 +13,7 @@
         "firebase_core",
         "flutter",
         "flutter_lints",
+        "flutter_localizations",
         "google_sign_in",
         "intl",
         "shared_preferences",
@@ -52,7 +53,7 @@
     },
     {
       "name": "intl",
-      "version": "0.19.0",
+      "version": "0.20.2",
       "dependencies": [
         "clock",
         "meta",
@@ -82,7 +83,7 @@
     },
     {
       "name": "firebase_auth",
-      "version": "4.16.0",
+      "version": "6.1.0",
       "dependencies": [
         "firebase_auth_platform_interface",
         "firebase_auth_web",
@@ -101,7 +102,7 @@
     },
     {
       "name": "audioplayers",
-      "version": "6.4.0",
+      "version": "6.5.1",
       "dependencies": [
         "audioplayers_android",
         "audioplayers_darwin",
@@ -120,7 +121,7 @@
     },
     {
       "name": "firebase_core",
-      "version": "2.32.0",
+      "version": "4.1.1",
       "dependencies": [
         "firebase_core_platform_interface",
         "firebase_core_web",
@@ -130,7 +131,7 @@
     },
     {
       "name": "cloud_firestore",
-      "version": "4.17.5",
+      "version": "6.0.2",
       "dependencies": [
         "cloud_firestore_platform_interface",
         "cloud_firestore_web",
@@ -152,6 +153,21 @@
         "shared_preferences_platform_interface",
         "shared_preferences_web",
         "shared_preferences_windows"
+      ]
+    },
+    {
+      "name": "flutter_localizations",
+      "version": "0.0.0",
+      "dependencies": [
+        "characters",
+        "clock",
+        "collection",
+        "flutter",
+        "intl",
+        "material_color_utilities",
+        "meta",
+        "path",
+        "vector_math"
       ]
     },
     {
@@ -380,7 +396,7 @@
     },
     {
       "name": "firebase_core_platform_interface",
-      "version": "5.4.0",
+      "version": "6.0.1",
       "dependencies": [
         "collection",
         "flutter",
@@ -391,7 +407,7 @@
     },
     {
       "name": "firebase_auth_web",
-      "version": "5.8.13",
+      "version": "6.0.3",
       "dependencies": [
         "firebase_auth_platform_interface",
         "firebase_core",
@@ -399,18 +415,19 @@
         "flutter",
         "flutter_web_plugins",
         "http_parser",
-        "js",
-        "meta"
+        "meta",
+        "web"
       ]
     },
     {
       "name": "firebase_auth_platform_interface",
-      "version": "7.3.0",
+      "version": "8.1.2",
       "dependencies": [
         "_flutterfire_internals",
         "collection",
         "firebase_core",
         "flutter",
+        "http",
         "meta",
         "plugin_platform_interface"
       ]
@@ -432,7 +449,7 @@
     },
     {
       "name": "synchronized",
-      "version": "3.3.1",
+      "version": "3.4.0",
       "dependencies": []
     },
     {
@@ -449,7 +466,7 @@
     },
     {
       "name": "http",
-      "version": "1.4.0",
+      "version": "1.5.0",
       "dependencies": [
         "async",
         "http_parser",
@@ -467,7 +484,7 @@
     },
     {
       "name": "audioplayers_windows",
-      "version": "4.2.0",
+      "version": "4.2.1",
       "dependencies": [
         "audioplayers_platform_interface",
         "flutter"
@@ -475,7 +492,7 @@
     },
     {
       "name": "audioplayers_web",
-      "version": "5.1.0",
+      "version": "5.1.1",
       "dependencies": [
         "audioplayers_platform_interface",
         "flutter",
@@ -485,7 +502,7 @@
     },
     {
       "name": "audioplayers_platform_interface",
-      "version": "7.1.0",
+      "version": "7.1.1",
       "dependencies": [
         "collection",
         "flutter",
@@ -495,7 +512,7 @@
     },
     {
       "name": "audioplayers_linux",
-      "version": "4.2.0",
+      "version": "4.2.1",
       "dependencies": [
         "audioplayers_platform_interface",
         "flutter"
@@ -503,7 +520,7 @@
     },
     {
       "name": "audioplayers_darwin",
-      "version": "6.2.0",
+      "version": "6.3.0",
       "dependencies": [
         "audioplayers_platform_interface",
         "flutter"
@@ -511,7 +528,7 @@
     },
     {
       "name": "audioplayers_android",
-      "version": "5.2.0",
+      "version": "5.2.1",
       "dependencies": [
         "audioplayers_platform_interface",
         "flutter"
@@ -519,7 +536,7 @@
     },
     {
       "name": "firebase_core_web",
-      "version": "2.23.0",
+      "version": "3.1.1",
       "dependencies": [
         "firebase_core_platform_interface",
         "flutter",
@@ -530,7 +547,7 @@
     },
     {
       "name": "cloud_firestore_web",
-      "version": "3.12.5",
+      "version": "5.0.2",
       "dependencies": [
         "_flutterfire_internals",
         "cloud_firestore_platform_interface",
@@ -543,7 +560,7 @@
     },
     {
       "name": "cloud_firestore_platform_interface",
-      "version": "6.2.5",
+      "version": "7.0.2",
       "dependencies": [
         "_flutterfire_internals",
         "collection",
@@ -605,7 +622,7 @@
     },
     {
       "name": "shared_preferences_android",
-      "version": "2.4.10",
+      "version": "2.4.13",
       "dependencies": [
         "flutter",
         "shared_preferences_platform_interface"
@@ -649,13 +666,6 @@
       ]
     },
     {
-      "name": "js",
-      "version": "0.6.7",
-      "dependencies": [
-        "meta"
-      ]
-    },
-    {
       "name": "http_parser",
       "version": "4.1.2",
       "dependencies": [
@@ -667,7 +677,7 @@
     },
     {
       "name": "_flutterfire_internals",
-      "version": "1.3.35",
+      "version": "1.3.62",
       "dependencies": [
         "collection",
         "firebase_core",
@@ -725,7 +735,7 @@
     },
     {
       "name": "path_provider_foundation",
-      "version": "2.4.1",
+      "version": "2.4.2",
       "dependencies": [
         "flutter",
         "path_provider_platform_interface"
@@ -733,7 +743,7 @@
     },
     {
       "name": "path_provider_android",
-      "version": "2.2.17",
+      "version": "2.2.18",
       "dependencies": [
         "flutter",
         "path_provider_platform_interface"

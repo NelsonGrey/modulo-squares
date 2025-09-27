@@ -25,7 +25,7 @@ class ProfileScreen extends StatelessWidget {
             Text('${AppLocalizations.of(context).email}: ${user?.email ?? "N/A"}'),
             Text('${AppLocalizations.of(context).uid}: ${user?.uid ?? "N/A"}'),
             ElevatedButton(
-              child: const Text(AppStrings.signOut),
+              child: Text(AppLocalizations.of(context).signOut),
               onPressed: () async {
                 await FirebaseAuth.instance.signOut();
               },

@@ -8,5 +8,11 @@
     "cmake.ignoreCMakeListsMissing": true,
     "prettier.printWidth": 160,
     "yaml.format.printWidth": 160,
-    "github.copilot.nextEditSuggestions.enabled": true
+    "github.copilot.nextEditSuggestions.enabled": true,
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "files.associations": {
+        "MLTable": "yaml",
+        "*.yaml": "yaml",
+        "__bit_reference": "cpp"
+    }
 }

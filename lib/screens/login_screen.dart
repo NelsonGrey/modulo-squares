@@ -3,17 +3,32 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   Future<void> _signInWithGoogle(BuildContext context) async {
     try {
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-      final GoogleSignInAuthentication? googleAuth = await googleUser?.authentication;
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth?.accessToken,
-        idToken: googleAuth?.idToken,
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+
+      if (googleUser == null) {
+        // User cancelled the sign-in
+        return;
+      }
+
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
       );
+
       await FirebaseAuth.instance.signInWithCredential(credential);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -27,6 +42,14 @@ class LoginScreen extends StatelessWidget {
       final appleCredential = await SignInWithApple.getAppleIDCredential(
         scopes: [AppleIDAuthorizationScopes.email, AppleIDAuthorizationScopes.fullName],
       );
+
+      if (appleCredential.identityToken == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Apple sign-in failed: No identity token')),
+        );
+        return;
+      }
+
       final oauthCredential = OAuthProvider("apple.com").credential(
         idToken: appleCredential.identityToken,
       );
@@ -41,9 +64,15 @@ class LoginScreen extends StatelessWidget {
   Future<void> _signInAnonymously(BuildContext context) async {
     try {
       await FirebaseAuth.instance.signInAnonymously();
-    } catch (e) {
+    } on FirebaseAuthException catch (e) {
+      print('Anonymous sign-in failed: ${e.code} - ${e.message}');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Anonymous sign-in failed: $e')),
+        SnackBar(content: Text('Guest sign-in failed. Please check your Firebase settings. Error: ${e.code}')),
+      );
+    } catch (e) {
+      print('Anonymous sign-in failed: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('An unexpected error occurred during guest sign-in.')),
       );
     }
   }
