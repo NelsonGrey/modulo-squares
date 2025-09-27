@@ -14,5 +14,6 @@
         "MLTable": "yaml",
         "*.yaml": "yaml",
         "__bit_reference": "cpp"
-    }
+    },
+    "chat.agent.maxRequests": 999
 }

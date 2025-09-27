@@ -1,17 +1,2 @@
-
-class AppStrings {
-  static const String gameTitle = 'Modulo Game';
-  static const String newGameTooltip = 'New Game';
-  static const String congratulationsTitle = 'Congratulations!';
-  static const String boardClearedMessage = 'You cleared the board!';
-  static const String playAgainButton = 'Play Again';
-  static const String tapToSelectInstruction = 'Tap a cell to select it.';
-
-  static String selectedInstruction(int value) {
-    return 'Selected cell with value: $value';
-  }
-
-  static String movesCount(int moves) {
-    return 'Moves: $moves';
-  }
-}
+// Deprecated: Do not use. Use AppLocalizations in lib/l10n/app_localizations.dart instead.
+// This file intentionally left blank and will be removed after any lingering references are cleaned up.
