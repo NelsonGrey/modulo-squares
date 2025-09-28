@@ -24,28 +24,14 @@ class GridCellWidget extends StatelessWidget {
     Color textColor = theme.colorScheme.onSurface;
 
     switch (tile.type) {
-      case TileType.locked:
-        tileColor = Colors.grey.shade700;
-        icon = Icons.lock;
-        break;
       case TileType.obstacle:
         tileColor = Colors.black87;
         icon = Icons.block;
         break;
-      case TileType.multiplier:
+      case TileType.bonus:
         tileColor = Colors.greenAccent.shade700;
         text = tile.value?.toString();
         icon = Icons.star;
-        break;
-      case TileType.poison:
-        tileColor = Colors.redAccent.shade700;
-        text = tile.value?.toString();
-        icon = Icons.warning;
-        break;
-      case TileType.freeze:
-        tileColor = Colors.blueAccent.shade700;
-        text = tile.value?.toString();
-        icon = Icons.ac_unit;
         break;
       case TileType.normal:
         tileColor = theme.colorScheme.secondaryContainer;
@@ -69,7 +55,7 @@ class GridCellWidget extends StatelessWidget {
             ),
           ),
           // Tile
-          if (tile.value != null || tile.type == TileType.locked || tile.type == TileType.obstacle)
+          if (tile.value != null || tile.type == TileType.obstacle)
             Positioned.fill(
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 300),

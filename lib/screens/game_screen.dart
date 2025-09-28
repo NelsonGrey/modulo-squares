@@ -5,6 +5,9 @@ import 'package:modulo/models/cell_position.dart';
 import 'package:modulo/widgets/grid_cell_widget.dart';
 import 'package:modulo/leaderboard_service.dart';
 import 'package:modulo/l10n/app_localizations.dart';
+import 'package:modulo/screens/instructions_screen.dart';
+import 'package:modulo/utils/analytics_service.dart';
+import 'package:modulo/utils/ad_service.dart';
 
 class GameScreen extends StatefulWidget {
   const GameScreen({super.key});
@@ -45,6 +48,7 @@ class _GameScreenState extends State<GameScreen> {
       selectedCell = null;
       remainingMoves = 20 + (level - 1) * 2;
     });
+    AnalyticsService.instance.logLevelStart(level: level, rows: gameBoard.rows, cols: gameBoard.cols);
   }
 
   void _handleTap(int row, int col) {
@@ -69,6 +73,19 @@ class _GameScreenState extends State<GameScreen> {
       if (newBoard != null) {
         gameBoard = newBoard;
         remainingMoves--;
+        AnalyticsService.instance.logMove(type: 'tap');
+        // Mercy spawn: if exactly one tile remains and we still have moves, spawn helper
+        if (gameBoard.nonEmptyTileCount() == 1 && remainingMoves > 0) {
+          final maybe = gameBoard.mercySpawnHelperTile(scorePenalty: 5);
+          if (maybe != null) {
+            gameBoard = maybe;
+            remainingMoves--; // cost one extra move for mercy spawn
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(AppLocalizations.of(context).mercyHelperSpawned(5))),
+            );
+            AnalyticsService.instance.logMercySpawn(penalty: 5);
+          }
+        }
         if (gameBoard.score > highScore) {
           highScore = gameBoard.score;
           _saveHighScore();
@@ -85,6 +102,19 @@ class _GameScreenState extends State<GameScreen> {
       if (newBoard != null) {
         gameBoard = newBoard;
         remainingMoves--;
+        AnalyticsService.instance.logMove(type: 'swipe');
+        // Mercy spawn: if exactly one tile remains and we still have moves, spawn helper
+        if (gameBoard.nonEmptyTileCount() == 1 && remainingMoves > 0) {
+          final maybe = gameBoard.mercySpawnHelperTile(scorePenalty: 5);
+          if (maybe != null) {
+            gameBoard = maybe;
+            remainingMoves--; // cost one extra move for mercy spawn
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(AppLocalizations.of(context).mercyHelperSpawned(5))),
+            );
+            AnalyticsService.instance.logMercySpawn(penalty: 5);
+          }
+        }
         if (gameBoard.score > highScore) {
           highScore = gameBoard.score;
           _saveHighScore();
@@ -96,17 +126,25 @@ class _GameScreenState extends State<GameScreen> {
 
   void _checkWinLose() {
     if (gameBoard.isBoardClear()) {
-      setState(() {
-        level++;
-      });
-      _showEndDialog(
-        'Level Complete!',
-        'You cleared the board! Proceeding to level $level.',
-        false,
-      );
+      // Show ad, then level up and show dialog
+      AdService.instance.showInterstitial(
+          trigger: 'level_complete',
+          levelNum: level,
+          onClosed: () {
+            setState(() {
+              level++;
+            });
+            AnalyticsService.instance.logLevelComplete(level: level - 1, score: gameBoard.score);
+            _showEndDialog(
+              'Level Complete!',
+              'You cleared the board! Proceeding to level $level.',
+              false,
+            );
+          });
       return;
     }
     if (remainingMoves <= 0) {
+      AnalyticsService.instance.logOutOfMoves(level: level, score: gameBoard.score);
       _showEndDialog(
         'Out of Moves',
         'No more moves left. Try again!',
@@ -115,6 +153,7 @@ class _GameScreenState extends State<GameScreen> {
       return;
     }
     if (!gameBoard.hasMoves()) {
+      AnalyticsService.instance.logGameOverNoMoves(score: gameBoard.score);
       _showEndDialog(
         AppLocalizations.of(context).gameOver,
         AppLocalizations.of(context).gameOverMessage(gameBoard.score),
@@ -148,6 +187,7 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _showLeaderboardDialog() {
+    AnalyticsService.instance.logViewLeaderboard();
     showDialog(
       context: context,
       builder: (_) {
@@ -196,20 +236,11 @@ class _GameScreenState extends State<GameScreen> {
   void _showTileEffectInfo(Tile tile) {
     String effect = '';
     switch (tile.type) {
-      case TileType.locked:
-        effect = 'Locked: Cannot be moved or entered.';
-        break;
       case TileType.obstacle:
-        effect = 'Obstacle: Blocks movement.';
+        effect = AppLocalizations.of(context).obstacleTooltip;
         break;
-      case TileType.multiplier:
-        effect = 'Multiplier: Bonus points!';
-        break;
-      case TileType.poison:
-        effect = 'Poison: Subtracts points!';
-        break;
-      case TileType.freeze:
-        effect = 'Freeze: Tile is frozen!';
+      case TileType.bonus:
+        effect = AppLocalizations.of(context).bonusTooltip;
         break;
       case TileType.normal:
         return;
@@ -223,46 +254,32 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _showSpecialTilesInfo() {
+    AnalyticsService.instance.logSpecialTilesInfo();
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Special Tiles'),
+          title: Text(AppLocalizations.of(context).specialTilesTitle),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               ListTile(
-                leading: const Icon(Icons.lock, color: Colors.grey),
-                title: const Text('Locked'),
-                subtitle: const Text('Cannot be moved or entered.'),
-              ),
-              ListTile(
                 leading: const Icon(Icons.block, color: Colors.black87),
-                title: const Text('Obstacle'),
-                subtitle: const Text('Blocks movement.'),
+                title: Text(AppLocalizations.of(context).obstacleTitle),
+                subtitle: Text(AppLocalizations.of(context).obstacleSubtitle),
               ),
               ListTile(
                 leading: const Icon(Icons.star, color: Colors.green),
-                title: const Text('Multiplier'),
-                subtitle: const Text('Gives bonus points when activated.'),
-              ),
-              ListTile(
-                leading: const Icon(Icons.warning, color: Colors.red),
-                title: const Text('Poison'),
-                subtitle: const Text('Subtracts points when activated.'),
-              ),
-              ListTile(
-                leading: const Icon(Icons.ac_unit, color: Colors.blue),
-                title: const Text('Freeze'),
-                subtitle: const Text('Freezes the tile when activated.'),
+                title: Text(AppLocalizations.of(context).bonusTitle),
+                subtitle: Text(AppLocalizations.of(context).bonusSubtitle),
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Close'),
+              child: Text(AppLocalizations.of(context).close),
             ),
           ],
         );
@@ -344,6 +361,16 @@ class _GameScreenState extends State<GameScreen> {
             tooltip: AppLocalizations.of(context).showLeaderboard,
           ),
           IconButton(
+            icon: const Icon(Icons.menu_book_outlined),
+            onPressed: () {
+              AnalyticsService.instance.logViewInstructions();
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const InstructionsScreen()),
+              );
+            },
+            tooltip: AppLocalizations.of(context).howToPlay,
+          ),
+          IconButton(
             icon: const Icon(Icons.help_outline),
             onPressed: _showSpecialTilesInfo,
             tooltip: 'Special Tiles Info',
@@ -363,7 +390,9 @@ class _GameScreenState extends State<GameScreen> {
           Center(child: _buildGrid()),
           const SizedBox(height: 40),
           ElevatedButton(
-            onPressed: _initializeGameBoard,
+            onPressed: () {
+              AdService.instance.showInterstitial(trigger: 'restart', levelNum: level, onClosed: _initializeGameBoard);
+            },
             child: Text('Restart'),
           ),
         ],
