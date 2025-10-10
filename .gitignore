@@ -33,6 +33,70 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+**/build/
+*.dill.track.dill
+.cache.dill.track.dill
+**/*.dill.track.dill
+
+# Android related
+.cxx/
+.cxx
+.gradle/
+**/android/app/build/
+**/android/build/
+**/android/.gradle/
+local.properties
+
+# iOS related
+**/ios/Pods/
+**/ios/Podfile.lock
+**/ios/build/
+**/ios/Flutter/ephemeral/
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/App.framework
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Runner/GeneratedPluginRegistrant.*
+**/ios/ServiceDefinitions.json
+
+# Web related
+**/web/build/
+**/web/.dart_tool/
+
+# Linux related
+**/linux/build/
+**/linux/.dart_tool/
+
+# macOS related
+**/macos/Pods/
+**/macos/build/
+**/macos/Flutter/ephemeral/
+**/macos/Flutter/Generated.xcconfig
+**/macos/Flutter/App.framework
+**/macos/Flutter/Flutter.framework
+**/macos/Flutter/Flutter.podspec
+**/macos/Runner/GeneratedPluginRegistrant.*
+
+# Windows related
+**/windows/build/
+**/windows/.dart_tool/
+
+# Test cache
+test_cache/
+**/test_cache/
+unit_test_assets/
+
+# Firebase related
+.firebase/
+firebase-debug.log
+firestore-debug.log
+
+# Node.js (for monorepo)
+**/node_modules/
+**/package-lock.json
+**/yarn.lock
+**/.npm/
+**/.yarn/
 
 # Symbolication related
 app.*.symbols
