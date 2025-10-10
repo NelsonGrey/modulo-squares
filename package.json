@@ -9,14 +9,17 @@
   "scripts": {
     "build:app": "cd packages/app && flutter build apk --release",
     "build:functions": "cd packages/functions && npm run build",
+    "build:web": "cd packages/web && npm run build",
     "deploy:functions": "firebase deploy --only functions",
     "deploy:rules": "firebase deploy --only firestore:rules",
+    "deploy:web": "cd packages/web && npm run build && firebase deploy --only hosting",
     "deploy:app": "cd packages/app && flutter build web && firebase deploy --only hosting",
-    "deploy:all": "npm run deploy:functions && npm run deploy:rules && npm run deploy:app",
+    "deploy:all": "npm run deploy:functions && npm run deploy:rules && npm run deploy:web",
+    "dev:web": "cd packages/web && npm run dev",
     "test:app": "cd packages/app && flutter test",
     "test:functions": "cd packages/functions && npm test",
     "clean": "cd packages/app && flutter clean && rm -rf build/",
-    "install:all": "npm install && cd packages/functions && npm install"
+    "install:all": "npm install && cd packages/functions && npm install && cd ../web && npm install"
   },
   "devDependencies": {
     "firebase": "^12.3.0",
