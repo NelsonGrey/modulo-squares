@@ -12,15 +12,33 @@
           "package_name": "com.nelsongrey.modulosquares.app.android"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "784677197785-phb5rd418ckoo43kt2koh1mfrens2uap.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyDUMMY_API_KEY_DEV"
+          "current_key": "AIzaSyDq66LnI1c7jSSRgs7hbdz-9lMkA92MfqA"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "784677197785-phb5rd418ckoo43kt2koh1mfrens2uap.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "784677197785-acn8nnrs4rhoeipg9ek4u6b1p512nqkm.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.nelsongrey.modulosquares.app.ios",
+                "app_store_id": "6753350832"
+              }
+            }
+          ]
         }
       }
     }

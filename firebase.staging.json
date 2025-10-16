@@ -5,7 +5,7 @@
         "default": {
           "projectId": "modulo-squares-staging",
           "appId": "1:838061114925:android:9a9206d7065e2e3e229aa4",
-          "fileOutput": "packages/app/android/app/google-services.json"
+          "fileOutput": "packages/app/android/app/google-services.staging.json"
         }
       },
       "ios": {
@@ -13,7 +13,7 @@
           "projectId": "modulo-squares-staging",
           "appId": "1:838061114925:ios:f607167ffa35e7bb229aa4",
           "uploadDebugSymbols": false,
-          "fileOutput": "packages/app/ios/Runner/GoogleService-Info.plist"
+          "fileOutput": "packages/app/ios/Runner/GoogleService-Info.staging.plist"
         }
       },
       "dart": {
