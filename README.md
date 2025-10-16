@@ -78,7 +78,7 @@ firebase login
 ### Development Commands
 ```bash
 # Run Flutter app
-cd packages/app && flutter run
+cd packages/mobile && flutter run
 
 # Run functions locally
 firebase emulators:start
@@ -96,12 +96,12 @@ npm run deploy:all
 npm run build:app
 
 # Build web app
-cd packages/app && flutter build web
+cd packages/mobile && flutter build web
 ```
 
 ## 📦 Packages
 
-### App (`packages/app/`)
+### App (`packages/mobile/`)
 The main Flutter application with cross-platform support.
 
 **Key Components:**
@@ -169,8 +169,8 @@ lib/
    - Firebase Analytics
 3. **Add Apps**: Register Android and iOS apps in Firebase console
 4. **Download Config Files**:
-   - `google-services.json` → `packages/app/android/app/`
-   - `GoogleService-Info.plist` → `packages/app/ios/Runner/`
+   - `google-services.json` → `packages/mobile/android/app/`
+   - `GoogleService-Info.plist` → `packages/mobile/ios/Runner/`
 
 ### Installation
 

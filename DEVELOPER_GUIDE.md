@@ -166,7 +166,7 @@ git clone <repository-url>
 cd modulo-flutter-project
 
 # Navigate to app package
-cd packages/app
+cd packages/mobile
 
 # Install dependencies
 flutter pub get
@@ -188,7 +188,7 @@ flutter doctor
 
 ### Overall Structure
 ```
-packages/app/
+packages/mobile/
 ├── lib/
 │   ├── core/                    # Application-wide code
 │   │   ├── config/             # Configuration files

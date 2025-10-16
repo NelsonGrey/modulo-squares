@@ -105,13 +105,13 @@ app.*.symbols
 app.*.map.json
 
 # Android signing configuration
-packages/app/android/app/*.jks
-packages/app/android/app/*.keystore
-packages/app/android/local.properties
+packages/mobile/android/app/*.jks
+packages/mobile/android/app/*.keystore
+packages/mobile/android/local.properties
 
 # iOS signing (generally handled by Xcode, but good to be safe)
-packages/app/ios/*.mobileprovision
-packages/app/ios/*.p12
+packages/mobile/ios/*.mobileprovision
+packages/mobile/ios/*.p12
 node_modules
 
 # Environment variables

@@ -74,16 +74,16 @@ jobs:
 
       - name: 🔧 Flutter Analyze
         run: flutter analyze
-        working-directory: packages/app
+        working-directory: packages/mobile
 
       - name: 🧪 Run Tests
         run: flutter test --coverage
-        working-directory: packages/app
+        working-directory: packages/mobile
 
       - name: 📊 Upload Coverage
         uses: codecov/codecov-action@v4
         with:
-          file: packages/app/coverage/lcov.info
+          file: packages/mobile/coverage/lcov.info
           flags: flutter
           name: codecov-umbrella
 
@@ -110,11 +110,11 @@ jobs:
 
       - name: 📦 Install FlutterFire CLI
         run: flutter pub global activate flutterfire_cli
-        working-directory: packages/app
+        working-directory: packages/mobile
 
       - name: 🔧 Configure Firebase
         run: flutterfire configure --project=${{ needs.determine-environment.outputs.environment == 'production' && 'modulo-squares-prod' || needs.determine-environment.outputs.environment == 'staging' && 'modulo-squares-staging' || 'modulo-squares-dev' }}
-        working-directory: packages/app
+        working-directory: packages/mobile
 
       - name: 🔄 Switch Mobile Configs
         run: |
@@ -124,17 +124,17 @@ jobs:
 
       - name: 📦 Install Dependencies
         run: flutter pub get
-        working-directory: packages/app
+        working-directory: packages/mobile
 
       - name: 🏗️ Build Web App
         run: flutter build web --release
-        working-directory: packages/app
+        working-directory: packages/mobile
 
       - name: 📤 Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: web-build
-          path: packages/app/build/web/
+          path: packages/mobile/build/web/
           retention-days: 7
 
   # 📱 Build Mobile Apps
@@ -161,11 +161,11 @@ jobs:
 
       - name: 📦 Install FlutterFire CLI
         run: flutter pub global activate flutterfire_cli
-        working-directory: packages/app
+        working-directory: packages/mobile
 
       - name: 🔧 Configure Firebase
         run: flutterfire configure --project=${{ needs.determine-environment.outputs.environment == 'production' && 'modulo-squares-prod' || needs.determine-environment.outputs.environment == 'staging' && 'modulo-squares-staging' || 'modulo-squares-dev' }}
-        working-directory: packages/app
+        working-directory: packages/mobile
 
       - name: 🔄 Switch Mobile Configs
         run: |
@@ -175,28 +175,28 @@ jobs:
 
       - name: �📦 Install Dependencies
         run: flutter pub get
-        working-directory: packages/app
+        working-directory: packages/mobile
 
       - name: 🏗️ Build Android APK
         run: flutter build apk --release
-        working-directory: packages/app
+        working-directory: packages/mobile
 
       - name: 🏗️ Build Android AAB
         run: flutter build appbundle --release
-        working-directory: packages/app
+        working-directory: packages/mobile
 
       - name: 📤 Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: android-apk
-          path: packages/app/build/app/outputs/flutter-apk/app-release.apk
+          path: packages/mobile/build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
 
       - name: 📤 Upload AAB
         uses: actions/upload-artifact@v4
         with:
           name: android-aab
-          path: packages/app/build/app/outputs/bundle/release/app-release.aab
+          path: packages/mobile/build/app/outputs/bundle/release/app-release.aab
           retention-days: 30
 
   # 🚀 Deploy to Firebase Hosting
@@ -214,7 +214,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: web-build
-          path: packages/app/build/web/
+          path: packages/mobile/build/web/
 
       - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4

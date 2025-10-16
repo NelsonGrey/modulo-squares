@@ -5,7 +5,7 @@
         "default": {
           "projectId": "modulo-squares-dev",
           "appId": "1:784677197785:android:d17a73b27367990061abc8",
-          "fileOutput": "packages/app/android/app/google-services.dev.json"
+          "fileOutput": "packages/mobile/android/app/google-services.dev.json"
         }
       },
       "ios": {
@@ -13,7 +13,7 @@
           "projectId": "modulo-squares-dev",
           "appId": "1:784677197785:ios:51104e6b575616cc61abc8",
           "uploadDebugSymbols": false,
-          "fileOutput": "packages/app/ios/Runner/GoogleService-Info.dev.plist"
+          "fileOutput": "packages/mobile/ios/Runner/GoogleService-Info.dev.plist"
         }
       },
       "dart": {
@@ -42,7 +42,7 @@
   },
   "hosting": {
     "target": "website",
-    "public": "packages/app/build/web",
+    "public": "packages/mobile/build/web",
     "ignore": [
       "firebase.json",
       "**/.*",
