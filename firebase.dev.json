@@ -3,14 +3,14 @@
     "platforms": {
       "android": {
         "default": {
-          "projectId": "modulo-squares-prod",
+          "projectId": "modulo-squares-dev",
           "appId": "1:1038873713695:android:8cc29f252bb8b1e6bcc92a",
           "fileOutput": "packages/app/android/app/google-services.json"
         }
       },
       "ios": {
         "default": {
-          "projectId": "modulo-squares-prod",
+          "projectId": "modulo-squares-dev",
           "appId": "1:1038873713695:ios:fd144b35448ed1e6bcc92a",
           "uploadDebugSymbols": false,
           "fileOutput": "packages/app/ios/Runner/GoogleService-Info.plist"
@@ -18,7 +18,7 @@
       },
       "dart": {
         "lib/firebase_options.dart": {
-          "projectId": "modulo-squares-prod",
+          "projectId": "modulo-squares-dev",
           "configurations": {
             "android": "1:1038873713695:android:8cc29f252bb8b1e6bcc92a",
             "ios": "1:1038873713695:ios:fd144b35448ed1e6bcc92a",

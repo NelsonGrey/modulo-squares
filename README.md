@@ -249,9 +249,40 @@ flutter build web
 
 ## 🚀 Deployment
 
-- **Android**: Upload `.aab` file to Google Play Console
-- **iOS**: Archive and upload to App Store Connect via Xcode
-- **Web**: Deploy `build/web` to Firebase Hosting or any web server
+The project uses GitHub Actions for CI/CD with three Firebase environments:
+
+- **DEV**: `modulo-squares-dev` (develop branch)
+- **STAGING**: `modulo-squares-staging` (staging branch)
+- **PROD**: `modulo-squares-prod` (main branch)
+
+### Environment URLs
+- **DEV**: https://modulo-squares-dev.web.app
+- **STAGING**: https://modulo-squares-staging.web.app
+- **PROD**: https://modulo-squares-prod.web.app
+
+### Automatic Deployments
+- Push to `develop` → Deploys to DEV
+- Push to `staging` → Deploys to STAGING
+- Push to `main` → Deploys to PROD + creates release
+
+### Manual Deployments
+```bash
+# Deploy to development
+./scripts/deploy.sh dev
+
+# Deploy to staging
+./scripts/deploy.sh staging
+
+# Deploy to production
+./scripts/deploy.sh prod
+```
+
+For detailed CI/CD setup instructions, see [CI_CD_SETUP.md](CI_CD_SETUP.md).
+
+### Mobile App Releases
+When pushing to `main`, the CI pipeline automatically builds and creates GitHub releases with:
+- Android APK and AAB files
+- iOS build artifacts
 
 ## 📊 Analytics & Monitoring
 

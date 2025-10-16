@@ -1,7 +1,32 @@
 {
   "projects": {
-    "default": "modulo-squares"
+    "default": "modulo-squares-prod",
+    "dev": "modulo-squares-dev",
+    "staging": "modulo-squares-staging",
+    "prod": "modulo-squares-prod"
   },
-  "targets": {},
+  "targets": {
+    "modulo-squares-dev": {
+      "hosting": {
+        "website": [
+          "modulo-squares-dev"
+        ]
+      }
+    },
+    "modulo-squares-staging": {
+      "hosting": {
+        "website": [
+          "modulo-squares-staging"
+        ]
+      }
+    },
+    "modulo-squares-prod": {
+      "hosting": {
+        "website": [
+          "modulo-squares-prod"
+        ]
+      }
+    }
+  },
   "etags": {}
 }
