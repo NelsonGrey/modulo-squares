@@ -19,7 +19,7 @@ switch ($Environment) {
     "dev" {
         $FirebaseProject = "modulo-squares-dev"
         $FirebaseConfig = Join-Path $ProjectRoot "firebase.dev.json"
-        $FirebaseTokenVar = "FIREBASE_TOKEN_DEV"
+        $FirebaseTokenVar = "FIREBASE_TOKEN_DEVELOPMENT"
     }
     "staging" {
         $FirebaseProject = "modulo-squares-staging"
@@ -29,7 +29,7 @@ switch ($Environment) {
     "prod" {
         $FirebaseProject = "modulo-squares-prod"
         $FirebaseConfig = Join-Path $ProjectRoot "firebase.prod.json"
-        $FirebaseTokenVar = "FIREBASE_TOKEN_PROD"
+        $FirebaseTokenVar = "FIREBASE_TOKEN_PRODUCTION"
     }
 }
 

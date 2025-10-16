@@ -25,7 +25,7 @@ case $ENVIRONMENT in
     dev)
         FIREBASE_PROJECT="modulo-squares-dev"
         FIREBASE_CONFIG="$PROJECT_ROOT/firebase.dev.json"
-        FIREBASE_TOKEN_VAR="FIREBASE_TOKEN_DEV"
+        FIREBASE_TOKEN_VAR="FIREBASE_TOKEN_DEVELOPMENT"
         ;;
     staging)
         FIREBASE_PROJECT="modulo-squares-staging"
@@ -35,7 +35,7 @@ case $ENVIRONMENT in
     prod)
         FIREBASE_PROJECT="modulo-squares-prod"
         FIREBASE_CONFIG="$PROJECT_ROOT/firebase.prod.json"
-        FIREBASE_TOKEN_VAR="FIREBASE_TOKEN_PROD"
+        FIREBASE_TOKEN_VAR="FIREBASE_TOKEN_PRODUCTION"
         ;;
 esac
 

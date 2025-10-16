@@ -83,7 +83,7 @@ jobs:
           case ${{ github.ref }} in
             refs/heads/main)
               echo "firebase_project=modulo-squares-prod" >> $GITHUB_OUTPUT
-              echo "firebase_token=${{ secrets.FIREBASE_TOKEN_PROD }}" >> $GITHUB_OUTPUT
+              echo "firebase_token=${{ secrets.FIREBASE_TOKEN_PRODUCTION }}" >> $GITHUB_OUTPUT
               ;;
             refs/heads/staging)
               echo "firebase_project=modulo-squares-staging" >> $GITHUB_OUTPUT
@@ -91,7 +91,7 @@ jobs:
               ;;
             refs/heads/develop)
               echo "firebase_project=modulo-squares-dev" >> $GITHUB_OUTPUT
-              echo "firebase_token=${{ secrets.FIREBASE_TOKEN_DEV }}" >> $GITHUB_OUTPUT
+              echo "firebase_token=${{ secrets.FIREBASE_TOKEN_DEVELOPMENT }}" >> $GITHUB_OUTPUT
               ;;
           esac
 

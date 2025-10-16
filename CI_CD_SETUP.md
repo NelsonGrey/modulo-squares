@@ -28,9 +28,9 @@ The project uses GitHub Actions for CI/CD with three Firebase environments:
 Add the following **environment-specific** secrets to your GitHub repository:
 
 ### Required Secrets
-- `FIREBASE_TOKEN_DEV`: Firebase CI token for DEV environment
+- `FIREBASE_TOKEN_DEVELOPMENT`: Firebase CI token for DEV environment
 - `FIREBASE_TOKEN_STAGING`: Firebase CI token for STAGING environment
-- `FIREBASE_TOKEN_PROD`: Firebase CI token for PROD environment
+- `FIREBASE_TOKEN_PRODUCTION`: Firebase CI token for PROD environment
 
 ### Optional Secrets (for releases)
 - `ANDROID_KEYSTORE`: Base64 encoded Android keystore (for signed releases)

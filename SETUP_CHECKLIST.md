@@ -33,9 +33,9 @@
 ## 🔄 In Progress / Next Steps
 
 ### GitHub Secrets Setup
-- [ ] Add FIREBASE_TOKEN_DEV to GitHub repository secrets
+- [ ] Add FIREBASE_TOKEN_DEVELOPMENT to GitHub repository secrets
 - [ ] Add FIREBASE_TOKEN_STAGING to GitHub repository secrets
-- [ ] Add FIREBASE_TOKEN_PROD to GitHub repository secrets
+- [ ] Add FIREBASE_TOKEN_PRODUCTION to GitHub repository secrets
 - [ ] (Optional) Add Android signing secrets for releases
 
 ### Branch Protection Rules
@@ -56,7 +56,7 @@
 # Get Firebase tokens for each environment
 firebase use modulo-squares-dev
 firebase login:ci
-# Copy the token for FIREBASE_TOKEN_DEV
+# Copy the token for FIREBASE_TOKEN_DEVELOPMENT
 
 firebase use modulo-squares-staging
 firebase login:ci
@@ -64,10 +64,10 @@ firebase login:ci
 
 firebase use modulo-squares-prod
 firebase login:ci
-# Copy the token for FIREBASE_TOKEN_PROD
+# Copy the token for FIREBASE_TOKEN_PRODUCTION
 
 # Add to GitHub: Repository → Settings → Secrets and variables → Actions
-# Names: FIREBASE_TOKEN_DEV, FIREBASE_TOKEN_STAGING, FIREBASE_TOKEN_PROD
+# Names: FIREBASE_TOKEN_DEVELOPMENT, FIREBASE_TOKEN_STAGING, FIREBASE_TOKEN_PRODUCTION
 # Values: [paste the respective tokens]
 ```
 
@@ -116,7 +116,7 @@ Feature Development:
 │   feature/*     │ -> │     develop     │ -> │     staging     │ -> │      main       │
 │   (local dev)   │    │   (DEV env)     │    │  (STAGING env)  │    │   (PROD env)    │
 │                 │    │ Tests + Deploy  │    │ Tests + Deploy  │    │ Tests + Deploy  │
-│                 │    │ FIREBASE_TOKEN_DEV    │ FIREBASE_TOKEN_STAGING │ FIREBASE_TOKEN_PROD │
+│                 │    │ FIREBASE_TOKEN_DEVELOPMENT │ FIREBASE_TOKEN_STAGING │ FIREBASE_TOKEN_PRODUCTION │
 │                 │    │                 │    │ PR Reviews Req  │    │ PR Reviews Req  │
 └─────────────────┘    └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```

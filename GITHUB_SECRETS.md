@@ -5,7 +5,7 @@
 ### Environment-Specific Firebase Tokens
 Each Firebase environment requires its own authentication token for security and access control.
 
-#### FIREBASE_TOKEN_DEV
+#### FIREBASE_TOKEN_DEVELOPMENT
 **Purpose**: Authenticates GitHub Actions with Firebase for DEV environment deployments
 
 **How to get it**:
@@ -25,7 +25,7 @@ firebase use modulo-squares-staging
 firebase login:ci
 ```
 
-#### FIREBASE_TOKEN_PROD
+#### FIREBASE_TOKEN_PRODUCTION
 **Purpose**: Authenticates GitHub Actions with Firebase for PROD environment deployments
 
 **How to get it**:
