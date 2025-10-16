@@ -1,5 +1,6 @@
 name: CI/CD Pipeline
 
+# Test deployment with environment-specific Firebase tokens
 on:
   push:
     branches: [ main, develop, staging ]
