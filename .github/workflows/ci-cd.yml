@@ -102,11 +102,27 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
 
-      - name: 🔄 Switch Mobile Configs
-        run: npm run config:prod
+      - name: 🔄 Switch Firebase Config
+        run: |
+          CONFIG_ENV="${{ needs.determine-environment.outputs.environment == 'development' && 'dev' || needs.determine-environment.outputs.environment == 'staging' && 'staging' || 'prod' }}"
+          cp firebase.$CONFIG_ENV.json firebase.json
         working-directory: .
 
-      - name: �📦 Install Dependencies
+      - name: 📦 Install FlutterFire CLI
+        run: flutter pub global activate flutterfire_cli
+        working-directory: packages/app
+
+      - name: 🔧 Configure Firebase
+        run: flutterfire configure --project=${{ needs.determine-environment.outputs.environment == 'production' && 'modulo-squares-prod' || needs.determine-environment.outputs.environment == 'staging' && 'modulo-squares-staging' || 'modulo-squares-dev' }}
+        working-directory: packages/app
+
+      - name: 🔄 Switch Mobile Configs
+        run: |
+          CONFIG_ENV="${{ needs.determine-environment.outputs.environment == 'development' && 'dev' || needs.determine-environment.outputs.environment }}"
+          npm run config:$CONFIG_ENV
+        working-directory: .
+
+      - name: 📦 Install Dependencies
         run: flutter pub get
         working-directory: packages/app
 
@@ -136,6 +152,20 @@ jobs:
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
+
+      - name: 🔄 Switch Firebase Config
+        run: |
+          CONFIG_ENV="${{ needs.determine-environment.outputs.environment == 'development' && 'dev' || needs.determine-environment.outputs.environment == 'staging' && 'staging' || 'prod' }}"
+          cp firebase.$CONFIG_ENV.json firebase.json
+        working-directory: .
+
+      - name: 📦 Install FlutterFire CLI
+        run: flutter pub global activate flutterfire_cli
+        working-directory: packages/app
+
+      - name: 🔧 Configure Firebase
+        run: flutterfire configure --project=${{ needs.determine-environment.outputs.environment == 'production' && 'modulo-squares-prod' || needs.determine-environment.outputs.environment == 'staging' && 'modulo-squares-staging' || 'modulo-squares-dev' }}
+        working-directory: packages/app
 
       - name: 🔄 Switch Mobile Configs
         run: |
