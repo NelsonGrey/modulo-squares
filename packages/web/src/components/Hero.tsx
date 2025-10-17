@@ -1,5 +1,3 @@
-import React from 'react';
-
 const Hero: React.FC = () => {
   const scrollToDownload = () => {
     const element = document.getElementById('download');

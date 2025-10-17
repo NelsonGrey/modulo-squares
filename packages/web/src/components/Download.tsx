@@ -1,5 +1,3 @@
-import React from 'react';
-
 const Download: React.FC = () => {
   return (
     <section id="download" className="section-padding bg-gray-50">
