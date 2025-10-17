@@ -2,29 +2,33 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-        <key>API_KEY</key>
-        <string>AIzaSyDUMMY_API_KEY_PROD</string>
-        <key>GCM_SENDER_ID</key>
-        <string>253948321735</string>
-        <key>PLIST_VERSION</key>
-        <string>1</string>
-        <key>BUNDLE_ID</key>
-        <string>com.nelsongrey.modulosquares.app.ios</string>
-        <key>PROJECT_ID</key>
-        <string>modulo-squares-prod</string>
-        <key>STORAGE_BUCKET</key>
-        <string>modulo-squares-prod.firebasestorage.app</string>
-        <key>IS_ADS_ENABLED</key>
-        <false></false>
-        <key>IS_ANALYTICS_ENABLED</key>
-        <false></false>
-        <key>IS_APPINVITE_ENABLED</key>
-        <true></true>
-        <key>IS_GCM_ENABLED</key>
-        <true></true>
-        <key>IS_SIGNIN_ENABLED</key>
-        <true></true>
-        <key>GOOGLE_APP_ID</key>
-        <string>1:253948321735:ios:527c4e69b233a2199ec3e2</string>
+	<key>CLIENT_ID</key>
+	<string>253948321735-jn4086nreghm2630go26stptkh2ja730.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.253948321735-jn4086nreghm2630go26stptkh2ja730</string>
+	<key>API_KEY</key>
+	<string>AIzaSyBGdIM2EJ7bsJgX8xB8yDDtqU9DooXF0w4</string>
+	<key>GCM_SENDER_ID</key>
+	<string>253948321735</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.nelsongrey.modulosquares.app.ios</string>
+	<key>PROJECT_ID</key>
+	<string>modulo-squares-prod</string>
+	<key>STORAGE_BUCKET</key>
+	<string>modulo-squares-prod.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:253948321735:ios:527c4e69b233a2199ec3e2</string>
 </dict>
 </plist>
