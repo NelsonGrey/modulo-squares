@@ -67,7 +67,7 @@
 
 	<!-- AdMob App ID (REPLACE with your production App ID from AdMobConfig.iosAppId) -->
 	<key>GADApplicationIdentifier</key>
-	<string>ca-app-pub-xxxxxxxxxxxxxxxx~zzzzzzzzzz</string>
+	<string>ca-app-pub-5198775482699756~9962129501</string>
 
         <!-- SKAdNetwork IDs (sample AdMob; update from Google’s latest list) -->
         <key>SKAdNetworkItems</key>

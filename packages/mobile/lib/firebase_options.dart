@@ -47,30 +47,31 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyBKRHVb9cigFuu2dxxfL3_0MaeFvypm-3I',
-    appId: '1:784677197785:web:17eec81cc847f1af61abc8',
-    messagingSenderId: '784677197785',
-    projectId: 'modulo-squares-dev',
-    authDomain: 'modulo-squares-dev.firebaseapp.com',
-    storageBucket: 'modulo-squares-dev.firebasestorage.app',
-    measurementId: 'G-RPFZ8V8Q8K',
+    apiKey: 'AIzaSyDlK3Pm3X5e9Nw31V8SPfm8o1CvPlisoEU',
+    appId: '1:838061114925:web:4489f878453573b9229aa4',
+    messagingSenderId: '838061114925',
+    projectId: 'modulo-squares-staging',
+    authDomain: 'modulo-squares-staging.firebaseapp.com',
+    storageBucket: 'modulo-squares-staging.firebasestorage.app',
+    measurementId: 'G-EJDZWN4Z3W',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDq66LnI1c7jSSRgs7hbdz-9lMkA92MfqA',
-    appId: '1:784677197785:android:d17a73b27367990061abc8',
-    messagingSenderId: '784677197785',
-    projectId: 'modulo-squares-dev',
-    storageBucket: 'modulo-squares-dev.firebasestorage.app',
+    apiKey: 'AIzaSyAqYm0u62vZdasCiKcKtW_LOFD9qu-z4Ys',
+    appId: '1:838061114925:android:9a9206d7065e2e3e229aa4',
+    messagingSenderId: '838061114925',
+    projectId: 'modulo-squares-staging',
+    storageBucket: 'modulo-squares-staging.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCnmHtmyARvoj5FjgZgIkrj1cs8RHo3nQg',
-    appId: '1:784677197785:ios:51104e6b575616cc61abc8',
-    messagingSenderId: '784677197785',
-    projectId: 'modulo-squares-dev',
-    storageBucket: 'modulo-squares-dev.firebasestorage.app',
-    iosClientId: '784677197785-acn8nnrs4rhoeipg9ek4u6b1p512nqkm.apps.googleusercontent.com',
+    apiKey: 'AIzaSyANg0NnZRQKbco2MOOx4-dNyCOSKdh6Ti0',
+    appId: '1:838061114925:ios:f607167ffa35e7bb229aa4',
+    messagingSenderId: '838061114925',
+    projectId: 'modulo-squares-staging',
+    storageBucket: 'modulo-squares-staging.firebasestorage.app',
+    iosClientId: '838061114925-ms9cle62f1qlq182movucpdl7ttqk7e4.apps.googleusercontent.com',
     iosBundleId: 'com.nelsongrey.modulosquares.app.ios',
   );
+
 }

@@ -4,11 +4,11 @@ import 'dart:io';
 class AdMobConfig {
   // Production AdMob App IDs (REPLACE WITH YOUR ACTUAL PRODUCTION IDs)
   static const String androidAppId = 'ca-app-pub-5198775482699756~4572596676'; // Already configured in AndroidManifest.xml
-  static const String iosAppId = 'ca-app-pub-XXXXXXXXXXXXXXXX~YYYYYYYYYY'; // TODO: Replace with your actual iOS App ID from AdMob console
+  static const String iosAppId = 'ca-app-pub-5198775482699756~9962129501'; // TODO: Replace with your actual iOS App ID from AdMob console
 
   // Production Ad Unit IDs (REPLACE WITH YOUR ACTUAL AD UNIT IDs)
-  static const String androidInterstitialId = 'ca-app-pub-5198775482699756/1234567890'; // TODO: Replace with your actual Android interstitial ad unit ID
-  static const String iosInterstitialId = 'ca-app-pub-XXXXXXXXXXXXXXXX/1234567890'; // TODO: Replace with your actual iOS interstitial ad unit ID
+  static const String androidInterstitialId = 'ca-app-pub-5198775482699756/2729455367'; // TODO: Replace with your actual Android interstitial ad unit ID
+  static const String iosInterstitialId = 'ca-app-pub-5198775482699756/8528576954'; // TODO: Replace with your actual iOS interstitial ad unit ID
 
   // Test Ad Unit IDs (used in debug mode)
   static const String testAndroidInterstitialId = 'ca-app-pub-3940256099942544/1033173712';

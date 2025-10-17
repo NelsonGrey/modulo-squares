@@ -3,21 +3,21 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>784677197785-acn8nnrs4rhoeipg9ek4u6b1p512nqkm.apps.googleusercontent.com</string>
+	<string>838061114925-ms9cle62f1qlq182movucpdl7ttqk7e4.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.784677197785-acn8nnrs4rhoeipg9ek4u6b1p512nqkm</string>
+	<string>com.googleusercontent.apps.838061114925-ms9cle62f1qlq182movucpdl7ttqk7e4</string>
 	<key>API_KEY</key>
-	<string>AIzaSyCnmHtmyARvoj5FjgZgIkrj1cs8RHo3nQg</string>
+	<string>AIzaSyANg0NnZRQKbco2MOOx4-dNyCOSKdh6Ti0</string>
 	<key>GCM_SENDER_ID</key>
-	<string>784677197785</string>
+	<string>838061114925</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
 	<string>com.nelsongrey.modulosquares.app.ios</string>
 	<key>PROJECT_ID</key>
-	<string>modulo-squares-dev</string>
+	<string>modulo-squares-staging</string>
 	<key>STORAGE_BUCKET</key>
-	<string>modulo-squares-dev.firebasestorage.app</string>
+	<string>modulo-squares-staging.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -29,6 +29,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:784677197785:ios:51104e6b575616cc61abc8</string>
+	<string>1:838061114925:ios:f607167ffa35e7bb229aa4</string>
 </dict>
 </plist>

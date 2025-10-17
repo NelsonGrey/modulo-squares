@@ -109,7 +109,7 @@ class GameBoard {
       maxValue: maxValue,
       grid: grid,
       score: 0,
-      level: level,
+      level: clampedLevel,
     );
   }
 
@@ -149,19 +149,19 @@ class GameBoard {
     // - Otherwise the move is invalid.
     if (fromTile.value != null) {
       if (toTile.value == null) {
-        final newGrid = grid.map((r) => List<Tile>.from(r)).toList();
+        final newGrid = List.generate(rows, (i) => List<Tile>.from(grid[i]));
         newGrid[newRow][newCol] = fromTile.copyWith();
         newGrid[row][col] = const Tile();
         return copyWith(grid: newGrid, score: score + 1);
       }
 
       if (fromTile.value! <= toTile.value!) {
-        final newGrid = grid.map((r) => List<Tile>.from(r)).toList();
+        final newGrid = List.generate(rows, (i) => List<Tile>.from(grid[i]));
         final int sourceVal = fromTile.value!;
         final int targetVal = toTile.value!;
         final int remainder = targetVal % sourceVal;
         // Base score +1; bonus tile grants +5 extra on collision
-        int newScore = score + 1 + (toTile.type == TileType.bonus ? 5 : 0);
+        int newScore = score + 1;
         TileType newType = toTile.type;
 
         if (remainder == 0) {
@@ -211,11 +211,11 @@ class GameBoard {
       Tile toTile = grid[nextRow][nextCol];
       if (toTile.value == null || toTile.type == TileType.obstacle) return null;
       if (fromTile.value! <= toTile.value!) {
-        final newGrid = grid.map((r) => List<Tile>.from(r)).toList();
+        final newGrid = List.generate(rows, (i) => List<Tile>.from(grid[i]));
         final int sourceVal = fromTile.value!;
         final int targetVal = toTile.value!;
         final int remainder = targetVal % sourceVal;
-        int newScore = score + 1 + (toTile.type == TileType.bonus ? 5 : 0);
+        int newScore = score + 1;
         TileType newType = toTile.type;
 
         if (remainder == 0) {
@@ -233,7 +233,7 @@ class GameBoard {
 
     // We moved through empties to (curRow,curCol). Check next cell:
     if (!isInBounds(nextRow, nextCol)) {
-      final newGrid = grid.map((r) => List<Tile>.from(r)).toList();
+      final newGrid = List.generate(rows, (i) => List<Tile>.from(grid[i]));
       newGrid[curRow][curCol] = fromTile.copyWith();
       newGrid[row][col] = const Tile();
       return copyWith(grid: newGrid, score: score + 1);
@@ -242,7 +242,7 @@ class GameBoard {
     Tile toTile = grid[nextRow][nextCol];
     // If next is blocked (locked/obstacle/frozen), settle at cur
     if (toTile.type == TileType.obstacle) {
-      final newGrid = grid.map((r) => List<Tile>.from(r)).toList();
+      final newGrid = List.generate(rows, (i) => List<Tile>.from(grid[i]));
       newGrid[curRow][curCol] = fromTile.copyWith();
       newGrid[row][col] = const Tile();
       return copyWith(grid: newGrid, score: score + 1);
@@ -250,18 +250,18 @@ class GameBoard {
 
     // Handle empty next cell
     if (toTile.value == null) {
-      final newGrid = grid.map((r) => List<Tile>.from(r)).toList();
+      final newGrid = List.generate(rows, (i) => List<Tile>.from(grid[i]));
       newGrid[curRow][curCol] = fromTile.copyWith();
       newGrid[row][col] = const Tile();
       return copyWith(grid: newGrid, score: score + 1);
     }
 
     if (fromTile.value! <= toTile.value!) {
-      final newGrid = grid.map((r) => List<Tile>.from(r)).toList();
+      final newGrid = List.generate(rows, (i) => List<Tile>.from(grid[i]));
       final int sourceVal = fromTile.value!;
       final int targetVal = toTile.value!;
       final int remainder = targetVal % sourceVal;
-      int newScore = score + 1 + (toTile.type == TileType.bonus ? 5 : 0);
+      int newScore = score + 1;
       TileType newType = toTile.type;
       if (remainder == 0) {
         newGrid[nextRow][nextCol] = Tile(type: newType, value: null);

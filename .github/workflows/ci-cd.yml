@@ -186,6 +186,12 @@ jobs:
           path: packages/mobile/build/app/outputs/bundle/release/app-release.aab
           retention-days: 30
 
+      - name: 📤 Distribute Android APK to Firebase App Distribution
+        run: |
+          TOKEN="${{ secrets[format('FIREBASE_TOKEN_{0}', needs.determine-environment.outputs.environment)] }}"
+          APP_ID="${{ secrets[format('FIREBASE_APP_ID_{0}', needs.determine-environment.outputs.environment)] }}"
+          firebase appdistribution:distribute packages/mobile/build/app/outputs/flutter-apk/app-release.apk --app $APP_ID --groups "testers" --release-notes "Build ${{ github.run_number }} - ${{ needs.determine-environment.outputs.environment }}" --token $TOKEN
+
   # 🚀 Deploy to Firebase Hosting
   deploy-web:
     name: 🔥 Deploy Web App to Firebase (${{ needs.determine-environment.outputs.environment }})
@@ -289,7 +295,7 @@ jobs:
   deployment-summary:
     name: 📊 Deployment Summary (${{ needs.determine-environment.outputs.environment }})
     runs-on: ubuntu-latest
-    needs: [determine-environment, deploy-web, create-release]
+    needs: [determine-environment, deploy-web, build-mobile, create-release]
     if: always() && needs.determine-environment.outputs.should-deploy == 'true'
     steps:
       - name: 📊 Generate Deployment Report
@@ -309,6 +315,7 @@ jobs:
           fi
 
           echo "| 🌐 Web App | ${{ needs.deploy-web.result }} | $WEB_URL |" >> $GITHUB_STEP_SUMMARY
+          echo "| 📱 Mobile App Distribution | ${{ needs.build-mobile.result }} | Firebase App Distribution |" >> $GITHUB_STEP_SUMMARY
           echo "| 📱 Mobile Release | ${{ needs.create-release.result }} | GitHub Releases |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Build Date**: $(date)" >> $GITHUB_STEP_SUMMARY
