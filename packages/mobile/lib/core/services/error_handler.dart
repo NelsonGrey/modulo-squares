@@ -96,7 +96,7 @@ class ErrorHandler {
       case 3: // No fill
         return 'No ad available at this time.';
       default:
-        return 'Ad error: ${error.message}';
+        return 'Ad error: ${error.domain}';
     }
   }
 

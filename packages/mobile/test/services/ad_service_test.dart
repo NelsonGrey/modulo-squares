@@ -1,12 +1,23 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get_it/get_it.dart';
 import 'package:modulo/core/services/ad_service.dart';
+import 'package:modulo/core/services/consent_service.dart';
+import 'package:modulo/core/services/purchase_service.dart';
 import 'package:modulo/core/config/admob_config.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   late AdService adService;
 
   setUp(() {
+    GetIt.I.registerSingleton<ConsentService>(ConsentService());
+    GetIt.I.registerSingleton<PurchaseService>(PurchaseService());
     adService = AdService();
+  });
+
+  tearDown(() {
+    GetIt.I.reset();
   });
 
   group('AdService', () {

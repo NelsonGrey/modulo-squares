@@ -18,7 +18,7 @@ class PurchaseService {
   static const String _premiumPrefKey = 'premium_unlocked';
 
   final InAppPurchase _inAppPurchase = InAppPurchase.instance;
-  late StreamSubscription<List<PurchaseDetails>> _subscription;
+  late StreamSubscription<List<PurchaseDetails>>? _subscription;
 
   final StreamController<PurchaseResult> _purchaseController = StreamController<PurchaseResult>.broadcast();
   Stream<PurchaseResult> get purchaseStream => _purchaseController.stream;
@@ -50,7 +50,7 @@ class PurchaseService {
     // Listen to purchase updates
     _subscription = _inAppPurchase.purchaseStream.listen(
       _handlePurchaseUpdate,
-      onDone: () => _subscription.cancel(),
+      onDone: () => _subscription?.cancel(),
       onError: (error) => _purchaseController.addError(error),
     );
 
@@ -197,7 +197,7 @@ class PurchaseService {
 
   /// Dispose of resources
   void dispose() {
-    _subscription.cancel();
+    _subscription?.cancel();
     _purchaseController.close();
   }
 }
