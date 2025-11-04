@@ -8,7 +8,7 @@ The project uses environment-specific `.env` files to manage Firebase configurat
 
 ## Environment Files
 
-- `.env.dev` - Development environment
+- `.env.development` - Development environment
 - `.env.staging` - Staging environment  
 - `.env.prod` - Production environment
 - `.env.example` - Template file (committed to git)
@@ -61,7 +61,7 @@ ENVIRONMENT=[development|staging|production]
 
 1. Copy the appropriate template:
    ```bash
-   cp .env.example .env.dev
+   cp .env.example .env.development
    cp .env.example .env.staging
    cp .env.example .env.prod
    ```
@@ -70,7 +70,7 @@ ENVIRONMENT=[development|staging|production]
 
 3. For local development, create a symlink or copy:
    ```bash
-   cp .env.dev .env
+   cp .env.development .env
    ```
 
 ## Security Notes
