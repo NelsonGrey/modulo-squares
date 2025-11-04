@@ -118,3 +118,7 @@ node_modules
 .env
 .env.*
 !.env.example
+
+# Act CLI secrets (DO NOT COMMIT real secrets)
+.act-secrets/
+!.act-secrets/test-secrets

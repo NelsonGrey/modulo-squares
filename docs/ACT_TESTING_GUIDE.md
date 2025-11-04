@@ -6,6 +6,8 @@
 
 ## 🚀 Quick Start
 
+## 🚀 Quick Start
+
 ### 1. Prerequisites
 ```bash
 # Install act
@@ -14,9 +16,25 @@ brew install act
 # Ensure Docker Desktop is running
 docker info
 
-# Setup test secrets
-echo "FIREBASE_TOKEN=your_test_token" > .act-secrets/test-secrets
-echo "FIREBASE_SERVICE_ACCOUNT_KEY=your_test_key" >> .act-secrets/test-secrets
+# Setup test secrets (safe for commits)
+mkdir -p .act-secrets
+cat > .act-secrets/test-secrets << EOF
+FIREBASE_TOKEN=test_token
+FIREBASE_SERVICE_ACCOUNT_KEY={"test": "key"}
+EOF
+
+# For real testing, create real-secrets with actual values (DO NOT COMMIT)
+cp .act-secrets/test-secrets .act-secrets/real-secrets
+# Edit .act-secrets/real-secrets with your real Firebase credentials
+```
+
+### 2. Test Workflows
+```bash
+# Use the interactive script
+./scripts/test-act.sh
+
+# Or test specific workflows directly
+act -W .github/workflows/ci-cd-pipeline.yml --job quality-check --secret-file .act-secrets/test-secrets --container-architecture linux/amd64
 ```
 
 ### 2. Test Workflows
