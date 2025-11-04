@@ -48,27 +48,35 @@ firebase use modulo-squares-dev
 firebase deploy --only hosting:website --dry-run
 ```
 
-## 🛠️ Testing Workflow
+## 🧪 Testing Strategies
 
-### Phase 1: Local Development
-1. Make code changes
-2. Test locally with `./scripts/dry-run-pipeline.sh`
-3. Fix any issues found
+### 1. Local Script Testing (0 Actions minutes)
+```bash
+# Test complete pipeline locally
+./scripts/dry-run-pipeline.sh development
 
-### Phase 2: act Simulation
-1. Run `act` to simulate GitHub Actions locally
-2. Verify workflow logic without consuming minutes
-3. Test different environments and configurations
+# Interactive testing menu
+./scripts/test-cicd-local.sh development true ci-cd-pipeline
+```
 
-### Phase 3: Dry-Run on GitHub
-1. Push with `[DRY-RUN]` in commit message
-2. Verify workflow runs correctly (consumes minutes but no deployment)
-3. Check logs and fix any issues
+### 2. Act CLI Testing (0 Actions minutes)
+```bash
+# Interactive act testing
+./scripts/test-act.sh
 
-### Phase 4: Live Deployment
-1. Push without dry-run flags
-2. Full deployment executes
-3. Monitor results
+# Test specific jobs
+act -W .github/workflows/ci-cd-pipeline.yml --job quality-check --container-architecture linux/amd64
+```
+
+### 3. GitHub Dry-Run Testing (Minimal Actions minutes)
+- Use workflow dispatch with `dry_run: true`
+- Include `[DRY-RUN]` in commit messages
+- Only triggers on main/staging branches
+
+### 4. Production Deployment (Full Actions minutes)
+- Reserved for actual releases
+- Push to main/staging branches
+- Full deployment execution
 
 ## 📊 Cost Savings
 
