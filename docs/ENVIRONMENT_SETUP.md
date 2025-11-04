@@ -10,7 +10,7 @@ The project uses environment-specific `.env` files to manage Firebase configurat
 
 - `.env.development` - Development environment
 - `.env.staging` - Staging environment  
-- `.env.prod` - Production environment
+- `.env.production` - Production environment
 - `.env.example` - Template file (committed to git)
 
 ## Getting Firebase Configuration Values
@@ -63,7 +63,7 @@ ENVIRONMENT=[development|staging|production]
    ```bash
    cp .env.example .env.development
    cp .env.example .env.staging
-   cp .env.example .env.prod
+   cp .env.example .env.production
    ```
 
 2. Fill in the actual values from Firebase Console
