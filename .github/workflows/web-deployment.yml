@@ -47,7 +47,6 @@ jobs:
         uses: ./.github/actions/setup-node
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache-dependency-path: packages/web/package-lock.json
 
       - name: 📦 Install Firebase CLI
         run: npm install -g firebase-tools

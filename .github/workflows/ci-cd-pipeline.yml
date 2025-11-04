@@ -89,7 +89,6 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: packages/web/package-lock.json
 
       - name: � Check Dry Run Status
         run: |

@@ -6,10 +6,6 @@ inputs:
     description: 'Node.js version to install'
     required: true
     default: '18'
-  cache-dependency-path:
-    description: 'Path to package-lock.json for caching'
-    required: false
-    default: 'packages/web/package-lock.json'
 
 runs:
   using: 'composite'
@@ -19,7 +15,6 @@ runs:
       with:
         node-version: ${{ inputs.node-version }}
         cache: 'npm'
-        cache-dependency-path: ${{ inputs.cache-dependency-path }}
 
     - name: 📦 Install Dependencies
       run: npm ci
