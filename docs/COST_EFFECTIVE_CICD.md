@@ -110,14 +110,35 @@ git commit -m "Deploy feature"
 - **Monitor usage**: Check GitHub Actions usage regularly
 - **Reserve minutes**: Save Actions minutes for actual deployments
 
-## 🚨 Emergency Mode
+## 🚨 Emergency Cost Control
 
-If you run out of Actions minutes:
+### Conservative Workflow Triggers
+- **Automatic deployment**: Only on `main` and `staging` branches
+- **Development branch**: No automatic triggers (use manual workflow dispatch)
+- **Safe commits**: Use `./scripts/safe-commit.sh` to avoid accidental triggers
 
-1. Use local testing exclusively
-2. Deploy manually using Firebase CLI
-3. Use `firebase deploy` commands directly
-4. Upgrade GitHub plan if needed
+### Workflow Trigger Summary
+| Branch | Push Trigger | Actions Consumed | Use Case |
+|--------|-------------|------------------|----------|
+| `main` | ✅ Automatic | Full deployment | Production releases |
+| `staging` | ✅ Automatic | Full deployment | Staging releases |
+| `develop` | ❌ Manual only | Controlled testing | Development work |
+
+### Safe Development Workflow
+```bash
+# 1. Test locally (0 Actions minutes)
+./scripts/dry-run-pipeline.sh development
+
+# 2. Safe commit (no automatic triggers)
+./scripts/safe-commit.sh  # Choose option 2 or 4
+
+# 3. Manual testing when ready (controlled Actions usage)
+# Go to GitHub Actions → CI/CD Pipeline → Run workflow
+# Select dry_run: true for testing without deployment
+
+# 4. Production deployment only when ready
+git push origin main  # Triggers full deployment
+```
 
 ## 📚 Additional Resources
 
