@@ -1,5 +1,5 @@
 {
-  "name": "modulo-monorepo",
+  "name": "modulo-squares",
   "version": "1.0.0",
   "description": "Modulo Squares - A Firebase-powered puzzle game monorepo",
   "private": true,

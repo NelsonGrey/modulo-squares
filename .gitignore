@@ -122,3 +122,4 @@ node_modules
 # Act CLI secrets (DO NOT COMMIT real secrets)
 .act-secrets/
 !.act-secrets/test-secrets
+.secrets

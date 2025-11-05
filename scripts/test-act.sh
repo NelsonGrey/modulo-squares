@@ -39,14 +39,11 @@ check_prerequisites() {
     fi
 
     # Check for .act-secrets
-    if [ ! -f ".act-secrets/test-secrets" ]; then
-        echo -e "${YELLOW}Creating test secrets file...${NC}"
-        mkdir -p .act-secrets
-        cat > .act-secrets/test-secrets << EOF
-FIREBASE_TOKEN=test_token_replace_with_real
-FIREBASE_SERVICE_ACCOUNT_KEY={"test": "key_replace_with_real"}
-EOF
-        echo -e "${YELLOW}⚠️  Update .act-secrets/test-secrets with real values${NC}"
+    if [ ! -f ".act-secrets/real-secrets" ]; then
+        echo -e "${RED}❌ Real secrets file not found${NC}"
+        echo -e "${YELLOW}Create .act-secrets/real-secrets with your actual secrets${NC}"
+        echo -e "${YELLOW}See .act-secrets/test-secrets for the expected format${NC}"
+        exit 1
     fi
 
     echo -e "${GREEN}✅ Prerequisites met${NC}"
@@ -54,14 +51,22 @@ EOF
 
 # Setup Docker images (one-time setup)
 setup_docker_images() {
-    echo -e "${YELLOW}🐳 Setting up Docker images for act...${NC}"
+    echo -e "${YELLOW}🐳 Setting up optimized Docker images for act...${NC}"
 
-    # Pull required images
-    docker pull catthehacker/ubuntu:act-latest || echo "Failed to pull act image"
-    docker pull node:18 || echo "Failed to pull Node.js image"
-    docker pull cimg/android:2023.10 || echo "Failed to pull Android image"
+    # Use smaller, optimized images
+    docker pull node:18-alpine || echo "Failed to pull Node.js Alpine image"
+    docker pull node:18-slim || echo "Failed to pull Node.js slim image"
 
-    echo -e "${GREEN}✅ Docker images setup${NC}"
+    # Create optimized act image (much smaller than catthehacker/ubuntu)
+    echo -e "${YELLOW}Building custom lightweight act image...${NC}"
+    cat > Dockerfile.act << EOF
+FROM node:18-alpine
+RUN apk add --no-cache bash git curl jq
+RUN npm install -g @actions/core @actions/github
+EOF
+    docker build -f Dockerfile.act -t act-lightweight:latest . && rm Dockerfile.act
+
+    echo -e "${GREEN}✅ Optimized Docker images setup${NC}"
 }
 
 # Test specific workflow
@@ -75,12 +80,24 @@ test_workflow() {
     echo -e "${YELLOW}Event: $event${NC}"
     echo ""
 
-    # Common act options
+    # Use optimized container options
     local act_cmd="act -W .github/workflows/$workflow.yml"
-    act_cmd="$act_cmd --secret-file .act-secrets/test-secrets"
+    act_cmd="$act_cmd --secret-file .act-secrets/real-secrets"
     act_cmd="$act_cmd --job $job"
     act_cmd="$act_cmd --container-architecture linux/amd64"
     act_cmd="$act_cmd --pull=false"
+    act_cmd="$act_cmd --rm"  # Auto-remove containers after run
+    act_cmd="$act_cmd --use-new-action-cache=false"  # Disable action cache to save space
+    act_cmd="$act_cmd --artifact-server-path /tmp/act-artifacts"  # Use temp directory
+
+    # Use lightweight image for Node.js jobs
+    if [[ "$workflow" == "test-secrets" ]] || [[ "$workflow" == "ci-cd-pipeline" && "$job" == "quality-check" ]]; then
+        act_cmd="$act_cmd --container-options=\"--memory=1g --cpus=1\""
+        # Use node:18-alpine for Flutter jobs to avoid architecture issues
+        if [[ "$workflow" == "ci-cd-pipeline" && "$job" == "quality-check" ]]; then
+            act_cmd="$act_cmd -P ubuntu-latest=node:18-alpine"
+        fi
+    fi
 
     # Add event-specific options
     case $event in
@@ -95,15 +112,62 @@ test_workflow() {
     echo "Running: $act_cmd"
     echo ""
 
-    if eval "$act_cmd"; then
-        echo -e "${GREEN}✅ Workflow test passed${NC}"
+    # Run with timeout and cleanup
+    if command -v timeout >/dev/null 2>&1; then
+        if timeout 600 eval "$act_cmd"; then
+            echo -e "${GREEN}✅ Workflow test passed${NC}"
+        else
+            local exit_code=$?
+            if [[ $exit_code -eq 124 ]]; then
+                echo -e "${YELLOW}⏰ Workflow test timed out (10 minutes)${NC}"
+            else
+                echo -e "${RED}❌ Workflow test failed${NC}"
+            fi
+            echo -e "${YELLOW}💡 This is expected - fix issues locally before pushing to GitHub${NC}"
+        fi
+    elif command -v gtimeout >/dev/null 2>&1; then
+        if gtimeout 600 eval "$act_cmd"; then
+            echo -e "${GREEN}✅ Workflow test passed${NC}"
+        else
+            local exit_code=$?
+            if [[ $exit_code -eq 124 ]]; then
+                echo -e "${YELLOW}⏰ Workflow test timed out (10 minutes)${NC}"
+            else
+                echo -e "${RED}❌ Workflow test failed${NC}"
+            fi
+            echo -e "${YELLOW}💡 This is expected - fix issues locally before pushing to GitHub${NC}"
+        fi
     else
-        echo -e "${RED}❌ Workflow test failed${NC}"
-        echo -e "${YELLOW}💡 This is expected - fix issues locally before pushing to GitHub${NC}"
+        echo -e "${YELLOW}⚠️  Timeout command not available, running without timeout protection${NC}"
+        if eval "$act_cmd"; then
+            echo -e "${GREEN}✅ Workflow test passed${NC}"
+        else
+            echo -e "${RED}❌ Workflow test failed${NC}"
+            echo -e "${YELLOW}💡 This is expected - fix issues locally before pushing to GitHub${NC}"
+        fi
     fi
+
+    # Cleanup any remaining containers
+    docker stop $(docker ps -aq --filter "name=act-") 2>/dev/null || true
+    docker rm $(docker ps -aq --filter "name=act-") 2>/dev/null || true
 }
 
-# Create test event files
+# Cleanup Docker resources
+cleanup_docker() {
+    echo -e "${YELLOW}🧹 Cleaning up Docker resources...${NC}"
+
+    # Stop and remove act containers
+    docker stop $(docker ps -aq --filter "name=act-") 2>/dev/null || true
+    docker rm $(docker ps -aq --filter "name=act-") 2>/dev/null || true
+
+    # Remove act volumes
+    docker volume rm $(docker volume ls -q --filter "name=act-") 2>/dev/null || true
+
+    # Prune system
+    docker system prune -f
+
+    echo -e "${GREEN}✅ Docker cleanup completed${NC}"
+}
 create_test_events() {
     echo -e "${YELLOW}📝 Creating test event files...${NC}"
 
@@ -147,10 +211,11 @@ main_menu() {
     echo "7. 🔐 Test Secrets"
     echo "8. 🐳 Setup Docker Images (one-time)"
     echo "9. 📝 Create Test Events"
+    echo "10. 🧹 Cleanup Docker Resources"
     echo "0. Exit"
     echo ""
 
-    read -p "Enter choice (0-9): " choice
+    read -p "Enter choice (0-10): " choice
 
     case $choice in
         1)
@@ -179,6 +244,9 @@ main_menu() {
             ;;
         9)
             create_test_events
+            ;;
+        10)
+            cleanup_docker
             ;;
         0)
             echo -e "${GREEN}👋 Goodbye!${NC}"
