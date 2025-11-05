@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - staging
+      - develop
     paths:
       - 'packages/mobile/**'
       - 'packages/web/**'
@@ -79,7 +80,7 @@ jobs:
     name: 🏗️ Build Web App
     runs-on: ubuntu-latest
     needs: quality-check
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment != 'production')
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment != 'production')
     steps:
       - name: 📥 Checkout Code
         uses: actions/checkout@v4
@@ -115,7 +116,7 @@ jobs:
     name: 🔥 Deploy Web App
     runs-on: ubuntu-latest
     needs: build-web
-    if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging' || github.event_name == 'workflow_dispatch')
+    if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/develop' || github.event_name == 'workflow_dispatch')
     environment:
       name: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.environment == 'production' && 'PRODUCTION' || github.event.inputs.environment == 'staging' && 'STAGING' || 'DEVELOPMENT') || (github.ref == 'refs/heads/main' && 'PRODUCTION' || github.ref == 'refs/heads/staging' && 'STAGING' || 'DEVELOPMENT') }}
     steps:
