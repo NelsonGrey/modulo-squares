@@ -168,6 +168,8 @@ cleanup_docker() {
 
     echo -e "${GREEN}✅ Docker cleanup completed${NC}"
 }
+
+# Create test event files
 create_test_events() {
     echo -e "${YELLOW}📝 Creating test event files...${NC}"
 

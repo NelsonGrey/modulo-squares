@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:modulo/l10n/app_localizations.dart';
-import 'package:modulo/features/game/game_screen.dart';
-import 'package:modulo/core/di/service_locator.dart';
-import 'package:modulo/shared/widgets/grid_cell_widget.dart';
-import 'package:modulo/shared/models/game_board.dart';
+import 'package:modulo_squares/l10n/app_localizations.dart';
+import 'package:modulo_squares/features/game/game_screen.dart';
+import 'package:modulo_squares/core/di/service_locator.dart';
+import 'package:modulo_squares/shared/widgets/grid_cell_widget.dart';
+import 'package:modulo_squares/shared/models/game_board.dart';
 
 void main() {
   setUpAll(() {

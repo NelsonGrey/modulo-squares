@@ -1,5 +1,5 @@
-import 'package:modulo/shared/models/game_board.dart';
-import 'package:modulo/shared/models/cell_position.dart';
+import 'package:modulo_squares/shared/models/game_board.dart';
+import 'package:modulo_squares/shared/models/cell_position.dart';
 
 /// Represents the complete state of a game session
 class GameState {

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:modulo/l10n/app_localizations.dart';
-import 'package:modulo/features/game/game_screen.dart';
-import 'package:modulo/core/di/service_locator.dart';
-import 'package:modulo/core/services/analytics_service.dart';
-import 'package:modulo/core/services/ad_service.dart';
-import 'package:modulo/core/services/purchase_service.dart';
+import 'package:modulo_squares/l10n/app_localizations.dart';
+import 'package:modulo_squares/features/game/game_screen.dart';
+import 'package:modulo_squares/core/di/service_locator.dart';
+import 'package:modulo_squares/core/services/analytics_service.dart';
+import 'package:modulo_squares/core/services/ad_service.dart';
+import 'package:modulo_squares/core/services/purchase_service.dart';
 
 // Mock services for testing
 class MockAnalyticsService implements AnalyticsService {

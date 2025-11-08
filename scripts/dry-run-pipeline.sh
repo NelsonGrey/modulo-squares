@@ -24,26 +24,32 @@ cd "$PROJECT_ROOT"
 run_quality_checks() {
     echo -e "${YELLOW}🔍 Running Quality Checks...${NC}"
 
-    # Flutter analyze
-    echo "Running flutter analyze..."
-    cd packages/mobile
-    if flutter analyze; then
-        echo -e "${GREEN}✅ Flutter analyze passed${NC}"
+    # Run TypeScript checks
+    echo "Running TypeScript checks..."
+    if npm run type-check; then
+        echo -e "${GREEN}✅ TypeScript checks passed${NC}"
     else
-        echo -e "${RED}❌ Flutter analyze failed${NC}"
+        echo -e "${RED}❌ TypeScript checks failed${NC}"
         return 1
     fi
 
-    # Flutter test
-    echo "Running flutter test..."
-    if flutter test; then
-        echo -e "${GREEN}✅ Flutter tests passed${NC}"
+    # Run linting
+    echo "Running linting..."
+    if npm run lint; then
+        echo -e "${GREEN}✅ Linting passed${NC}"
     else
-        echo -e "${RED}❌ Flutter tests failed${NC}"
+        echo -e "${RED}❌ Linting failed${NC}"
         return 1
     fi
 
-    cd "$PROJECT_ROOT"
+    # Run tests
+    echo "Running tests..."
+    if npm test; then
+        echo -e "${GREEN}✅ Tests passed${NC}"
+    else
+        echo -e "${RED}❌ Tests failed${NC}"
+        return 1
+    fi
 }
 
 # Simulate web build
@@ -81,15 +87,15 @@ simulate_deployment() {
 
     case $ENVIRONMENT in
         "production")
-            PROJECT_ID="modulo-squares-prod"
+            PROJECT_ID="wishlist-wizard-prod"
             CONFIG_FILE="firebase.prod.json"
             ;;
         "staging")
-            PROJECT_ID="modulo-squares-staging"
+            PROJECT_ID="wishlist-wizard-staging"
             CONFIG_FILE="firebase.staging.json"
             ;;
         *)
-            PROJECT_ID="modulo-squares-dev"
+            PROJECT_ID="wishlist-wizard-dev"
             CONFIG_FILE="firebase.dev.json"
             ;;
     esac

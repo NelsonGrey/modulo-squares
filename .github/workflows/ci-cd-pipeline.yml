@@ -44,10 +44,10 @@ env:
   NODE_VERSION: '18'
 
 jobs:
-  # 🔍 Quality Checks
+    # 🔍 Quality Checks
   quality-check:
     name: 🔍 Quality Check
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: 📥 Checkout Code
         uses: actions/checkout@v4
@@ -69,6 +69,76 @@ jobs:
         run: flutter test --coverage --test-randomize-ordering-seed random
         working-directory: packages/mobile
 
+      - name: 🧪 Run Integration Tests
+        run: flutter test integration_test --test-randomize-ordering-seed random
+        working-directory: packages/mobile
+
+      - name: 📊 Check Test Coverage
+        run: |
+          # Function to extract coverage data for a service
+          get_coverage() {
+            local service_file=$1
+            local start_line=$(grep -n "SF:$service_file" coverage/lcov.info | cut -d: -f1)
+
+            # Find the LF and LH lines that come after this SF line
+            local lf_line=$(tail -n +$start_line coverage/lcov.info | grep -m 1 "LF:" | cut -d: -f2)
+            local lh_line=$(tail -n +$start_line coverage/lcov.info | grep -m 1 "LH:" | cut -d: -f2)
+
+            echo "$lh_line:$lf_line"
+          }
+
+          echo "📊 Checking test coverage thresholds..."
+
+          # Purchase Service: 70% minimum
+          PURCHASE_DATA=$(get_coverage "lib/core/services/purchase_service.dart")
+          PURCHASE_COVERAGE=$(echo $PURCHASE_DATA | cut -d: -f1)
+          PURCHASE_TOTAL=$(echo $PURCHASE_DATA | cut -d: -f2)
+          PURCHASE_PERCENT=$(( PURCHASE_COVERAGE * 100 / PURCHASE_TOTAL ))
+
+          # Consent Service: 20% minimum
+          CONSENT_DATA=$(get_coverage "lib/core/services/consent_service.dart")
+          CONSENT_COVERAGE=$(echo $CONSENT_DATA | cut -d: -f1)
+          CONSENT_TOTAL=$(echo $CONSENT_DATA | cut -d: -f2)
+          CONSENT_PERCENT=$(( CONSENT_COVERAGE * 100 / CONSENT_TOTAL ))
+
+          # Leaderboard Service: 5% minimum
+          LEADERBOARD_DATA=$(get_coverage "lib/core/services/leaderboard_service.dart")
+          LEADERBOARD_COVERAGE=$(echo $LEADERBOARD_DATA | cut -d: -f1)
+          LEADERBOARD_TOTAL=$(echo $LEADERBOARD_DATA | cut -d: -f2)
+          LEADERBOARD_PERCENT=$(( LEADERBOARD_COVERAGE * 100 / LEADERBOARD_TOTAL ))
+
+          # Integration Test Coverage: Check for integration test files
+          INTEGRATION_TESTS=$(find test/integration -name "*_integration_test.dart" | wc -l)
+          INTEGRATION_TESTS_RUN=$(find . -name "*integration_test*" -type f | wc -l)
+
+          echo "Purchase Service: $PURCHASE_COVERAGE/$PURCHASE_TOTAL lines ($PURCHASE_PERCENT%)"
+          echo "Consent Service: $CONSENT_COVERAGE/$CONSENT_TOTAL lines ($CONSENT_PERCENT%)"
+          echo "Leaderboard Service: $LEADERBOARD_COVERAGE/$LEADERBOARD_TOTAL lines ($LEADERBOARD_PERCENT%)"
+          echo "Integration Tests: $INTEGRATION_TESTS files found"
+
+          # Check thresholds
+          if [ $PURCHASE_PERCENT -lt 70 ]; then
+            echo "❌ Purchase service coverage ($PURCHASE_PERCENT%) below 70% threshold"
+            exit 1
+          fi
+
+          if [ $CONSENT_PERCENT -lt 20 ]; then
+            echo "❌ Consent service coverage ($CONSENT_PERCENT%) below 20% threshold"
+            exit 1
+          fi
+
+          if [ $LEADERBOARD_PERCENT -lt 5 ]; then
+            echo "❌ Leaderboard service coverage ($LEADERBOARD_PERCENT%) below 5% threshold"
+            exit 1
+          fi
+
+          if [ $INTEGRATION_TESTS -lt 3 ]; then
+            echo "❌ Integration test coverage insufficient ($INTEGRATION_TESTS files, minimum 3 required)"
+            exit 1
+          fi
+
+          echo "✅ All coverage thresholds met!"
+
       - name: 📊 Upload Coverage
         uses: codecov/codecov-action@v4
         with:
@@ -78,7 +148,7 @@ jobs:
   # 🏗️ Build Web App
   build-web:
     name: 🏗️ Build Web App
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: quality-check
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment != 'production')
     steps:
@@ -118,7 +188,7 @@ jobs:
   # 🔥 Deploy Web App
   deploy-web:
     name: 🔥 Deploy Web App
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: build-web
     if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/develop' || github.event_name == 'workflow_dispatch')
     environment:
@@ -177,7 +247,7 @@ jobs:
   # 📊 Deployment Summary
   deployment-summary:
     name: 📊 Deployment Summary
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: [quality-check, build-web, deploy-web]
     if: always()
     steps:

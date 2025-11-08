@@ -1,10 +1,10 @@
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:modulo/core/services/analytics_service.dart';
-import 'package:modulo/core/services/consent_service.dart';
-import 'package:modulo/core/services/purchase_service.dart';
-import 'package:modulo/core/di/service_locator.dart';
-import 'package:modulo/core/config/admob_config.dart';
-import 'package:modulo/core/services/error_handler.dart';
+import 'package:modulo_squares/core/services/analytics_service.dart';
+import 'package:modulo_squares/core/services/consent_service.dart';
+import 'package:modulo_squares/core/services/purchase_service.dart';
+import 'package:modulo_squares/core/di/service_locator.dart';
+import 'package:modulo_squares/core/config/admob_config.dart';
+import 'package:modulo_squares/core/services/error_handler.dart';
 
 class AdService {
   AdService._([bool testMode = false]) : _testMode = testMode;

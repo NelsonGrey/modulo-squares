@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
-import 'package:modulo/core/services/error_handler.dart';
+import 'package:modulo_squares/core/services/error_handler.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,60 +12,79 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeGoogleSignIn();
+  }
+
+  Future<void> _initializeGoogleSignIn() async {
+    try {
+      await _googleSignIn.initialize();
+    } catch (e) {
+      debugPrint('Google Sign-In initialization failed: $e');
+    }
+  }
 
   Future<void> _signInWithGoogle(BuildContext context) async {
     try {
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      // First authenticate the user
+      final GoogleSignInAccount? googleUser = await _googleSignIn.authenticate();
 
       if (googleUser == null) {
         // User cancelled the sign-in
         return;
       }
 
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      // Get the ID token from authentication
+      final GoogleSignInAuthentication auth = googleUser.authentication;
+      final String? idToken = auth.idToken;
 
-      final AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
+      if (idToken == null) {
+        if (context.mounted) {
+          ErrorHandler().showErrorSnackBar(context, 'Failed to get authentication tokens');
+        }
+        return;
+      }
 
-      await FirebaseAuth.instance.signInWithCredential(credential);
+      // Then get authorization for the required scopes (empty list for basic profile)
+      final GoogleSignInClientAuthorization? authorization = await googleUser.authorizationClient.authorizationForScopes([]);
+
+      if (authorization == null) {
+        // If not authorized, request authorization
+        final auth = await googleUser.authorizationClient.authorizeScopes([]);
+        final AuthCredential credential = GoogleAuthProvider.credential(accessToken: auth.accessToken, idToken: idToken);
+        await FirebaseAuth.instance.signInWithCredential(credential);
+      } else {
+        // Already authorized
+        final AuthCredential credential = GoogleAuthProvider.credential(accessToken: authorization.accessToken, idToken: idToken);
+        await FirebaseAuth.instance.signInWithCredential(credential);
+      }
     } catch (e) {
       if (context.mounted) {
-        ErrorHandler().showErrorSnackBar(
-          context,
-          ErrorHandler().getAuthErrorMessage(e),
-        );
+        ErrorHandler().showErrorSnackBar(context, ErrorHandler().getAuthErrorMessage(e));
       }
     }
   }
 
   Future<void> _signInWithApple(BuildContext context) async {
     try {
-      final appleCredential = await SignInWithApple.getAppleIDCredential(
-        scopes: [AppleIDAuthorizationScopes.email, AppleIDAuthorizationScopes.fullName],
-      );
+      final appleCredential = await SignInWithApple.getAppleIDCredential(scopes: [AppleIDAuthorizationScopes.email, AppleIDAuthorizationScopes.fullName]);
 
       if (appleCredential.identityToken == null) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Apple sign-in failed: No identity token')),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Apple sign-in failed: No identity token')));
         }
         return;
       }
 
-      final oauthCredential = OAuthProvider("apple.com").credential(
-        idToken: appleCredential.identityToken,
-      );
+      final oauthCredential = OAuthProvider("apple.com").credential(idToken: appleCredential.identityToken);
       await FirebaseAuth.instance.signInWithCredential(oauthCredential);
     } catch (e) {
       if (context.mounted) {
-        ErrorHandler().showErrorSnackBar(
-          context,
-          ErrorHandler().getAuthErrorMessage(e),
-        );
+        ErrorHandler().showErrorSnackBar(context, ErrorHandler().getAuthErrorMessage(e));
       }
     }
   }
@@ -76,20 +95,12 @@ class _LoginScreenState extends State<LoginScreen> {
     } on FirebaseAuthException catch (e) {
       debugPrint('Anonymous sign-in failed: ${e.code} - ${e.message}');
       if (context.mounted) {
-        ErrorHandler().showErrorSnackBar(
-          context,
-          ErrorHandler().getAuthErrorMessage(e),
-          onRetry: () => _signInAnonymously(context),
-        );
+        ErrorHandler().showErrorSnackBar(context, ErrorHandler().getAuthErrorMessage(e), onRetry: () => _signInAnonymously(context));
       }
     } catch (e) {
       debugPrint('Anonymous sign-in failed: $e');
       if (context.mounted) {
-        ErrorHandler().showErrorSnackBar(
-          context,
-          'An unexpected error occurred during guest sign-in.',
-          onRetry: () => _signInAnonymously(context),
-        );
+        ErrorHandler().showErrorSnackBar(context, 'An unexpected error occurred during guest sign-in.', onRetry: () => _signInAnonymously(context));
       }
     }
   }
@@ -102,22 +113,13 @@ class _LoginScreenState extends State<LoginScreen> {
         children: [
           const SizedBox(height: 20),
           const Text('Some static text'),
-          ElevatedButton(
-            onPressed: () => _signInWithGoogle(context),
-            child: const Text('Sign in with Google'),
-          ),
+          ElevatedButton(onPressed: () => _signInWithGoogle(context), child: const Text('Sign in with Google')),
           const SizedBox(height: 12),
-          ElevatedButton(
-            onPressed: () => _signInWithApple(context),
-            child: const Text('Sign in with Apple'),
-          ),
+          ElevatedButton(onPressed: () => _signInWithApple(context), child: const Text('Sign in with Apple')),
           const SizedBox(height: 24),
           const Text('or'),
           const SizedBox(height: 12),
-          OutlinedButton(
-            onPressed: () => _signInAnonymously(context),
-            child: const Text('Play as Guest'),
-          ),
+          OutlinedButton(onPressed: () => _signInAnonymously(context), child: const Text('Play as Guest')),
         ],
       ),
     );

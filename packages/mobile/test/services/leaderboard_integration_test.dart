@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:modulo/core/services/leaderboard_service.dart';
-import 'package:modulo/core/services/cache_service.dart';
+import 'package:modulo_squares/core/services/leaderboard_service.dart';
+import 'package:modulo_squares/core/services/cache_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

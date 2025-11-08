@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:modulo/features/game/models/game_state.dart';
-import 'package:modulo/shared/models/game_board.dart';
-import 'package:modulo/shared/models/cell_position.dart';
-import 'package:modulo/core/services/analytics_service.dart';
-import 'package:modulo/core/services/ad_service.dart';
+import 'package:modulo_squares/features/game/models/game_state.dart';
+import 'package:modulo_squares/shared/models/game_board.dart';
+import 'package:modulo_squares/shared/models/cell_position.dart';
+import 'package:modulo_squares/core/services/analytics_service.dart';
+import 'package:modulo_squares/core/services/ad_service.dart';
 
 /// Provider for managing game state using ChangeNotifier
 class GameProvider extends ChangeNotifier {

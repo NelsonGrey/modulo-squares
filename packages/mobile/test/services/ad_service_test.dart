@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
-import 'package:modulo/core/services/ad_service.dart';
-import 'package:modulo/core/services/consent_service.dart';
-import 'package:modulo/core/services/purchase_service.dart';
-import 'package:modulo/core/config/admob_config.dart';
+import 'package:modulo_squares/core/services/ad_service.dart';
+import 'package:modulo_squares/core/services/consent_service.dart';
+import 'package:modulo_squares/core/services/purchase_service.dart';
+import 'package:modulo_squares/core/config/admob_config.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

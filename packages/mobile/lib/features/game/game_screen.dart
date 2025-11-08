@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:modulo/features/game/providers/game_provider.dart';
-import 'package:modulo/features/game/models/game_state.dart';
-import 'package:modulo/shared/models/game_board.dart' as game_board;
-import 'package:modulo/l10n/app_localizations.dart';
-import 'package:modulo/features/game/instructions_screen.dart';
-import 'package:modulo/core/services/purchase_service.dart';
-import 'package:modulo/core/di/service_locator.dart';
-import 'package:modulo/features/game/widgets/game_level_info.dart';
-import 'package:modulo/features/game/widgets/game_score_display.dart';
-import 'package:modulo/features/game/widgets/game_grid.dart';
-import 'package:modulo/features/game/widgets/game_app_bar_actions.dart';
-import 'package:modulo/features/game/widgets/game_dialogs.dart';
-import 'package:modulo/core/services/analytics_service.dart';
-import 'package:modulo/core/services/ad_service.dart';
+import 'package:modulo_squares/features/game/providers/game_provider.dart';
+import 'package:modulo_squares/features/game/models/game_state.dart';
+import 'package:modulo_squares/shared/models/game_board.dart' as game_board;
+import 'package:modulo_squares/l10n/app_localizations.dart';
+import 'package:modulo_squares/features/game/instructions_screen.dart';
+import 'package:modulo_squares/core/services/purchase_service.dart';
+import 'package:modulo_squares/core/di/service_locator.dart';
+import 'package:modulo_squares/features/game/widgets/game_level_info.dart';
+import 'package:modulo_squares/features/game/widgets/game_score_display.dart';
+import 'package:modulo_squares/features/game/widgets/game_grid.dart';
+import 'package:modulo_squares/features/game/widgets/game_app_bar_actions.dart';
+import 'package:modulo_squares/features/game/widgets/game_dialogs.dart';
+import 'package:modulo_squares/core/services/analytics_service.dart';
+import 'package:modulo_squares/core/services/ad_service.dart';
 
 class GameScreen extends StatelessWidget {
   const GameScreen({super.key});

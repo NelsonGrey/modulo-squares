@@ -43,12 +43,6 @@ check_prerequisites() {
         exit 1
     fi
 
-    # Check if flutter is installed
-    if ! command -v flutter &> /dev/null; then
-        echo -e "${RED}❌ Flutter is not installed. Please install Flutter SDK.${NC}"
-        exit 1
-    fi
-
     echo -e "${GREEN}✅ All prerequisites met${NC}"
 }
 
@@ -137,6 +131,8 @@ test_deployment_scripts() {
             echo "Would run: ./distribute-ios.sh debug"
         fi
     fi
+
+    cd "$PROJECT_ROOT"
 }
 
 # Test Firebase CLI locally
@@ -153,7 +149,7 @@ test_firebase_cli() {
 
     # List available projects
     echo "Available Firebase projects:"
-    firebase projects:list --token="${FIREBASE_TOKEN:-}" 2>/dev/null | grep -E "(Project ID|modulo-squares)" || echo "No projects accessible"
+    firebase projects:list --token="${FIREBASE_TOKEN:-}" 2>/dev/null | grep -E "(Project ID|wishlist-wizard)" || echo "No projects accessible"
 }
 
 # Main execution

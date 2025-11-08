@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:modulo/core/services/leaderboard_service.dart';
-import 'package:modulo/l10n/app_localizations.dart';
+import 'package:modulo_squares/core/services/leaderboard_service.dart';
+import 'package:modulo_squares/l10n/app_localizations.dart';
 
 mixin GameDialogs {
   void showEndDialog(BuildContext context, String title, String message, bool showLeaderboardOption) {

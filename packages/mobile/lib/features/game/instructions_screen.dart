@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:modulo/l10n/app_localizations.dart';
+import 'package:modulo_squares/l10n/app_localizations.dart';
 
 class InstructionsScreen extends StatelessWidget {
   const InstructionsScreen({super.key});

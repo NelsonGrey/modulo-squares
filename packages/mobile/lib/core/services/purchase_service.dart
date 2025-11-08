@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:modulo/core/services/error_handler.dart';
+import 'package:modulo_squares/core/services/error_handler.dart';
 
 /// Test implementation of InAppPurchase for testing
 class _TestInAppPurchase implements InAppPurchase {

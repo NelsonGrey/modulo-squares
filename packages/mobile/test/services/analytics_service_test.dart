@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:modulo/core/services/analytics_service.dart';
+import 'package:modulo_squares/core/services/analytics_service.dart';
 
 void main() {
   late AnalyticsService analyticsService;

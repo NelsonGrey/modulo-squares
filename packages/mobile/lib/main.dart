@@ -3,20 +3,20 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:modulo/features/game/game_screen.dart';
-import 'package:modulo/features/website/website_screen.dart';
+import 'package:modulo_squares/features/game/game_screen.dart';
+import 'package:modulo_squares/features/website/website_screen.dart';
 // Login screen intentionally not used for launch; auto guest auth.
-import 'package:modulo/l10n/app_localizations.dart';
+import 'package:modulo_squares/l10n/app_localizations.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
-import 'package:modulo/core/services/analytics_service.dart';
-import 'package:modulo/core/services/ad_service.dart';
-import 'package:modulo/core/services/consent_service.dart';
-import 'package:modulo/core/services/purchase_service.dart';
-import 'package:modulo/core/config/firebase_options.dart';
-import 'package:modulo/core/services/error_handler.dart';
-import 'package:modulo/core/services/cache_service.dart';
-import 'package:modulo/core/services/asset_service.dart';
-import 'package:modulo/core/di/service_locator.dart';
+import 'package:modulo_squares/core/services/analytics_service.dart';
+import 'package:modulo_squares/core/services/ad_service.dart';
+import 'package:modulo_squares/core/services/consent_service.dart';
+import 'package:modulo_squares/core/services/purchase_service.dart';
+import 'package:modulo_squares/core/config/firebase_options.dart';
+import 'package:modulo_squares/core/services/error_handler.dart';
+import 'package:modulo_squares/core/services/cache_service.dart';
+import 'package:modulo_squares/core/services/asset_service.dart';
+import 'package:modulo_squares/core/di/service_locator.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -84,10 +84,7 @@ class AuthGate extends StatelessWidget {
       await FirebaseAuth.instance.signInAnonymously();
     } catch (error) {
       if (context.mounted) {
-        ErrorHandler().showErrorSnackBar(
-          context,
-          ErrorHandler().getAuthErrorMessage(error),
-        );
+        ErrorHandler().showErrorSnackBar(context, ErrorHandler().getAuthErrorMessage(error));
       }
     }
   }
@@ -126,10 +123,7 @@ class AuthGate extends StatelessWidget {
                         await FirebaseAuth.instance.signInAnonymously();
                       } catch (error) {
                         if (context.mounted) {
-                          ErrorHandler().showErrorSnackBar(
-                            context,
-                            ErrorHandler().getAuthErrorMessage(error),
-                          );
+                          ErrorHandler().showErrorSnackBar(context, ErrorHandler().getAuthErrorMessage(error));
                         }
                       }
                     },
