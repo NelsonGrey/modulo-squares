@@ -32,7 +32,7 @@ env:
 
 jobs:
   distribute-ios:
-    runs-on: macos-latest
+    runs-on: [self-hosted, macos-latest]
     environment:
       name: ${{ github.ref == 'refs/heads/main' && 'PRODUCTION' || github.ref == 'refs/heads/staging' && 'STAGING' || 'DEVELOPMENT' }}
     steps:
