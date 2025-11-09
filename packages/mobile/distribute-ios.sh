@@ -51,17 +51,17 @@ else
         mkdir -p build/ios/ipa
         echo "Dummy debug IPA content" > build/ios/ipa/app-debug.ipa
     else
-        flutter build ios --debug --no-codesign
+        flutter build ios --debug --simulator --no-codesign
     fi
-    IPA_PATH="build/ios/ipa/app-debug.ipa"
+    IPA_PATH="build/ios/iphonesimulator/Runner.app"
 fi
 
-if [[ ! -f "$IPA_PATH" ]]; then
-    echo "❌ Error: IPA not found at $IPA_PATH"
+if [[ ! -e "$IPA_PATH" ]]; then
+    echo "❌ Error: Build output not found at $IPA_PATH"
     exit 1
 fi
 
-echo "✅ IPA built successfully: $IPA_PATH"
+echo "✅ Build completed successfully: $IPA_PATH"
 
 # Distribute to Firebase App Distribution (works on both macOS and Linux)
 echo "📤 Distributing to Firebase App Distribution..."
@@ -81,7 +81,10 @@ if [[ -f "ios/service-account-key.json" ]]; then
         FIREBASE_APP_ID="1:784677197785:ios:51104e6b575616cc61abc8"
     fi
 
-    firebase appdistribution:distribute "$IPA_PATH" \
+    # For debug builds (simulator), use .app bundle; for release, use IPA
+    DISTRIBUTION_FILE="$IPA_PATH"
+
+    firebase appdistribution:distribute "$DISTRIBUTION_FILE" \
         --project "$FIREBASE_PROJECT" \
         --app "$FIREBASE_APP_ID" \
         --groups "testers" \
@@ -108,7 +111,7 @@ elif [[ "$BUILD_TYPE" == "release" ]]; then
     echo "In a real macOS environment, this would be uploaded to TestFlight"
 else
     echo "📤 Debug iOS build completed"
-    echo "The app can be installed on development devices"
+    echo "The app can be installed on iOS simulators"
 fi
 
 echo "🎉 iOS distribution completed!"
