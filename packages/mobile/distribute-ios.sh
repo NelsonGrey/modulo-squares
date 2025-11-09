@@ -51,7 +51,9 @@ else
         mkdir -p build/ios/ipa
         echo "Dummy debug IPA content" > build/ios/ipa/app-debug.ipa
     else
-        flutter build ios --debug -d "apple_ios_simulator" --no-codesign
+        echo "🚀 Booting iOS Simulator..."
+        xcrun simctl boot "23DCF2C4-2576-418F-9A82-08ED6D6F0B02"
+        flutter build ios --debug -d "iPhone 17 Pro" --no-codesign
     fi
     IPA_PATH="build/ios/iphonesimulator/Runner.app"
 fi
