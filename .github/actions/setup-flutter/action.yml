@@ -26,20 +26,21 @@ runs:
           OS_NAME="macos"
           ARCHIVE_EXT="zip"
           EXTRACT_CMD="unzip -q"
+          # macOS has both x64 and ARM64 builds
+          if [ "$RUNNER_ARCH" = "ARM64" ] || [ "$(uname -m)" = "aarch64" ] || [ "$(uname -m)" = "arm64" ]; then
+            ARCH_SUFFIX="_arm64"
+          else
+            ARCH_SUFFIX=""
+          fi
         elif [ "$RUNNER_OS" = "Linux" ]; then
           OS_NAME="linux"
           ARCHIVE_EXT="tar.xz"
           EXTRACT_CMD="tar -xf"
+          # Linux only has x64 builds available, even on ARM64 runners
+          ARCH_SUFFIX=""
         else
           echo "Unsupported OS: $RUNNER_OS"
           exit 1
-        fi
-        
-        # Determine architecture
-        if [ "$RUNNER_ARCH" = "ARM64" ] || [ "$(uname -m)" = "aarch64" ] || [ "$(uname -m)" = "arm64" ]; then
-          ARCH_SUFFIX="_arm64"
-        else
-          ARCH_SUFFIX=""
         fi
         
         # Construct archive name and URL
@@ -54,6 +55,9 @@ runs:
           echo "${OS_NAME}${ARCH_SUFFIX} archive downloaded successfully"
         else
           echo "${OS_NAME}${ARCH_SUFFIX} archive failed to download"
+          if [ "$RUNNER_OS" = "Linux" ] && [ "$RUNNER_ARCH" = "ARM64" ]; then
+            echo "Note: Linux ARM64 builds are not available. Using x64 Linux build on ARM64 runner."
+          fi
           exit 1
         fi
         
