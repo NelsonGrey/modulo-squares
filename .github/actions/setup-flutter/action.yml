@@ -73,6 +73,9 @@ runs:
         echo "$FLUTTER_BIN" >> $GITHUB_PATH
         export PATH="$FLUTTER_BIN:$PATH"
         
+        echo "Configuring Git safe directories for Flutter..."
+        git config --global --add safe.directory "$RUNNER_TEMP/flutter"
+        
         echo "Checking Flutter binary permissions..."
         ls -la "$FLUTTER_BIN/flutter"
         ls -la "$FLUTTER_BIN/cache/dart-sdk/bin/dart"
