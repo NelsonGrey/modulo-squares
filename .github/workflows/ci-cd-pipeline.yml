@@ -10,6 +10,7 @@ on:
       - 'packages/mobile/**'
       - 'packages/web/**'
       - '.github/workflows/ci-cd-pipeline.yml'
+      - '.github/actions/**'
       - 'pubspec.yaml'
       - 'package.json'
       - 'firebase*.json'

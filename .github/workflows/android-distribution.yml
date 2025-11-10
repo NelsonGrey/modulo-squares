@@ -10,6 +10,7 @@ on:
     paths:
       - 'packages/mobile/**'
       - '.github/workflows/android-distribution.yml'
+      - '.github/actions/**'
       - 'pubspec.yaml'
       - 'firebase*.json'
   workflow_dispatch:
