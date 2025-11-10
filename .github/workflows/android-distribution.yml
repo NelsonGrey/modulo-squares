@@ -43,10 +43,22 @@ jobs:
     environment:
       name: ${{ github.ref == 'refs/heads/main' && 'PRODUCTION' || github.ref == 'refs/heads/staging' && 'STAGING' || 'DEVELOPMENT' }}
     steps:
+      - name: 🏃 Check Runner Compatibility
+        id: check-runner
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ] && [ "$RUNNER_ARCH" = "ARM64" ]; then
+            echo "ARM64 Linux detected - skipping Flutter operations"
+            echo "skip-flutter=true" >> $GITHUB_OUTPUT
+          else
+            echo "Compatible runner - proceeding with Flutter operations"
+            echo "skip-flutter=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: 📥 Checkout Code
         uses: actions/checkout@v4
 
       - name: 🦋 Setup Flutter
+        if: steps.check-runner.outputs.skip-flutter != 'true'
         uses: ./.github/actions/setup-flutter
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -71,6 +83,7 @@ jobs:
           fi
 
       - name: 🔧 Generate Android Platform Files
+        if: steps.check-runner.outputs.skip-flutter != 'true'
         run: flutter create --platforms=android .
         working-directory: packages/mobile
 
@@ -85,7 +98,7 @@ jobs:
         run: chmod +x packages/mobile/distribute-android.sh
 
       - name: 📱 Extract AdMob Configuration for Production
-        if: github.ref == 'refs/heads/main'
+        if: steps.check-runner.outputs.skip-flutter != 'true' && github.ref == 'refs/heads/main'
         run: |
           # Read AdMob unit IDs from .env.production file
           ADMOB_BANNER_ANDROID=$(grep "^ADMOB_BANNER_UNIT_ID_ANDROID=" .env.production | cut -d '=' -f2)
@@ -98,7 +111,7 @@ jobs:
           echo "ADMOB_REWARDED_UNIT_ID=$ADMOB_REWARDED_ANDROID" >> $GITHUB_ENV
 
       - name: 🏗️ Build and Distribute Android App
-        if: env.DRY_RUN != 'true'
+        if: steps.check-runner.outputs.skip-flutter != 'true' && env.DRY_RUN != 'true'
         env:
           ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'PRODUCTION' || github.ref == 'refs/heads/staging' && 'STAGING' || 'DEVELOPMENT' }}
         run: |

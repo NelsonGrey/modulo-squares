@@ -52,11 +52,22 @@ else
         echo "Dummy debug IPA content" > build/ios/ipa/app-debug.ipa
     else
         echo "🚀 Finding available iOS Simulator..."
-        # Find an available iOS simulator device
-        SIMULATOR_ID=$(xcrun simctl list devices available | grep -E "iPhone.*\([A-F0-9-]+\)" | head -1 | sed 's/.*(\([A-F0-9-]*\)).*/\1/')
+        # Find an available iOS simulator device from the latest available runtime
+        # First, get the latest iOS runtime version
+        LATEST_RUNTIME=$(xcrun simctl list runtimes | grep "iOS" | tail -1 | sed 's/.*iOS \([0-9]*\.[0-9]*\).*/\1/')
+        
+        if [[ -z "$LATEST_RUNTIME" ]]; then
+            echo "❌ Error: No iOS simulator runtimes found"
+            exit 1
+        fi
+        
+        echo "📱 Using iOS runtime: $LATEST_RUNTIME"
+        
+        # Find a device from this runtime
+        SIMULATOR_ID=$(xcrun simctl list devices available | grep -A 10 "iOS $LATEST_RUNTIME" | grep -E "iPhone.*\([A-F0-9-]+\)" | head -1 | sed 's/.*(\([A-F0-9-]*\)).*/\1/')
 
         if [[ -z "$SIMULATOR_ID" ]]; then
-            echo "❌ Error: No iOS simulator devices found"
+            echo "❌ Error: No iOS simulator devices found for runtime $LATEST_RUNTIME"
             exit 1
         fi
 
@@ -81,8 +92,9 @@ else
 
         cd ..
 
-        # Use Flutter's simulator flag instead of device ID for more reliable builds
-        flutter build ios --debug --simulator --no-codesign
+        # Build for the specific simulator device instead of generic destination
+        echo "🔧 Building for simulator device: $SIMULATOR_ID"
+        flutter build ios --debug --device-id="$SIMULATOR_ID" --no-codesign
     fi
     IPA_PATH="build/ios/iphonesimulator/Runner.app"
 fi

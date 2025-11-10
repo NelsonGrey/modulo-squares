@@ -55,9 +55,37 @@ jobs:
       - name: 📦 Install Fastlane
         run: gem install fastlane
 
-      - name: 📦 Install Dependencies
+      - name: 🛠️ Setup Xcode
+        run: |
+          # Select the latest Xcode version
+          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+          
+          # Accept Xcode license
+          sudo xcodebuild -license accept
+          
+          # Install additional simulator runtimes if available
+          # This will install commonly needed runtimes
+          xcodebuild -downloadPlatform iOS 2>/dev/null || echo "⚠️ Could not download iOS platform (may already be installed)"
+          
+          # List available runtimes for debugging
+          echo "📱 Available iOS Simulator Runtimes:"
+          xcrun simctl list runtimes | grep "iOS" || echo "No iOS runtimes found"
+          
+          # Create a default simulator if none exists
+          if ! xcrun simctl list devices | grep -q "iPhone"; then
+            echo "📱 Creating default iPhone simulator..."
+            xcrun simctl create "iPhone 15 Pro" "iPhone 15 Pro" 2>/dev/null || echo "⚠️ Could not create simulator"
+          fi
+
+      - name:  Install Dependencies
         run: flutter pub get
         working-directory: packages/mobile
+
+      - name: 🔍 Check Flutter Doctor
+        run: |
+          flutter doctor -v
+          echo "🔧 Checking iOS setup..."
+          flutter doctor --ios || echo "⚠️ iOS setup issues detected"
 
       - name: 🔧 Generate iOS Platform Files
         run: flutter create --platforms=ios .
