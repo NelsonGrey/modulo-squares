@@ -72,7 +72,7 @@ jobs:
           
           echo "Checking Flutter binary permissions..."
           ls -la "$FLUTTER_BIN/flutter"
-          file "$FLUTTER_BIN/flutter"
+          ls -la "$FLUTTER_BIN/cache/dart-sdk/bin/dart"
           
           echo "Running flutter doctor to initialize..."
           "$FLUTTER_BIN/flutter" doctor --verbose || echo "Flutter doctor failed, but continuing..."
