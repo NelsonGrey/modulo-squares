@@ -53,10 +53,12 @@ jobs:
           unzip -q "$RUNNER_TEMP/flutter.zip" -d "$RUNNER_TEMP"
           
           echo "Setting up Flutter path..."
-          echo "$RUNNER_TEMP/flutter/bin" >> $GITHUB_PATH
+          FLUTTER_BIN="$RUNNER_TEMP/flutter/bin"
+          echo "$FLUTTER_BIN" >> $GITHUB_PATH
+          export PATH="$FLUTTER_BIN:$PATH"
           
           echo "Verifying Flutter installation..."
-          flutter --version
+          "$FLUTTER_BIN/flutter" --version
 
       - name: 💎 Setup Ruby
         uses: ruby/setup-ruby@v1
