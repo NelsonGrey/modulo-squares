@@ -41,12 +41,12 @@ jobs:
 
       - name: 🦋 Setup Flutter
         run: |
-          # Download and setup Flutter manually for ARM64
+          # Download and setup Flutter manually
           FLUTTER_VERSION="${{ env.FLUTTER_VERSION }}"
           FLUTTER_ARCHIVE="flutter_macos_${FLUTTER_VERSION}-stable.zip"
           FLUTTER_URL="https://storage.googleapis.com/flutter_infra_release/releases/stable/macos/${FLUTTER_ARCHIVE}"
           
-          echo "Downloading Flutter ${FLUTTER_VERSION} for x64..."
+          echo "Downloading Flutter ${FLUTTER_VERSION}..."
           curl -L "$FLUTTER_URL" -o "$RUNNER_TEMP/flutter.zip"
           
           echo "Extracting Flutter..."
@@ -56,6 +56,13 @@ jobs:
           FLUTTER_BIN="$RUNNER_TEMP/flutter/bin"
           echo "$FLUTTER_BIN" >> $GITHUB_PATH
           export PATH="$FLUTTER_BIN:$PATH"
+          
+          echo "Checking Flutter binary permissions..."
+          ls -la "$FLUTTER_BIN/flutter"
+          file "$FLUTTER_BIN/flutter"
+          
+          echo "Running flutter doctor to initialize..."
+          "$FLUTTER_BIN/flutter" doctor --verbose || echo "Flutter doctor failed, but continuing..."
           
           echo "Verifying Flutter installation..."
           "$FLUTTER_BIN/flutter" --version
