@@ -43,10 +43,10 @@ jobs:
         run: |
           # Download and setup Flutter manually for ARM64
           FLUTTER_VERSION="${{ env.FLUTTER_VERSION }}"
-          FLUTTER_ARCHIVE="flutter_macos_arm64_${FLUTTER_VERSION}-stable.zip"
+          FLUTTER_ARCHIVE="flutter_macos_${FLUTTER_VERSION}-stable.zip"
           FLUTTER_URL="https://storage.googleapis.com/flutter_infra_release/releases/stable/macos/${FLUTTER_ARCHIVE}"
           
-          echo "Downloading Flutter ${FLUTTER_VERSION} for ARM64..."
+          echo "Downloading Flutter ${FLUTTER_VERSION} for x64..."
           curl -L "$FLUTTER_URL" -o "$RUNNER_TEMP/flutter.zip"
           
           echo "Extracting Flutter..."
