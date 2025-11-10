@@ -67,9 +67,9 @@ get_runner_token() {
     local response=$(curl -s -X POST \
         -H "Authorization: token $api_token" \
         -H "Accept: application/vnd.github.v3+json" \
-        https://api.github.com/repos/mnelson3/wishlist-wizard/actions/runners/registration-token)
+        https://api.github.com/repos/mnelson3/modulo-squares/actions/runners/registration-token)
 
-    RUNNER_TOKEN=$(echo "$response" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+    RUNNER_TOKEN=$(echo "$response" | grep -o '"token": "[^"]*"' | cut -d'"' -f4)
 
     if [ -z "$RUNNER_TOKEN" ]; then
         echo -e "${RED}❌ Failed to generate registration token${NC}"
