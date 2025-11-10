@@ -50,33 +50,45 @@ jobs:
     name: 🔍 Quality Check
     runs-on: self-hosted
     steps:
+      - name: 🏃 Check Runner Compatibility
+        id: check-runner
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ] && [ "$RUNNER_ARCH" = "ARM64" ]; then
+            echo "ARM64 Linux detected - skipping Flutter operations"
+            echo "skip-flutter=true" >> $GITHUB_OUTPUT
+          else
+            echo "Compatible runner - proceeding with Flutter operations"
+            echo "skip-flutter=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: 📥 Checkout Code
         uses: actions/checkout@v4
 
       - name: 🦋 Setup Flutter
         id: setup-flutter
+        if: steps.check-runner.outputs.skip-flutter != 'true'
         uses: ./.github/actions/setup-flutter
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache-bust: v3
 
       - name: 📦 Install Dependencies
-        if: steps.setup-flutter.outputs.flutter-skipped != 'true'
+        if: steps.check-runner.outputs.skip-flutter != 'true'
         run: flutter pub get
         working-directory: packages/mobile
 
       - name: 🔧 Flutter Analyze
-        if: steps.setup-flutter.outputs.flutter-skipped != 'true'
+        if: steps.check-runner.outputs.skip-flutter != 'true'
         run: flutter analyze
         working-directory: packages/mobile
 
       - name: 🧪 Run Tests
-        if: steps.setup-flutter.outputs.flutter-skipped != 'true'
+        if: steps.check-runner.outputs.skip-flutter != 'true'
         run: flutter test --coverage --test-randomize-ordering-seed random
         working-directory: packages/mobile
 
       - name: 🧪 Run Integration Tests
-        if: steps.setup-flutter.outputs.flutter-skipped != 'true'
+        if: steps.check-runner.outputs.skip-flutter != 'true'
         run: |
           # Check if devices are available for integration tests
           if flutter devices | grep -q "•"; then
@@ -94,7 +106,7 @@ jobs:
         working-directory: packages/mobile
 
       - name: 📊 Check Test Coverage
-        if: steps.setup-flutter.outputs.flutter-skipped != 'true'
+        if: steps.check-runner.outputs.skip-flutter != 'true'
         run: |
           # Function to extract coverage data for a service
           get_coverage() {
@@ -166,7 +178,7 @@ jobs:
           echo "✅ All coverage thresholds met!"
 
       - name: 📊 Upload Coverage
-        if: steps.setup-flutter.outputs.flutter-skipped != 'true'
+        if: steps.check-runner.outputs.skip-flutter != 'true'
         uses: codecov/codecov-action@v4
         with:
           file: packages/mobile/coverage/lcov.info
