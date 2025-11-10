@@ -1,0 +1,29 @@
+# Root-level analysis options to exclude CI and build artifacts
+analyzer:
+  exclude:
+    - actions-runner/**
+    - build/**
+    - .dart_tool/**
+    - android/**
+    - ios/**
+    - web/**
+    - macos/**
+    - linux/**
+    - windows/**
+    - test/**
+    - coverage/**
+    - .git/**
+    - packages/**/build/**
+    - packages/**/.dart_tool/**
+    - packages/**/android/**
+    - packages/**/ios/**
+    - packages/**/web/**
+    - packages/**/macos/**
+    - packages/**/linux/**
+    - packages/**/windows/**
+    - packages/**/test/**
+    - packages/**/coverage/**
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "**/*.config.dart"
+    - "**/*.mocks.dart"

@@ -31,12 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _signInWithGoogle(BuildContext context) async {
     try {
       // First authenticate the user
-      final GoogleSignInAccount? googleUser = await _googleSignIn.authenticate();
-
-      if (googleUser == null) {
-        // User cancelled the sign-in
-        return;
-      }
+      final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
 
       // Get the ID token from authentication
       final GoogleSignInAuthentication auth = googleUser.authentication;

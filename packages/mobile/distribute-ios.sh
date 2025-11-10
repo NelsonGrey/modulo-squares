@@ -51,9 +51,38 @@ else
         mkdir -p build/ios/ipa
         echo "Dummy debug IPA content" > build/ios/ipa/app-debug.ipa
     else
+        echo "🚀 Finding available iOS Simulator..."
+        # Find an available iOS simulator device
+        SIMULATOR_ID=$(xcrun simctl list devices available | grep -E "iPhone.*\([A-F0-9-]+\)" | head -1 | sed 's/.*(\([A-F0-9-]*\)).*/\1/')
+
+        if [[ -z "$SIMULATOR_ID" ]]; then
+            echo "❌ Error: No iOS simulator devices found"
+            exit 1
+        fi
+
+        echo "📱 Using simulator: $SIMULATOR_ID"
         echo "🚀 Booting iOS Simulator..."
-        xcrun simctl boot "23DCF2C4-2576-418F-9A82-08ED6D6F0B02"
-        flutter build ios --debug -d "23DCF2C4-2576-418F-9A82-08ED6D6F0B02" --no-codesign
+        xcrun simctl boot "$SIMULATOR_ID" 2>/dev/null || echo "⚠️ Warning: Could not boot simulator (may already be booted)"
+
+        # Clean CocoaPods cache and update if needed
+        echo "🧹 Cleaning CocoaPods cache..."
+        cd ios
+        pod cache clean --all 2>/dev/null || true
+
+        # Force update CocoaPods repo and problematic pods
+        echo "📦 Updating CocoaPods..."
+        pod repo update --silent 2>/dev/null || echo "⚠️ Warning: Could not update pod repo"
+
+        # If Podfile.lock exists and is causing issues, remove it to force resolution
+        if [[ -f "Podfile.lock" ]]; then
+            echo "🔄 Removing Podfile.lock to force dependency resolution..."
+            rm Podfile.lock
+        fi
+
+        cd ..
+
+        # Use Flutter's simulator flag instead of device ID for more reliable builds
+        flutter build ios --debug --simulator --no-codesign
     fi
     IPA_PATH="build/ios/iphonesimulator/Runner.app"
 fi

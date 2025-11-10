@@ -60,7 +60,7 @@ configure() {
 
     # Configure runner
     echo -e "${YELLOW}🔧 Configuring runner...${NC}"
-    ./config.sh --url "$REPO_URL" --token "$GITHUB_TOKEN" --name "$RUNNER_NAME" --labels "self-hosted,macOS,arm64" --unattended
+    ./config.sh --url "$REPO_URL" --token "$GITHUB_TOKEN" --name "$RUNNER_NAME" --labels "self-hosted,macos-latest,arm64" --unattended
 
     echo -e "${GREEN}✅ Runner configured successfully!${NC}"
 }
