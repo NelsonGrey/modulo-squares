@@ -53,6 +53,7 @@ runs:
             # Set a flag to skip Flutter operations
             SKIP_FLUTTER=true
             echo "SKIP_FLUTTER=true" >> $GITHUB_ENV
+            export SKIP_FLUTTER=true
           fi
         else
           echo "Unsupported OS: $RUNNER_OS"
@@ -104,7 +105,11 @@ runs:
       shell: bash
 
     - name: 📦 Install Flutter Dependencies
-      if: env.SKIP_FLUTTER != 'true'
-      run: flutter pub get
+      run: |
+        if [ "$SKIP_FLUTTER" != "true" ]; then
+          flutter pub get
+        else
+          echo "Skipping Flutter dependency installation on ARM64 Linux"
+        fi
       shell: bash
       working-directory: packages/mobile
