@@ -21,22 +21,44 @@ runs:
         # Download and setup Flutter manually
         FLUTTER_VERSION="${{ inputs.flutter-version }}"
         
-        # Try ARM64 first, fallback to x64 if it fails
-        FLUTTER_ARCHIVE="flutter_macos_arm64_${FLUTTER_VERSION}-stable.zip"
-        FLUTTER_URL="https://storage.googleapis.com/flutter_infra_release/releases/stable/macos/${FLUTTER_ARCHIVE}"
-        
-        echo "Attempting to download ARM64 Flutter ${FLUTTER_VERSION}..."
-        if curl -L --fail "$FLUTTER_URL" -o "$RUNNER_TEMP/flutter.zip" 2>/dev/null; then
-          echo "ARM64 archive downloaded successfully"
+        # Determine OS and architecture for correct archive
+        if [ "$RUNNER_OS" = "macOS" ]; then
+          OS_NAME="macos"
+          ARCHIVE_EXT="zip"
+          EXTRACT_CMD="unzip -q"
+        elif [ "$RUNNER_OS" = "Linux" ]; then
+          OS_NAME="linux"
+          ARCHIVE_EXT="tar.xz"
+          EXTRACT_CMD="tar -xf"
         else
-          echo "ARM64 archive failed, trying x64..."
-          FLUTTER_ARCHIVE="flutter_macos_${FLUTTER_VERSION}-stable.zip"
-          FLUTTER_URL="https://storage.googleapis.com/flutter_infra_release/releases/stable/macos/${FLUTTER_ARCHIVE}"
-          curl -L "$FLUTTER_URL" -o "$RUNNER_TEMP/flutter.zip"
+          echo "Unsupported OS: $RUNNER_OS"
+          exit 1
+        fi
+        
+        # Determine architecture
+        if [ "$RUNNER_ARCH" = "ARM64" ] || [ "$(uname -m)" = "aarch64" ] || [ "$(uname -m)" = "arm64" ]; then
+          ARCH_SUFFIX="_arm64"
+        else
+          ARCH_SUFFIX=""
+        fi
+        
+        # Construct archive name and URL
+        FLUTTER_ARCHIVE="flutter_${OS_NAME}${ARCH_SUFFIX}_${FLUTTER_VERSION}-stable.${ARCHIVE_EXT}"
+        FLUTTER_URL="https://storage.googleapis.com/flutter_infra_release/releases/stable/${OS_NAME}/${FLUTTER_ARCHIVE}"
+        
+        echo "Attempting to download ${OS_NAME}${ARCH_SUFFIX} Flutter ${FLUTTER_VERSION}..."
+        echo "Archive: $FLUTTER_ARCHIVE"
+        echo "URL: $FLUTTER_URL"
+        
+        if curl -L --fail "$FLUTTER_URL" -o "$RUNNER_TEMP/flutter.${ARCHIVE_EXT}" 2>/dev/null; then
+          echo "${OS_NAME}${ARCH_SUFFIX} archive downloaded successfully"
+        else
+          echo "${OS_NAME}${ARCH_SUFFIX} archive failed to download"
+          exit 1
         fi
         
         echo "Extracting Flutter..."
-        unzip -q "$RUNNER_TEMP/flutter.zip" -d "$RUNNER_TEMP"
+        $EXTRACT_CMD "$RUNNER_TEMP/flutter.${ARCHIVE_EXT}" -C "$RUNNER_TEMP"
         
         echo "Setting up Flutter path..."
         FLUTTER_BIN="$RUNNER_TEMP/flutter/bin"
