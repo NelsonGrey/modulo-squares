@@ -9,7 +9,7 @@ inputs:
   cache-bust:
     description: 'Cache busting parameter'
     required: false
-    default: 'v1'
+    default: 'v3'
 
 runs:
   using: 'composite'
