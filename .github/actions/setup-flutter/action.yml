@@ -30,6 +30,7 @@ runs:
           OS_NAME="macos"
           ARCHIVE_EXT="zip"
           EXTRACT_CMD="unzip -q"
+          EXTRACT_ARGS="-d"
           # macOS has both x64 and ARM64 builds
           if [ "$RUNNER_ARCH" = "ARM64" ] || [ "$(uname -m)" = "aarch64" ] || [ "$(uname -m)" = "arm64" ]; then
             ARCH_SUFFIX="_arm64"
@@ -40,6 +41,7 @@ runs:
           OS_NAME="linux"
           ARCHIVE_EXT="tar.xz"
           EXTRACT_CMD="tar -xf"
+          EXTRACT_ARGS="-C"
           # Linux only has x64 builds available, even on ARM64 runners
           ARCH_SUFFIX=""
         else
@@ -66,7 +68,7 @@ runs:
         fi
         
         echo "Extracting Flutter..."
-        $EXTRACT_CMD "$RUNNER_TEMP/flutter.${ARCHIVE_EXT}" -C "$RUNNER_TEMP"
+        $EXTRACT_CMD "$RUNNER_TEMP/flutter.${ARCHIVE_EXT}" $EXTRACT_ARGS "$RUNNER_TEMP"
         
         echo "Setting up Flutter path..."
         FLUTTER_BIN="$RUNNER_TEMP/flutter/bin"
