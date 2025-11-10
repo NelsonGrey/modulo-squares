@@ -93,10 +93,19 @@ jobs:
           # Check if devices are available for integration tests
           if flutter devices | grep -q "•"; then
             echo "Devices found, running integration tests..."
-            # Use the first available iOS simulator or Chrome
-            DEVICE_ID=$(flutter devices | grep -E "(ios|chrome)" | head -1 | awk '{print $3}')
-            if [ -n "$DEVICE_ID" ]; then
-              flutter test integration_test --test-randomize-ordering-seed random -d "$DEVICE_ID"
+            # Parse device ID from human-readable output (more reliable than machine output)
+            # Format: Name (type) • ID • platform • details
+            DEVICE_LINE=$(flutter devices | grep -E "(ios|chrome)" | head -1)
+            if [ -n "$DEVICE_LINE" ]; then
+              # Extract device ID (4th field when split by •)
+              DEVICE_ID=$(echo "$DEVICE_LINE" | awk -F '•' '{gsub(/^[ \t]+|[ \t]+$/, "", $2); print $2}')
+              if [ -n "$DEVICE_ID" ]; then
+                echo "Using device: $DEVICE_ID"
+                flutter test integration_test --test-randomize-ordering-seed random -d "$DEVICE_ID"
+              else
+                echo "Could not parse device ID from: $DEVICE_LINE"
+                echo "Skipping integration tests..."
+              fi
             else
               echo "No suitable device found for integration tests, skipping..."
             fi
