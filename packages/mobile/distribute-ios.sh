@@ -108,33 +108,37 @@ echo "✅ Build completed successfully: $IPA_PATH"
 
 # Distribute to Firebase App Distribution (works on both macOS and Linux)
 echo "📤 Distributing to Firebase App Distribution..."
-if [[ -f "ios/service-account-key.json" ]]; then
-    # Authenticate with service account
-    export GOOGLE_APPLICATION_CREDENTIALS="ios/service-account-key.json"
+if [[ "$BUILD_TYPE" == "release" ]]; then
+    if [[ -f "ios/service-account-key.json" ]]; then
+        # Authenticate with service account
+        export GOOGLE_APPLICATION_CREDENTIALS="ios/service-account-key.json"
 
-    # Get Firebase project and app ID based on environment
-    if [[ "$ENVIRONMENT" == "PRODUCTION" ]]; then
-        FIREBASE_PROJECT="modulo-squares-prod"
-        FIREBASE_APP_ID="1:253948321735:ios:527c4e69b233a2199ec3e2"
-    elif [[ "$ENVIRONMENT" == "STAGING" ]]; then
-        FIREBASE_PROJECT="modulo-squares-staging"
-        FIREBASE_APP_ID="1:838061114925:ios:f607167ffa35e7bb229aa4"
+        # Get Firebase project and app ID based on environment
+        if [[ "$ENVIRONMENT" == "PRODUCTION" ]]; then
+            FIREBASE_PROJECT="modulo-squares-prod"
+            FIREBASE_APP_ID="1:253948321735:ios:527c4e69b233a2199ec3e2"
+        elif [[ "$ENVIRONMENT" == "STAGING" ]]; then
+            FIREBASE_PROJECT="modulo-squares-staging"
+            FIREBASE_APP_ID="1:838061114925:ios:f607167ffa35e7bb229aa4"
+        else
+            FIREBASE_PROJECT="modulo-squares-dev"
+            FIREBASE_APP_ID="1:784677197785:ios:51104e6b575616cc61abc8"
+        fi
+
+        # For release builds, use IPA
+        DISTRIBUTION_FILE="$IPA_PATH"
+
+        firebase appdistribution:distribute "$DISTRIBUTION_FILE" \
+            --project "$FIREBASE_PROJECT" \
+            --app "$FIREBASE_APP_ID" \
+            --groups "testers" \
+            --release-notes "$RELEASE_NOTES"
+        echo "✅ Successfully distributed to Firebase App Distribution"
     else
-        FIREBASE_PROJECT="modulo-squares-dev"
-        FIREBASE_APP_ID="1:784677197785:ios:51104e6b575616cc61abc8"
+        echo "⚠️ Warning: Service account key not found, skipping Firebase distribution"
     fi
-
-    # For debug builds (simulator), use .app bundle; for release, use IPA
-    DISTRIBUTION_FILE="$IPA_PATH"
-
-    firebase appdistribution:distribute "$DISTRIBUTION_FILE" \
-        --project "$FIREBASE_PROJECT" \
-        --app "$FIREBASE_APP_ID" \
-        --groups "testers" \
-        --release-notes "$RELEASE_NOTES"
-    echo "✅ Successfully distributed to Firebase App Distribution"
 else
-    echo "⚠️ Warning: Service account key not found, skipping Firebase distribution"
+    echo "⚠️ Skipping Firebase distribution for debug builds (simulator-only)"
 fi
 
 # For production builds, you would typically use Fastlane or Xcode Cloud
