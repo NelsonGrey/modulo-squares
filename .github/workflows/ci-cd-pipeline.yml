@@ -54,24 +54,29 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 🦋 Setup Flutter
+        id: setup-flutter
         uses: ./.github/actions/setup-flutter
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache-bust: v3
 
       - name: 📦 Install Dependencies
+        if: steps.setup-flutter.outputs.flutter-skipped != 'true'
         run: flutter pub get
         working-directory: packages/mobile
 
       - name: 🔧 Flutter Analyze
+        if: steps.setup-flutter.outputs.flutter-skipped != 'true'
         run: flutter analyze
         working-directory: packages/mobile
 
       - name: 🧪 Run Tests
+        if: steps.setup-flutter.outputs.flutter-skipped != 'true'
         run: flutter test --coverage --test-randomize-ordering-seed random
         working-directory: packages/mobile
 
       - name: 🧪 Run Integration Tests
+        if: steps.setup-flutter.outputs.flutter-skipped != 'true'
         run: |
           # Check if devices are available for integration tests
           if flutter devices | grep -q "•"; then
@@ -89,6 +94,7 @@ jobs:
         working-directory: packages/mobile
 
       - name: 📊 Check Test Coverage
+        if: steps.setup-flutter.outputs.flutter-skipped != 'true'
         run: |
           # Function to extract coverage data for a service
           get_coverage() {
@@ -160,6 +166,7 @@ jobs:
           echo "✅ All coverage thresholds met!"
 
       - name: 📊 Upload Coverage
+        if: steps.setup-flutter.outputs.flutter-skipped != 'true'
         uses: codecov/codecov-action@v4
         with:
           file: packages/mobile/coverage/lcov.info
