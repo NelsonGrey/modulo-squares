@@ -46,10 +46,23 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 🦋 Setup Flutter
-        uses: subosito/flutter-action@v2.21.0
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          architecture: arm64
+        run: |
+          # Download and setup Flutter manually for ARM64
+          FLUTTER_VERSION="${{ env.FLUTTER_VERSION }}"
+          FLUTTER_ARCHIVE="flutter_macos_arm64_${FLUTTER_VERSION}-stable.zip"
+          FLUTTER_URL="https://storage.googleapis.com/flutter_infra_release/releases/stable/macos/${FLUTTER_ARCHIVE}"
+          
+          echo "Downloading Flutter ${FLUTTER_VERSION} for ARM64..."
+          curl -L "$FLUTTER_URL" -o "$RUNNER_TEMP/flutter.zip"
+          
+          echo "Extracting Flutter..."
+          unzip -q "$RUNNER_TEMP/flutter.zip" -d "$RUNNER_TEMP"
+          
+          echo "Setting up Flutter path..."
+          echo "$RUNNER_TEMP/flutter/bin" >> $GITHUB_PATH
+          
+          echo "Verifying Flutter installation..."
+          flutter --version
 
       - name: ☕ Setup Java
         uses: actions/setup-java@v4
