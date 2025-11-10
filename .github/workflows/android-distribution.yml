@@ -33,7 +33,7 @@ on:
         type: string
 
 env:
-  FLUTTER_VERSION: '3.32.0'
+  FLUTTER_VERSION: '3.35.7'
   DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true' || contains(github.event.head_commit.message, '[DRY-RUN]') || contains(github.event.head_commit.message, '[SKIP-DEPLOY]') }}
 
 jobs:
