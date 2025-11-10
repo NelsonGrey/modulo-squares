@@ -127,3 +127,8 @@ node_modules
 # Self-hosted runner binaries (too large for Git)
 actions-runner/externals/node*/bin/node
 actions-runner/actions-runner-*.tar.gz
+
+# Self-hosted runner working directory and artifacts
+actions-runner/_work/
+actions-runner/_diag/
+actions-runner/.runner_migrated
