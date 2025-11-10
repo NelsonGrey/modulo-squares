@@ -6,6 +6,10 @@ inputs:
     description: 'Flutter version to install'
     required: true
     default: '3.35.7'
+  cache-bust:
+    description: 'Cache busting parameter'
+    required: false
+    default: 'v1'
 
 runs:
   using: 'composite'

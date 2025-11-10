@@ -56,6 +56,7 @@ jobs:
         uses: ./.github/actions/setup-flutter
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache-bust: v2
 
       - name: 📦 Install Dependencies
         run: flutter pub get
