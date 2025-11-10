@@ -5,13 +5,13 @@ inputs:
   flutter-version:
     description: 'Flutter version to install'
     required: true
-    default: '3.32.0'
+    default: '3.35.7'
 
 runs:
   using: 'composite'
   steps:
     - name: 🦋 Setup Flutter
-      uses: subosito/flutter-action@v2
+      uses: subosito/flutter-action@v2.21.0
       with:
         flutter-version: ${{ inputs.flutter-version }}
         cache: true
