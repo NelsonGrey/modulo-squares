@@ -54,13 +54,28 @@ jobs:
 
       - name: 🦋 Setup Flutter
         run: |
+          # Check runner architecture first
+          echo "Runner OS: $RUNNER_OS"
+          echo "Runner Architecture: $RUNNER_ARCH"
+          uname -a
+          sysctl -n machdep.cpu.brand_string 2>/dev/null || echo "CPU info not available"
+          
           # Download and setup Flutter manually
           FLUTTER_VERSION="${{ env.FLUTTER_VERSION }}"
-          FLUTTER_ARCHIVE="flutter_macos_${FLUTTER_VERSION}-stable.zip"
+          
+          # Try ARM64 first, fallback to x64 if it fails
+          FLUTTER_ARCHIVE="flutter_macos_arm64_${FLUTTER_VERSION}-stable.zip"
           FLUTTER_URL="https://storage.googleapis.com/flutter_infra_release/releases/stable/macos/${FLUTTER_ARCHIVE}"
           
-          echo "Downloading Flutter ${FLUTTER_VERSION}..."
-          curl -L "$FLUTTER_URL" -o "$RUNNER_TEMP/flutter.zip"
+          echo "Attempting to download ARM64 Flutter ${FLUTTER_VERSION}..."
+          if curl -L --fail "$FLUTTER_URL" -o "$RUNNER_TEMP/flutter.zip" 2>/dev/null; then
+            echo "ARM64 archive downloaded successfully"
+          else
+            echo "ARM64 archive failed, trying x64..."
+            FLUTTER_ARCHIVE="flutter_macos_${FLUTTER_VERSION}-stable.zip"
+            FLUTTER_URL="https://storage.googleapis.com/flutter_infra_release/releases/stable/macos/${FLUTTER_ARCHIVE}"
+            curl -L "$FLUTTER_URL" -o "$RUNNER_TEMP/flutter.zip"
+          fi
           
           echo "Extracting Flutter..."
           unzip -q "$RUNNER_TEMP/flutter.zip" -d "$RUNNER_TEMP"
