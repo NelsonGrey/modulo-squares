@@ -49,6 +49,7 @@ jobs:
         uses: ./.github/actions/setup-flutter
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache-bust: v2
 
       - name: ☕ Setup Java
         uses: actions/setup-java@v4
