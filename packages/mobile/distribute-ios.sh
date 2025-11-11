@@ -113,37 +113,10 @@ if [[ "$BUILD_TYPE" == "release" ]]; then
     # Release builds are already uploaded to TestFlight by Fastlane above
     echo "✅ Release build already uploaded to TestFlight"
 else
-    # For debug builds, use Firebase App Distribution if service account is available
-    if [[ -f "ios/service-account-key.json" ]]; then
-        echo "📤 Distributing debug build to Firebase App Distribution..."
-        # Authenticate with service account
-        export GOOGLE_APPLICATION_CREDENTIALS="ios/service-account-key.json"
-
-        # Get Firebase project and app ID based on environment
-        if [[ "$ENVIRONMENT" == "PRODUCTION" ]]; then
-            FIREBASE_PROJECT="modulo-squares-prod"
-            FIREBASE_APP_ID="1:253948321735:ios:527c4e69b233a2199ec3e2"
-        elif [[ "$ENVIRONMENT" == "STAGING" ]]; then
-            FIREBASE_PROJECT="modulo-squares-staging"
-            FIREBASE_APP_ID="1:838061114925:ios:f607167ffa35e7bb229aa4"
-        else
-            FIREBASE_PROJECT="modulo-squares-dev"
-            FIREBASE_APP_ID="1:784677197785:ios:51104e6b575616cc61abc8"
-        fi
-
-        # For debug builds, we need to create an IPA from the app bundle
-        # This is a simplified approach - in production you'd want proper IPA creation
-        DISTRIBUTION_FILE="$IPA_PATH"
-
-        firebase appdistribution:distribute "$DISTRIBUTION_FILE" \
-            --project "$FIREBASE_PROJECT" \
-            --app "$FIREBASE_APP_ID" \
-            --groups "testers" \
-            --release-notes "$RELEASE_NOTES"
-        echo "✅ Successfully distributed debug build to Firebase App Distribution"
-    else
-        echo "⚠️ Warning: Service account key not found, skipping Firebase distribution for debug build"
-    fi
+    # For debug builds, skip Firebase distribution since simulator builds produce .app files
+    # which Firebase App Distribution doesn't support
+    echo "⚠️ Skipping Firebase distribution for debug builds (simulator-only)"
+    echo "Debug builds are for local testing only and cannot be distributed to external testers"
 fi
 
 # For production builds, you would typically use Fastlane or Xcode Cloud
@@ -160,11 +133,8 @@ elif [[ "$BUILD_TYPE" == "release" ]]; then
     echo "In a real macOS environment, this would be uploaded to TestFlight"
 else
     echo "📤 Debug iOS build completed"
-    if [[ -f "ios/service-account-key.json" ]]; then
-        echo "The debug build has been distributed to Firebase App Distribution"
-    else
-        echo "The app can be installed on iOS simulators"
-    fi
+    echo "The app can be installed on iOS simulators for local testing"
+    echo "Debug builds are not distributed to external testers"
 fi
 
 echo "🎉 iOS distribution completed!"
