@@ -10,8 +10,8 @@ team_id ENV["APP_STORE_CONNECT_TEAM_ID"]
 # App identifier
 app_identifier "com.nelsongrey.modulosquares.app.ios"
 
-# Path to your iTunes Connect team (optional)
-itc_team_name ENV["APP_STORE_CONNECT_TEAM_NAME"]
+# Path to your iTunes Connect team (optional - comment out if not needed)
+# itc_team_name ENV["APP_STORE_CONNECT_TEAM_NAME"]
 
-# Path to your Apple Developer Portal team (optional)
-team_name ENV["APP_STORE_CONNECT_TEAM_NAME"]
+# Path to your Apple Developer Portal team (optional - comment out if not needed)
+# team_name ENV["APP_STORE_CONNECT_TEAM_NAME"]
