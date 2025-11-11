@@ -33,18 +33,19 @@ if [[ "$BUILD_TYPE" == "release" ]]; then
         # Create a dummy IPA file for testing
         mkdir -p build/ios/ipa
         echo "Dummy IPA content" > build/ios/ipa/app.ipa
+        IPA_PATH="build/ios/ipa/app.ipa"
     else
-        echo "🔧 Building iOS release app..."
-        # For production builds, proper code signing is required
-        # This would need certificates, provisioning profiles, and Fastlane
-        flutter build ios --release --no-codesign
-        echo "⚠️ Warning: Built without code signing. For distribution, you need:"
-        echo "  - Apple Developer Program membership"
-        echo "  - iOS Distribution Certificate"
-        echo "  - App Store Distribution Provisioning Profile"
-        echo "  - Fastlane setup for automated signing and upload"
+        echo "📤 Building and uploading to TestFlight via Fastlane..."
+        cd ios
+
+        # Use Fastlane to build and upload to TestFlight (handles code signing automatically)
+        fastlane beta
+
+        cd ..
+        echo "✅ Successfully built and uploaded to TestFlight"
+        # Set a dummy path since Fastlane handles the actual build
+        IPA_PATH="build/ios/ipa/testflight-build.ipa"
     fi
-    IPA_PATH="build/ios/ipa/app.ipa"
 else
     if [[ "$SIMULATION_MODE" == "true" ]]; then
         echo "🔧 Simulating iOS debug build..."
@@ -106,10 +107,15 @@ fi
 
 echo "✅ Build completed successfully: $IPA_PATH"
 
-# Distribute to Firebase App Distribution (works on both macOS and Linux)
-echo "📤 Distributing to Firebase App Distribution..."
+# Distribute to TestFlight or Firebase App Distribution
+echo "📤 Distributing iOS app..."
 if [[ "$BUILD_TYPE" == "release" ]]; then
+    # Release builds are already uploaded to TestFlight by Fastlane above
+    echo "✅ Release build already uploaded to TestFlight"
+else
+    # For debug builds, use Firebase App Distribution if service account is available
     if [[ -f "ios/service-account-key.json" ]]; then
+        echo "📤 Distributing debug build to Firebase App Distribution..."
         # Authenticate with service account
         export GOOGLE_APPLICATION_CREDENTIALS="ios/service-account-key.json"
 
@@ -125,7 +131,8 @@ if [[ "$BUILD_TYPE" == "release" ]]; then
             FIREBASE_APP_ID="1:784677197785:ios:51104e6b575616cc61abc8"
         fi
 
-        # For release builds, use IPA
+        # For debug builds, we need to create an IPA from the app bundle
+        # This is a simplified approach - in production you'd want proper IPA creation
         DISTRIBUTION_FILE="$IPA_PATH"
 
         firebase appdistribution:distribute "$DISTRIBUTION_FILE" \
@@ -133,32 +140,31 @@ if [[ "$BUILD_TYPE" == "release" ]]; then
             --app "$FIREBASE_APP_ID" \
             --groups "testers" \
             --release-notes "$RELEASE_NOTES"
-        echo "✅ Successfully distributed to Firebase App Distribution"
+        echo "✅ Successfully distributed debug build to Firebase App Distribution"
     else
-        echo "⚠️ Warning: Service account key not found, skipping Firebase distribution"
+        echo "⚠️ Warning: Service account key not found, skipping Firebase distribution for debug build"
     fi
-else
-    echo "⚠️ Skipping Firebase distribution for debug builds (simulator-only)"
 fi
 
 # For production builds, you would typically use Fastlane or Xcode Cloud
 if [[ "$BUILD_TYPE" == "release" && "$SIMULATION_MODE" != "true" ]]; then
-    echo "📤 Production iOS build completed"
-    echo "Next steps for distribution:"
-    echo "  1. Set up Fastlane in ios/fastlane/"
-    echo "  2. Configure match for code signing"
-    echo "  3. Add certificates and provisioning profiles to CI secrets"
-    echo "  4. Use Fastlane to upload to TestFlight or App Store"
+    echo "📤 Production iOS build completed and uploaded to TestFlight"
+    echo "The app should now be available in TestFlight for testing"
     echo ""
-    echo "Example Fastlane setup:"
-    echo "  fastlane beta  # Upload to TestFlight"
-    echo "  fastlane release  # Upload to App Store"
+    echo "Next steps for App Store release:"
+    echo "  1. Test the app thoroughly in TestFlight"
+    echo "  2. Run 'fastlane release' to submit to App Store"
+    echo "  3. Monitor app review process in App Store Connect"
 elif [[ "$BUILD_TYPE" == "release" ]]; then
-    echo "📤 Simulated production iOS build completed"
+    echo "📤 Simulated TestFlight upload completed"
     echo "In a real macOS environment, this would be uploaded to TestFlight"
 else
     echo "📤 Debug iOS build completed"
-    echo "The app can be installed on iOS simulators"
+    if [[ -f "ios/service-account-key.json" ]]; then
+        echo "The debug build has been distributed to Firebase App Distribution"
+    else
+        echo "The app can be installed on iOS simulators"
+    fi
 fi
 
 echo "🎉 iOS distribution completed!"
