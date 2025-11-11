@@ -21,6 +21,12 @@ platform :ios do
     # Increment build number
     increment_build_number
 
+    # Install CocoaPods dependencies
+    cocoapods(
+      clean_install: true,
+      repo_update: true
+    )
+
     # Build the app
     build_app(
       scheme: "Runner",
@@ -42,6 +48,12 @@ platform :ios do
 
     # Increment build number
     increment_build_number
+
+    # Install CocoaPods dependencies
+    cocoapods(
+      clean_install: true,
+      repo_update: true
+    )
 
     # Build the app
     build_app(
