@@ -39,7 +39,7 @@ if [[ "$BUILD_TYPE" == "release" ]]; then
         cd ios
 
         # Use Fastlane to build and upload to TestFlight (handles code signing automatically)
-        fastlane beta
+        bundle exec fastlane beta
 
         cd ..
         echo "✅ Successfully built and uploaded to TestFlight"
