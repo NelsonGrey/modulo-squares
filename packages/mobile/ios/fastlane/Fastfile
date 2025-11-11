@@ -26,7 +26,8 @@ platform :ios do
       scheme: "Runner",
       export_method: "app-store",
       output_directory: "./fastlane/builds",
-      output_name: "ModuloSquares-beta"
+      output_name: "ModuloSquares-beta",
+      code_sign_identity: "Apple Distribution"
     )
 
     # Upload to TestFlight
@@ -48,7 +49,8 @@ platform :ios do
       scheme: "Runner",
       export_method: "app-store",
       output_directory: "./fastlane/builds",
-      output_name: "ModuloSquares-release"
+      output_name: "ModuloSquares-release",
+      code_sign_identity: "Apple Distribution"
     )
 
     # Upload to App Store
