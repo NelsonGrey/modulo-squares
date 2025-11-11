@@ -49,3 +49,4 @@ app.*.map.json
 ios/service-account-key.json
 android/service-account-key.json
 ios/fastlane/
+Gemfile.lock
