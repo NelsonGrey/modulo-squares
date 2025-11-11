@@ -48,3 +48,4 @@ app.*.map.json
 .metadata
 ios/service-account-key.json
 android/service-account-key.json
+ios/fastlane/
