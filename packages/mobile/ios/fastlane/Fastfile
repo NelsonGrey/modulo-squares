@@ -32,6 +32,7 @@ platform :ios do
       scheme: "Runner",
       export_method: "app-store",
       export_team_id: ENV["APP_STORE_CONNECT_TEAM_ID"],
+      codesigning_identity: "Apple Distribution",
       output_directory: "./fastlane/builds",
       output_name: "ModuloSquares-beta",
       xcargs: "CODE_SIGN_STYLE=Manual"
@@ -62,6 +63,7 @@ platform :ios do
       scheme: "Runner",
       export_method: "app-store",
       export_team_id: ENV["APP_STORE_CONNECT_TEAM_ID"],
+      codesigning_identity: "Apple Distribution",
       output_directory: "./fastlane/builds",
       output_name: "ModuloSquares-release",
       xcargs: "CODE_SIGN_STYLE=Manual"
