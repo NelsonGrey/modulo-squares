@@ -33,13 +33,10 @@ platform :ios do
       export_method: "app-store",
       output_directory: "./fastlane/builds",
       output_name: "ModuloSquares-beta",
-      export_options: {
-        method: "app-store",
-        provisioningProfiles: {
-          "com.nelsongrey.modulosquares.app.ios" => "Modulo Squares Distribution"
-        }
-      },
-      xcargs: "CODE_SIGN_STYLE=Manual"
+      automatic_code_signing: {
+        team_id: ENV["APP_STORE_CONNECT_TEAM_ID"],
+        code_sign_identity: "Apple Distribution"
+      }
     )
 
     # Upload to TestFlight
@@ -68,13 +65,10 @@ platform :ios do
       export_method: "app-store",
       output_directory: "./fastlane/builds",
       output_name: "ModuloSquares-release",
-      export_options: {
-        method: "app-store",
-        provisioningProfiles: {
-          "com.nelsongrey.modulosquares.app.ios" => "Modulo Squares Distribution"
-        }
-      },
-      xcargs: "CODE_SIGN_STYLE=Manual"
+      automatic_code_signing: {
+        team_id: ENV["APP_STORE_CONNECT_TEAM_ID"],
+        code_sign_identity: "Apple Distribution"
+      }
     )
 
     # Upload to App Store
