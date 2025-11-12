@@ -141,6 +141,9 @@ jobs:
             KEYCHAIN_PATH=$HOME/Library/Keychains/build.keychain
             KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
             
+            # Delete existing keychain if it exists
+            security delete-keychain "$KEYCHAIN_PATH" 2>/dev/null || true
+            
             # Create and unlock the keychain
             security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
             security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
