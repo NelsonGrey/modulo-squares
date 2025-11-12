@@ -122,6 +122,34 @@ jobs:
       - name: 🔧 Make Distribution Script Executable
         run: chmod +x packages/mobile/distribute-ios.sh
 
+      - name: 📱 Install Provisioning Profile
+        run: |
+          # Create provisioning profiles directory if it doesn't exist
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles/
+          
+          # Decode and install the provisioning profile
+          if [ ! -z "$IOS_PROVISIONING_PROFILE_BASE64" ]; then
+            echo "$IOS_PROVISIONING_PROFILE_BASE64" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/$IOS_PROVISIONING_PROFILE.mobileprovision
+            echo "✅ Provisioning profile installed"
+          else
+            echo "⚠️ IOS_PROVISIONING_PROFILE_BASE64 secret not found"
+          fi
+          
+          # Install distribution certificate if provided
+          if [ ! -z "$IOS_DISTRIBUTION_CERTIFICATE_BASE64" ]; then
+            echo "$IOS_DISTRIBUTION_CERTIFICATE_BASE64" | base64 --decode > /tmp/ios_distribution.p12
+            security import /tmp/ios_distribution.p12 -P "$IOS_CERTIFICATE_PASSWORD" -A
+            rm /tmp/ios_distribution.p12
+            echo "✅ Distribution certificate installed"
+          else
+            echo "⚠️ IOS_DISTRIBUTION_CERTIFICATE_BASE64 secret not found"
+          fi
+        env:
+          IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
+          IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+          IOS_DISTRIBUTION_CERTIFICATE_BASE64: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_BASE64 }}
+          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+
       - name: 📱 Extract AdMob Configuration for Production
         if: github.ref == 'refs/heads/main'
         run: |
