@@ -38,6 +38,10 @@ if [[ "$BUILD_TYPE" == "release" ]]; then
         echo "📤 Building and uploading to TestFlight via Fastlane..."
         cd ios
 
+        # Install Ruby dependencies
+        echo "📦 Installing Ruby gems..."
+        bundle install
+
         # Use Fastlane to build and upload to TestFlight (handles code signing automatically)
         bundle exec fastlane beta
 
