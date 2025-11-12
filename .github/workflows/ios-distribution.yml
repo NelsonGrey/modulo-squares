@@ -51,9 +51,7 @@ jobs:
         with:
           ruby-version: '3.0'
           bundler-cache: true
-
-      - name: 📦 Install Fastlane
-        run: gem install fastlane
+          working-directory: packages/mobile
 
       - name: 🛠️ Setup Xcode
         run: |
