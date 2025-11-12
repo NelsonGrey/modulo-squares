@@ -32,7 +32,14 @@ platform :ios do
       scheme: "Runner",
       export_method: "app-store",
       output_directory: "./fastlane/builds",
-      output_name: "ModuloSquares-beta"
+      output_name: "ModuloSquares-beta",
+      export_options: {
+        method: "app-store",
+        provisioningProfiles: {
+          "com.nelsongrey.modulosquares.app.ios" => "Modulo Squares Distribution"
+        }
+      },
+      xcargs: "CODE_SIGN_STYLE=Manual"
     )
 
     # Upload to TestFlight
@@ -60,7 +67,14 @@ platform :ios do
       scheme: "Runner",
       export_method: "app-store",
       output_directory: "./fastlane/builds",
-      output_name: "ModuloSquares-release"
+      output_name: "ModuloSquares-release",
+      export_options: {
+        method: "app-store",
+        provisioningProfiles: {
+          "com.nelsongrey.modulosquares.app.ios" => "Modulo Squares Distribution"
+        }
+      },
+      xcargs: "CODE_SIGN_STYLE=Manual"
     )
 
     # Upload to App Store
