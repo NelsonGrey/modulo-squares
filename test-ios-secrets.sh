@@ -117,7 +117,23 @@ test_certificate() {
             echo "✅ Found Apple Distribution certificate"
         else
             echo "❌ No Apple Distribution certificate found"
-            echo "Make sure you're using a DISTRIBUTION certificate, not a development certificate"
+            echo "📋 Available identities in test keychain:"
+            security find-identity -v "$KEYCHAIN_PATH" || true
+            echo ""
+            echo "💡 For TestFlight builds, you need an 'Apple Distribution' certificate"
+            echo "   You currently have a different type of certificate."
+            echo ""
+            echo "Check your local certificates with:"
+            echo "security find-identity -v -p codesigning"
+            echo ""
+            echo "If you only have 'Apple Development' certificates:"
+            echo "1. Go to https://developer.apple.com/account/resources/certificates"
+            echo "2. Click '+' → Choose 'Apple Distribution'"
+            echo "3. Follow the instructions to create and download"
+            echo "4. Install the certificate in Keychain Access"
+            echo "5. Export as .p12 file with password"
+            echo "6. Base64 encode: base64 -i YourCert.p12"
+            echo "7. Update IOS_DISTRIBUTION_CERTIFICATE_BASE64 secret"
             security delete-keychain "$KEYCHAIN_PATH" 2>/dev/null || true
             rm -f /tmp/test_cert.p12
             return 1
