@@ -97,9 +97,9 @@ else
 
         cd ..
 
-        # Build for the specific simulator device instead of generic destination
-        echo "🔧 Building for simulator device: $SIMULATOR_ID"
-        flutter build ios --debug --device-id="$SIMULATOR_ID" --no-codesign
+        # Build for iOS simulator (generic destination)
+        echo "🔧 Building for iOS simulator..."
+        flutter build ios --debug --simulator --no-codesign
     fi
     IPA_PATH="build/ios/iphonesimulator/Runner.app"
 fi
