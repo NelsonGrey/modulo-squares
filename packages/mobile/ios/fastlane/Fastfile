@@ -33,7 +33,11 @@ platform :ios do
       export_method: "app-store",
       export_team_id: ENV["APP_STORE_CONNECT_TEAM_ID"],
       codesigning_identity: "Apple Distribution",
-      provisioning_profile: ENV["IOS_PROVISIONING_PROFILE"],
+      export_options: {
+        provisioningProfiles: {
+          "com.nelsongrey.modulosquares.app.ios" => ENV["IOS_PROVISIONING_PROFILE"]
+        }
+      },
       output_directory: "./fastlane/builds",
       output_name: "ModuloSquares-beta",
       xcargs: "CODE_SIGN_STYLE=Manual"
@@ -65,7 +69,11 @@ platform :ios do
       export_method: "app-store",
       export_team_id: ENV["APP_STORE_CONNECT_TEAM_ID"],
       codesigning_identity: "Apple Distribution",
-      provisioning_profile: ENV["IOS_PROVISIONING_PROFILE"],
+      export_options: {
+        provisioningProfiles: {
+          "com.nelsongrey.modulosquares.app.ios" => ENV["IOS_PROVISIONING_PROFILE"]
+        }
+      },
       output_directory: "./fastlane/builds",
       output_name: "ModuloSquares-release",
       xcargs: "CODE_SIGN_STYLE=Manual"
