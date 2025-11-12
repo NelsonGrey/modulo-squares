@@ -32,7 +32,7 @@ platform :ios do
       scheme: "Runner",
       export_method: "app-store",
       export_team_id: ENV["APP_STORE_CONNECT_TEAM_ID"],
-      codesigning_identity: "Apple Distribution",
+      codesigning_identity: ENV["CERT_NAME"] || "Apple Distribution",
       export_options: {
         provisioningProfiles: {
           "com.nelsongrey.modulosquares.app.ios" => ENV["IOS_PROVISIONING_PROFILE"]
@@ -68,7 +68,7 @@ platform :ios do
       scheme: "Runner",
       export_method: "app-store",
       export_team_id: ENV["APP_STORE_CONNECT_TEAM_ID"],
-      codesigning_identity: "Apple Distribution",
+      codesigning_identity: ENV["CERT_NAME"] || "Apple Distribution",
       export_options: {
         provisioningProfiles: {
           "com.nelsongrey.modulosquares.app.ios" => ENV["IOS_PROVISIONING_PROFILE"]

@@ -130,9 +130,28 @@ jobs:
           # Decode and install the provisioning profile
           if [ ! -z "$IOS_PROVISIONING_PROFILE_BASE64" ]; then
             echo "$IOS_PROVISIONING_PROFILE_BASE64" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/$IOS_PROVISIONING_PROFILE.mobileprovision
-            echo "✅ Provisioning profile installed"
+            
+            # Verify the provisioning profile was installed
+            if [ -f ~/Library/MobileDevice/Provisioning\ Profiles/$IOS_PROVISIONING_PROFILE.mobileprovision ]; then
+              echo "✅ Provisioning profile installed successfully"
+              # Show profile info for debugging
+              security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/$IOS_PROVISIONING_PROFILE.mobileprovision | grep -A 5 -B 5 "Name\|UUID\|TeamIdentifier\|application-identifier" || true
+              
+              # Check if the bundle ID is in the profile
+              if security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/$IOS_PROVISIONING_PROFILE.mobileprovision | grep -q "com.nelsongrey.modulosquares.app.ios"; then
+                echo "✅ Provisioning profile contains correct bundle ID"
+              else
+                echo "❌ Provisioning profile does not contain the correct bundle ID"
+                security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/$IOS_PROVISIONING_PROFILE.mobileprovision | grep -A 10 "Entitlements" || true
+                exit 1
+              fi
+            else
+              echo "❌ Failed to install provisioning profile"
+              exit 1
+            fi
           else
             echo "⚠️ IOS_PROVISIONING_PROFILE_BASE64 secret not found"
+            exit 1
           fi
           
           # Install distribution certificate if provided
@@ -154,6 +173,23 @@ jobs:
             security import /tmp/ios_distribution.p12 -P "$IOS_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
             rm /tmp/ios_distribution.p12
             
+            # Verify certificate was imported
+            if security find-identity -v "$KEYCHAIN_PATH" | grep -q "Apple Distribution"; then
+              echo "✅ Distribution certificate installed successfully"
+              echo "Available identities:"
+              security find-identity -v "$KEYCHAIN_PATH"
+              
+              # Get the exact certificate name
+              CERT_NAME=$(security find-identity -v "$KEYCHAIN_PATH" | grep "Apple Distribution" | head -1 | sed 's/.*"\(.*\)"/\1/')
+              echo "Using certificate: $CERT_NAME"
+              echo "CERT_NAME=$CERT_NAME" >> $GITHUB_ENV
+            else
+              echo "❌ Failed to install distribution certificate"
+              echo "Available identities in keychain:"
+              security find-identity -v "$KEYCHAIN_PATH" || true
+              exit 1
+            fi
+            
             # Set the keychain as default and unlock it
             security list-keychains -d user -s "$KEYCHAIN_PATH"
             security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
@@ -161,6 +197,7 @@ jobs:
             echo "✅ Distribution certificate installed"
           else
             echo "⚠️ IOS_DISTRIBUTION_CERTIFICATE_BASE64 secret not found"
+            exit 1
           fi
         env:
           IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
