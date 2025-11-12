@@ -64,7 +64,7 @@ else
     IPA_PATH="build/ios/iphonesimulator/Runner.app"
 fi
 
-if [[ ! -e "$IPA_PATH" ]]; then
+if [[ ! -e "$IPA_PATH" && "$BUILD_TYPE" != "debug" ]]; then
     echo "❌ Error: Build output not found at $IPA_PATH"
     exit 1
 fi
