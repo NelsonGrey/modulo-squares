@@ -170,7 +170,19 @@ jobs:
             
             # Import certificate to the keychain
             echo "$IOS_DISTRIBUTION_CERTIFICATE_BASE64" | base64 --decode > /tmp/ios_distribution.p12
-            security import /tmp/ios_distribution.p12 -P "$IOS_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+            
+            # Try to import with different options
+            if ! security import /tmp/ios_distribution.p12 -P "$IOS_CERTIFICATE_PASSWORD" -A -k "$KEYCHAIN_PATH" 2>/dev/null; then
+              echo "Standard import failed, trying alternative method..."
+              # Try without -A flag (allow interaction) but in a way that works in CI
+              security import /tmp/ios_distribution.p12 -P "$IOS_CERTIFICATE_PASSWORD" -k "$KEYCHAIN_PATH" || {
+                echo "Certificate import failed. Checking certificate details..."
+                openssl pkcs12 -info -in /tmp/ios_distribution.p12 -passin pass:"$IOS_CERTIFICATE_PASSWORD" -nokeys || true
+                rm /tmp/ios_distribution.p12
+                exit 1
+              }
+            fi
+            
             rm /tmp/ios_distribution.p12
             
             # Verify certificate was imported
