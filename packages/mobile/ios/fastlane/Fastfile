@@ -33,7 +33,8 @@ platform :ios do
       export_method: "app-store",
       export_team_id: ENV["APP_STORE_CONNECT_TEAM_ID"],
       output_directory: "./fastlane/builds",
-      output_name: "ModuloSquares-beta"
+      output_name: "ModuloSquares-beta",
+      xcargs: "CODE_SIGN_STYLE=Manual"
     )
 
     # Upload to TestFlight
@@ -62,7 +63,8 @@ platform :ios do
       export_method: "app-store",
       export_team_id: ENV["APP_STORE_CONNECT_TEAM_ID"],
       output_directory: "./fastlane/builds",
-      output_name: "ModuloSquares-release"
+      output_name: "ModuloSquares-release",
+      xcargs: "CODE_SIGN_STYLE=Manual"
     )
 
     # Upload to App Store
