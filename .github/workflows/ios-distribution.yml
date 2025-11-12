@@ -137,9 +137,24 @@ jobs:
           
           # Install distribution certificate if provided
           if [ ! -z "$IOS_DISTRIBUTION_CERTIFICATE_BASE64" ]; then
+            # Create a temporary keychain for CI
+            KEYCHAIN_PATH=$HOME/Library/Keychains/build.keychain
+            KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
+            
+            # Create and unlock the keychain
+            security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+            security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+            security set-keychain-settings -t 3600 -u "$KEYCHAIN_PATH"
+            
+            # Import certificate to the keychain
             echo "$IOS_DISTRIBUTION_CERTIFICATE_BASE64" | base64 --decode > /tmp/ios_distribution.p12
-            security import /tmp/ios_distribution.p12 -P "$IOS_CERTIFICATE_PASSWORD" -A
+            security import /tmp/ios_distribution.p12 -P "$IOS_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
             rm /tmp/ios_distribution.p12
+            
+            # Set the keychain as default and unlock it
+            security list-keychains -d user -s "$KEYCHAIN_PATH"
+            security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+            
             echo "✅ Distribution certificate installed"
           else
             echo "⚠️ IOS_DISTRIBUTION_CERTIFICATE_BASE64 secret not found"
