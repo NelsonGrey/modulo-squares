@@ -91,12 +91,10 @@ unit_test_assets/
 firebase-debug.log
 firestore-debug.log
 
-# Node.js (for monorepo)
-**/node_modules/
-**/package-lock.json
-**/yarn.lock
-**/.npm/
-**/.yarn/
+# Ruby/Bundler related
+packages/mobile/.bundle/
+packages/mobile/vendor/
+packages/mobile/Gemfile.lock
 
 # Symbolication related
 app.*.symbols
@@ -132,3 +130,8 @@ actions-runner/actions-runner-*.tar.gz
 actions-runner/_work/
 actions-runner/_diag/
 actions-runner/.runner_migrated
+modulosquare.mobileprovision
+AppleDistribution.p12
+modulosquares.mobileprovision
+DistributionCert.p12
+ModuloSquaresDistribution.mobileprovision
