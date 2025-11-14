@@ -39,7 +39,8 @@ if [[ "$BUILD_TYPE" == "release" ]]; then
         cd ios
 
         # Ruby dependencies should already be installed by CI/CD workflow
-        # Skip bundle install here since it was done in the mobile directory
+        # Set BUNDLE_GEMFILE to point to the Gemfile in the parent mobile directory
+        export BUNDLE_GEMFILE="../Gemfile"
         echo "📦 Ruby gems already installed by CI/CD workflow"
 
         # Use Fastlane to build and upload to TestFlight (handles code signing automatically)
