@@ -81,10 +81,6 @@ deploy_component() {
                 cd ../..
             fi
             ;;
-        "extension")
-            log_info "Chrome extension package created: wishlist-wizard-extension.zip"
-            log_warning "Manual submission to Chrome Web Store required"
-            ;;
     esac
 }
 
@@ -108,21 +104,12 @@ build_all() {
         log_warning "Flutter not found. Skipping mobile app build."
     fi
     
-    # Create extension package
-    mkdir -p chrome-extension-package
-    cp -r packages/browser-extension/dist/* chrome-extension-package/
-    cp packages/browser-extension/manifest.json chrome-extension-package/
-    cp -r packages/browser-extension/public/icons chrome-extension-package/
-    cd chrome-extension-package
-    zip -r ../wishlist-wizard-extension.zip .
-    cd ..
-    
     log_success "All components built successfully"
 }
 
 # Show usage
 show_usage() {
-    echo "🚀 Wishlist Wizard Deployment Script"
+    echo "🚀 Modulo Squares Deployment Script"
     echo ""
     echo "Usage: $0 [OPTION]"
     echo ""
@@ -132,7 +119,6 @@ show_usage() {
     echo "  deploy-api      Deploy API server to Firebase Functions"
     echo "  deploy-mobile   Deploy mobile PWA to Firebase Hosting"
     echo "  deploy-all      Deploy all components"
-    echo "  package-ext     Create Chrome extension package"
     echo "  help            Show this help message"
     echo ""
     echo "Examples:"
@@ -163,12 +149,7 @@ case ${1:-help} in
         deploy_component "web" "firebase"
         deploy_component "api-server" "firebase"
         deploy_component "mobile" "firebase"
-        deploy_component "extension" "package"
         log_success "All components deployed!"
-        ;;
-    "package-ext")
-        build_all
-        deploy_component "extension" "package"
         ;;
     "help"|*)
         show_usage

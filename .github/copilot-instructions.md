@@ -1,4 +1,4 @@
-# Copilot instructions for modulo-flutter-project
+# Copilot instructions for modulo-squares
 
 Purpose: Help AI coding agents be productive in this Flutter + Firebase puzzle game by encoding the project’s architecture, workflows, and conventions.
 

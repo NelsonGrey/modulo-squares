@@ -13,7 +13,7 @@ NC='\033[0m'
 
 # Configuration
 GITHUB_TOKEN="${GITHUB_TOKEN:-$1}"
-REPO="${REPO:-mnelson3/wishlist-wizard}"
+REPO="${REPO:-mnelson3/modulo-squares}"
 MONTHS_BACK="${MONTHS_BACK:-1}"
 
 if [ -z "$GITHUB_TOKEN" ]; then

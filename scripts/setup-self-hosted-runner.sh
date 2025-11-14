@@ -12,7 +12,7 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 # Configuration
-REPO_URL="${REPO_URL:-https://github.com/mnelson3/wishlist-wizard}"
+REPO_URL="${REPO_URL:-https://github.com/mnelson3/modulo-squares}"
 RUNNER_VERSION="${RUNNER_VERSION:-2.311.0}"
 RUNNER_USER="${RUNNER_USER:-github-runner}"
 RUNNER_DIR="/home/${RUNNER_USER}/actions-runner"

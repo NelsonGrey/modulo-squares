@@ -83,13 +83,13 @@ gh auth login
 ```
 
 **Option B: Manual Setup**
-Go to: https://github.com/mnelson3/modulo-flutter-project/settings/branches
+Go to: https://github.com/mnelson3/modulo-squares/settings/branches
 Follow the rules in `BRANCH_PROTECTION.md`
 
 ### 3. Verify Setup
 ```bash
 # Check pipeline status
-# Visit: https://github.com/mnelson3/modulo-flutter-project/actions
+# Visit: https://github.com/mnelson3/modulo-squares/actions
 
 # Test deployments
 ./scripts/deploy.sh dev     # Manual deploy to DEV

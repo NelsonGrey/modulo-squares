@@ -149,7 +149,7 @@ test_firebase_cli() {
 
     # List available projects
     echo "Available Firebase projects:"
-    firebase projects:list --token="${FIREBASE_TOKEN:-}" 2>/dev/null | grep -E "(Project ID|wishlist-wizard)" || echo "No projects accessible"
+    firebase projects:list --token="${FIREBASE_TOKEN:-}" 2>/dev/null | grep -E "(Project ID|modulo-squares)" || echo "No projects accessible"
 }
 
 # Main execution

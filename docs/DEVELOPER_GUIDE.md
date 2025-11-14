@@ -163,7 +163,7 @@ This comprehensive guide provides technical information for developers working o
 ```bash
 # Clone repository
 git clone <repository-url>
-cd modulo-flutter-project
+cd modulo-squares
 
 # Navigate to app package
 cd packages/mobile

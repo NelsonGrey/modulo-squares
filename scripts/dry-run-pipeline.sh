@@ -87,15 +87,15 @@ simulate_deployment() {
 
     case $ENVIRONMENT in
         "production")
-            PROJECT_ID="wishlist-wizard-prod"
+            PROJECT_ID="modulo-squares-prod"
             CONFIG_FILE="firebase.prod.json"
             ;;
         "staging")
-            PROJECT_ID="wishlist-wizard-staging"
+            PROJECT_ID="modulo-squares-staging"
             CONFIG_FILE="firebase.staging.json"
             ;;
         *)
-            PROJECT_ID="wishlist-wizard-dev"
+            PROJECT_ID="modulo-squares-dev"
             CONFIG_FILE="firebase.dev.json"
             ;;
     esac
