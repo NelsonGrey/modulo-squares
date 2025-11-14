@@ -50,8 +50,11 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.0'
-          bundler-cache: true
-          working-directory: packages/mobile
+
+      - name: 📦 Install Ruby Dependencies
+        run: |
+          cd packages/mobile
+          bundle install
 
       - name: 🛠️ Setup Xcode
         run: |
