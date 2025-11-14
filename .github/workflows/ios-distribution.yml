@@ -143,11 +143,11 @@ jobs:
                 echo "✅ Provisioning profile contains correct bundle ID"
                 
                 # Extract the provisioning profile name/UUID for Fastlane
-                PROFILE_NAME=$(security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/$IOS_PROVISIONING_PROFILE.mobileprovision | grep -A 1 "Name" | tail -1 | sed 's/.*: //' | sed 's/<string>//' | sed 's/<\/string>//' | tr -d '\n')
-                PROFILE_UUID=$(security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/$IOS_PROVISIONING_PROFILE.mobileprovision | grep -A 1 "UUID" | tail -1 | sed 's/.*: //' | sed 's/<string>//' | sed 's/<\/string>//' | tr -d '\n')
+                PROFILE_NAME=$(security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/$IOS_PROVISIONING_PROFILE.mobileprovision | grep -A 1 "Name" | tail -1 | sed 's/.*: //' | sed 's/<string>//' | sed 's/<\/string>//' | xargs)
+                PROFILE_UUID=$(security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/$IOS_PROVISIONING_PROFILE.mobileprovision | grep -A 1 "UUID" | tail -1 | sed 's/.*: //' | sed 's/<string>//' | sed 's/<\/string>//' | xargs)
                 
-                echo "Profile Name: $PROFILE_NAME"
-                echo "Profile UUID: $PROFILE_UUID"
+                echo "Profile Name: '$PROFILE_NAME'"
+                echo "Profile UUID: '$PROFILE_UUID'"
                 echo "IOS_PROVISIONING_PROFILE_NAME=$PROFILE_NAME" >> $GITHUB_ENV
                 echo "IOS_PROVISIONING_PROFILE_UUID=$PROFILE_UUID" >> $GITHUB_ENV
               else
