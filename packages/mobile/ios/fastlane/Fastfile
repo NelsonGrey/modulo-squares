@@ -38,12 +38,12 @@ platform :ios do
       codesigning_identity: ENV["CERT_NAME"] || "Apple Distribution",
       export_options: {
         provisioningProfiles: {
-          "com.nelsongrey.modulosquares.app.ios" => ENV["IOS_PROVISIONING_PROFILE"]
+          "com.nelsongrey.modulosquares.app.ios" => ENV["IOS_PROVISIONING_PROFILE_UUID"] || ENV["IOS_PROVISIONING_PROFILE"]
         }
       },
       output_directory: "./fastlane/builds",
       output_name: "ModuloSquares-beta",
-      xcargs: "CODE_SIGN_STYLE=Manual PROVISIONING_PROFILE=#{ENV['IOS_PROVISIONING_PROFILE']}"
+      xcargs: "CODE_SIGN_STYLE=Manual PROVISIONING_PROFILE=#{ENV['IOS_PROVISIONING_PROFILE_UUID'] || ENV['IOS_PROVISIONING_PROFILE']}"
     )
 
     # Upload to TestFlight
@@ -77,12 +77,12 @@ platform :ios do
       codesigning_identity: ENV["CERT_NAME"] || "Apple Distribution",
       export_options: {
         provisioningProfiles: {
-          "com.nelsongrey.modulosquares.app.ios" => ENV["IOS_PROVISIONING_PROFILE"]
+          "com.nelsongrey.modulosquares.app.ios" => ENV["IOS_PROVISIONING_PROFILE_UUID"] || ENV["IOS_PROVISIONING_PROFILE"]
         }
       },
       output_directory: "./fastlane/builds",
       output_name: "ModuloSquares-release",
-      xcargs: "CODE_SIGN_STYLE=Manual PROVISIONING_PROFILE=#{ENV['IOS_PROVISIONING_PROFILE']}"
+      xcargs: "CODE_SIGN_STYLE=Manual PROVISIONING_PROFILE=#{ENV['IOS_PROVISIONING_PROFILE_UUID'] || ENV['IOS_PROVISIONING_PROFILE']}"
     )
 
     # Upload to App Store

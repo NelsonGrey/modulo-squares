@@ -141,6 +141,15 @@ jobs:
               # Check if the bundle ID is in the profile
               if security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/$IOS_PROVISIONING_PROFILE.mobileprovision | grep -q "com.nelsongrey.modulosquares.app.ios"; then
                 echo "✅ Provisioning profile contains correct bundle ID"
+                
+                # Extract the provisioning profile name/UUID for Fastlane
+                PROFILE_NAME=$(security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/$IOS_PROVISIONING_PROFILE.mobileprovision | grep -A 1 "Name" | tail -1 | sed 's/.*: //' | tr -d '\n')
+                PROFILE_UUID=$(security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/$IOS_PROVISIONING_PROFILE.mobileprovision | grep -A 1 "UUID" | tail -1 | sed 's/.*: //' | tr -d '\n')
+                
+                echo "Profile Name: $PROFILE_NAME"
+                echo "Profile UUID: $PROFILE_UUID"
+                echo "IOS_PROVISIONING_PROFILE_NAME=$PROFILE_NAME" >> $GITHUB_ENV
+                echo "IOS_PROVISIONING_PROFILE_UUID=$PROFILE_UUID" >> $GITHUB_ENV
               else
                 echo "❌ Provisioning profile does not contain the correct bundle ID"
                 security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/$IOS_PROVISIONING_PROFILE.mobileprovision | grep -A 10 "Entitlements" || true
@@ -237,7 +246,7 @@ jobs:
           APP_STORE_CONNECT_PRIVATE_EMAIL: ${{ secrets.APP_STORE_CONNECT_PRIVATE_EMAIL }}
           APP_STORE_CONNECT_TEAM_ID: ${{ secrets.APP_STORE_CONNECT_TEAM_ID }}
           APP_STORE_CONNECT_TEAM_NAME: ${{ secrets.APP_STORE_CONNECT_TEAM_NAME }}
-          IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
+          IOS_PROVISIONING_PROFILE: ${{ env.IOS_PROVISIONING_PROFILE_NAME }}
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
           FASTLANE_PASSWORD: ${{ secrets.FASTLANE_PASSWORD }}
         run: |
