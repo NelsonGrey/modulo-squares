@@ -43,7 +43,7 @@ platform :ios do
       },
       output_directory: "./fastlane/builds",
       output_name: "ModuloSquares-beta",
-      xcargs: "CODE_SIGN_STYLE=Manual"
+      xcargs: "CODE_SIGN_STYLE=Manual PROVISIONING_PROFILE=#{ENV['IOS_PROVISIONING_PROFILE_UUID']}"
     )
 
     # Upload to TestFlight
@@ -82,7 +82,7 @@ platform :ios do
       },
       output_directory: "./fastlane/builds",
       output_name: "ModuloSquares-release",
-      xcargs: "CODE_SIGN_STYLE=Manual"
+      xcargs: "CODE_SIGN_STYLE=Manual PROVISIONING_PROFILE=#{ENV['IOS_PROVISIONING_PROFILE_UUID']}"
     )
 
     # Upload to App Store
