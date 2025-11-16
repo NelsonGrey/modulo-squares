@@ -135,3 +135,12 @@ AppleDistribution.p12
 modulosquares.mobileprovision
 DistributionCert.p12
 ModuloSquaresDistribution.mobileprovision
+
+# Automation configuration (contains secrets)
+.env.automation
+automation.log
+health-status.json
+monitoring.pid
+
+# But allow the example template
+!.env.automation.example
