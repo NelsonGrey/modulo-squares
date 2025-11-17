@@ -14,6 +14,7 @@ on:
       - 'pubspec.yaml'
       - 'package.json'
       - 'firebase*.json'
+      - 'docs/**'
   workflow_dispatch:
     inputs:
       environment:
@@ -26,7 +27,6 @@ on:
         - staging
         - production
       dry_run:
-        description: 'Run in dry-run mode (skip actual deployments)'
         required: false
         default: true
         type: boolean
@@ -36,6 +36,7 @@ on:
       - 'packages/**'
       - '.github/workflows/**'
       - 'firebase*.json'
+      - 'docs/**'
       - 'pubspec.yaml'
       - 'package.json'
 
