@@ -1,8 +1,8 @@
 #!/bin/bash
 
-SVC_NAME="actions.runner.mnelson3-modulo-squares.macos-runner-KRONOS-1762796671"
+SVC_NAME="actions.runner.mnelson3-modulo-squares.modulo-squares-macos-runner-KRONOS.local"
 SVC_NAME=${SVC_NAME// /_}
-SVC_DESCRIPTION="GitHub Actions Runner (mnelson3-modulo-squares.macos-runner-KRONOS-1762796671)"
+SVC_DESCRIPTION="GitHub Actions Runner (mnelson3-modulo-squares.modulo-squares-macos-runner-KRONOS.local)"
 
 user_id=`id -u`
 
