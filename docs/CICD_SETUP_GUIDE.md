@@ -1,162 +1,253 @@
-# CI/CD Setup for Modulo Squares
+# CI/CD Setup for Multiple Repositories
 
-This document describes the current CI/CD infrastructure setup for the Modulo Squares Flutter project.
+This repository contains a complete self-hosted CI/CD infrastructure that can be applied to other repositories for cost-effective continuous integration and deployment.
 
-## 🎯 Current Setup
+## 🎯 Overview
 
-The project includes a complete self-hosted CI/CD infrastructure with:
-
-- **Self-hosted GitHub Actions runners** (macOS for iOS builds)
-- **Automated workflows** for CI/CD, testing, and app distribution
+The setup includes:
+- **Self-hosted GitHub Actions runners** (macOS + Linux Docker)
+- **Automated workflows** for CI/CD, testing, and deployment
 - **Cost monitoring** and infrastructure management
-- **Documentation** and maintenance guides
+- **Documentation** and setup guides
 
 **Cost Savings**: ~90% reduction compared to GitHub-hosted runners
 
-## 🚀 Current Infrastructure
+## 🚀 Quick Apply to Other Repositories
 
-### Workflows (`.github/workflows/`)
-- `ci-cd-pipeline.yml` - Main CI/CD pipeline (currently disabled)
-- `ios-distribution.yml` - iOS app distribution to Firebase App Distribution
-- `android-distribution.yml` - Android app distribution to Firebase App Distribution
-- `web-deployment.yml` - Web app deployment to Firebase Hosting
+### Option 1: Automated Script (Recommended)
 
-### Scripts (`scripts/`)
-- `manage-macos-runner.sh` - macOS runner lifecycle management
-- `setup-macos-runner.sh` - macOS runner initial setup
-- `monitor-github-actions-costs.sh` - Cost analysis and monitoring
-- `switch-mobile-configs.sh` - Environment configuration switching
-
-### Runner Configuration
-- **macOS Runner**: Self-hosted on macOS with Flutter, Xcode, and iOS Simulator
-- **Labels**: `self-hosted`, `macos-latest`, `arm64`
-- **Auto-restart**: Configured as launchd service
-
-## 🛠️ Maintenance & Operation
-
-### Checking Runner Status
 ```bash
-# View runner status
-./scripts/manage-macos-runner.sh status
+# Clone this repository
+git clone https://github.com/mnelson3/wishlist-wizard.git
+cd wishlist-wizard
 
-# View runner logs
-./scripts/manage-macos-runner.sh logs
+# Run the setup script for your target repository
+./apply-cicd-setup.sh https://github.com/mnelson3/modulo-squares
+./apply-cicd-setup.sh https://github.com/mnelson3/vehicle-vitals
 ```
 
-### Monitoring Costs
+The script will:
+- Clone the target repository
+- Copy all CI/CD files with repository-specific customizations
+- Create setup documentation
+- Stage and commit the changes
+
+### Option 2: Manual Copy
+
+If you prefer manual control:
+
 ```bash
-# Analyze GitHub Actions costs
+# 1. Copy workflow files
+cp .github/workflows/*.yml /path/to/target/repo/.github/workflows/
+
+# 2. Copy scripts
+cp -r scripts /path/to/target/repo/
+
+# 3. Copy Docker configuration
+cp docker-compose.runner.yml /path/to/target/repo/
+
+# 4. Copy documentation
+cp docs/SELF_HOSTED_RUNNERS.md /path/to/target/repo/docs/
+cp docs/COST_EFFECTIVE_CICD.md /path/to/target/repo/docs/
+
+# 5. Update repository references
+find /path/to/target/repo -name "*.yml" -o -name "*.sh" | xargs sed -i '' "s/wishlist-wizard/your-repo-name/g"
+```
+
+## 📋 What's Included
+
+### Workflows (`.github/workflows/`)
+- `ci-cd-pipeline.yml` - Main CI/CD pipeline with build, test, deploy
+- `ios-distribution.yml` - iOS app distribution to TestFlight/App Store
+- `android-distribution.yml` - Android app distribution to Play Store
+- `test-ci-cd.yml` - Comprehensive testing and validation
+- `chrome-extension-submit.yml` - Chrome extension publishing
+- `test-secrets.yml` - Secret validation testing
+
+### Scripts (`scripts/`)
+- `setup-macos-runner.sh` - macOS runner installation
+- `manage-macos-runner.sh` - macOS runner lifecycle management
+- `setup-linux-runner.sh` - Linux Docker runner setup
+- `infrastructure-status.sh` - Comprehensive status dashboard
+- `monitor-github-actions-costs.sh` - Cost analysis and monitoring
+
+### Docker Configuration
+- `docker-compose.runner.yml` - Linux runner container setup
+- `.env.runner.template` - Environment configuration template
+
+### Documentation (`docs/`)
+- `SELF_HOSTED_RUNNERS.md` - Complete setup guide
+- `COST_EFFECTIVE_CICD.md` - Cost analysis and benefits
+- `SELF_HOSTED_RUNNER_SETUP.md` - Detailed setup instructions
+
+## 🛠️ Repository-Specific Customization
+
+After applying the setup, customize for your repository:
+
+### 1. Update Workflow Configuration
+
+Edit `.github/workflows/ci-cd-pipeline.yml`:
+```yaml
+env:
+  NODE_VERSION: '18'  # Adjust for your tech stack
+  # Add your environment variables
+```
+
+### 2. Modify Build Commands
+
+Update build steps to match your tech stack:
+```yaml
+- name: 🏗️ Build Your App
+  run: |
+    # Replace with your build commands
+    npm run build
+    # or
+    ./gradlew build
+    # or
+    flutter build apk
+```
+
+### 3. Configure Deployment
+
+Update deployment targets in workflow files:
+```yaml
+- name: 🔥 Deploy to Firebase
+  uses: FirebaseExtended/action-hosting-deploy@v0
+  with:
+    projectId: your-firebase-project
+```
+
+### 4. Update Runner Labels
+
+Ensure workflow labels match your runner configuration:
+```yaml
+runs-on: [self-hosted, macos-latest, your-repo-name]
+```
+
+## 🏗️ Infrastructure Setup
+
+### Linux Docker Runner (Automated)
+
+```bash
+# 1. Copy environment template
+cp .env.runner.template .env.runner
+
+# 2. Add your GitHub token
+nano .env.runner
+# ACCESS_TOKEN=your_github_personal_access_token
+
+# 3. Start the runner
+docker-compose -f docker-compose.runner.yml up -d
+
+# 4. Check status
+docker-compose -f docker-compose.runner.yml logs
+```
+
+### macOS Runner (Manual Setup)
+
+**CRITICAL**: Install macOS runner OUTSIDE project directory to avoid ES module conflicts.
+
+```bash
+# 1. Create isolated runner directory (outside project)
+mkdir ~/actions-runner-wishlist-wizard
+cd ~/actions-runner-wishlist-wizard
+
+# 2. Download and extract GitHub runner
+# (Download from: https://github.com/actions/runner/releases)
+
+# 3. Configure with GitHub token
+./config.sh --url https://github.com/mnelson3/wishlist-wizard \
+            --token YOUR_TOKEN \
+            --labels "self-hosted,macos-latest,wishlist-wizard" \
+            --name "wishlist-wizard-macos-runner"
+
+# 4. Install as service (auto-restart on reboot)
+./svc.sh install
+./svc.sh start
+```
+
+**Why Outside Project?**
+Projects with `"type": "module"` in `package.json` cause runner failures:
+`ReferenceError: require is not defined in ES module scope`
+
+### Monitoring Dashboard
+
+```bash
+# View comprehensive status
+./scripts/infrastructure-status.sh
+
+# Monitor costs
 ./scripts/monitor-github-actions-costs.sh
 ```
 
-### Managing the Runner
-```bash
-# Stop the runner
-./scripts/manage-macos-runner.sh stop
+## 💰 Cost Analysis
 
-# Start the runner
-./scripts/manage-macos-runner.sh start
+| Runner Type | GitHub-Hosted Cost | Self-Hosted Cost | Savings |
+|-------------|-------------------|------------------|---------|
+| macOS (per minute) | $0.08 | ~$0.001 | 98% |
+| Linux (per minute) | $0.008 | ~$0.0003 | 96% |
+| **Monthly (1000 min)** | **$64** | **$2.50** | **96%** |
 
-# Restart the runner
-./scripts/manage-macos-runner.sh stop && ./scripts/manage-macos-runner.sh start
-
-# Update runner software
-./scripts/manage-macos-runner.sh update
-```
-
-## 📋 Workflow Configuration
-
-### iOS Distribution
-- **Trigger**: Push to `main`, `develop`, `staging` branches
-- **Environment**: Matches branch (`DEVELOPMENT`, `STAGING`, `PRODUCTION`)
-- **Build**: Debug build for simulator, distributed to Firebase App Distribution
-- **Requirements**: iOS Simulator, Flutter, Xcode 26.1+
-
-### Android Distribution
-- **Trigger**: Push to `main`, `develop`, `staging` branches
-- **Environment**: Matches branch (`DEVELOPMENT`, `STAGING`, `PRODUCTION`)
-- **Build**: Debug APK distributed to Firebase App Distribution
-- **Requirements**: Android SDK, Flutter
-
-### Web Deployment
-- **Trigger**: Push to `main` branch
-- **Build**: Flutter web build deployed to Firebase Hosting
-- **Requirements**: Flutter, Firebase CLI
+**Annual Savings**: ~$700+ per repository
 
 ## 🔧 Troubleshooting
 
-### Runner Issues
-```bash
-# Check if runner service is running
-./scripts/manage-macos-runner.sh status
+### Runner Not Connecting
+- Verify GitHub token has `repo` scope
+- Check runner labels match workflow requirements
+- Ensure firewall allows outbound connections
 
-# View detailed logs
-./scripts/manage-macos-runner.sh logs
-
-# Restart if needed
-./scripts/manage-macos-runner.sh stop
-./scripts/manage-macos-runner.sh start
-```
+### ES Module Conflicts (macOS Runner)
+- **Error**: `ReferenceError: require is not defined in ES module scope`
+- **Cause**: macOS runner installed inside project with `"type": "module"` in `package.json`
+- **Solution**: Move runner to isolated directory outside project
+  ```bash
+  mv ~/Projects/my-project/actions-runner ~/actions-runner-my-project
+  ```
 
 ### Workflow Failures
-- **iOS Build Issues**: Ensure Xcode 26.1+ and iOS Simulator are available
-- **Android Build Issues**: Check Android SDK installation
-- **Permission Issues**: Verify runner has access to required directories
-- **Network Issues**: Check firewall and GitHub connectivity
+- Check runner status: `./scripts/infrastructure-status.sh`
+- View runner logs: `./scripts/manage-macos-runner.sh logs`
+- Verify required tools are installed on runners
 
-### Common Solutions
-1. **Runner not responding**: Restart the runner service
-2. **iOS simulator issues**: Boot simulator manually or restart Xcode
-3. **Permission denied**: Check file permissions on Flutter/Android SDK paths
-4. **Build cache issues**: Clean Flutter build cache (`flutter clean`)
+### Permission Issues
+- macOS runner needs admin access for Xcode
+- Linux runner needs Docker socket access
+- Ensure proper file permissions on runner directories
 
-## � Cost Monitoring
+## 📊 Monitoring & Maintenance
 
-### Current Costs (Estimated)
-- **Self-hosted macOS**: ~$5-10/month (hardware + electricity)
-- **GitHub Actions**: Minimal (only for coordination)
-- **Total Savings**: ~90% vs GitHub-hosted runners
-
-### Monitoring Commands
+### Regular Tasks
 ```bash
-# View cost analysis
+# Weekly: Check runner health
+./scripts/infrastructure-status.sh
+
+# Monthly: Review costs
 ./scripts/monitor-github-actions-costs.sh
 
-# Check runner utilization
-./scripts/manage-macos-runner.sh status
-```
-
-## 🔄 Updates & Maintenance
-
-### Regular Maintenance
-- **Weekly**: Check runner status and logs
-- **Monthly**: Review cost reports and utilization
-- **Quarterly**: Update runner software and dependencies
-
-### Updating Runner Software
-```bash
-# Update GitHub Actions runner
+# Quarterly: Update runner software
 ./scripts/manage-macos-runner.sh update
-
-# Update Flutter and dependencies
-flutter upgrade
 ```
 
-## 📚 Related Documentation
-
-- `docs/COST_EFFECTIVE_CICD.md` - Cost analysis and benefits
-- `docs/SELF_HOSTED_RUNNERS.md` - Runner setup details
-- `docs/SELF_HOSTED_RUNNER_SETUP.md` - Detailed setup instructions
-- `README.md` - Project overview and quick start
+### Auto-Restart Configuration
+- **macOS**: Installed as launchd service (restarts on reboot)
+- **Linux**: Docker container with `restart: unless-stopped`
 
 ## 🎯 Best Practices
 
-1. **Monitor runner health** regularly
-2. **Keep dependencies updated** (Flutter, Xcode, Android SDK)
-3. **Review costs monthly** to track savings
-4. **Test workflows** after major changes
-5. **Document issues** and solutions for future reference
+1. **Use repository-specific labels** for runner targeting
+2. **Keep runners updated** with latest GitHub runner versions
+3. **Monitor costs regularly** to track savings
+4. **Document customizations** for team members
+5. **Test workflows thoroughly** before going to production
+6. **CRITICAL: Isolate macOS runners** outside project directories to prevent ES module conflicts
+
+## 📞 Support
+
+- Check logs: `./scripts/manage-macos-runner.sh logs`
+- View status: `./scripts/infrastructure-status.sh`
+- Documentation: `docs/SELF_HOSTED_RUNNERS.md`
 
 ---
 
-**CI/CD infrastructure active and saving ~90% on build costs!** ✅
+**Ready to save 90% on CI/CD costs?** Apply this setup to your repositories today! 🚀
