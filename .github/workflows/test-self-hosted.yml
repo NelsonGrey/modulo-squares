@@ -1,22 +1,21 @@
-name: Test Hosted Runner
+name: Test Self-Hosted Runner
 
 on:
   workflow_dispatch:
 
 jobs:
   test-runner:
-    runs-on: macos-latest
+    runs-on: self-hosted
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
       
       - name: Test basic commands
         run: |
-          echo "Testing hosted runner on modulo-squares..."
+          echo "Testing self-hosted runner on modulo-squares..."
           uname -a
-          echo "Runner type: GitHub-hosted"
-          echo "OS: $(uname -s)"
-          echo "Architecture: $(uname -m)"
+          sw_vers
+          echo "Runner labels: self-hosted, macOS, ARM64, modulo-squares"
           
       - name: Test Flutter/Dart (if available)
         run: |
