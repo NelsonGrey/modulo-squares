@@ -1,4 +1,4 @@
-name: Test Self-Hosted Runner
+name: Test Hosted Runner
 
 on:
   workflow_dispatch:
