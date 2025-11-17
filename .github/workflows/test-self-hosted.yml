@@ -1,0 +1,25 @@
+name: Test Self-Hosted Runner
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-runner:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Test basic commands
+        run: |
+          echo "Testing hosted runner on modulo-squares..."
+          uname -a
+          echo "Runner type: GitHub-hosted"
+          echo "OS: $(uname -s)"
+          echo "Architecture: $(uname -m)"
+          
+      - name: Test Flutter/Dart (if available)
+        run: |
+          which flutter || echo "Flutter not found"
+          which dart || echo "Dart not found"
+          flutter --version || echo "Flutter version check failed"
