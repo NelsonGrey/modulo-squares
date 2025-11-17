@@ -1,6 +1,6 @@
 # macOS Self-Hosted Runner Setup Guide
 
-This guide covers setting up macOS self-hosted runners for the Wishlist Wizard project to enable cost-effective iOS builds.
+This guide covers setting up macOS self-hosted runners for the Modulo Squares project to enable cost-effective iOS builds.
 
 ## 🎯 Overview
 
@@ -47,8 +47,8 @@ ReferenceError: require is not defined in ES module scope
 
 ```bash
 # Clone the repository (if not already done)
-git clone https://github.com/mnelson3/wishlist-wizard.git
-cd wishlist-wizard
+git clone https://github.com/mnelson3/modulo-squares.git
+cd modulo-squares
 
 # Run the macOS runner setup script
 ./scripts/setup-macos-runner.sh
@@ -60,16 +60,16 @@ cd wishlist-wizard
 
 ```bash
 # Get a runner token from GitHub
-# Visit: https://github.com/mnelson3/wishlist-wizard/settings/actions/runners
+# Visit: https://github.com/mnelson3/modulo-squares/settings/actions/runners
 # Click "New self-hosted runner" and copy the token
 
 # Configure the runner (in isolated directory)
-cd ~/actions-runner-wishlist-wizard/  # Outside project directory
+cd ~/actions-runner-modulo-squares/  # Outside project directory
 ./config.sh \
-  --url https://github.com/mnelson3/wishlist-wizard \
+  --url https://github.com/mnelson3/modulo-squares \
   --token AIQEPB7NN7HGN5V4KR7OZLTJBZYMW \
-  --labels "self-hosted,macos-latest,macos-arm64,wishlist-wizard" \
-  --name "wishlist-wizard-macos-runner-$(hostname)"
+  --labels "self-hosted,macos-latest,macos-arm64,modulo-squares" \
+  --name "modulo-squares-macos-runner-$(hostname)"
 ```
 
 ### 3. Start the Runner
@@ -117,8 +117,8 @@ Set these in your shell profile (`~/.zshrc`):
 ```bash
 # Custom runner configuration
 export RUNNER_USER="marknelson"           # Your username
-export RUNNER_DIR="~/actions-runner-wishlist-wizard"  # Outside project directory
-export REPO_URL="https://github.com/mnelson3/wishlist-wizard"  # Repository URL
+export RUNNER_DIR="~/actions-runner-modulo-squares"  # Outside project directory
+export REPO_URL="https://github.com/mnelson3/modulo-squares"  # Repository URL
 ```
 
 ### Runner Labels
@@ -127,7 +127,7 @@ The runner is configured with these labels:
 - `self-hosted` - Identifies as self-hosted
 - `macos-latest` - macOS environment
 - `macos-x64` or `macos-arm64` - Architecture specific
-- `wishlist-wizard` - Project specific
+- `modulo-squares` - Project specific
 
 ### Security Considerations
 
@@ -145,7 +145,7 @@ The runner is configured with these labels:
 ./scripts/manage-macos-runner.sh status
 
 # View recent logs
-tail -f ~/actions-runner-wishlist-wizard/runner.log
+tail -f ~/actions-runner-modulo-squares/runner.log
 
 # Check system resources
 top -l 1 | head -10
@@ -154,7 +154,7 @@ top -l 1 | head -10
 ### GitHub Repository
 
 Monitor runner status in:
-`https://github.com/mnelson3/wishlist-wizard/settings/actions/runners`
+`https://github.com/mnelson3/modulo-squares/settings/actions/runners`
 
 ## 🐛 Troubleshooting
 
@@ -163,7 +163,7 @@ Monitor runner status in:
 1. **Runner won't start**
    ```bash
    # Check logs
-   cat ~/actions-runner-wishlist-wizard/runner.log
+   cat ~/actions-runner-modulo-squares/runner.log
 
    # Reconfigure
    ./scripts/manage-macos-runner.sh unconfigure
@@ -189,7 +189,7 @@ Monitor runner status in:
 4. **Permission issues**
    ```bash
    # Fix permissions
-   sudo chown -R $USER:admin ~/actions-runner-wishlist-wizard
+   sudo chown -R $USER:admin ~/actions-runner-modulo-squares
    ```
 
 5. **ES Module Conflicts** (Most Common Issue)
@@ -204,7 +204,7 @@ Monitor runner status in:
 
 ```bash
 # Runner diagnostic logs
-ls -la ~/actions-runner-wishlist-wizard/_diag/
+ls -la ~/actions-runner-modulo-squares/_diag/
 
 # System logs
 log show --predicate 'process == "Runner.Listener"' --last 1h

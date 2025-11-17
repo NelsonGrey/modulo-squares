@@ -18,12 +18,12 @@ The setup includes:
 
 ```bash
 # Clone this repository
-git clone https://github.com/mnelson3/wishlist-wizard.git
-cd wishlist-wizard
+git clone https://github.com/mnelson3/modulo-squares.git
+cd modulo-squares
 
 # Run the setup script for your target repository
 ./apply-cicd-setup.sh https://github.com/mnelson3/modulo-squares
-./apply-cicd-setup.sh https://github.com/mnelson3/vehicle-vitals
+./apply-cicd-setup.sh https://github.com/your-org/your-repo
 ```
 
 The script will:
@@ -51,7 +51,7 @@ cp docs/SELF_HOSTED_RUNNERS.md /path/to/target/repo/docs/
 cp docs/COST_EFFECTIVE_CICD.md /path/to/target/repo/docs/
 
 # 5. Update repository references
-find /path/to/target/repo -name "*.yml" -o -name "*.sh" | xargs sed -i '' "s/wishlist-wizard/your-repo-name/g"
+find /path/to/target/repo -name "*.yml" -o -name "*.sh" | xargs sed -i '' "s/modulo-squares/your-repo-name/g"
 ```
 
 ## 📋 What's Included
@@ -149,17 +149,17 @@ docker-compose -f docker-compose.runner.yml logs
 
 ```bash
 # 1. Create isolated runner directory (outside project)
-mkdir ~/actions-runner-wishlist-wizard
-cd ~/actions-runner-wishlist-wizard
+mkdir ~/actions-runner-modulo-squares
+cd ~/actions-runner-modulo-squares
 
 # 2. Download and extract GitHub runner
 # (Download from: https://github.com/actions/runner/releases)
 
 # 3. Configure with GitHub token
-./config.sh --url https://github.com/mnelson3/wishlist-wizard \
+./config.sh --url https://github.com/mnelson3/modulo-squares \
             --token ***REMOVED*** \
-            --labels "self-hosted,macos-latest,wishlist-wizard" \
-            --name "wishlist-wizard-macos-runner"
+            --labels "self-hosted,macos-latest,modulo-squares" \
+            --name "modulo-squares-macos-runner"
 
 # 4. Install as service (auto-restart on reboot)
 ./svc.sh install

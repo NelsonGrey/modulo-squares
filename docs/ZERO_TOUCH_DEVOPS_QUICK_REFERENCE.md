@@ -146,7 +146,7 @@ log_error() { echo "$(date '+%Y-%m-%d %H:%M:%S') [ERROR] $1" | tee -a "$LOG_FILE
 - Handle unauthenticated state gracefully
 
 ### 3. **Hardcoded Project Names**
-- Replace all `wishlist-wizard` references with variables
+- Replace all `modulo-squares` references with variables
 - Use `PROJECT_NAME` environment variable
 
 ### 4. **Missing Error Handling**
@@ -223,7 +223,7 @@ cp automate.sh.template /path/to/new/project/automate.sh
 cp .env.automation.example /path/to/new/project/.env.automation
 
 # 2. Customize project names
-sed -i 's/wishlist-wizard/your-project-name/g' automate.sh
+sed -i 's/modulo-squares/your-project-name/g' automate.sh
 
 # 3. Test compatibility
 bash --version  # Must be 3.2+ for macOS
@@ -252,5 +252,4 @@ bash --version  # Must be 3.2+ for macOS
 
 ---
 
-**Remember**: This solution was built specifically to work across different projects. Focus on Bash 3.2 compatibility and the master controller pattern. The full implementation guide contains all detailed code templates.</content>
-<parameter name="filePath">/Users/marknelson/Circus/Repositories/wishlist-wizard/ZERO_TOUCH_DEVOPS_QUICK_REFERENCE.md
+**Remember**: This solution was built specifically to work across different projects. Focus on Bash 3.2 compatibility and the master controller pattern. The full implementation guide contains all detailed code templates.

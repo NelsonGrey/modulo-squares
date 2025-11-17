@@ -133,7 +133,7 @@ Create a `.env.automation` file in the project root:
 
 ```bash
 # Notification Settings
-ALERT_EMAIL=admin@wishlist-wizard.com
+ALERT_EMAIL=admin@modulo-squares.com
 SLACK_WEBHOOK=https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK
 
 # Docker Configuration
@@ -317,7 +317,7 @@ tail -f monitoring.log
 ./automate.sh environment status production
 
 # Verify secrets
-gh secret list --repo mnelson3/wishlist-wizard
+gh secret list --repo mnelson3/modulo-squares
 ```
 
 #### Token Issues
@@ -364,13 +364,13 @@ Set up cron jobs for regular maintenance:
 
 ```bash
 # Daily token rotation
-0 2 * * * /path/to/wishlist-wizard/automate.sh tokens rotate
+0 2 * * * /path/to/modulo-squares/automate.sh tokens rotate
 
 # Weekly full backup
-0 3 * * 0 /path/to/wishlist-wizard/automate.sh backup create
+0 3 * * 0 /path/to/modulo-squares/automate.sh backup create
 
 # Health monitoring
-*/5 * * * * /path/to/wishlist-wizard/automate.sh monitor once
+*/5 * * * * /path/to/modulo-squares/automate.sh monitor once
 ```
 
 ### API Integration
@@ -405,7 +405,7 @@ curl -X POST http://localhost:8080/api/deploy \
 
 ## 📄 License
 
-This automation suite is part of the Wishlist Wizard project.
+This automation suite is part of the Modulo Squares project.
 
 ---
 
@@ -415,8 +415,8 @@ Ready to eliminate manual DevOps tasks? Here's your quick start:
 
 ```bash
 # 1. Clone and setup
-git clone https://github.com/mnelson3/wishlist-wizard.git
-cd wishlist-wizard
+git clone https://github.com/mnelson3/modulo-squares.git
+cd modulo-squares
 
 # 2. Configure your environment
 cp .env.automation.example .env.automation
@@ -432,8 +432,8 @@ cp .env.automation.example .env.automation
 git push origin main
 ```
 
-**That's it!** Your Wishlist Wizard now deploys automatically across all platforms with zero manual intervention. 🎯
+**That's it!** Your Modulo Squares now deploys automatically across all platforms with zero manual intervention. 🎯
 
 ---
 
-*Built with ❤️ for the Wishlist Wizard team - Zero-touch DevOps achieved!* 🚀
+*Built with ❤️ for the Modulo Squares team - Zero-touch DevOps achieved!* 🚀

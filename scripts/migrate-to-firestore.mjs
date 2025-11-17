@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Data Migration Script for Wishlist Wizard
+ * Data Migration Script Template
  * Migrates data from PostgreSQL/Drizzle to Firebase Firestore
  * 
  * Usage:
@@ -17,10 +17,11 @@
 import { initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { db } from '../packages/api-server/server/db.js';
-import { 
-  users, wishlists, wishlistItems, wishlistCollaborators, 
-  beneficiaries, notifications, priceAlerts 
-} from '@wishlist-wizard/shared';
+// TODO: Import schemas from local shared package once defined
+// import { 
+//   users, wishlists, wishlistItems, wishlistCollaborators, 
+//   beneficiaries, notifications, priceAlerts 
+// } from '../packages/shared';
 import { eq } from 'drizzle-orm';
 import * as dotenv from 'dotenv';
 import { promises as fs } from 'fs';
@@ -35,7 +36,7 @@ const isDryRun = args.includes('--dry-run');
 const batchSizeArg = args.find(arg => arg.startsWith('--batch-size='));
 const batchSize = batchSizeArg ? parseInt(batchSizeArg.split('=')[1]) : 100;
 
-console.log(`🔥 Wishlist Wizard Data Migration`);
+console.log(`🔥 Modulo Squares Data Migration`);
 console.log(`Mode: ${isDryRun ? 'DRY RUN' : 'PRODUCTION'}`);
 console.log(`Batch Size: ${batchSize}`);
 console.log('');

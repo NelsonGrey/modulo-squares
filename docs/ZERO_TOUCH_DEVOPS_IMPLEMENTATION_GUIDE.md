@@ -257,9 +257,9 @@ log_header() { echo -e "${PURPLE}🌍 $1${NC}"; echo -e "${PURPLE}$(printf '%.0s
 
 # CRITICAL: Bash 3.2 compatibility - NO associative arrays
 # Use variable naming convention: CONFIGS_<environment>_<key>
-ENV_CONFIGS_development="wishlist-wizard-dev"
-ENV_CONFIGS_staging="wishlist-wizard-staging"
-ENV_CONFIGS_production="wishlist-wizard-prod"
+ENV_CONFIGS_development="modulo-squares-dev"
+ENV_CONFIGS_staging="modulo-squares-staging"
+ENV_CONFIGS_production="modulo-squares-prod"
 
 # Validate environment
 validate_environment() {
@@ -338,9 +338,9 @@ log_header() { echo -e "${PURPLE}🚀 $1${NC}"; echo -e "${PURPLE}$(printf '%.0s
 
 # CRITICAL: Bash 3.2 compatibility - NO associative arrays
 # Use variable naming: ENDPOINTS_<environment>
-ENDPOINTS_production="https://api.wishlist-wizard-prod.web.app"
-ENDPOINTS_staging="https://api.wishlist-wizard-staging.web.app"
-ENDPOINTS_development="http://localhost:5001/wishlist-wizard-dev/us-central1/api"
+ENDPOINTS_production="https://api.modulo-squares-prod.web.app"
+ENDPOINTS_staging="https://api.modulo-squares-staging.web.app"
+ENDPOINTS_development="http://localhost:5001/modulo-squares-dev/us-central1/api"
 
 # Send alerts
 send_alert() {
@@ -443,7 +443,7 @@ DOCKER_PASSWORD=your-password
 # ==========================================
 
 # GitHub repository
-GITHUB_REPO=mnelson3/wishlist-wizard
+GITHUB_REPO=mnelson3/modulo-squares
 GITHUB_TOKEN=your-github-token
 
 # ==========================================
@@ -458,14 +458,14 @@ FIREBASE_SERVICE_ACCOUNT_KEY={"type":"service_account","project_id":"..."}
 # ==========================================
 
 # Web app domains
-WEB_DEV_DOMAIN=https://wishlist-wizard-dev.web.app
-WEB_STAGING_DOMAIN=https://wishlist-wizard-staging.web.app
-WEB_PROD_DOMAIN=https://wishlist-wizard-prod.web.app
+WEB_DEV_DOMAIN=https://modulo-squares-dev.web.app
+WEB_STAGING_DOMAIN=https://modulo-squares-staging.web.app
+WEB_PROD_DOMAIN=https://modulo-squares-prod.web.app
 
 # API endpoints
-API_DEV_ENDPOINT=https://us-central1-wishlist-wizard-dev.cloudfunctions.net/api
-API_STAGING_ENDPOINT=https://us-central1-wishlist-wizard-staging.cloudfunctions.net/api
-API_PROD_ENDPOINT=https://us-central1-wishlist-wizard-prod.cloudfunctions.net/api
+API_DEV_ENDPOINT=https://us-central1-modulo-squares-dev.cloudfunctions.net/api
+API_STAGING_ENDPOINT=https://us-central1-modulo-squares-staging.cloudfunctions.net/api
+API_PROD_ENDPOINT=https://us-central1-modulo-squares-prod.cloudfunctions.net/api
 
 # ==========================================
 # MOBILE APP CONFIGURATION
@@ -539,10 +539,10 @@ version: '3.8'
 services:
   github-runner:
     image: myoung34/github-runner:latest
-    container_name: wishlist-wizard-github-runner
+    container_name: modulo-squares-github-runner
     environment:
-      REPO_URL: https://github.com/mnelson3/wishlist-wizard
-      RUNNER_NAME: wishlist-wizard-runner
+      REPO_URL: https://github.com/mnelson3/modulo-squares
+      RUNNER_NAME: modulo-squares-runner
       RUNNER_TOKEN: ${RUNNER_TOKEN}
       RUNNER_WORKDIR: /tmp/runner/work
       RUNNER_GROUP: default
@@ -557,7 +557,7 @@ services:
 
   runner-monitor:
     image: nginx:alpine
-    container_name: wishlist-wizard-runner-monitor
+    container_name: modulo-squares-runner-monitor
     ports:
       - "8080:80"
     volumes:
@@ -670,7 +670,7 @@ firebase projects:list
 
 ## 🎯 Next Steps for New Projects
 
-1. **Adapt Project Names**: Update all `wishlist-wizard` references
+1. **Adapt Project Names**: Update all `modulo-squares` references
 2. **Configure Environments**: Set up Firebase projects for each environment
 3. **Update Domains**: Modify API endpoints and domains
 4. **Configure Secrets**: Set up service accounts and API keys
@@ -696,5 +696,4 @@ firebase projects:list
 
 **Implementation Time Estimate**: 4-8 hours for experienced developer
 **Maintenance Overhead**: 2-4 hours/month
-**Reliability**: 99.9% uptime with automated recovery</content>
-<parameter name="filePath">/Users/marknelson/Circus/Repositories/wishlist-wizard/ZERO_TOUCH_DEVOPS_IMPLEMENTATION_GUIDE.md
+**Reliability**: 99.9% uptime with automated recovery

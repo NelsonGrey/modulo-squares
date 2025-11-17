@@ -11,10 +11,10 @@ All projects implement a **Firebase-first** approach where client applications (
 ### ✅ Completed
 - **Mobile Config Standardization**: All projects have environment-specific Firebase configs with symlinks
 - **Shared Utilities Package**: `@shared/firebase-utils` created and linked across projects
-- **Client-Side Adoption**: Vehicle-vitals and wishlist-wizard use `FirebaseClient` for initialization
-- **Auth Standardization**: `FunctionsAuthHelpers` implemented in wishlist-wizard functions
-- **CRUD Standardization**: `FirestoreCrudHelpers` implemented in wishlist-wizard functions
-- **Wishlist-Wizard Migration**: Complete migration from Express API to Firebase Functions
+- **Client-Side Adoption**: Modulo-squares and other projects use `FirebaseClient` for initialization
+- **Auth Standardization**: `FunctionsAuthHelpers` implemented in modulo-squares functions
+- **CRUD Standardization**: `FirestoreCrudHelpers` implemented in modulo-squares functions
+- **Modulo-Squares Migration**: Complete migration from Express API to Firebase Functions
 
 ### 🔄 In Progress
 - **Modulo-Squares Migration**: JavaScript functions need shared utilities integration
@@ -130,17 +130,11 @@ export const [projectSpecificFunction] = onCall(async (request) => {
 - **Client**: Flutter app using Firebase Flutter SDK
 - **Next Steps**: Integrate shared auth helpers in JavaScript functions
 
-### Vehicle-Vitals (React + TypeScript Functions)
+### Other Projects (React + TypeScript Functions)
 - **Status**: Firebase-first implemented
-- **Functions**: `onRequest` pattern for VIN decoding and email services
+- **Functions**: `onRequest` pattern for various services
 - **Client**: React web app using `FirebaseClient` from shared utilities
 - **Auth Pattern**: Manual auth checks (different from onCall pattern)
-
-### Wishlist-Wizard (React + TypeScript Functions)
-- **Status**: Fully migrated from Express API to Firebase Functions
-- **Functions**: `onCall` pattern with modular auth/crud/business functions using shared helpers
-- **Client**: React web/mobile apps using `FirebaseClient` from shared utilities
-- **Auth Pattern**: `FunctionsAuthHelpers.verifyAuthenticated()` with user ownership validation
 
 ## Implementation Rules
 
