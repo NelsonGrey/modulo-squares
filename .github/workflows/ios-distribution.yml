@@ -48,6 +48,9 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
 
+      - name: 🔧 Set Flutter Environment
+        run: echo "FLUTTER_ROOT=$FLUTTER_ROOT" >> $GITHUB_ENV
+
       - name: 💎 Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
