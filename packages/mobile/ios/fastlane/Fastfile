@@ -30,7 +30,8 @@ platform :ios do
     match(
       type: "appstore",
       readonly: is_ci ? false : true,
-      username: ENV["FASTLANE_APPLE_ID"]
+      username: ENV["FASTLANE_APPLE_ID"],
+      password: ENV["FASTLANE_PASSWORD"]
     )
 
     # Clean bundler artifacts that shouldn't be tracked
@@ -66,6 +67,7 @@ platform :ios do
 
     # Upload to TestFlight
     upload_to_testflight(
+      username: ENV["FASTLANE_APPLE_ID"],
       beta_app_feedback_email: ENV["BETA_FEEDBACK_EMAIL"]
     )
   end
@@ -83,7 +85,8 @@ platform :ios do
     match(
       type: "appstore",
       readonly: is_ci ? false : true,
-      username: ENV["FASTLANE_APPLE_ID"]
+      username: ENV["FASTLANE_APPLE_ID"],
+      password: ENV["FASTLANE_PASSWORD"]
     )
 
     # Clean bundler artifacts that shouldn't be tracked
@@ -119,6 +122,7 @@ platform :ios do
 
     # Upload to App Store
     upload_to_app_store(
+      username: ENV["FASTLANE_APPLE_ID"],
       force: true,
       reject_if_possible: true,
       skip_metadata: false,
