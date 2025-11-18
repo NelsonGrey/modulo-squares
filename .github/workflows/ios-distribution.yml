@@ -115,6 +115,18 @@ jobs:
         run: flutter create --platforms=ios .
         working-directory: packages/mobile
 
+      - name: 🔍 Check Secrets
+        run: |
+          TOKEN_LENGTH=${#MATCH_GIT_URL_TOKEN}
+          if [ "$TOKEN_LENGTH" -eq 0 ]; then
+            echo "❌ MATCH_GIT_URL_TOKEN secret is not set or empty"
+            exit 1
+          else
+            echo "✅ MATCH_GIT_URL_TOKEN secret is set (length: $TOKEN_LENGTH)"
+          fi
+        env:
+          MATCH_GIT_URL_TOKEN: ${{ secrets.MATCH_GIT_URL_TOKEN }}
+
       - name: 🔐 Create Service Account Key File
         env:
           FIREBASE_SERVICE_ACCOUNT_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
