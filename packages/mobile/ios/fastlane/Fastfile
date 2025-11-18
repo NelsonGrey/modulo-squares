@@ -52,6 +52,9 @@ platform :ios do
       repo_update: true
     )
 
+    # Debug: Check FLUTTER_ROOT
+    sh("echo FLUTTER_ROOT: $FLUTTER_ROOT")
+
     # Build the app
     build_app(
       scheme: "Runner",
