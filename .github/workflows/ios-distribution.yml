@@ -160,6 +160,9 @@ jobs:
           BETA_FEEDBACK_EMAIL=${{ secrets.BETA_FEEDBACK_EMAIL }}
           EOF
 
+          # Create App Store Connect private key file from base64 encoded secret
+          echo "${{ secrets.ASC_PRIVATE_KEY }}" | base64 -d > asc_private_key.p8
+
       - name: 🏗️ Build and Distribute iOS App
         env:
           ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'PRODUCTION' || github.ref == 'refs/heads/staging' && 'STAGING' || 'DEVELOPMENT' }}
@@ -169,4 +172,4 @@ jobs:
 
       - name: 🧹 Clean Up Service Account Key
         if: always()
-        run: rm -f packages/mobile/ios/service-account-key.json
+        run: rm -f packages/mobile/ios/service-account-key.json packages/mobile/ios/asc_private_key.p8
