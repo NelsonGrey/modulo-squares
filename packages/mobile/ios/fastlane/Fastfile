@@ -37,8 +37,10 @@ platform :ios do
     # Clean bundler artifacts that shouldn't be tracked
     sh("rm -rf ../../.bundle ../../vendor")
 
-    # Ensure clean git status
-    ensure_git_status_clean
+    # Ensure clean git status (skip in CI as .env and keys are created)
+    unless is_ci
+      ensure_git_status_clean
+    end
 
     # Increment build number
     increment_build_number
@@ -92,8 +94,10 @@ platform :ios do
     # Clean bundler artifacts that shouldn't be tracked
     sh("rm -rf ../../.bundle ../../vendor")
 
-    # Ensure clean git status
-    ensure_git_status_clean
+    # Ensure clean git status (skip in CI as .env and keys are created)
+    unless is_ci
+      ensure_git_status_clean
+    end
 
     # Increment build number
     increment_build_number
