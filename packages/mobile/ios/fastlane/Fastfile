@@ -30,8 +30,7 @@ platform :ios do
     match(
       type: "appstore",
       readonly: is_ci ? false : true,
-      username: ENV["FASTLANE_APPLE_ID"],
-      password: ENV["FASTLANE_PASSWORD"]
+      username: ENV["FASTLANE_APPLE_ID"]
     )
 
     # Clean bundler artifacts that shouldn't be tracked
@@ -85,8 +84,7 @@ platform :ios do
     match(
       type: "appstore",
       readonly: is_ci ? false : true,
-      username: ENV["FASTLANE_APPLE_ID"],
-      password: ENV["FASTLANE_PASSWORD"]
+      username: ENV["FASTLANE_APPLE_ID"]
     )
 
     # Clean bundler artifacts that shouldn't be tracked
