@@ -29,7 +29,7 @@ platform :ios do
     # Sync code signing certificates
     match(
       type: "appstore",
-      readonly: true,
+      readonly: is_ci ? false : true,
       api_key_path: nil,
       username: ENV["FASTLANE_APPLE_ID"]
     )
@@ -84,7 +84,7 @@ platform :ios do
     # Sync code signing certificates
     match(
       type: "appstore",
-      readonly: true,
+      readonly: is_ci ? false : true,
       api_key_path: nil,
       username: ENV["FASTLANE_APPLE_ID"]
     )
