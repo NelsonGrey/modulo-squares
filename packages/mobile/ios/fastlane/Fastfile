@@ -65,7 +65,7 @@ platform :ios do
       },
       output_directory: "./fastlane/builds",
       output_name: "ModuloSquares-beta",
-      xcargs: "CODE_SIGN_STYLE=Manual PROVISIONING_PROFILE_SPECIFIER=match AppStore com.nelsongrey.modulosquares.app.ios"
+      xcargs: "CODE_SIGN_STYLE=Manual PROVISIONING_PROFILE_SPECIFIER=\"match AppStore com.nelsongrey.modulosquares.app.ios\""
     )
 
     # Upload to TestFlight
@@ -123,7 +123,7 @@ platform :ios do
       },
       output_directory: "./fastlane/builds",
       output_name: "ModuloSquares-release",
-      xcargs: "CODE_SIGN_STYLE=Manual PROVISIONING_PROFILE_SPECIFIER=match AppStore com.nelsongrey.modulosquares.app.ios"
+      xcargs: "CODE_SIGN_STYLE=Manual PROVISIONING_PROFILE_SPECIFIER=\"match AppStore com.nelsongrey.modulosquares.app.ios\""
     )
 
     # Upload to App Store
