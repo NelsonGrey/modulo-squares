@@ -153,7 +153,7 @@ jobs:
           ASC_PRIVATE_KEY=${{ secrets.ASC_PRIVATE_KEY }}
 
           # Match Configuration
-          MATCH_GIT_URL=${{ secrets.MATCH_GIT_URL }}
+          MATCH_GIT_URL=https://oauth2:REDACTED_GITHUB_TOKEN@github.com/mnelson3/modulo-squares-certificates.git
           MATCH_PASSWORD=${{ secrets.MATCH_PASSWORD }}
 
           # TestFlight Configuration
