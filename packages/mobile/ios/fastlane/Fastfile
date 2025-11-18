@@ -13,8 +13,27 @@
 default_platform(:ios)
 
 platform :ios do
+  before_all do
+    setup_ci if ENV['CI']
+  end
+
   desc "Deploy a new version to TestFlight"
   lane :beta do
+    # Setup App Store Connect API Key
+    app_store_connect_api_key(
+      key_id: ENV["ASC_KEY_ID"],
+      issuer_id: ENV["ASC_ISSUER_ID"],
+      key_content: ENV["ASC_PRIVATE_KEY"],
+      is_key_content_base64: true
+    )
+
+    # Sync code signing certificates
+    match(
+      type: "appstore",
+      readonly: true,
+      api_key_path: nil
+    )
+
     # Clean bundler artifacts that shouldn't be tracked
     sh("rm -rf ../../.bundle ../../vendor")
 
@@ -34,26 +53,42 @@ platform :ios do
     build_app(
       scheme: "Runner",
       export_method: "app-store",
-      export_team_id: ENV["APP_STORE_CONNECT_TEAM_ID"],
-      codesigning_identity: ENV["CERT_NAME"] || "Apple Distribution",
+      export_team_id: ENV["FASTLANE_TEAM_ID"],
+      codesigning_identity: "Apple Distribution",
       export_options: {
         provisioningProfiles: {
-          "com.nelsongrey.modulosquares.app.ios" => ENV["IOS_PROVISIONING_PROFILE_UUID"] || ENV["IOS_PROVISIONING_PROFILE"]
+          "com.nelsongrey.modulosquares.app.ios" => "match AppStore com.nelsongrey.modulosquares.app.ios"
         }
       },
       output_directory: "./fastlane/builds",
       output_name: "ModuloSquares-beta",
-      xcargs: "CODE_SIGN_STYLE=Manual PROVISIONING_PROFILE_SPECIFIER=#{ENV['IOS_PROVISIONING_PROFILE_UUID'] || ENV['IOS_PROVISIONING_PROFILE']}"
+      xcargs: "CODE_SIGN_STYLE=Manual PROVISIONING_PROFILE_SPECIFIER=match AppStore com.nelsongrey.modulosquares.app.ios"
     )
 
     # Upload to TestFlight
     upload_to_testflight(
-      skip_waiting_for_build_processing: true
+      skip_waiting_for_build_processing: true,
+      beta_app_feedback_email: ENV["BETA_FEEDBACK_EMAIL"]
     )
   end
 
   desc "Deploy a new version to the App Store"
   lane :release do
+    # Setup App Store Connect API Key
+    app_store_connect_api_key(
+      key_id: ENV["ASC_KEY_ID"],
+      issuer_id: ENV["ASC_ISSUER_ID"],
+      key_content: ENV["ASC_PRIVATE_KEY"],
+      is_key_content_base64: true
+    )
+
+    # Sync code signing certificates
+    match(
+      type: "appstore",
+      readonly: true,
+      api_key_path: nil
+    )
+
     # Clean bundler artifacts that shouldn't be tracked
     sh("rm -rf ../../.bundle ../../vendor")
 
@@ -73,16 +108,16 @@ platform :ios do
     build_app(
       scheme: "Runner",
       export_method: "app-store",
-      export_team_id: ENV["APP_STORE_CONNECT_TEAM_ID"],
-      codesigning_identity: ENV["CERT_NAME"] || "Apple Distribution",
+      export_team_id: ENV["FASTLANE_TEAM_ID"],
+      codesigning_identity: "Apple Distribution",
       export_options: {
         provisioningProfiles: {
-          "com.nelsongrey.modulosquares.app.ios" => ENV["IOS_PROVISIONING_PROFILE_UUID"] || ENV["IOS_PROVISIONING_PROFILE"]
+          "com.nelsongrey.modulosquares.app.ios" => "match AppStore com.nelsongrey.modulosquares.app.ios"
         }
       },
       output_directory: "./fastlane/builds",
       output_name: "ModuloSquares-release",
-      xcargs: "CODE_SIGN_STYLE=Manual PROVISIONING_PROFILE_SPECIFIER=#{ENV['IOS_PROVISIONING_PROFILE_UUID'] || ENV['IOS_PROVISIONING_PROFILE']}"
+      xcargs: "CODE_SIGN_STYLE=Manual PROVISIONING_PROFILE_SPECIFIER=match AppStore com.nelsongrey.modulosquares.app.ios"
     )
 
     # Upload to App Store
@@ -101,12 +136,26 @@ platform :ios do
     )
   end
 
-  desc "Run tests"
-  lane :test do
-    run_tests(
-      scheme: "Runner",
-      devices: ["iPhone 14"],
-      clean: true
+  desc "Initialize certificates and provisioning profiles"
+  lane :init_certificates do
+    # Generate development certificate
+    match(
+      type: "development",
+      force: true
+    )
+
+    # Generate distribution certificate and provisioning profiles
+    match(
+      type: "appstore",
+      force: true
+    )
+  end
+
+  desc "Sync certificates and provisioning profiles"
+  lane :sync_certificates do
+    match(
+      type: "appstore",
+      readonly: true
     )
   end
 end
