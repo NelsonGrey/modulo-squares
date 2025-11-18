@@ -49,7 +49,16 @@ jobs:
           cache: true
 
       - name: 🔧 Set Flutter Environment
-        run: echo "FLUTTER_ROOT=$FLUTTER_ROOT" >> $GITHUB_ENV
+        run: |
+          FLUTTER_PATH=$(which flutter)
+          if [ -n "$FLUTTER_PATH" ]; then
+            FLUTTER_ROOT=$(dirname $(dirname $FLUTTER_PATH))
+            echo "FLUTTER_ROOT=$FLUTTER_ROOT" >> $GITHUB_ENV
+            echo "Found Flutter at: $FLUTTER_ROOT"
+          else
+            echo "Flutter not found in PATH"
+            exit 1
+          fi
 
       - name: 💎 Setup Ruby
         uses: ruby/setup-ruby@v1
