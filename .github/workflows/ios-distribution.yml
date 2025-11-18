@@ -123,132 +123,6 @@ jobs:
       - name: 🔧 Make Distribution Script Executable
         run: chmod +x packages/mobile/distribute-ios.sh
 
-      - name: 📱 Install Provisioning Profile and Certificate
-        run: |
-          # Create provisioning profiles directory if it doesn't exist
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles/
-          
-          # Install provisioning profile
-          if [ ! -z "$IOS_PROVISIONING_PROFILE_BASE64" ]; then
-            echo "$IOS_PROVISIONING_PROFILE_BASE64" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/$IOS_PROVISIONING_PROFILE.mobileprovision
-            
-            if [ -f ~/Library/MobileDevice/Provisioning\ Profiles/$IOS_PROVISIONING_PROFILE.mobileprovision ]; then
-              echo "✅ Provisioning profile installed successfully"
-              
-              # Extract profile info
-              PROFILE_NAME=$(security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/$IOS_PROVISIONING_PROFILE.mobileprovision | grep -A 1 "Name" | tail -1 | sed 's/.*: //' | sed 's/<string>//' | sed 's/<\/string>//' | xargs)
-              PROFILE_UUID=$(security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/$IOS_PROVISIONING_PROFILE.mobileprovision | grep -A 1 "UUID" | tail -1 | sed 's/.*: //' | sed 's/<string>//' | sed 's/<\/string>//' | xargs)
-              
-              echo "Profile Name: '$PROFILE_NAME'"
-              echo "Profile UUID: '$PROFILE_UUID'"
-              echo "IOS_PROVISIONING_PROFILE_NAME=$PROFILE_NAME" >> $GITHUB_ENV
-              echo "IOS_PROVISIONING_PROFILE_UUID=$PROFILE_UUID" >> $GITHUB_ENV
-              
-              # Verify bundle ID
-              if security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/$IOS_PROVISIONING_PROFILE.mobileprovision | grep -q "com.nelsongrey.modulosquares.app.ios"; then
-                echo "✅ Provisioning profile contains correct bundle ID"
-              else
-                echo "❌ Provisioning profile does not contain the correct bundle ID"
-                exit 1
-              fi
-            else
-              echo "❌ Failed to install provisioning profile"
-              exit 1
-            fi
-          else
-            echo "⚠️ IOS_PROVISIONING_PROFILE_BASE64 secret not found"
-            exit 1
-          fi
-          
-          # Install distribution certificate
-          if [ ! -z "$IOS_DISTRIBUTION_CERTIFICATE_BASE64" ] && [ ! -z "$IOS_CERTIFICATE_PASSWORD" ]; then
-            echo "🔐 Installing distribution certificate..."
-            
-            # Create temporary certificate file
-            echo "$IOS_DISTRIBUTION_CERTIFICATE_BASE64" | base64 --decode > /tmp/ios_distribution.p12
-            
-            # Verify certificate can be read
-            if ! openssl pkcs12 -info -in /tmp/ios_distribution.p12 -passin pass:"$IOS_CERTIFICATE_PASSWORD" -nokeys > /dev/null 2>&1; then
-              echo "❌ Certificate password is incorrect or certificate is corrupted"
-              rm /tmp/ios_distribution.p12
-              exit 1
-            fi
-            
-            # Get certificate info
-            CERT_INFO=$(openssl pkcs12 -info -in /tmp/ios_distribution.p12 -passin pass:"$IOS_CERTIFICATE_PASSWORD" -nokeys | grep "subject=" | head -1)
-            echo "Certificate info: $CERT_INFO"
-            
-            # Create a temporary keychain for CI
-            KEYCHAIN_PATH=$HOME/Library/Keychains/build.keychain
-            KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
-            
-            # Clean up any existing keychain
-            security delete-keychain "$KEYCHAIN_PATH" 2>/dev/null || true
-            
-            # Create new keychain
-            security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-            security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-            security set-keychain-settings -t 3600 -u "$KEYCHAIN_PATH"
-            
-            # Import certificate to keychain
-            if security import /tmp/ios_distribution.p12 -P "$IOS_CERTIFICATE_PASSWORD" -A -k "$KEYCHAIN_PATH"; then
-              echo "✅ Certificate imported successfully"
-              
-              # List available identities
-              echo "Available identities in keychain:"
-              security find-identity -v "$KEYCHAIN_PATH"
-              
-              # Check for Apple Distribution certificate
-              if security find-identity -v "$KEYCHAIN_PATH" | grep -q "Apple Distribution"; then
-                CERT_NAME=$(security find-identity -v "$KEYCHAIN_PATH" | grep "Apple Distribution" | head -1 | sed 's/.*"\(.*\)"/\1/')
-                echo "Found Apple Distribution certificate: $CERT_NAME"
-                echo "CERT_NAME=$CERT_NAME" >> $GITHUB_ENV
-              else
-                echo "⚠️ No Apple Distribution certificate found, checking for any valid identities..."
-                # Try to find any valid code signing identity
-                CERT_NAME=$(security find-identity -v "$KEYCHAIN_PATH" | grep -E "(iPhone|iOS)" | head -1 | sed 's/.*"\(.*\)"/\1/' || true)
-                if [ ! -z "$CERT_NAME" ]; then
-                  echo "Using alternative certificate: $CERT_NAME"
-                  echo "CERT_NAME=$CERT_NAME" >> $GITHUB_ENV
-                else
-                  echo "❌ No valid code signing identities found"
-                  security find-identity -v "$KEYCHAIN_PATH" || true
-                  rm /tmp/ios_distribution.p12
-                  exit 1
-                fi
-              fi
-              
-              # Make the keychain available to Xcode
-              security list-keychains -d user -s "$KEYCHAIN_PATH" "$(security list-keychains -d user | sed 's/"//g')"
-              security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-              
-              # Set keychain search path
-              security set-keychain-settings -t 3600 "$KEYCHAIN_PATH"
-              
-            else
-              echo "❌ Failed to import certificate to keychain"
-              echo "Available identities in keychain:"
-              security find-identity -v "$KEYCHAIN_PATH" || true
-              rm /tmp/ios_distribution.p12
-              exit 1
-            fi
-            
-            # Clean up
-            rm /tmp/ios_distribution.p12
-            
-          elif [ -z "$IOS_DISTRIBUTION_CERTIFICATE_BASE64" ]; then
-            echo "⚠️ IOS_DISTRIBUTION_CERTIFICATE_BASE64 secret not found - skipping certificate installation"
-            echo "Note: This may cause code signing to fail if required"
-          else
-            echo "⚠️ IOS_CERTIFICATE_PASSWORD secret not found - skipping certificate installation"
-            echo "Note: This may cause code signing to fail if required"
-          fi
-        env:
-          IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
-          IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
-          IOS_DISTRIBUTION_CERTIFICATE_BASE64: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_BASE64 }}
-          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
-
       - name: 📱 Extract AdMob Configuration for Production
         if: github.ref == 'refs/heads/main'
         run: |
@@ -262,15 +136,33 @@ jobs:
           echo "ADMOB_INTERSTITIAL_UNIT_ID=$ADMOB_INTERSTITIAL_IOS" >> $GITHUB_ENV
           echo "ADMOB_REWARDED_UNIT_ID=$ADMOB_REWARDED_IOS" >> $GITHUB_ENV
 
+      - name: 🔐 Setup Fastlane Environment
+        run: |
+          cd packages/mobile/ios
+
+          # Create .env file for Fastlane with all required environment variables
+          cat > .env << EOF
+          # Apple Developer Account
+          FASTLANE_APPLE_ID=${{ secrets.FASTLANE_APPLE_ID }}
+          FASTLANE_TEAM_ID=${{ secrets.FASTLANE_TEAM_ID }}
+          FASTLANE_ITC_TEAM_ID=${{ secrets.FASTLANE_ITC_TEAM_ID }}
+
+          # App Store Connect API Key
+          ASC_KEY_ID=${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID=${{ secrets.ASC_ISSUER_ID }}
+          ASC_PRIVATE_KEY=${{ secrets.ASC_PRIVATE_KEY }}
+
+          # Match Configuration
+          MATCH_GIT_URL=${{ secrets.MATCH_GIT_URL }}
+          MATCH_PASSWORD=${{ secrets.MATCH_PASSWORD }}
+
+          # TestFlight Configuration
+          BETA_FEEDBACK_EMAIL=${{ secrets.BETA_FEEDBACK_EMAIL }}
+          EOF
+
       - name: 🏗️ Build and Distribute iOS App
         env:
           ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'PRODUCTION' || github.ref == 'refs/heads/staging' && 'STAGING' || 'DEVELOPMENT' }}
-          APP_STORE_CONNECT_PRIVATE_EMAIL: ${{ secrets.APP_STORE_CONNECT_PRIVATE_EMAIL }}
-          APP_STORE_CONNECT_TEAM_ID: ${{ secrets.APP_STORE_CONNECT_TEAM_ID }}
-          APP_STORE_CONNECT_TEAM_NAME: ${{ secrets.APP_STORE_CONNECT_TEAM_NAME }}
-          IOS_PROVISIONING_PROFILE: ${{ env.IOS_PROVISIONING_PROFILE_UUID }}
-          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-          FASTLANE_PASSWORD: ${{ secrets.FASTLANE_PASSWORD }}
         run: |
           cd packages/mobile
           ./distribute-ios.sh ${{ github.event.inputs.build_type || 'debug' }} "${{ github.event.inputs.release_notes || format('Build from {0} - {1}', github.ref_name, github.sha) }}"

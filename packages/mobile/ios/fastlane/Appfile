@@ -1,17 +1,14 @@
 # fastlane Appfile for Modulo Squares iOS
 # This file contains app-specific configuration for fastlane
 
-# Your Apple ID email (set via APP_STORE_CONNECT_PRIVATE_EMAIL secret)
-apple_id ENV["APP_STORE_CONNECT_PRIVATE_EMAIL"]
+# Your Apple ID email (set via FASTLANE_APPLE_ID secret)
+apple_id ENV["FASTLANE_APPLE_ID"]
 
-# Your team ID (set via APP_STORE_CONNECT_TEAM_ID secret)
-team_id ENV["APP_STORE_CONNECT_TEAM_ID"]
+# Your team ID (set via FASTLANE_TEAM_ID secret)
+team_id ENV["FASTLANE_TEAM_ID"]
+
+# App Store Connect team ID (set via FASTLANE_ITC_TEAM_ID secret)
+itc_team_id ENV["FASTLANE_ITC_TEAM_ID"]
 
 # App identifier
 app_identifier "com.nelsongrey.modulosquares.app.ios"
-
-# Path to your iTunes Connect team (optional - comment out if not needed)
-# itc_team_name ENV["APP_STORE_CONNECT_TEAM_NAME"]
-
-# Path to your Apple Developer Portal team (optional - comment out if not needed)
-# team_name ENV["APP_STORE_CONNECT_TEAM_NAME"]
