@@ -101,8 +101,12 @@ jobs:
             xcrun simctl create "iPhone 15 Pro" "iPhone 15 Pro" 2>/dev/null || echo "⚠️ Could not create simulator"
           fi
 
-      - name:  Install Dependencies
+      - name: Install Dependencies
         run: flutter pub get
+        working-directory: packages/mobile
+
+      - name: Generate Launcher Icons
+        run: flutter pub run flutter_launcher_icons
         working-directory: packages/mobile
 
       - name: 🔍 Check Flutter Doctor
