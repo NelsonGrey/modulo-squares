@@ -53,7 +53,9 @@ platform :ios do
     )
 
     # Debug: Check FLUTTER_ROOT
-    sh("echo FLUTTER_ROOT: $FLUTTER_ROOT && which flutter && ls -la $FLUTTER_ROOT/packages/flutter_tools/bin/")
+    puts "FLUTTER_ROOT: #{ENV['FLUTTER_ROOT']}"
+    sh("which flutter")
+    sh("ls -la #{ENV['FLUTTER_ROOT']}/packages/flutter_tools/bin/")
 
     # Build the app
     build_app(
