@@ -52,11 +52,6 @@ platform :ios do
       repo_update: true
     )
 
-    # Debug: Check FLUTTER_ROOT
-    puts "FLUTTER_ROOT: #{ENV['FLUTTER_ROOT']}"
-    sh("which flutter")
-    sh("ls -la #{ENV['FLUTTER_ROOT']}/packages/flutter_tools/bin/")
-
     # Build the app
     build_app(
       scheme: "Runner",
