@@ -30,13 +30,7 @@ platform :ios do
     # )
 
     # Sync code signing certificates
-    match(
-      type: "appstore",
-      readonly: true,
-      username: ENV["FASTLANE_APPLE_ID"],
-      git_branch: "main",
-      app_identifier: "com.nelsongrey.modulosquares.app.ios"
-    )
+    sync_certificates
 
     # Clean bundler artifacts that shouldn't be tracked
     sh("rm -rf ../../.bundle ../../vendor")
@@ -88,13 +82,7 @@ platform :ios do
     # )
 
     # Sync code signing certificates
-    match(
-      type: "appstore",
-      readonly: true,
-      username: ENV["FASTLANE_APPLE_ID"],
-      git_branch: "main",
-      app_identifier: "com.nelsongrey.modulosquares.app.ios"
-    )
+    sync_certificates
 
     # Clean bundler artifacts that shouldn't be tracked
     sh("rm -rf ../../.bundle ../../vendor")
@@ -163,9 +151,49 @@ platform :ios do
 
   desc "Sync certificates and provisioning profiles"
   lane :sync_certificates do
-    match(
+    # Allow installing into a specific keychain if provided by CI
+    keychain_name = ENV['MATCH_KEYCHAIN_NAME']
+    keychain_password = ENV['MATCH_KEYCHAIN_PASSWORD']
+
+    match_opts = {
       type: "appstore",
-      readonly: true
-    )
+      readonly: true,
+      username: ENV["FASTLANE_APPLE_ID"],
+      git_branch: "main",
+      app_identifier: "com.nelsongrey.modulosquares.app.ios"
+    }
+    match_opts[:keychain_name] = keychain_name unless keychain_name.to_s.empty?
+    match_opts[:keychain_password] = keychain_password unless keychain_password.to_s.empty?
+
+    match(match_opts)
+  end
+
+  desc "Install Flutter dependencies"
+  lane :flutter_deps do
+    Dir.chdir("../../") do
+      sh("flutter pub get")
+    end
+  end
+
+  desc "Run Flutter tests"
+  lane :flutter_test do
+    Dir.chdir("../../") do
+      sh("flutter test")
+    end
+  end
+
+  desc "Build Flutter iOS app in debug mode"
+  lane :build_debug do
+    flutter_deps
+    Dir.chdir("../../") do
+      sh("flutter build ios --debug --no-codesign")
+    end
+  end
+
+  desc "Run tests and build debug version"
+  lane :test_and_build do
+    flutter_deps
+    flutter_test
+    build_debug
   end
 end
