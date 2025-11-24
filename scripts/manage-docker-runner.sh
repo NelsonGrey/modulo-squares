@@ -54,6 +54,10 @@ get_runner_token() {
     local api_token=""
     if [ -f ".act-secrets/secrets" ]; then
         api_token=$(grep "^GITHUB_TOKEN=" .act-secrets/secrets | cut -d'=' -f2-)
+        if [ -z "$api_token" ]; then
+            # Also try GIT_TOKEN as fallback
+            api_token=$(grep "^GIT_TOKEN=" .act-secrets/secrets | cut -d'=' -f2-)
+        fi
     fi
 
     if [ -z "$api_token" ]; then

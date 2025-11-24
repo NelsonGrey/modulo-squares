@@ -28,19 +28,19 @@ fi
 # Check if MATCH_GIT_URL is set
 if [ -z "$MATCH_GIT_URL" ]; then
     echo "❌ Error: MATCH_GIT_URL environment variable is not set"
-    echo "Please set it with: export MATCH_GIT_URL='https://github.com/mnelson3/modulo-squares-certificates.git'"
+    echo "Please set it with: export MATCH_GIT_URL='https://github.com/mnelson3/nelson-grey-certificates.git'"
     exit 1
 fi
 
 echo "🔐 Initializing certificates repository..."
 echo "This will create a new private repository for storing certificates."
 echo "Make sure you have:"
-echo "1. Created the modulo-squares-certificates repository on GitHub"
+echo "1. Created the nelson-grey-certificates repository on GitHub"
 echo "2. Set up SSH keys or personal access token for authentication"
 echo "3. Configured the repository as private"
 echo ""
 
-read -p "Have you created the modulo-squares-certificates repository? (y/N): " -n 1 -r
+read -p "Have you created the nelson-grey-certificates repository? (y/N): " -n 1 -r
 echo
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     echo "❌ Please create the repository first, then run this script again."
@@ -66,10 +66,10 @@ bundle exec fastlane match appstore --force
 echo "✅ Certificate setup complete!"
 echo ""
 echo "Next steps:"
-echo "1. Verify the certificates were uploaded to the modulo-squares-certificates repository"
+echo "1. Verify the certificates were uploaded to the nelson-grey-certificates repository"
 echo "2. Set up the following secrets in your GitHub repository:"
 echo "   - MATCH_PASSWORD: The password you used for the certificates"
-echo "   - MATCH_GIT_URL: https://oauth2:gho_YOUR_TOKEN@github.com/mnelson3/modulo-squares-certificates.git"
+echo "   - MATCH_GIT_URL: https://oauth2:gho_YOUR_TOKEN@github.com/mnelson3/nelson-grey-certificates.git"
 echo "   - ASC_PRIVATE_KEY: Your App Store Connect API private key (base64 encoded)"
 echo "   - ASC_KEY_ID: Your App Store Connect key ID"
 echo "   - ASC_ISSUER_ID: Your App Store Connect issuer ID"
