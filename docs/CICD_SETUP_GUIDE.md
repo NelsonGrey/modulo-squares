@@ -149,8 +149,8 @@ docker-compose -f docker-compose.runner.yml logs
 
 ```bash
 # 1. Create isolated runner directory (outside project)
-mkdir ~/actions-runner-modulo-squares
-cd ~/actions-runner-modulo-squares
+mkdir ~/Circus/Repositories/modulo-squares-actions-runner
+cd ~/Circus/Repositories/modulo-squares-actions-runner
 
 # 2. Download and extract GitHub runner
 # (Download from: https://github.com/actions/runner/releases)

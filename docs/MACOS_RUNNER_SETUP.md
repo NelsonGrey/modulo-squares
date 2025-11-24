@@ -64,7 +64,7 @@ cd modulo-squares
 # Click "New self-hosted runner" and copy the token
 
 # Configure the runner (in isolated directory)
-cd ~/actions-runner-modulo-squares/  # Outside project directory
+cd ~/Circus/Repositories/modulo-squares-actions-runner/  # Outside project directory
 ./config.sh \
   --url https://github.com/mnelson3/modulo-squares \
   --token AIQEPB7NN7HGN5V4KR7OZLTJBZYMW \
@@ -117,7 +117,7 @@ Set these in your shell profile (`~/.zshrc`):
 ```bash
 # Custom runner configuration
 export RUNNER_USER="marknelson"           # Your username
-export RUNNER_DIR="~/actions-runner-modulo-squares"  # Outside project directory
+export RUNNER_DIR="~/Circus/Repositories/modulo-squares-actions-runner"  # Outside project directory
 export REPO_URL="https://github.com/mnelson3/modulo-squares"  # Repository URL
 ```
 
@@ -145,7 +145,7 @@ The runner is configured with these labels:
 ./scripts/manage-macos-runner.sh status
 
 # View recent logs
-tail -f ~/actions-runner-modulo-squares/runner.log
+tail -f ~/Circus/Repositories/modulo-squares-actions-runner/runner.log
 
 # Check system resources
 top -l 1 | head -10
@@ -163,7 +163,7 @@ Monitor runner status in:
 1. **Runner won't start**
    ```bash
    # Check logs
-   cat ~/actions-runner-modulo-squares/runner.log
+   cat ~/Circus/Repositories/modulo-squares-actions-runner/runner.log
 
    # Reconfigure
    ./scripts/manage-macos-runner.sh unconfigure
@@ -189,7 +189,7 @@ Monitor runner status in:
 4. **Permission issues**
    ```bash
    # Fix permissions
-   sudo chown -R $USER:admin ~/actions-runner-modulo-squares
+   sudo chown -R $USER:admin ~/Circus/Repositories/modulo-squares-actions-runner
    ```
 
 5. **ES Module Conflicts** (Most Common Issue)
@@ -204,7 +204,7 @@ Monitor runner status in:
 
 ```bash
 # Runner diagnostic logs
-ls -la ~/actions-runner-modulo-squares/_diag/
+ls -la ~/Circus/Repositories/modulo-squares-actions-runner/_diag/
 
 # System logs
 log show --predicate 'process == "Runner.Listener"' --last 1h
