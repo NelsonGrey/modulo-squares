@@ -17,7 +17,7 @@ NC='\033[0m' # No Color
 
 # Default runner configuration
 RUNNER_USER="${RUNNER_USER:-github-runner}"
-RUNNER_DIR="${RUNNER_DIR:-/Users/$RUNNER_USER/actions-runner-modulo-squares}"
+RUNNER_DIR="${RUNNER_DIR:-/Users/$RUNNER_USER/Circus/Repositories/modulo-squares-actions-runner}"
 REPO_URL="${REPO_URL:-https://github.com/mnelson3/modulo-squares}"
 
 # Auto-detect runner location if not specified
@@ -30,8 +30,8 @@ auto_detect_runner() {
     # Check common locations (prioritize isolated directories for ES module safety)
     local possible_locations=(
         "$(pwd)/actions-runner"                         # Current working directory (highest priority)
-        "$HOME/actions-runner-modulo-squares"           # Isolated modulo-squares runner (NEW)
-        "/Users/$USER/actions-runner-modulo-squares"    # Alternative isolated location
+        "$HOME/Circus/Repositories/modulo-squares-actions-runner"           # Isolated modulo-squares runner (NEW)
+        "/Users/$USER/Circus/Repositories/modulo-squares-actions-runner"    # Alternative isolated location
         "/Users/$USER/actions-runner"                   # Current user in home
         "/Users/github-runner/actions-runner"           # Dedicated user
         "$HOME/actions-runner"                          # Home directory
