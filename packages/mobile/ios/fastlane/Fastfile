@@ -269,6 +269,12 @@ platform :ios do
     match(match_opts)
   end
 
+  desc "Generate local development certificates (no git repo required)"
+  lane :generate_local_certificates do
+    UI.message("Skipping certificate generation for local development")
+    UI.message("Certificates will be generated automatically by Xcode when building")
+  end
+
   desc "Install Flutter dependencies"
   lane :flutter_deps do
     Dir.chdir("../../") do

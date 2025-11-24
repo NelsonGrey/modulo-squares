@@ -90,6 +90,20 @@ npm run test:app
 npm run deploy:all
 ```
 
+#### iOS Development
+For iOS development with proper certificate management:
+
+```bash
+# Local iOS development (avoids keychain dialogs)
+./scripts/ios-local-dev.sh help    # Show available commands
+./scripts/ios-local-dev.sh sync    # Sync certificates (first time)
+./scripts/ios-local-dev.sh build   # Build debug version
+./scripts/ios-local-dev.sh test    # Run tests and build
+./scripts/ios-local-dev.sh beta    # Build and upload to TestFlight
+```
+
+See [iOS Signing Documentation](docs/IOS_SIGNING.md) for detailed setup instructions.
+
 ### Building
 ```bash
 # Build Android APK

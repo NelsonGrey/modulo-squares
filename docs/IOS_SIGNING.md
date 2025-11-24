@@ -20,6 +20,74 @@ This project uses Fastlane Match to manage iOS certificates and provisioning pro
 - **Certificates Repository**: `https://github.com/mnelson3/nelson-grey-certificates`
 - **Match Type**: `appstore` for distribution builds
 
+## Local Development Setup
+
+For local development and testing, use the provided scripts to avoid keychain password prompts:
+
+### Quick Local Setup
+
+1. **Set environment variables**:
+   ```bash
+   export FASTLANE_APPLE_ID="your-apple-id@example.com"
+   export FASTLANE_PASSWORD="your-app-specific-password"
+   export FASTLANE_TEAM_ID="your-team-id"
+   export MATCH_GIT_URL_TOKEN="your-github-token"
+   export MATCH_PASSWORD="your-match-password"
+   export BETA_FEEDBACK_EMAIL="your-email@example.com"
+   ```
+
+2. **Run the local development script**:
+   ```bash
+   # Sync certificates (first time setup)
+   ./scripts/ios-local-dev.sh sync
+
+   # Build for testing
+   ./scripts/ios-local-dev.sh build
+
+   # Run tests
+   ./scripts/ios-local-dev.sh test
+
+   # Upload to TestFlight
+   ./scripts/ios-local-dev.sh beta
+   ```
+
+### What the Local Script Does
+
+- Creates a dedicated development keychain that doesn't require password prompts
+- Sets up environment variables for Fastlane
+- Runs Fastlane commands with proper keychain isolation
+- Handles cleanup automatically
+
+### Available Commands
+
+```bash
+./scripts/ios-local-dev.sh help    # Show all available commands
+./scripts/ios-local-dev.sh sync    # Sync certificates and profiles
+./scripts/ios-local-dev.sh build   # Build debug version
+./scripts/ios-local-dev.sh test    # Run tests and build
+./scripts/ios-local-dev.sh beta    # Build and upload to TestFlight
+./scripts/ios-local-dev.sh clean   # Clean build artifacts
+```
+
+### Troubleshooting Local Builds
+
+If you still see keychain dialogs:
+
+1. **Delete existing keychains**:
+   ```bash
+   security delete-keychain ~/Library/Keychains/modulo-squares-dev.keychain-db
+   ```
+
+2. **Reset keychain search list**:
+   ```bash
+   security list-keychains -d user -s ~/Library/Keychains/login.keychain-db
+   ```
+
+3. **Run setup again**:
+   ```bash
+   ./scripts/ios-local-dev.sh sync
+   ```
+
 ## Build Process
 
 ### Automated (Recommended)
