@@ -95,10 +95,60 @@ jobs:
           echo "📱 Available iOS Simulator Runtimes:"
           xcrun simctl list runtimes | grep "iOS" || echo "No iOS runtimes found"
           
+      - name: 🛠️ Setup Xcode
+        run: |
+          # Check if Xcode is already properly selected
+          CURRENT_XCODE=$(xcode-select -p 2>/dev/null || echo "")
+          if [[ "$CURRENT_XCODE" == "/Applications/Xcode.app/Contents/Developer" ]]; then
+            echo "✅ Xcode already properly selected"
+          else
+            echo "🔄 Attempting to select Xcode..."
+            # Try to select Xcode (may require sudo on some systems)
+            if sudo -n xcode-select -s /Applications/Xcode.app/Contents/Developer 2>/dev/null; then
+              echo "✅ Xcode selected successfully"
+            else
+              echo "⚠️ Could not select Xcode (may already be selected or requires manual setup)"
+            fi
+          fi
+          
+          # Check if Xcode license is already accepted
+          if xcodebuild -license check 2>/dev/null; then
+            echo "✅ Xcode license already accepted"
+          else
+            echo "🔄 Attempting to accept Xcode license..."
+            # Try to accept license (may require sudo on some systems)
+            if sudo -n xcodebuild -license accept 2>/dev/null; then
+              echo "✅ Xcode license accepted successfully"
+            else
+              echo "⚠️ Could not accept Xcode license (may already be accepted or requires manual setup)"
+            fi
+          fi
+          
+          # Install additional simulator runtimes if available
+          # This will install commonly needed runtimes
+          xcodebuild -downloadPlatform iOS 2>/dev/null || echo "⚠️ Could not download iOS platform (may already be installed)"
+          
+          # List available runtimes for debugging
+          echo "📱 Available iOS Simulator Runtimes:"
+          xcrun simctl list runtimes | grep "iOS" || echo "No iOS runtimes found"
+          
           # Create a default simulator if none exists
           if ! xcrun simctl list devices | grep -q "iPhone"; then
             echo "📱 Creating default iPhone simulator..."
             xcrun simctl create "iPhone 15 Pro" "iPhone 15 Pro" 2>/dev/null || echo "⚠️ Could not create simulator"
+          fi
+
+      - name: 🔧 Install System Dependencies
+        run: |
+          # Install GNU coreutils for timeout command (gtimeout)
+          brew install coreutils
+          
+          # Verify gtimeout is available
+          if command -v gtimeout >/dev/null 2>&1; then
+            echo "✅ gtimeout is available"
+          else
+            echo "❌ gtimeout is not available after installing coreutils"
+            exit 1
           fi
 
       - name: Install Dependencies
