@@ -198,6 +198,7 @@ jobs:
           ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'PRODUCTION' || github.ref == 'refs/heads/staging' && 'STAGING' || 'DEVELOPMENT' }}
           FASTLANE_PASSWORD: ${{ secrets.FASTLANE_PASSWORD }}
           FLUTTER_ROOT: ${{ env.FLUTTER_ROOT }}
+          IOS_CERT_P12_PASSWORD: ${{ secrets.IOS_CERT_P12_PASSWORD }}
         run: |
           # Set release notes environment variable
           RELEASE_NOTES="${{ github.event.inputs.release_notes || format('Build from {0} - {1}', github.ref_name, github.sha) }}"
@@ -233,15 +234,22 @@ jobs:
           # correct iOS directory by prefixing with a cd when invoking.
           if [ -f "$EPHEMERAL_HELPER" ]; then
             echo "Using ephemeral keychain helper: $EPHEMERAL_HELPER"
-            # Pass a single command string to the helper. Helper will execute
-            # the command and clean up the temporary keychain afterwards.
-            # Ensure CERT_P12_* variables are exported for the helper context
-            CERT_P12_PATH="./packages/mobile/ios/certs/dist_cert.p12" CERT_P12_PASSWORD="${{ secrets.IOS_CERT_P12_PASSWORD }}" bash "$EPHEMERAL_HELPER" "cd packages/mobile/ios && $RUN_CMD"
+            # Check if certificate P12 exists and set variables accordingly
+            CERT_P12_PATH="./packages/mobile/ios/certs/dist_cert.p12"
+            if [ -f "$CERT_P12_PATH" ] && [ -n "$IOS_CERT_P12_PASSWORD" ]; then
+              echo "Certificate P12 found, using ephemeral keychain with certificate import"
+              echo "CERT_P12_PATH=$CERT_P12_PATH"
+              echo "CERT_P12_PASSWORD length: ${#IOS_CERT_P12_PASSWORD}"
+              CERT_P12_PATH="$CERT_P12_PATH" CERT_P12_PASSWORD="$IOS_CERT_P12_PASSWORD" timeout 1800 bash "$EPHEMERAL_HELPER" "cd packages/mobile/ios && $RUN_CMD"
+            else
+              echo "No certificate P12 or password found, using ephemeral keychain without certificate import"
+              timeout 1800 bash "$EPHEMERAL_HELPER" "cd packages/mobile/ios && $RUN_CMD"
+            fi
           else
             echo "Ephemeral keychain helper not found; running Fastlane directly"
             cd packages/mobile/ios
-            # Fallback: run the assembled command directly in shell
-            eval "$RUN_CMD"
+            # Fallback: run the assembled command directly in shell with timeout
+            timeout 1800 bash -c "$RUN_CMD"
           fi
 
       - name: 🧹 Clean Up Ephemeral Keychain
