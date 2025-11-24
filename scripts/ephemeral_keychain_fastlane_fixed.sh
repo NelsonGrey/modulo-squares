@@ -17,6 +17,18 @@ fi
 
 FASTLANE_CMD="$1"
 
+# Check if running in CI environment
+if [ -n "${CI:-}" ] || [ -n "${GITHUB_ACTIONS:-}" ]; then
+  echo "[ephemeral-keychain] Running in CI environment, using ephemeral keychain approach"
+else
+  echo "[ephemeral-keychain] Running locally, skipping ephemeral keychain setup"
+  echo "[ephemeral-keychain] Running command directly: $FASTLANE_CMD"
+  set -x
+  eval "$FASTLANE_CMD"
+  set +x
+  exit 0
+fi
+
 # Unique temporary keychain name and password
 KC_NAME="fastlane_tmp_$(date +%s)_$$.keychain-db"
 KC_PATH="$HOME/Library/Keychains/$KC_NAME"
