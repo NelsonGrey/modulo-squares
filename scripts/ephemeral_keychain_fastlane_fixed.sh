@@ -161,7 +161,7 @@ fi
 echo "[ephemeral-keychain] Running command: $FASTLANE_CMD"
 set -x
 # Add timeout to prevent hanging
-timeout 1200 eval "$FASTLANE_CMD" || {
+gtimeout 1200 eval "$FASTLANE_CMD" || {
   echo "[ephemeral-keychain] ERROR: Command timed out or failed"
   exit 1
 }

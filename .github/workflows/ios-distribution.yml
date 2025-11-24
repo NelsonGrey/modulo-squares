@@ -240,16 +240,16 @@ jobs:
               echo "Certificate P12 found, using ephemeral keychain with certificate import"
               echo "CERT_P12_PATH=$CERT_P12_PATH"
               echo "CERT_P12_PASSWORD length: ${#IOS_CERT_P12_PASSWORD}"
-              CERT_P12_PATH="$CERT_P12_PATH" CERT_P12_PASSWORD="$IOS_CERT_P12_PASSWORD" timeout 1800 bash "$EPHEMERAL_HELPER" "cd packages/mobile/ios && $RUN_CMD"
+              CERT_P12_PATH="$CERT_P12_PATH" CERT_P12_PASSWORD="$IOS_CERT_P12_PASSWORD" gtimeout 1800 bash "$EPHEMERAL_HELPER" "cd packages/mobile/ios && $RUN_CMD"
             else
               echo "No certificate P12 or password found, using ephemeral keychain without certificate import"
-              timeout 1800 bash "$EPHEMERAL_HELPER" "cd packages/mobile/ios && $RUN_CMD"
+              gtimeout 1800 bash "$EPHEMERAL_HELPER" "cd packages/mobile/ios && $RUN_CMD"
             fi
           else
             echo "Ephemeral keychain helper not found; running Fastlane directly"
             cd packages/mobile/ios
             # Fallback: run the assembled command directly in shell with timeout
-            timeout 1800 bash -c "$RUN_CMD"
+            gtimeout 1800 bash -c "$RUN_CMD"
           fi
 
       - name: 🧹 Clean Up Ephemeral Keychain
