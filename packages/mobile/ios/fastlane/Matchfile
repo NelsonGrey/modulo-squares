@@ -1,3 +1,9 @@
+# ZERO-TOUCH CERTIFICATE CONFIGURATION
+# Optimized for maximum certificate reuse across all projects
+# - Git storage enables sharing certificates between projects
+# - force_for_new_devices ensures new devices are automatically added
+# - skip_set_partition_list improves performance
+
 git_url(ENV["MATCH_GIT_URL"])
 git_branch("main")
 storage_mode("git")

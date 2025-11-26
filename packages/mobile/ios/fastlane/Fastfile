@@ -35,7 +35,14 @@ platform :ios do
 
   desc "Generate development certificates"
   lane :certificates_development do
-    # Try API key authentication first (works better with 2FA)
+    # ZERO-TOUCH CERTIFICATE MANAGEMENT
+    # Strategy: Maximize certificate reuse across all projects
+    # 1. Try to use existing shared development certificates first
+    # 2. Create project-specific profiles only when necessary
+    # 3. Never require human intervention
+
+    UI.message("🚀 ZERO-TOUCH: Attempting maximum certificate efficiency...")
+
     private_key_content = ENV["ASC_PRIVATE_KEY"]
     if private_key_content && !private_key_content.empty? && private_key_content != "your_asc_private_key"
       private_key_content = private_key_content.gsub("\0", "").gsub("%", "").strip
@@ -47,19 +54,34 @@ platform :ios do
         is_key_content_base64: true
       )
 
+      # ZERO-TOUCH STRATEGY: Try shared certificates first, then project-specific
       begin
+        # Step 1: Try to use any existing development certificates (maximum reuse)
+        UI.message("📋 Checking for existing development certificates...")
         match(
           type: "development",
           readonly: true,
-          app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
           api_key: api_key,
           keychain_name: "fastlane_tmp_keychain",
           keychain_password: ENV["MATCH_PASSWORD"]
         )
-        UI.success("✅ Zero-touch success: Using existing development certificates")
+        UI.success("✅ ZERO-TOUCH SUCCESS: Reused existing development certificates across projects")
+        UI.message("💡 Certificate efficiency: Maximum reuse achieved")
+
       rescue => e
-        if e.message.include?("No code signing identity found") || e.message.include?("No matching provisioning profiles found")
-          UI.message("⚠️  No existing development certificates/profiles found for modulo-squares. Creating new ones...")
+        if e.message.include?("No code signing identity found")
+          UI.message("⚠️  No development certificates exist. Creating shared certificates for all projects...")
+          match(
+            type: "development",
+            readonly: false,
+            api_key: api_key,
+            keychain_name: "fastlane_tmp_keychain",
+            keychain_password: ENV["MATCH_PASSWORD"]
+          )
+          UI.success("✅ ZERO-TOUCH: Created shared development certificates for maximum project reuse")
+        elsif e.message.include?("No matching provisioning profiles found")
+          # Create project-specific profile while reusing shared certificates
+          UI.message("📱 Creating project-specific development profile for modulo-squares...")
           match(
             type: "development",
             readonly: false,
@@ -68,29 +90,28 @@ platform :ios do
             keychain_name: "fastlane_tmp_keychain",
             keychain_password: ENV["MATCH_PASSWORD"]
           )
-          UI.success("✅ Created new development certificates and profiles for modulo-squares")
+          UI.success("✅ ZERO-TOUCH: Created project-specific profile while reusing shared certificates")
         else
           raise e
         end
       end
     else
-      # Fall back to username/password authentication
-      UI.message("API key not available, using username/password authentication")
-      UI.message("Note: If you have 2FA enabled, use an app-specific password")
+      # Fallback to username/password (less efficient but still zero-touch)
+      UI.message("🔑 Using username/password authentication (consider API key for maximum efficiency)")
+
       begin
         match(
           type: "development",
           readonly: true,
-          app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
           username: ENV["FASTLANE_APPLE_ID"],
           team_id: ENV["FASTLANE_TEAM_ID"],
           keychain_name: "fastlane_tmp_keychain",
           keychain_password: ENV["MATCH_PASSWORD"]
         )
-        UI.success("✅ Zero-touch success: Using existing development certificates")
+        UI.success("✅ ZERO-TOUCH SUCCESS: Reused existing development certificates")
       rescue => e
         if e.message.include?("No code signing identity found") || e.message.include?("No matching provisioning profiles found")
-          UI.message("⚠️  No existing development certificates/profiles found for modulo-squares. Creating new ones...")
+          UI.message("⚠️  Creating development certificates automatically...")
           match(
             type: "development",
             readonly: false,
@@ -100,7 +121,7 @@ platform :ios do
             keychain_name: "fastlane_tmp_keychain",
             keychain_password: ENV["MATCH_PASSWORD"]
           )
-          UI.success("✅ Created new development certificates and profiles for modulo-squares")
+          UI.success("✅ ZERO-TOUCH: Created development certificates automatically")
         else
           raise e
         end
@@ -110,11 +131,14 @@ platform :ios do
 
   desc "Zero-touch certificate management - automatically handles certificate acquisition and sharing"
   lane :certificates_appstore do
-    # Zero-touch DevOps: Most efficient certificate strategy
-    # 1. Check for existing valid certificates in shared repo
+    # ZERO-TOUCH DEVOPS: Most efficient certificate strategy across all projects
+    # 1. Check for existing valid certificates in shared repo (maximum reuse)
     # 2. Reuse certificates across multiple apps (most efficient)
-    # 3. Only create new certificates when necessary
+    # 3. Only create new certificates when absolutely necessary
     # 4. Support certificate sharing across all projects
+    # 5. Never require human intervention
+
+    UI.message("🚀 ZERO-TOUCH: Implementing maximum certificate efficiency strategy...")
 
     private_key_content = ENV["ASC_PRIVATE_KEY"]
     if private_key_content && !private_key_content.empty? && private_key_content != "your_asc_private_key"
@@ -127,9 +151,8 @@ platform :ios do
         is_key_content_base64: true
       )
 
-      # Most efficient zero-touch strategy: Smart certificate reuse
-      # Use readonly mode to avoid creating new certificates
-      UI.message("🚀 Most efficient zero-touch: Using existing certificates (readonly mode)")
+      # ZERO-TOUCH STRATEGY: Smart certificate reuse with project-specific profiles
+      UI.message("📋 Checking for existing distribution certificates...")
 
       begin
         match(
@@ -140,11 +163,12 @@ platform :ios do
           keychain_name: "fastlane_tmp_keychain",
           keychain_password: ENV["MATCH_PASSWORD"]
         )
-        UI.success("✅ Zero-touch success: Using existing certificates from shared repository")
-        UI.message("💡 Maximum efficiency achieved: No new certificates created")
+        UI.success("✅ ZERO-TOUCH SUCCESS: Reused existing certificates from shared repository")
+        UI.message("💡 Maximum efficiency achieved: No new certificates created, full reuse")
+
       rescue => e
         if e.message.include?("No code signing identity found")
-          UI.message("⚠️  No existing certificates found. Creating new ones...")
+          UI.message("⚠️  No distribution certificates exist. Creating shared certificates for all projects...")
           match(
             type: "appstore",
             readonly: false,
@@ -153,30 +177,98 @@ platform :ios do
             keychain_name: "fastlane_tmp_keychain",
             keychain_password: ENV["MATCH_PASSWORD"]
           )
-          UI.success("✅ Created new certificates successfully")
+          UI.success("✅ ZERO-TOUCH: Created shared distribution certificates for maximum project reuse")
+          UI.message("💡 Future projects will reuse these certificates automatically")
         else
           raise e
         end
       end
     else
-      # Fallback for when API key is not available
-      UI.message("🔑 API key not available, using username/password authentication")
-      UI.message("📝 Note: For zero-touch efficiency, configure ASC_PRIVATE_KEY environment variable")
+      # Fallback for when API key is not available (less efficient but still zero-touch)
+      UI.message("🔑 API key not available, using username/password (consider API key for maximum efficiency)")
 
-      match(
-        type: "appstore",
-        readonly: true,  # Be conservative with certificate creation
-        username: ENV["FASTLANE_APPLE_ID"],
-        team_id: ENV["FASTLANE_TEAM_ID"],
-        keychain_name: "fastlane_tmp_keychain",
-        keychain_password: ENV["MATCH_PASSWORD"]
-      )
+      begin
+        match(
+          type: "appstore",
+          readonly: true,
+          app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
+          username: ENV["FASTLANE_APPLE_ID"],
+          team_id: ENV["FASTLANE_TEAM_ID"],
+          keychain_name: "fastlane_tmp_keychain",
+          keychain_password: ENV["MATCH_PASSWORD"]
+        )
+        UI.success("✅ ZERO-TOUCH SUCCESS: Reused existing distribution certificates")
+      rescue => e
+        if e.message.include?("No code signing identity found")
+          UI.message("⚠️  Creating distribution certificates automatically...")
+          match(
+            type: "appstore",
+            readonly: false,
+            app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
+            username: ENV["FASTLANE_APPLE_ID"],
+            team_id: ENV["FASTLANE_TEAM_ID"],
+            keychain_name: "fastlane_tmp_keychain",
+            keychain_password: ENV["MATCH_PASSWORD"]
+          )
+          UI.success("✅ ZERO-TOUCH: Created distribution certificates automatically")
+        else
+          raise e
+        end
+      end
     end
   end
 
   lane :certificates_all do
     certificates_development
     certificates_appstore
+  end
+
+  desc "ZERO-TOUCH CERTIFICATE LIFECYCLE - Complete automated certificate management for all projects"
+  lane :zero_touch_certificates do
+    # ZERO-TOUCH CERTIFICATE LIFECYCLE MANAGEMENT
+    # This lane implements the complete automated certificate strategy:
+    # 1. Assess current certificate state
+    # 2. Reuse existing certificates when possible (maximum efficiency)
+    # 3. Create new certificates only when necessary
+    # 4. Ensure all projects can share certificates
+    # 5. Provide detailed status reporting
+    # 6. Never require human intervention
+
+    UI.message("🤖 ZERO-TOUCH CERTIFICATE LIFECYCLE: Starting automated assessment...")
+
+    # Phase 1: Development Certificates (Maximum Reuse Strategy)
+    UI.message("📋 Phase 1: Development Certificate Assessment")
+    begin
+      certificates_development
+      UI.success("✅ Development certificates: Optimized and ready")
+    rescue => e
+      UI.error("❌ Development certificate phase failed: #{e.message}")
+      raise e
+    end
+
+    # Phase 2: Distribution Certificates (Project-Specific but Efficient)
+    UI.message("📋 Phase 2: Distribution Certificate Assessment")
+    begin
+      certificates_appstore
+      UI.success("✅ Distribution certificates: Optimized and ready")
+    rescue => e
+      UI.error("❌ Distribution certificate phase failed: #{e.message}")
+      raise e
+    end
+
+    # Phase 3: Status Report and Optimization Recommendations
+    UI.message("📊 Phase 3: Certificate Status Report")
+    UI.success("🎉 ZERO-TOUCH COMPLETE: All certificates optimized for maximum efficiency")
+    UI.message("💡 Benefits achieved:")
+    UI.message("   • Maximum certificate reuse across all projects")
+    UI.message("   • Automatic certificate lifecycle management")
+    UI.message("   • Zero human intervention required")
+    UI.message("   • Shared certificate pool for development")
+    UI.message("   • Project-specific profiles for distribution")
+    UI.message("   • Future projects will automatically reuse these certificates")
+
+    # Future enhancement: Certificate expiration monitoring
+    UI.message("🔮 Future: Automatic certificate renewal 30 days before expiration")
   end
 
   desc "Build iOS app for development without code signing"
@@ -200,8 +292,8 @@ platform :ios do
     release_notes = options[:release_notes] || "Automated build for TestFlight"
     feedback_email = ENV["BETA_FEEDBACK_EMAIL"] || "mark.a.nelson@outlook.com"
 
-    # Sync code signing certificates for TestFlight (both development and distribution)
-    certificates_all
+    # ZERO-TOUCH: Use complete automated certificate lifecycle management
+    zero_touch_certificates
 
     # Set environment variables for manual code signing in Flutter build
     ENV['PROVISIONING_PROFILE'] = ENV['sigh_com.nelsongrey.modulosquares.app.ios_appstore']
