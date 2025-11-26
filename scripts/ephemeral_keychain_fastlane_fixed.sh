@@ -32,7 +32,7 @@ fi
 # Check for leftover ephemeral keychains from previous runs
 echo "[ephemeral-keychain] Checking for leftover ephemeral keychains..."
 if command -v security >/dev/null 2>&1; then
-  LEFTOVER_KEYCHAINS=$(security list-keychains -d user 2>/dev/null | grep "fastlane_tmp_" | wc -l || echo "0")
+  LEFTOVER_KEYCHAINS=$(security list-keychains -d user 2>/dev/null | grep "fastlane_tmp_" | wc -l | tr -d ' ' || echo "0")
   if [ "$LEFTOVER_KEYCHAINS" -gt 0 ]; then
     echo "[ephemeral-keychain] WARNING: Found $LEFTOVER_KEYCHAINS leftover ephemeral keychains, cleaning up..."
     security list-keychains -d user 2>/dev/null | grep "fastlane_tmp_" | while read -r kc; do
