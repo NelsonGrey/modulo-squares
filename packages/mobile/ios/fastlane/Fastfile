@@ -35,73 +35,14 @@ platform :ios do
 
   desc "Generate development certificates"
   lane :certificates_development do
-    # Try API key authentication first (works better with 2FA)
-    private_key_content = ENV["ASC_PRIVATE_KEY"]
-    if private_key_content && !private_key_content.empty? && private_key_content != "your_asc_private_key"
-      private_key_content = private_key_content.gsub("\0", "").gsub("%", "").strip
-
-      api_key = app_store_connect_api_key(
-        key_id: ENV["ASC_KEY_ID"],
-        issuer_id: ENV["ASC_ISSUER_ID"],
-        key_content: private_key_content,
-        is_key_content_base64: true
-      )
-
-      begin
-        match(
-          type: "development",
-          readonly: true,
-          api_key: api_key,
-          keychain_name: "fastlane_tmp_keychain",
-          keychain_password: ENV["MATCH_PASSWORD"]
-        )
-        UI.success("✅ Zero-touch success: Using existing development certificates")
-      rescue => e
-        if e.message.include?("No code signing identity found")
-          UI.message("⚠️  No existing development certificates found. Creating new ones...")
-          match(
-            type: "development",
-            readonly: false,
-            api_key: api_key,
-            keychain_name: "fastlane_tmp_keychain",
-            keychain_password: ENV["MATCH_PASSWORD"]
-          )
-          UI.success("✅ Created new development certificates successfully")
-        else
-          raise e
-        end
-      end
-    else
-      # Fall back to username/password authentication
-      UI.message("API key not available, using username/password authentication")
-      UI.message("Note: If you have 2FA enabled, use an app-specific password")
-      begin
-        match(
-          type: "development",
-          readonly: true,
-          username: ENV["FASTLANE_APPLE_ID"],
-          team_id: ENV["FASTLANE_TEAM_ID"],
-          keychain_name: "fastlane_tmp_keychain",
-          keychain_password: ENV["MATCH_PASSWORD"]
-        )
-        UI.success("✅ Zero-touch success: Using existing development certificates")
-      rescue => e
-        if e.message.include?("No code signing identity found")
-          UI.message("⚠️  No existing development certificates found. Creating new ones...")
-          match(
-            type: "development",
-            readonly: false,
-            username: ENV["FASTLANE_APPLE_ID"],
-            team_id: ENV["FASTLANE_TEAM_ID"],
-            keychain_name: "fastlane_tmp_keychain",
-            keychain_password: ENV["MATCH_PASSWORD"]
-          )
-          UI.success("✅ Created new development certificates successfully")
-        else
-          raise e
-        end
-      end
-    end
+    # For development, allow creating new certificates
+    match(
+      type: "development",
+      readonly: false,  # Allow creating new certificates for development
+      app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
+      keychain_name: "fastlane_tmp_keychain",
+      keychain_password: ENV["MATCH_PASSWORD"]
+    )
   end
 
   desc "Zero-touch certificate management - automatically handles certificate acquisition and sharing"

@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Test script to verify GitHub token access to nelson-grey-certificates repository
+# Test script to verify GitHub token access to modulo-squares-certificates repository
 
-echo "🔍 Testing GitHub token access to nelson-grey-certificates repository..."
+echo "🔍 Testing GitHub token access to modulo-squares-certificates repository..."
 echo ""
 
 # Check if token is provided
@@ -13,11 +13,11 @@ if [ -z "$1" ]; then
 fi
 
 TOKEN="$1"
-REPO_URL="https://oauth2:$TOKEN@github.com/mnelson3/nelson-grey-certificates.git"
+REPO_URL="https://oauth2:$TOKEN@github.com/mnelson3/modulo-squares-certificates.git"
 TEST_DIR="/tmp/test-certificates-$(date +%s)"
 
 echo "📁 Testing repository access..."
-echo "Repository: https://github.com/mnelson3/nelson-grey-certificates"
+echo "Repository: https://github.com/mnelson3/modulo-squares-certificates"
 echo "Test directory: $TEST_DIR"
 echo ""
 
