@@ -1,0 +1,343 @@
+name: 🚀 CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+      - develop
+    paths:
+      - 'packages/mobile/**'
+      - 'packages/web/**'
+      - '.github/workflows/ci-cd-pipeline.yml'
+      - '.github/actions/**'
+      - 'pubspec.yaml'
+      - 'package.json'
+      - 'firebase*.json'
+      - 'docs/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+        - development
+        - staging
+        - production
+      dry_run:
+        required: false
+        default: true
+        type: boolean
+  pull_request:
+    branches: [main, develop, staging]
+    paths:
+      - 'packages/**'
+      - '.github/workflows/**'
+      - 'firebase*.json'
+      - 'docs/**'
+      - 'pubspec.yaml'
+      - 'package.json'
+
+env:
+  FLUTTER_VERSION: '3.35.7'
+  DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true' || contains(github.event.head_commit.message, '[DRY-RUN]') || contains(github.event.head_commit.message, '[SKIP-DEPLOY]') }}
+  NODE_VERSION: '18'
+
+jobs:
+    # 🔍 Quality Checks
+  quality-check:
+    name: 🔍 Quality Check
+    runs-on: self-hosted
+    steps:
+      - name: 🏃 Check Runner Compatibility
+        id: check-runner
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ] && [ "$RUNNER_ARCH" = "ARM64" ]; then
+            echo "ARM64 Linux detected - skipping Flutter operations"
+            echo "skip-flutter=true" >> $GITHUB_OUTPUT
+          else
+            echo "Compatible runner - proceeding with Flutter operations"
+            echo "skip-flutter=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🦋 Setup Flutter
+        id: setup-flutter
+        if: steps.check-runner.outputs.skip-flutter != 'true'
+        uses: ./.github/actions/setup-flutter
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache-bust: v3
+
+      - name: 📦 Install Dependencies
+        if: steps.check-runner.outputs.skip-flutter != 'true'
+        run: flutter pub get
+        working-directory: packages/mobile
+
+      - name: 🔧 Flutter Analyze
+        if: steps.check-runner.outputs.skip-flutter != 'true'
+        run: flutter analyze
+        working-directory: packages/mobile
+
+      - name: 🧪 Run Tests
+        if: steps.check-runner.outputs.skip-flutter != 'true'
+        run: flutter test --coverage --test-randomize-ordering-seed random
+        working-directory: packages/mobile
+
+      - name: 🧪 Run Integration Tests
+        if: steps.check-runner.outputs.skip-flutter != 'true'
+        run: |
+          # Check if devices are available for integration tests
+          if flutter devices | grep -q "•"; then
+            echo "Devices found, running integration tests..."
+            # Prefer simulators over physical devices (physical devices often need manual setup)
+            # Look for iOS simulators first, then Chrome as fallback
+            DEVICE_LINE=$(flutter devices | grep -E "com\.apple\.CoreSimulator\.SimRuntime\.iOS.*simulator" | head -1)
+
+            # If no simulator found, try Chrome
+            if [ -z "$DEVICE_LINE" ]; then
+              DEVICE_LINE=$(flutter devices | grep "chrome" | head -1)
+            fi
+
+            if [ -n "$DEVICE_LINE" ]; then
+              # Extract device ID (2nd field when split by •)
+              DEVICE_ID=$(echo "$DEVICE_LINE" | awk -F '•' '{gsub(/^[ \t]+|[ \t]+$/, "", $2); print $2}')
+              if [ -n "$DEVICE_ID" ]; then
+                echo "Using device: $DEVICE_ID"
+                # Add timeout to prevent hanging on device connection issues
+                timeout 300 flutter test integration_test --test-randomize-ordering-seed random -d "$DEVICE_ID" || echo "Integration tests timed out or failed, continuing..."
+              else
+                echo "Could not parse device ID from: $DEVICE_LINE"
+                echo "Skipping integration tests..."
+              fi
+            else
+              echo "No suitable simulator or Chrome device found for integration tests, skipping..."
+              echo "Available devices:"
+              flutter devices
+            fi
+          else
+            echo "No devices available for integration tests, skipping..."
+          fi
+        working-directory: packages/mobile
+
+      - name: 📊 Check Test Coverage
+        if: steps.check-runner.outputs.skip-flutter != 'true'
+        run: |
+          # Function to extract coverage data for a service
+          get_coverage() {
+            local service_file=$1
+            # Extract lines found and lines hit for the specific file
+            local lf=$(grep -A 100 "SF:$service_file" coverage/lcov.info | grep "^LF:" | head -1 | cut -d: -f2)
+            local lh=$(grep -A 100 "SF:$service_file" coverage/lcov.info | grep "^LH:" | head -1 | cut -d: -f2)
+
+            # Default to 0 if not found
+            lf=${lf:-0}
+            lh=${lh:-0}
+
+            echo "$lh:$lf"
+          }
+
+          echo "📊 Checking test coverage thresholds..."
+
+          # Purchase Service: 70% minimum
+          PURCHASE_DATA=$(get_coverage "lib/core/services/purchase_service.dart")
+          PURCHASE_COVERAGE=$(echo $PURCHASE_DATA | cut -d: -f1)
+          PURCHASE_TOTAL=$(echo $PURCHASE_DATA | cut -d: -f2)
+
+          # Calculate percentage safely
+          if [ "$PURCHASE_TOTAL" -gt 0 ]; then
+            PURCHASE_PERCENT=$(( PURCHASE_COVERAGE * 100 / PURCHASE_TOTAL ))
+          else
+            PURCHASE_PERCENT=0
+          fi
+
+          # Consent Service: 20% minimum
+          CONSENT_DATA=$(get_coverage "lib/core/services/consent_service.dart")
+          CONSENT_COVERAGE=$(echo $CONSENT_DATA | cut -d: -f1)
+          CONSENT_TOTAL=$(echo $CONSENT_DATA | cut -d: -f2)
+
+          if [ "$CONSENT_TOTAL" -gt 0 ]; then
+            CONSENT_PERCENT=$(( CONSENT_COVERAGE * 100 / CONSENT_TOTAL ))
+          else
+            CONSENT_PERCENT=0
+          fi
+
+          # Leaderboard Service: 5% minimum
+          LEADERBOARD_DATA=$(get_coverage "lib/core/services/leaderboard_service.dart")
+          LEADERBOARD_COVERAGE=$(echo $LEADERBOARD_DATA | cut -d: -f1)
+          LEADERBOARD_TOTAL=$(echo $LEADERBOARD_DATA | cut -d: -f2)
+
+          if [ "$LEADERBOARD_TOTAL" -gt 0 ]; then
+            LEADERBOARD_PERCENT=$(( LEADERBOARD_COVERAGE * 100 / LEADERBOARD_TOTAL ))
+          else
+            LEADERBOARD_PERCENT=0
+          fi
+
+          # Integration Test Coverage: Check for integration test files
+          INTEGRATION_TESTS=$(find test/integration -name "*_integration_test.dart" 2>/dev/null | wc -l)
+          INTEGRATION_TESTS_RUN=$(find . -name "*integration_test*" -type f 2>/dev/null | wc -l)
+
+          echo "Purchase Service: $PURCHASE_COVERAGE/$PURCHASE_TOTAL lines ($PURCHASE_PERCENT%)"
+          echo "Consent Service: $CONSENT_COVERAGE/$CONSENT_TOTAL lines ($CONSENT_PERCENT%)"
+          echo "Leaderboard Service: $LEADERBOARD_COVERAGE/$LEADERBOARD_TOTAL lines ($LEADERBOARD_PERCENT%)"
+          echo "Integration Tests: $INTEGRATION_TESTS files found, $INTEGRATION_TESTS_RUN tests run"
+
+          # Check thresholds (only if we have coverage data)
+          if [ "$PURCHASE_TOTAL" -gt 0 ] && [ $PURCHASE_PERCENT -lt 70 ]; then
+            echo "❌ Purchase service coverage ($PURCHASE_PERCENT%) below 70% threshold"
+            exit 1
+          fi
+
+          if [ "$CONSENT_TOTAL" -gt 0 ] && [ $CONSENT_PERCENT -lt 20 ]; then
+            echo "❌ Consent service coverage ($CONSENT_PERCENT%) below 20% threshold"
+            exit 1
+          fi
+
+          if [ "$LEADERBOARD_TOTAL" -gt 0 ] && [ $LEADERBOARD_PERCENT -lt 5 ]; then
+            echo "❌ Leaderboard service coverage ($LEADERBOARD_PERCENT%) below 5% threshold"
+            exit 1
+          fi
+
+          # Only check integration test count if tests were actually run
+          if [ $INTEGRATION_TESTS_RUN -gt 0 ] && [ $INTEGRATION_TESTS -lt 3 ]; then
+            echo "❌ Integration test coverage insufficient ($INTEGRATION_TESTS files, minimum 3 required)"
+            exit 1
+          elif [ $INTEGRATION_TESTS_RUN -eq 0 ]; then
+            echo "⚠️ Integration tests were skipped (no devices available)"
+          else
+            echo "✅ Integration test coverage met ($INTEGRATION_TESTS files)"
+          fi
+
+          echo "✅ All coverage thresholds met!"
+        working-directory: packages/mobile
+
+      - name: 📊 Upload Coverage
+        if: steps.check-runner.outputs.skip-flutter != 'true'
+        uses: codecov/codecov-action@v4
+        with:
+          file: packages/mobile/coverage/lcov.info
+          flags: flutter
+
+  # 🏗️ Build Web App
+  build-web:
+    name: 🏗️ Build Web App
+    runs-on: self-hosted
+    needs: quality-check
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment != 'production')
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install Dependencies
+        run: npm ci
+        working-directory: packages/web
+
+      - name: � Check Dry Run Status
+        run: |
+          if [[ "${{ env.DRY_RUN }}" == "true" ]]; then
+            echo "🏃 DRY RUN MODE: Skipping actual deployments"
+            echo "This run will test the pipeline without consuming resources"
+          else
+            echo "🚀 LIVE MODE: Full deployment will proceed"
+          fi
+
+      - name: 🏗️ Build Web App
+        run: npm run build
+        working-directory: packages/web
+
+      - name: 📤 Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build-${{ github.sha }}
+          path: packages/web/dist/
+          retention-days: 7
+
+  # 🔥 Deploy Web App
+  deploy-web:
+    name: 🔥 Deploy Web App
+    runs-on: self-hosted
+    needs: build-web
+    if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/develop' || github.event_name == 'workflow_dispatch')
+    environment:
+      name: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.environment == 'production' && 'PRODUCTION' || github.event.inputs.environment == 'staging' && 'STAGING' || 'DEVELOPMENT') || (github.ref == 'refs/heads/main' && 'PRODUCTION' || github.ref == 'refs/heads/staging' && 'STAGING' || 'DEVELOPMENT') }}
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 📥 Download Web Build
+        uses: actions/download-artifact@v4
+        with:
+          name: web-build-${{ github.sha }}
+          path: packages/web/dist/
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: 📦 Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: 🔥 Deploy to Firebase Hosting
+        if: env.DRY_RUN != 'true'
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: |
+          # Determine environment and config
+          ENVIRONMENT="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'production' || github.ref == 'refs/heads/staging' && 'staging' || 'development') }}"
+          echo "🚀 Deploying to $ENVIRONMENT environment"
+
+          if [[ "$ENVIRONMENT" == "production" ]]; then
+            CONFIG_FILE="firebase.prod.json"
+            PROJECT_ID="modulo-squares-prod"
+          elif [[ "$ENVIRONMENT" == "staging" ]]; then
+            CONFIG_FILE="firebase.staging.json"
+            PROJECT_ID="modulo-squares-staging"
+          else
+            CONFIG_FILE="firebase.dev.json"
+            PROJECT_ID="modulo-squares-dev"
+          fi
+
+          # Check if Firebase token is available
+          if [ -z "$FIREBASE_TOKEN" ]; then
+            echo "❌ FIREBASE_TOKEN secret is not configured"
+            exit 1
+          fi
+
+          # Copy environment-specific config
+          cp "$CONFIG_FILE" firebase.json
+
+          # Deploy to the website target (configured in firebase.json)
+          firebase use "$PROJECT_ID" --token "$FIREBASE_TOKEN"
+          firebase deploy --only hosting:website --token "$FIREBASE_TOKEN"
+
+  # 📊 Deployment Summary
+  deployment-summary:
+    name: 📊 Deployment Summary
+    runs-on: self-hosted
+    needs: [quality-check, build-web, deploy-web]
+    if: always()
+    steps:
+      - name: 📊 Generate Summary
+        run: |
+          echo "## � CI/CD Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Component | Status | Details |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|---------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔍 Quality Check | ${{ needs.quality-check.result }} | Tests & Analysis |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🏗️ Web Build | ${{ needs.build-web.result }} | Build artifacts created |" >> $GITHUB_STEP_SUMMARY
+          echo "| � Web Deploy | ${{ needs.deploy-web.result }} | Firebase Hosting |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment**: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'PRODUCTION' || github.ref == 'refs/heads/staging' && 'STAGING' || 'DEVELOPMENT') }}" >> $GITHUB_STEP_SUMMARY

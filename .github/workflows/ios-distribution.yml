@@ -138,18 +138,12 @@ jobs:
             xcrun simctl create "iPhone 15 Pro" "iPhone 15 Pro" 2>/dev/null || echo "⚠️ Could not create simulator"
           fi
 
-      - name: 🔧 Install System Dependencies
+      - name: 🔧 Setup macOS CI Environment
         run: |
-          # Install GNU coreutils for timeout command (gtimeout)
-          brew install coreutils
-          
-          # Verify gtimeout is available
-          if command -v gtimeout >/dev/null 2>&1; then
-            echo "✅ gtimeout is available"
-          else
-            echo "❌ gtimeout is not available after installing coreutils"
-            exit 1
-          fi
+          chmod +x scripts/setup-macos-ci.sh
+          ./scripts/setup-macos-ci.sh
+        env:
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
 
       - name: Install Dependencies
         run: flutter pub get
@@ -248,96 +242,39 @@ jobs:
           ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'PRODUCTION' || github.ref == 'refs/heads/staging' && 'STAGING' || 'DEVELOPMENT' }}
           FASTLANE_PASSWORD: ${{ secrets.FASTLANE_PASSWORD }}
           FLUTTER_ROOT: ${{ env.FLUTTER_ROOT }}
-          IOS_CERT_P12_PASSWORD: ${{ secrets.IOS_CERT_P12_PASSWORD }}
         run: |
           # Set release notes environment variable
           RELEASE_NOTES="${{ github.event.inputs.release_notes || format('Build from {0} - {1}', github.ref_name, github.sha) }}"
           echo "RELEASE_NOTES=$RELEASE_NOTES" >> $GITHUB_ENV
           
+          cd packages/mobile/ios
+          
           # Run Fastlane pipeline based on environment and build type
           BUILD_TYPE="${{ github.event.inputs.build_type || 'debug' }}"
 
-          # Prefer using the repository ephemeral keychain helper when present.
-          # The helper will create a temporary keychain, import any provided certs,
-          # run the given command, and then delete the temporary keychain.
-          EPHEMERAL_HELPER="./scripts/ephemeral_keychain_fastlane_fixed.sh"
-
           if [[ "${{ github.ref }}" == "refs/heads/main" ]] || [[ "${{ github.ref }}" == "refs/heads/staging" ]] || [[ "$BUILD_TYPE" == "release" ]]; then
             # Production/Staging OR manual release: Upload to TestFlight
-            if [ -f packages/mobile/ios/Gemfile ]; then
-              RUN_CMD="bundle config set --local path 'vendor/bundle' && bundle install --jobs 4 || true && bundle exec fastlane beta"
+            if [ -f Gemfile ]; then
+              bundle config set --local path 'vendor/bundle' && bundle install --jobs 4 || true
+              bundle exec fastlane beta
             else
-              RUN_CMD="fastlane beta"
+              fastlane beta
             fi
           else
             # Development: Just build and test
-            if [ -f packages/mobile/ios/Gemfile ]; then
-              RUN_CMD="bundle config set --local path 'vendor/bundle' && bundle install --jobs 4 || true && bundle exec fastlane test_and_build"
+            if [ -f Gemfile ]; then
+              bundle config set --local path 'vendor/bundle' && bundle install --jobs 4 || true
+              bundle exec fastlane test_and_build
             else
-              RUN_CMD="fastlane test_and_build"
+              fastlane test_and_build
             fi
           fi
 
-          # If ephemeral helper exists, run the pipeline through it so we avoid
-          # touching the login keychain on the runner. The helper will run the
-          # command from the repository root; ensure Fastlane executes in the
-          # correct iOS directory by prefixing with a cd when invoking.
-          if [ -f "$EPHEMERAL_HELPER" ]; then
-            echo "Using ephemeral keychain helper: $EPHEMERAL_HELPER"
-            # Check if certificate P12 exists and set variables accordingly
-            CERT_P12_PATH="./packages/mobile/ios/certs/dist_cert.p12"
-            if [ -f "$CERT_P12_PATH" ] && [ -n "$IOS_CERT_P12_PASSWORD" ]; then
-              echo "Certificate P12 found, using ephemeral keychain with certificate import"
-              echo "CERT_P12_PATH=$CERT_P12_PATH"
-              echo "CERT_P12_PASSWORD length: ${#IOS_CERT_P12_PASSWORD}"
-              CERT_P12_PATH="$CERT_P12_PATH" CERT_P12_PASSWORD="$IOS_CERT_P12_PASSWORD" bash "$EPHEMERAL_HELPER" "cd packages/mobile/ios && $RUN_CMD"
-            else
-              echo "No certificate P12 or password found, using ephemeral keychain without certificate import"
-              bash "$EPHEMERAL_HELPER" "cd packages/mobile/ios && $RUN_CMD"
-            fi
-          else
-            echo "Ephemeral keychain helper not found; running Fastlane directly"
-            cd packages/mobile/ios
-            # Fallback: run the assembled command directly in shell with timeout
-            timeout 1800 bash -c "$RUN_CMD"
-          fi
-
-      - name: 🧹 Clean Up Ephemeral Keychain
+      - name: 🧹 Clean Up
         if: always()
         run: |
-          set -euo pipefail
+          # Clean up temporary keychain
+          security delete-keychain fastlane_tmp_keychain 2>/dev/null || true
           
-          # Clean up any ephemeral keychains created during the build
-          if [ -n "${MATCH_KEYCHAIN_PATH:-}" ]; then
-            base_name=$(basename "${MATCH_KEYCHAIN_PATH}")
-            if [[ "$base_name" == fastlane_tmp_* ]]; then
-              echo "Deleting temporary keychain at path ${MATCH_KEYCHAIN_PATH}"
-              security delete-keychain "${MATCH_KEYCHAIN_PATH}" || true
-            else
-              echo "MATCH_KEYCHAIN_PATH='${MATCH_KEYCHAIN_PATH}' does not match ephemeral pattern; skipping deletion"
-            fi
-          elif [ -n "${MATCH_KEYCHAIN_NAME:-}" ]; then
-            base_name=$(basename "${MATCH_KEYCHAIN_NAME}")
-            if [[ "$base_name" == fastlane_tmp_* ]]; then
-              echo "Deleting temporary keychain ${MATCH_KEYCHAIN_NAME}"
-              security delete-keychain "${MATCH_KEYCHAIN_NAME}" || true
-            else
-              echo "MATCH_KEYCHAIN_NAME='${MATCH_KEYCHAIN_NAME}' does not match ephemeral pattern; skipping deletion to avoid deleting login or other system keychains"
-            fi
-          else
-            echo "No MATCH_KEYCHAIN_NAME present; attempting to delete any ephemeral keychains named 'fastlane_tmp_*'"
-            # Try to remove any leftover ephemeral keychains created by previous runs using 'fastlane_tmp_' prefix
-            list=$(security list-keychains -d user | sed 's/[" ]//g' | tr '\n' ' ')
-            for kc in $list; do
-              # Make sure we only delete keychains with the fastlane_tmp_ prefix (avoid login.keychain-db)
-              short=$(basename "$kc")
-              if [[ "$short" == fastlane_tmp_* ]]; then
-                echo "Deleting leftover ephemeral keychain: $kc"
-                security delete-keychain "$kc" || true
-              fi
-            done
-          fi
-
-      - name: 🧹 Clean Up Service Account Key
-        if: always()
-        run: rm -f packages/mobile/ios/service-account-key.json packages/mobile/ios/asc_private_key.p8 packages/mobile/ios/certs/dist_cert.p12
+          # Clean up service account files
+          rm -f packages/mobile/ios/service-account-key.json packages/mobile/ios/asc_private_key.p8 packages/mobile/ios/certs/dist_cert.p12
