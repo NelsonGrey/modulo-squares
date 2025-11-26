@@ -34,8 +34,6 @@ env:
 jobs:
   distribute-ios:
     runs-on: [self-hosted, macos-latest]
-    environment:
-      name: ${{ github.ref == 'refs/heads/main' && 'PRODUCTION' || github.ref == 'refs/heads/staging' && 'STAGING' || 'DEVELOPMENT' }}
     steps:
       - name: 📥 Checkout Code
         uses: actions/checkout@v4
@@ -238,7 +236,7 @@ jobs:
       - name: 🏗️ Build and Distribute iOS App
         env:
           ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'PRODUCTION' || github.ref == 'refs/heads/staging' && 'STAGING' || 'DEVELOPMENT' }}
-          FASTLANE_PASSWORD: ${{ secrets.FASTLANE_PASSWORD }}
+          FASTLANE_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
           FLUTTER_ROOT: ${{ env.FLUTTER_ROOT }}
         run: |
           # Set release notes environment variable
