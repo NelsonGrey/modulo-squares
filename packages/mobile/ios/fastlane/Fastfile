@@ -51,22 +51,24 @@ platform :ios do
         match(
           type: "development",
           readonly: true,
+          app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
           api_key: api_key,
           keychain_name: "fastlane_tmp_keychain",
           keychain_password: ENV["MATCH_PASSWORD"]
         )
         UI.success("✅ Zero-touch success: Using existing development certificates")
       rescue => e
-        if e.message.include?("No code signing identity found")
-          UI.message("⚠️  No existing development certificates found. Creating new ones...")
+        if e.message.include?("No code signing identity found") || e.message.include?("No matching provisioning profiles found")
+          UI.message("⚠️  No existing development certificates/profiles found for modulo-squares. Creating new ones...")
           match(
             type: "development",
             readonly: false,
+            app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
             api_key: api_key,
             keychain_name: "fastlane_tmp_keychain",
             keychain_password: ENV["MATCH_PASSWORD"]
           )
-          UI.success("✅ Created new development certificates successfully")
+          UI.success("✅ Created new development certificates and profiles for modulo-squares")
         else
           raise e
         end
@@ -79,6 +81,7 @@ platform :ios do
         match(
           type: "development",
           readonly: true,
+          app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
           username: ENV["FASTLANE_APPLE_ID"],
           team_id: ENV["FASTLANE_TEAM_ID"],
           keychain_name: "fastlane_tmp_keychain",
@@ -86,17 +89,18 @@ platform :ios do
         )
         UI.success("✅ Zero-touch success: Using existing development certificates")
       rescue => e
-        if e.message.include?("No code signing identity found")
-          UI.message("⚠️  No existing development certificates found. Creating new ones...")
+        if e.message.include?("No code signing identity found") || e.message.include?("No matching provisioning profiles found")
+          UI.message("⚠️  No existing development certificates/profiles found for modulo-squares. Creating new ones...")
           match(
             type: "development",
             readonly: false,
+            app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
             username: ENV["FASTLANE_APPLE_ID"],
             team_id: ENV["FASTLANE_TEAM_ID"],
             keychain_name: "fastlane_tmp_keychain",
             keychain_password: ENV["MATCH_PASSWORD"]
           )
-          UI.success("✅ Created new development certificates successfully")
+          UI.success("✅ Created new development certificates and profiles for modulo-squares")
         else
           raise e
         end
