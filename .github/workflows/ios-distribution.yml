@@ -34,6 +34,8 @@ env:
 jobs:
   distribute-ios:
     runs-on: [self-hosted, macos-latest]
+    environment:
+      name: ${{ github.ref == 'refs/heads/main' && 'PRODUCTION' || github.ref == 'refs/heads/staging' && 'STAGING' || 'DEVELOPMENT' }}
     steps:
       - name: 📥 Checkout Code
         uses: actions/checkout@v4
@@ -173,7 +175,7 @@ jobs:
 
       - name: 🔐 Create Service Account Key File
         env:
-          FIREBASE_SERVICE_ACCOUNT_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
+          FIREBASE_SERVICE_ACCOUNT_KEY: ${{ secrets[format('FIREBASE_SERVICE_ACCOUNT_KEY_{0}', github.ref == 'refs/heads/main' && 'PRODUCTION' || github.ref == 'refs/heads/staging' && 'STAGING' || 'DEVELOPMENT')] }}
         run: |
           mkdir -p packages/mobile/ios
           echo "$FIREBASE_SERVICE_ACCOUNT_KEY" > packages/mobile/ios/service-account-key.json
