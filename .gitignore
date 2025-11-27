@@ -19,10 +19,24 @@ migrate_working_dir/
 *.iws
 .idea/
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
+# Editor and IDE files
+.vscode/settings.json
+.vscode/launch.json
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+.temp/
+
+# Cache directories
+.sass-cache/
+.cache/
+**/.cache/
 
 # Flutter/Dart/Pub related
 **/doc/api/
@@ -130,17 +144,40 @@ actions-runner/actions-runner-*.tar.gz
 actions-runner/_work/
 actions-runner/_diag/
 actions-runner/.runner_migrated
+
+# macOS runner directory (contains credentials and local config)
+macos-runner/
+macos-runner/**
+
 modulosquare.mobileprovision
 AppleDistribution.p12
 modulosquares.mobileprovision
 DistributionCert.p12
 ModuloSquaresDistribution.mobileprovision
 
-# Automation configuration (contains secrets)
-.env.automation
+# Automation and monitoring logs
 automation.log
+monitoring.log
+modulo.log
+flutter_*.log
+
+# Firebase cache files
+.firebase/*.cache
+.firebase/hosting.*.cache
+
+# macOS system files
+.DS_Store
+**/.DS_Store
+
+# Windows system files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Automation and monitoring files
 health-status.json
 monitoring.pid
-
-# But allow the example template
-!.env.automation.example
+automation.log
+monitoring.log
+modulo.log
+flutter_*.log
