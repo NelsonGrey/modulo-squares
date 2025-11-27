@@ -44,6 +44,64 @@ modulo-squares/
 - **Offline Play**: Local gameplay with cloud sync
 - **Privacy Compliant**: App Tracking Transparency, consent management
 
+## 🐳 Containerization & Docker
+
+The project includes Docker containerization for web and API components, enabling consistent deployments across environments.
+
+### Docker Setup
+
+**Prerequisites:**
+- Docker Desktop or Docker Engine
+- Docker Hub account (for image publishing)
+
+**Quick Start:**
+```bash
+# Set up Docker Hub authentication
+./setup-docker-auth.sh
+
+# Build and run web app locally
+cd packages/web
+docker build -t modulo-squares-web .
+docker run -p 8080:80 modulo-squares-web
+
+# Build and run API locally
+cd packages/functions
+docker build -t modulo-squares-api .
+docker run -p 3000:3000 modulo-squares-api
+```
+
+### Docker Images
+
+- **`packages/web/Dockerfile`**: Multi-stage build for the Flutter web app
+  - Build stage: Compiles Flutter web assets
+  - Runtime stage: Nginx serving static files with production optimizations
+- **`packages/functions/Dockerfile`**: Node.js container for Firebase Functions API
+  - Includes Express server wrapper for containerized deployment
+
+### CI/CD with Docker
+
+The GitHub Actions pipeline automatically:
+- Builds Docker images for web and API components
+- Pushes images to Docker Hub with version tags
+- Deploys containers to production environments
+
+**Environment Variables Required:**
+- `DOCKERHUB_USERNAME`: Your Docker Hub username
+- `DOCKERHUB_TOKEN`: Docker Hub Personal Access Token
+
+For detailed Docker authentication setup, see [DOCKER_AUTH_SETUP.md](docs/DOCKER_AUTH_SETUP.md).
+
+### Local Development with Docker
+
+```bash
+# Run full stack with Docker Compose (future enhancement)
+# docker-compose up
+
+# Or run individual services
+docker run -d --name web-app -p 8080:80 modulo-squares-web:latest
+docker run -d --name api-server -p 3000:3000 modulo-squares-api:latest
+```
+
 ## 🛠️ Tech Stack
 
 - **Framework**: Flutter 3.32.0
@@ -263,7 +321,7 @@ flutter build web
 
 ## 🚀 Deployment
 
-The project uses GitHub Actions for CI/CD with three Firebase environments:
+The project uses GitHub Actions for CI/CD with three Firebase environments and Docker-based container deployments:
 
 - **DEV**: `modulo-squares-dev` (develop branch)
 - **STAGING**: `modulo-squares-staging` (staging branch)
@@ -275,9 +333,14 @@ The project uses GitHub Actions for CI/CD with three Firebase environments:
 - **PROD**: https://modulo-squares-prod.web.app
 
 ### Automatic Deployments
-- Push to `develop` → Deploys to DEV
-- Push to `staging` → Deploys to STAGING
-- Push to `main` → Deploys to PROD + creates release
+- Push to `develop` → Deploys to DEV (Docker containers + Firebase)
+- Push to `staging` → Deploys to STAGING (Docker containers + Firebase)
+- Push to `main` → Deploys to PROD + creates release (Docker containers + Firebase + mobile builds)
+
+### Containerized Components
+- **Web App**: Docker container with Nginx serving Flutter web build
+- **API Functions**: Docker container with Node.js/Express wrapping Firebase Functions
+- **Mobile Apps**: Native Android/iOS builds via Flutter
 
 ### Manual Deployments
 ```bash

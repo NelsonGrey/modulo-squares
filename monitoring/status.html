@@ -28,7 +28,11 @@
         </div>
 
         <div class="status info">
-            <strong>Labels:</strong> self-hosted, ubuntu-latest, docker
+            <strong>Labels:</strong> self-hosted, ubuntu-latest, docker, modulo-squares
+        </div>
+
+        <div class="status info">
+            <strong>Token Status:</strong> <span id="token-status">Checking...</span>
         </div>
 
         <div class="status info">
@@ -80,6 +84,23 @@
                 .catch(error => {
                     document.getElementById('status-text').textContent = '❌ Unhealthy';
                     document.getElementById('runner-status').className = 'status unhealthy';
+                });
+
+            // Check token status
+            fetch('/token-status')
+                .then(response => response.json())
+                .then(data => {
+                    const tokenElement = document.getElementById('token-status');
+                    if (data.valid) {
+                        tokenElement.textContent = '✅ Valid (expires: ' + new Date(data.expires_at).toLocaleString() + ')';
+                        tokenElement.style.color = '#155724';
+                    } else {
+                        tokenElement.textContent = '❌ Invalid/Expired';
+                        tokenElement.style.color = '#721c24';
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('token-status').textContent = '❓ Unknown';
                 });
 
             document.getElementById('last-updated').textContent = new Date().toLocaleString();
