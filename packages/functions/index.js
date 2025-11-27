@@ -1,10 +1,24 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
+const express = require('express');
 
 // Import shared utilities
 const { FunctionsAuthHelpers } = require('@shared/firebase-utils');
 
 admin.initializeApp();
+
+// Create Express app for Docker deployment
+const app = express();
+app.use(express.json());
+
+// Health check endpoint for Docker
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    service: 'modulo-squares-api'
+  });
+});
 
 // Cloud Function to validate and process leaderboard submissions
 exports.submitScore = functions.https.onCall(async (data, context) => {
@@ -94,3 +108,13 @@ exports.validatePurchase = functions.https.onCall(async (data, context) => {
     throw new functions.https.HttpsError('internal', 'Failed to validate purchase');
   }
 });
+
+// Start Express server for Docker deployment
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`🚀 Modulo Squares API running on port ${PORT}`);
+  });
+}
+
+module.exports = app;

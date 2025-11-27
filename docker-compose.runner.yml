@@ -43,14 +43,13 @@ services:
   #             count: 1
   #             capabilities: [gpu]
 
-  # Monitoring container (optional)
+  # Monitoring container (nginx-based)
   runner-monitor:
     image: nginx:alpine
     container_name: modulo-squares-runner-monitor
     ports:
       - "8082:80"
     volumes:
-      - ./monitoring/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./monitoring/status.html:/usr/share/nginx/html/index.html:ro
     networks:
       - runner-network
