@@ -80,17 +80,40 @@ platform :ios do
           )
           UI.success("✅ ZERO-TOUCH: Created shared development certificates for maximum project reuse")
         elsif e.message.include?("No matching provisioning profiles found")
-          # Create project-specific profile while reusing shared certificates
-          UI.message("📱 Creating project-specific development profile for modulo-squares...")
-          match(
-            type: "development",
-            readonly: false,
-            app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
-            api_key: api_key,
-            keychain_name: "fastlane_tmp_keychain",
-            keychain_password: ENV["MATCH_PASSWORD"]
-          )
-          UI.success("✅ ZERO-TOUCH: Created project-specific profile while reusing shared certificates")
+          # Try to create project-specific profile, but handle permission errors gracefully
+          UI.message("📱 Attempting to create project-specific development profile for modulo-squares...")
+          begin
+            match(
+              type: "development",
+              readonly: false,
+              app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
+              api_key: api_key,
+              keychain_name: "fastlane_tmp_keychain",
+              keychain_password: ENV["MATCH_PASSWORD"]
+            )
+            UI.success("✅ ZERO-TOUCH: Created project-specific profile while reusing shared certificates")
+          rescue => profile_error
+            if profile_error.message.include?("forbidden") || profile_error.message.include?("not allowed")
+              UI.error("❌ API key lacks permission to create provisioning profiles")
+              UI.error("💡 Please ensure your App Store Connect API key has Admin role")
+              UI.error("💡 Or create the provisioning profile manually in Apple Developer portal")
+              UI.message("🔄 Falling back to username/password authentication...")
+
+              # Fallback to username/password for profile creation
+              match(
+                type: "development",
+                readonly: false,
+                app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
+                username: ENV["FASTLANE_APPLE_ID"],
+                team_id: ENV["FASTLANE_TEAM_ID"],
+                keychain_name: "fastlane_tmp_keychain",
+                keychain_password: ENV["MATCH_PASSWORD"]
+              )
+              UI.success("✅ ZERO-TOUCH: Created profile using username/password fallback")
+            else
+              raise profile_error
+            end
+          end
         else
           raise e
         end
