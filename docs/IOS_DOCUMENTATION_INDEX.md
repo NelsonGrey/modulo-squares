@@ -9,7 +9,7 @@ This collection provides everything needed to set up iOS projects with professio
 ## 📖 Available Guides
 
 ### 1. iOS Certificate Setup Guide
-**File**: [`IOS_CERTIFICATE_SETUP_GUIDE.md`](./IOS_CERTIFICATE_SETUP_GUIDE.md)
+**File**: [`IOS_CERTIFICATE_SETUP.md`](./IOS_CERTIFICATE_SETUP.md)
 **Purpose**: Complete step-by-step guide for setting up iOS certificate repositories
 **Use When**: Starting a new iOS project, setting up certificates for the first time
 **Includes**:
@@ -42,7 +42,7 @@ This collection provides everything needed to set up iOS projects with professio
 - Performance optimization
 
 ### 4. iOS Project Template
-**File**: [`IOS_PROJECT_TEMPLATE.md`](./IOS_PROJECT_TEMPLATE.md)
+**File**: [`IOS_CICD_INTEGRATION_GUIDE.md`](./IOS_CICD_INTEGRATION_GUIDE.md)
 **Purpose**: Complete project starter with all configurations
 **Use When**: Creating a new iOS project from scratch
 **Includes**:
@@ -57,8 +57,8 @@ This collection provides everything needed to set up iOS projects with professio
 ### Option 1: Use the Template (Recommended)
 ```bash
 # 1. Copy the template files to your new project
-cp docs/IOS_PROJECT_TEMPLATE.md your-new-project/
-cp docs/IOS_CERTIFICATE_SETUP_GUIDE.md your-new-project/docs/
+cp docs/IOS_CICD_INTEGRATION_GUIDE.md your-new-project/
+cp docs/IOS_CERTIFICATE_SETUP.md your-new-project/docs/
 cp docs/IOS_CICD_INTEGRATION_GUIDE.md your-new-project/docs/
 
 # 2. Follow the setup script in the template
@@ -70,7 +70,7 @@ chmod +x scripts/setup-ios-project.sh
 ### Option 2: Manual Setup
 ```bash
 # 1. Create certificate repository
-# Follow: IOS_CERTIFICATE_SETUP_GUIDE.md
+# Follow: IOS_CERTIFICATE_SETUP.md
 
 # 2. Setup Fastlane
 # Follow: IOS_CERTIFICATE_QUICK_REFERENCE.md
@@ -191,7 +191,7 @@ Track these to ensure successful implementation:
 
 ### Related Documentation
 - [macOS Runner Setup Guide](./MACOS_RUNNER_SETUP.md)
-- [CI/CD Pipeline Guide](./CICD_SETUP_GUIDE.md)
+- [CI/CD Pipeline Guide](./CI_CD_SETUP.md)
 - [Fastlane Documentation](https://docs.fastlane.tools)
 - [App Store Connect API](https://developer.apple.com/support/app-store-connect-api/)
 
@@ -206,5 +206,5 @@ With these guides, you can:
 - ✅ Scale to multiple iOS projects
 - ✅ Save costs with optimized infrastructure
 
-**Start with the [iOS Certificate Setup Guide](./IOS_CERTIFICATE_SETUP_GUIDE.md)** for your first project!</content>
+**Start with the [iOS Certificate Setup](./IOS_CERTIFICATE_SETUP.md)** for your first project!</content>
 <parameter name="filePath">/Users/marknelson/Circus/Repositories/wishlist-wizard/docs/IOS_DOCUMENTATION_INDEX.md

@@ -382,6 +382,6 @@ jobs:
 ---
 
 **📖 Related Documentation:**
-- [iOS Certificate Setup Guide](./IOS_CERTIFICATE_SETUP_GUIDE.md)
+- [iOS Certificate Setup](./IOS_CERTIFICATE_SETUP.md)
 - [macOS Runner Setup Guide](./MACOS_RUNNER_SETUP.md)</content>
 <parameter name="filePath">/Users/marknelson/Circus/Repositories/wishlist-wizard/docs/IOS_CICD_INTEGRATION_GUIDE.md
