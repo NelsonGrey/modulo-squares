@@ -67,7 +67,6 @@ test_api_key() {
     local response
     response=$(curl -s -w "%{http_code}" -o /dev/null \
         -H "Authorization: Bearer $jwt_token" \
-        -H "Accept: application/json" \
         "https://api.appstoreconnect.apple.com/v1/apps" 2>/dev/null) || response="000"
 
     rm -f "$key_file"
@@ -104,12 +103,18 @@ generate_jwt() {
 
     # Verify key file exists and is readable
     if [ ! -f "$key_file" ]; then
-        echo "❌ Key file does not exist: $key_file"
-        return 1
+        # Try to use the local .p8 file if available
+        local local_key_file="/Users/marknelson/Circus/Repositories/modulo-squares/.act-secrets/AuthKey_${key_id}.p8"
+        if [ -f "$local_key_file" ]; then
+            key_file="$local_key_file"
+        else
+            echo "❌ Key file does not exist: $key_file"
+            return 1
+        fi
     fi
 
     # Create JWT header
-    local header=$(echo -n '{"alg":"ES256","kid":"'"$key_id"'","typ":"JWT"}' | base64 -w 0 | tr '+/' '-_' | tr -d '=')
+    local header=$(echo -n '{"alg":"ES256","kid":"'"$key_id"'","typ":"JWT"}' | base64 | tr '+/' '-_' | tr -d '=' | tr -d '\n')
     if [ -z "$header" ]; then
         echo "❌ Failed to create JWT header"
         return 1
@@ -118,21 +123,34 @@ generate_jwt() {
     # Create JWT payload
     local now=$(date +%s)
     local exp=$((now + 1200))  # 20 minutes from now
-    local payload=$(echo -n '{"iss":"'"$issuer_id"'","exp":'"$exp"',"aud":"appstoreconnect-v1"}' | base64 -w 0 | tr '+/' '-_' | tr -d '=')
+    local payload=$(echo -n '{"iss":"'"$issuer_id"'","iat":'"$now"',"exp":'"$exp"',"aud":"appstoreconnect-v1"}' | base64 | tr '+/' '-_' | tr -d '=' | tr -d '\n')
     if [ -z "$payload" ]; then
         echo "❌ Failed to create JWT payload"
         return 1
     fi
 
-    # Create signature
+    # Create signature (ES256 requires raw r+s, not DER)
     local data="$header.$payload"
-    local signature=$(echo -n "$data" | openssl dgst -sha256 -sign "$key_file" -binary | base64 -w 0 | tr '+/' '-_' | tr -d '=' 2>/dev/null)
+    local temp_der=$(mktemp)
+    echo -n "$data" | openssl dgst -sha256 -sign "$key_file" -binary > "$temp_der" 2>/dev/null
+    if [ ! -s "$temp_der" ]; then
+        echo "❌ Failed to create DER signature"
+        rm -f "$temp_der"
+        return 1
+    fi
+    if [ ! -s "$temp_der" ]; then
+        echo "❌ Failed to create JWT signature (DER)"
+        rm -f "$temp_der"
+        return 1
+    fi
+    local signature=$(openssl asn1parse -inform DER -in "$temp_der" 2>/dev/null | grep INTEGER | tail -2 | cut -d: -f4 | xxd -r -p | base64 | tr '+/' '-_' | tr -d '=' | tr -d '\n' 2>/dev/null)
+    rm -f "$temp_der"
     if [ -z "$signature" ]; then
-        echo "❌ Failed to create JWT signature"
+        echo "❌ Failed to extract signature from DER"
         return 1
     fi
 
-    echo "$data.$signature"
+    printf "%s" "$data.$signature"
 }
 
 # Check if API key is approaching expiration (if we can determine creation date)
@@ -163,7 +181,7 @@ generate_rotation_guide() {
     echo "1. 🌐 Go to: https://appstoreconnect.apple.com/access/api"
     echo "2. 🔑 Click 'Keys' tab → '+' to create new key"
     echo "3. 📝 Name: 'GitHub Actions CI $(date +%Y-%m-%d)'"
-    echo "4. ✅ Access: Check 'Developer' and 'App Manager'"
+    echo "4. ✅ Access: Select 'Developer' role (for certificate management)"
     echo "5. 💾 Download .p8 file and copy Key ID + Issuer ID"
     echo ""
     echo "6. 🔧 Convert to base64:"
