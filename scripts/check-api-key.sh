@@ -114,7 +114,7 @@ generate_jwt() {
     fi
 
     # Create JWT header
-    local header=$(echo -n '{"alg":"ES256","kid":"'"$key_id"'","typ":"JWT"}' | base64 | tr '+/' '-_' | tr -d '=' | tr -d '\n')
+    local header=$(echo -n '{"alg":"ES256","kid":"'"$key_id"'","typ":"JWT"}' | (base64 -w 0 2>/dev/null || base64 | tr -d '\n') | tr '+/' '-_' | tr -d '=')
     if [ -z "$header" ]; then
         echo "❌ Failed to create JWT header"
         return 1
@@ -123,7 +123,7 @@ generate_jwt() {
     # Create JWT payload
     local now=$(date +%s)
     local exp=$((now + 1200))  # 20 minutes from now
-    local payload=$(echo -n '{"iss":"'"$issuer_id"'","iat":'"$now"',"exp":'"$exp"',"aud":"appstoreconnect-v1"}' | base64 | tr '+/' '-_' | tr -d '=' | tr -d '\n')
+    local payload=$(echo -n '{"iss":"'"$issuer_id"'","iat":'"$now"',"exp":'"$exp"',"aud":"appstoreconnect-v1"}' | (base64 -w 0 2>/dev/null || base64 | tr -d '\n') | tr '+/' '-_' | tr -d '=')
     if [ -z "$payload" ]; then
         echo "❌ Failed to create JWT payload"
         return 1
@@ -143,7 +143,7 @@ generate_jwt() {
         rm -f "$temp_der"
         return 1
     fi
-    local signature=$(openssl asn1parse -inform DER -in "$temp_der" 2>/dev/null | grep INTEGER | tail -2 | cut -d: -f4 | xxd -r -p | base64 | tr '+/' '-_' | tr -d '=' | tr -d '\n' 2>/dev/null)
+    local signature=$(openssl asn1parse -inform DER -in "$temp_der" 2>/dev/null | grep INTEGER | tail -2 | cut -d: -f4 | xxd -r -p | (base64 -w 0 2>/dev/null || base64 | tr -d '\n') | tr '+/' '-_' | tr -d '=' 2>/dev/null)
     rm -f "$temp_der"
     if [ -z "$signature" ]; then
         echo "❌ Failed to extract signature from DER"
