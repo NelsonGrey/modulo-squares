@@ -67,6 +67,7 @@ test_api_key() {
     local response
     response=$(curl -s -w "%{http_code}" -o /dev/null \
         -H "Authorization: Bearer $jwt_token" \
+        -H "Accept: application/json" \
         "https://api.appstoreconnect.apple.com/v1/apps" 2>/dev/null) || response="000"
 
     rm -f "$key_file"
