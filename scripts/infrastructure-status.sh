@@ -93,12 +93,12 @@ check_macos_runner() {
     if pgrep -f "Runner.Listener" > /dev/null 2>&1; then
         success "macOS runner service is running"
 
-        # Check if configured for this repo
-        if [ -d "/Users/$USER/actions-runner" ]; then
+        # Check if configured for this repo (custom directory location)
+        if [ -d "/Users/marknelson/Circus/Repositories/modulo-squares-actions-runner" ]; then
             success "macOS runner directory exists"
 
             # Check configuration
-            if [ -f "/Users/$USER/actions-runner/.runner" ]; then
+            if [ -f "/Users/marknelson/Circus/Repositories/modulo-squares-actions-runner/.runner" ]; then
                 success "macOS runner is configured"
             else
                 warning "macOS runner is not configured"
