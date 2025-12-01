@@ -35,6 +35,8 @@ test_api_key() {
 
     # Decode the private key
     local private_key_content="$ASC_PRIVATE_KEY"
+    # Trim any whitespace/newlines from the secret
+    private_key_content=$(echo "$private_key_content" | tr -d ' \t\n\r')
 
     # Create a temporary key file
     local key_file=$(mktemp)
