@@ -35,77 +35,24 @@ jobs:
 
       - name: 📢 Alert on API Key Expiration
         if: failure()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const { data: issues } = await github.rest.issues.listForRepo({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              labels: ['api-key-expired', 'security'],
-              state: 'open'
-            });
-
-            if (issues.length === 0) {
-              // Create new issue if none exists
-              await github.rest.issues.create({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                title: '🚨 App Store Connect API Key Expired - Requires Rotation',
-                body: `## 🔐 API Key Rotation Required
-
-            The App Store Connect API key used for automated iOS certificate management has expired.
-
-            ### 📋 Immediate Action Required
-
-            1. **Create new API key** in [App Store Connect](https://appstoreconnect.apple.com/access/api)
-            2. **Update GitHub secrets** with new key details
-            3. **Delete old key** from App Store Connect
-
-            ### 🔧 Rotation Steps
-
-            \`\`\`bash
-            # 1. Create new key in App Store Connect
-            # 2. Download .p8 file
-            # 3. Convert to base64: cat AuthKey_*.p8 | base64 | tr -d '\\n'
-            # 4. Update these GitHub secrets:
-            #    - ASC_KEY_ID
-            #    - ASC_ISSUER_ID
-            #    - ASC_PRIVATE_KEY
-            \`\`\`
-
-            ### 🚨 Impact
-
-            - **iOS CI/CD builds will fail** until key is rotated
-            - **Certificate generation blocked**
-            - **TestFlight uploads unavailable**
-
-            ### ⏰ Timeline
-
-            App Store Connect API keys expire **1 year** after creation. Set up calendar reminders for annual rotation.
-
-            ### 🤖 ZERO-TOUCH Vision
-
-            This manual process breaks the ZERO-TOUCH promise. Future enhancement: Automated key rotation via Apple's API (when available).
-
-            ---
-
-            *This issue was automatically created by the API Key Health Check workflow.*`,
-                labels: ['api-key-expired', 'security', 'zero-touch', 'ios', 'urgent']
-              });
-
-              // Send notification to repository owner
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: (await github.rest.issues.listForRepo({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  labels: ['api-key-expired'],
-                  state: 'open'
-                })).data[0].number,
-                body: `👋 @${context.repo.owner} - The App Store Connect API key has expired and requires immediate rotation to restore iOS CI/CD functionality.`
-              });
-            }
+        run: |
+          echo "🚨 ZERO-TOUCH ALERT: App Store Connect API Key Expired"
+          echo "===================================================="
+          echo ""
+          echo "The App Store Connect API key has expired and requires immediate rotation."
+          echo ""
+          echo "📋 IMMEDIATE ACTION REQUIRED:"
+          echo ""
+          echo "1. 🌐 Go to: https://appstoreconnect.apple.com/access/api"
+          echo "2. 🔑 Create new API key with 'Developer' and 'App Manager' access"
+          echo "3. 💾 Download .p8 file and convert to base64"
+          echo "4. 🔒 Update GitHub secrets: ASC_KEY_ID, ASC_ISSUER_ID, ASC_PRIVATE_KEY"
+          echo "5. 🗑️ Delete old key from App Store Connect"
+          echo ""
+          echo "📞 iOS CI/CD builds will fail until the key is rotated"
+          echo ""
+          echo "🔄 After rotation, ZERO-TOUCH certificate management will resume automatically"
+          exit 1
 
       - name: ✅ Success Notification
         if: success()
