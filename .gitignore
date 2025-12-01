@@ -177,3 +177,6 @@ automation.log
 monitoring.log
 modulo.log
 flutter_*.log
+
+# Secrets
+.act-secrets/
