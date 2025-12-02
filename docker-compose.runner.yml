@@ -1,7 +1,9 @@
 services:
-  github-runner:
-    image: myoung34/github-runner:latest
-    container_name: modulo-squares-runner
+  github-runner-modulo-squares:
+    build:
+      context: .
+      dockerfile: Dockerfile.runner
+    container_name: github-runner-modulo-squares
     env_file:
       - .env.runner
     environment:
@@ -9,7 +11,7 @@ services:
       RUNNER_NAME: modulo-squares-docker-runner
       RUNNER_TOKEN: ${RUNNER_TOKEN}
       RUNNER_WORKDIR: /tmp/runner/work
-      LABELS: self-hosted,ubuntu-latest,docker,modulo-squares
+      LABELS: self-hosted,ARM64,linux,ubuntu-latest,docker,modulo-squares
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - runner-work:/tmp/runner/work
@@ -45,17 +47,19 @@ services:
 
   # Monitoring container (nginx-based)
   runner-monitor:
-    image: nginx:alpine
+    build:
+      context: .
+      dockerfile: Dockerfile.monitor
     container_name: modulo-squares-runner-monitor
     ports:
-      - "8082:80"
+      - "8081:80"
     volumes:
       - ./monitoring/status.html:/usr/share/nginx/html/index.html:ro
     networks:
       - runner-network
     restart: unless-stopped
     depends_on:
-      - github-runner
+      - github-runner-modulo-squares
 
 volumes:
   runner-work:
