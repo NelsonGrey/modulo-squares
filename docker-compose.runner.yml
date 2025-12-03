@@ -4,12 +4,10 @@ services:
       context: .
       dockerfile: Dockerfile.runner
     container_name: github-runner-modulo-squares
-    env_file:
-      - .env.runner
     environment:
       REPO_URL: https://github.com/mnelson3/modulo-squares
       RUNNER_NAME: modulo-squares-docker-runner
-      RUNNER_TOKEN: ${RUNNER_TOKEN}
+      RUNNER_TOKEN: AIQEPBZQEG7QGXESGDYGVRTJGDJEQ
       RUNNER_WORKDIR: /tmp/runner/work
       LABELS: self-hosted,ARM64,linux,ubuntu-latest,docker,modulo-squares
     volumes:
@@ -45,14 +43,14 @@ services:
   #             count: 1
   #             capabilities: [gpu]
 
-  # Monitoring container (nginx-based)
+  # Monitoring container (Node.js-based)
   runner-monitor:
     build:
       context: .
       dockerfile: Dockerfile.monitor
     container_name: modulo-squares-runner-monitor
     ports:
-      - "8081:80"
+      - "8081:8081"
     volumes:
       - ./monitoring/status.html:/usr/share/nginx/html/index.html:ro
     networks:
