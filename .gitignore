@@ -180,3 +180,21 @@ flutter_*.log
 
 # Secrets
 .act-secrets/
+
+# App Store Connect Private Keys (NEVER COMMIT)
+packages/mobile/ios/asc_private_key.p8
+packages/mobile/ios/*.p8
+**/*.p8
+
+# Android Keystores (NEVER COMMIT)
+packages/mobile/android/app/*.jks
+packages/mobile/android/app/*.keystore
+
+# Firebase Service Account Keys (NEVER COMMIT)
+packages/mobile/android/app/service-account-key.json
+packages/mobile/ios/service-account-key.json
+**/*service-account-key.json
+
+# iOS Certificates (NEVER COMMIT)
+packages/mobile/ios/certs/*.p12
+packages/mobile/ios/certs/*.pem
