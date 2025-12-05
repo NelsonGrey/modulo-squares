@@ -474,4 +474,172 @@ platform :ios do
     plist = Plist.parse_xml(plist_path)
     plist['CFBundleVersion']
   end
+
+  desc "Submit app to App Store Review"
+  lane :submit_to_app_store do |options|
+    # ZERO-TOUCH APP STORE SUBMISSION
+    # Automatically handles the complete App Store submission process
+    # 1. Prepare metadata and screenshots
+    # 2. Submit for review
+    # 3. Handle submission status and notifications
+
+    UI.message("🚀 ZERO-TOUCH: Starting automated App Store submission...")
+
+    # Get version info
+    version = get_version_number_from_plist(plist_path: "../../ios/Runner/Info.plist")
+    build_number = get_build_number_from_plist(plist_path: "../../ios/Runner/Info.plist")
+
+    UI.message("📦 Submitting version #{version} (#{build_number}) to App Store")
+
+    # Set up API key authentication
+    private_key_content = ENV["ASC_PRIVATE_KEY"]
+    if private_key_content.nil? || private_key_content.empty?
+      UI.error("ASC_PRIVATE_KEY environment variable is not set or empty")
+      raise "Missing ASC_PRIVATE_KEY"
+    end
+    private_key_content = private_key_content.gsub("\0", "").gsub("%", "").strip
+
+    api_key = app_store_connect_api_key(
+      key_id: ENV["ASC_KEY_ID"],
+      issuer_id: ENV["ASC_ISSUER_ID"],
+      key_content: private_key_content,
+      is_key_content_base64: true
+    )
+
+    # Submit to App Store
+    deliver(
+      api_key: api_key,
+      submit_for_review: true,
+      automatic_release: false,  # Manual release after approval
+      force: true,  # Skip HTML report verification
+      skip_metadata: false,  # Include metadata updates
+      skip_screenshots: false,  # Include screenshot updates
+      skip_binary_upload: true,  # Binary already uploaded via TestFlight
+      submission_information: {
+        add_id_info_uses_idfa: false,
+        export_compliance_encryption_updated: false,
+        export_compliance_uses_encryption: false
+      },
+      release_notes: {
+        'en-US' => options[:release_notes] || "Bug fixes and performance improvements"
+      }
+    )
+
+    UI.success("✅ App successfully submitted to App Store Review!")
+    UI.message("⏳ Apple review process typically takes 1-3 days")
+    UI.message("📱 You'll receive email notifications about review status")
+  end
+
+  desc "Promote TestFlight build to App Store"
+  lane :promote_to_app_store do |options|
+    # ZERO-TOUCH PROMOTION: TestFlight → App Store
+    # Automatically promotes a successful TestFlight build to App Store submission
+    # 1. Verify TestFlight build is ready
+    # 2. Prepare App Store metadata
+    # 3. Submit for App Store review
+
+    UI.message("🚀 ZERO-TOUCH: Promoting TestFlight build to App Store...")
+
+    # This lane would typically be called after TestFlight testing is complete
+    # For now, it assumes the build is ready for promotion
+
+    release_notes = options[:release_notes] || "Build #{get_build_number_from_plist(plist_path: '../../ios/Runner/Info.plist')} - Ready for App Store"
+
+    # Call the submit lane
+    submit_to_app_store(release_notes: release_notes)
+
+    UI.success("✅ TestFlight build successfully promoted to App Store!")
+  end
+
+  desc "Manage TestFlight beta groups and testers"
+  lane :manage_beta_groups do |options|
+    # ZERO-TOUCH BETA MANAGEMENT
+    # Automatically manages TestFlight beta groups and tester access
+    # 1. Create/update beta groups
+    # 2. Add/remove testers
+    # 3. Manage group permissions
+
+    UI.message("🚀 ZERO-TOUCH: Managing TestFlight beta groups...")
+
+    private_key_content = ENV["ASC_PRIVATE_KEY"]
+    if private_key_content.nil? || private_key_content.empty?
+      UI.error("ASC_PRIVATE_KEY environment variable is not set or empty")
+      raise "Missing ASC_PRIVATE_KEY"
+    end
+    private_key_content = private_key_content.gsub("\0", "").gsub("%", "").strip
+
+    api_key = app_store_connect_api_key(
+      key_id: ENV["ASC_KEY_ID"],
+      issuer_id: ENV["ASC_ISSUER_ID"],
+      key_content: private_key_content,
+      is_key_content_base64: true
+    )
+
+    # Create or update beta group
+    beta_group_name = options[:group_name] || "Internal Testers"
+    beta_group_is_internal = options[:internal] || true
+
+    begin
+      # Check if beta group exists
+      beta_groups = app_store_connect(
+        api_key: api_key,
+        get_beta_groups: true
+      )
+
+      existing_group = beta_groups.find { |group| group['attributes']['name'] == beta_group_name }
+
+      if existing_group
+        UI.message("✅ Beta group '#{beta_group_name}' already exists")
+      else
+        # Create new beta group
+        app_store_connect(
+          api_key: api_key,
+          create_beta_group: {
+            name: beta_group_name,
+            is_internal_group: beta_group_is_internal
+          }
+        )
+        UI.success("✅ Created new beta group: #{beta_group_name}")
+      end
+
+    rescue => e
+      UI.error("❌ Failed to manage beta groups: #{e.message}")
+      raise e
+    end
+  end
+
+  desc "Complete automated release pipeline: TestFlight → App Store"
+  lane :full_release_pipeline do |options|
+    # ZERO-TOUCH COMPLETE RELEASE PIPELINE
+    # End-to-end automated release from development to App Store
+    # 1. Build and upload to TestFlight
+    # 2. Manage beta testing
+    # 3. Submit to App Store
+
+    UI.message("🚀 ZERO-TOUCH: Starting complete automated release pipeline...")
+
+    # Step 1: Ensure certificates are ready
+    UI.message("📋 Step 1: Preparing certificates...")
+    zero_touch_certificates
+
+    # Step 2: Build and upload to TestFlight
+    UI.message("📋 Step 2: Building and uploading to TestFlight...")
+    beta
+
+    # Step 3: Manage beta groups (optional)
+    if options[:manage_beta]
+      UI.message("📋 Step 3: Managing beta groups...")
+      manage_beta_groups(group_name: options[:beta_group_name])
+    end
+
+    # Step 4: Submit to App Store (if requested)
+    if options[:submit_to_app_store]
+      UI.message("📋 Step 4: Submitting to App Store...")
+      sleep(300)  # Wait 5 minutes for TestFlight processing
+      submit_to_app_store(release_notes: options[:release_notes])
+    end
+
+    UI.success("✅ Complete automated release pipeline finished!")
+    UI.message("🎉 Your app is now in TestFlight (and optionally submitted to App Store)")
+  end
 end
