@@ -9,7 +9,7 @@ on:
 
 jobs:
   test:
-    runs-on: [self-hosted, macos-latest]
+    runs-on: [self-hosted, modulo-squares]
     steps:
       - name: Test Runner
         run: echo "Runner is working!"
