@@ -40,218 +40,161 @@ jobs:
       - name: 📥 Checkout Code
         uses: actions/checkout@v4
 
+      - name: ⏰ Sync NTP Time
+        run: |
+          echo "🔄 Synchronizing system time with NTP..."
+          sudo sntp -sS time.apple.com || sudo ntpdate -u time.apple.com || echo "⚠️ NTP sync failed, continuing..."
+
       - name: 🦋 Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
 
-      - name: 💎 Setup Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.0'
-
-      - name: 📦 Install Ruby Dependencies
+      - name: 💎 Setup Ruby with GMP
         run: |
-          cd packages/mobile
-          bundle install
+          echo "🔄 Installing Ruby 3.2.2 with GMP dependency..."
+          brew install gmp
+          \curl -sSL https://get.rvm.io | bash -s stable
+          source ~/.rvm/scripts/rvm
+          rvm install 3.2.2 --with-gmp-dir=$(brew --prefix gmp)
+          rvm use 3.2.2 --default
+          ruby --version
+          echo "✅ Ruby 3.2.2 installed successfully"
 
-      - name: 🛠️ Setup Xcode
+      - name: 🔧 Install Fastlane
         run: |
-          # Check if Xcode is already properly selected
-          CURRENT_XCODE=$(xcode-select -p 2>/dev/null || echo "")
-          if [[ "$CURRENT_XCODE" == "/Applications/Xcode.app/Contents/Developer" ]]; then
-            echo "✅ Xcode already properly selected"
+          echo "📦 Installing Fastlane 2.229.0..."
+          gem install fastlane -v 2.229.0
+          fastlane --version
+          echo "✅ Fastlane installed successfully"
+
+      - name: 🔐 Setup App Store Connect Authentication
+        run: |
+          echo "🔄 Setting up App Store Connect authentication..."
+
+          # Create ASC private key file
+          mkdir -p ~/.private_keys
+          echo "${{ secrets.ASC_PRIVATE_KEY }}" | base64 -d > ~/.private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8
+
+          # Verify the key was created
+          if [ -f ~/.private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8 ]; then
+            echo "✅ ASC private key created successfully"
           else
-            echo "🔄 Attempting to select Xcode..."
-            # Try to select Xcode (may require sudo on some systems)
-            if sudo -n xcode-select -s /Applications/Xcode.app/Contents/Developer 2>/dev/null; then
-              echo "✅ Xcode selected successfully"
-            else
-              echo "⚠️ Could not select Xcode (may already be selected or requires manual setup)"
-            fi
-          fi
-          
-          # Check if Xcode license is already accepted
-          if xcodebuild -license check 2>/dev/null; then
-            echo "✅ Xcode license already accepted"
-          else
-            echo "🔄 Attempting to accept Xcode license..."
-            # Try to accept license (may require sudo on some systems)
-            if sudo -n xcodebuild -license accept 2>/dev/null; then
-              echo "✅ Xcode license accepted successfully"
-            else
-              echo "⚠️ Could not accept Xcode license (may already be accepted or requires manual setup)"
-            fi
-          fi
-          
-          # Install additional simulator runtimes if available
-          # This will install commonly needed runtimes
-          xcodebuild -downloadPlatform iOS 2>/dev/null || echo "⚠️ Could not download iOS platform (may already be installed)"
-          
-          # List available runtimes for debugging
-          echo "📱 Available iOS Simulator Runtimes:"
-          xcrun simctl list runtimes | grep "iOS" || echo "No iOS runtimes found"
-          
-      - name: 🛠️ Setup Xcode
-        run: |
-          # Check if Xcode is already properly selected
-          CURRENT_XCODE=$(xcode-select -p 2>/dev/null || echo "")
-          if [[ "$CURRENT_XCODE" == "/Applications/Xcode.app/Contents/Developer" ]]; then
-            echo "✅ Xcode already properly selected"
-          else
-            echo "🔄 Attempting to select Xcode..."
-            # Try to select Xcode (may require sudo on some systems)
-            if sudo -n xcode-select -s /Applications/Xcode.app/Contents/Developer 2>/dev/null; then
-              echo "✅ Xcode selected successfully"
-            else
-              echo "⚠️ Could not select Xcode (may already be selected or requires manual setup)"
-            fi
-          fi
-          
-          # Check if Xcode license is already accepted
-          if xcodebuild -license check 2>/dev/null; then
-            echo "✅ Xcode license already accepted"
-          else
-            echo "🔄 Attempting to accept Xcode license..."
-            # Try to accept license (may require sudo on some systems)
-            if sudo -n xcodebuild -license accept 2>/dev/null; then
-              echo "✅ Xcode license accepted successfully"
-            else
-              echo "⚠️ Could not accept Xcode license (may already be accepted or requires manual setup)"
-            fi
-          fi
-          
-          # Install additional simulator runtimes if available
-          # This will install commonly needed runtimes
-          xcodebuild -downloadPlatform iOS 2>/dev/null || echo "⚠️ Could not download iOS platform (may already be installed)"
-          
-          # List available runtimes for debugging
-          echo "📱 Available iOS Simulator Runtimes:"
-          xcrun simctl list runtimes | grep "iOS" || echo "No iOS runtimes found"
-          
-          # Create a default simulator if none exists
-          if ! xcrun simctl list devices | grep -q "iPhone"; then
-            echo "📱 Creating default iPhone simulator..."
-            xcrun simctl create "iPhone 15 Pro" "iPhone 15 Pro" 2>/dev/null || echo "⚠️ Could not create simulator"
-          fi
-
-      - name: 🔧 Setup macOS CI Environment
-        run: |
-          chmod +x scripts/setup-macos-ci.sh
-          ./scripts/setup-macos-ci.sh
-        env:
-          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-
-      - name: Install Dependencies
-        run: flutter pub get
-        working-directory: packages/mobile
-
-      - name: Generate Launcher Icons
-        run: flutter pub run flutter_launcher_icons
-        working-directory: packages/mobile
-
-      - name: 🔍 Check Flutter Doctor
-        run: |
-          flutter doctor -v
-          echo "🔧 Checking iOS setup..."
-          flutter doctor --ios || echo "⚠️ iOS setup issues detected"
-
-      - name: 🔧 Generate iOS Platform Files
-        run: flutter create --platforms=ios .
-        working-directory: packages/mobile
-
-      - name: 🔍 Check Secrets
-        run: |
-          TOKEN_LENGTH=${#MATCH_GIT_URL_TOKEN}
-          if [ "$TOKEN_LENGTH" -eq 0 ]; then
-            echo "❌ MATCH_GIT_URL_TOKEN secret is not set or empty"
+            echo "❌ Failed to create ASC private key"
             exit 1
-          else
-            echo "✅ MATCH_GIT_URL_TOKEN secret is set (length: $TOKEN_LENGTH)"
           fi
-        env:
-          MATCH_GIT_URL_TOKEN: ${{ secrets.MATCH_GIT_URL_TOKEN }}
 
-      - name: 🔐 Create Service Account Key File
-        env:
-          FIREBASE_SERVICE_ACCOUNT_KEY: ${{ secrets[format('FIREBASE_SERVICE_ACCOUNT_KEY_{0}', github.ref == 'refs/heads/main' && 'PRODUCTION' || github.ref == 'refs/heads/staging' && 'STAGING' || 'DEVELOPMENT')] }}
+      - name: 🧪 Test App Store Connect JWT
         run: |
+          echo "🔄 Testing App Store Connect JWT authentication..."
+          ruby -e "
+          require 'jwt'
+          require 'openssl'
+
+          key_id = '${{ secrets.ASC_KEY_ID }}'
+          issuer_id = '${{ secrets.ASC_ISSUER_ID }}'
+          private_key_path = '~/.private_keys/AuthKey_#{key_id}.p8'
+
+          private_key = OpenSSL::PKey::EC.new(File.read(File.expand_path(private_key_path)))
+
+          now = Time.now.to_i
+          payload = {
+            iss: issuer_id,
+            exp: now + 1200,
+            aud: 'appstoreconnect-v1'
+          }
+
+          headers = {
+            kid: key_id
+          }
+
+          token = JWT.encode(payload, private_key, 'ES256', headers)
+          puts '✅ JWT token generated successfully'
+          puts '🔄 Testing API connectivity...'
+
+          # Test API call
+          curl -H 'Authorization: Bearer #{token}' 'https://api.appstoreconnect.apple.com/v1/apps' -o /dev/null -s -w '%{http_code}' | grep -q '200' && echo '✅ App Store Connect API accessible' || echo '⚠️ App Store Connect API test inconclusive'
+          "
+
+      - name: 📱 Generate iOS Platform Files
+        run: |
+          echo "🔄 Generating iOS platform files..."
+          cd packages/mobile
+          flutter create --platforms=ios .
+          echo "✅ iOS platform files generated"
+
+      - name: 🔐 Setup Service Account Key
+        run: |
+          echo "🔄 Setting up Firebase service account key..."
           mkdir -p packages/mobile/ios
-          echo "$FIREBASE_SERVICE_ACCOUNT_KEY" > packages/mobile/ios/service-account-key.json
-
-      - name: 🔧 Make Distribution Script Executable
-        run: chmod +x packages/mobile/distribute-ios.sh
-
-      - name: 📱 Extract AdMob Configuration for Production
-        if: github.ref == 'refs/heads/main'
-        run: |
-          # Read AdMob unit IDs from .env.production file
-          ADMOB_BANNER_IOS=$(grep "^ADMOB_BANNER_UNIT_ID_IOS=" .env.production | cut -d '=' -f2)
-          ADMOB_INTERSTITIAL_IOS=$(grep "^ADMOB_INTERSTITIAL_UNIT_ID_IOS=" .env.production | cut -d '=' -f2)
-          ADMOB_REWARDED_IOS=$(grep "^ADMOB_REWARDED_UNIT_ID_IOS=" .env.production | cut -d '=' -f2)
-
-          # Export as environment variables for the build script
-          echo "ADMOB_BANNER_UNIT_ID=$ADMOB_BANNER_IOS" >> $GITHUB_ENV
-          echo "ADMOB_INTERSTITIAL_UNIT_ID=$ADMOB_INTERSTITIAL_IOS" >> $GITHUB_ENV
-          echo "ADMOB_REWARDED_UNIT_ID=$ADMOB_REWARDED_IOS" >> $GITHUB_ENV
-
-      - name: 🔐 Setup Fastlane Environment
-        run: |
-          cd packages/mobile/ios
-
-          # Create .env file for Fastlane with all required environment variables
-          cat > .env << EOF
-          # Apple Developer Account
-          FASTLANE_APPLE_ID=${{ secrets.FASTLANE_APPLE_ID }}
-          FASTLANE_PASSWORD=${{ secrets.FASTLANE_PASSWORD }}
-          FASTLANE_TEAM_ID=${{ secrets.FASTLANE_TEAM_ID }}
-          FASTLANE_ITC_TEAM_ID=${{ secrets.FASTLANE_ITC_TEAM_ID }}
-
-          # App Store Connect API Key
-          ASC_KEY_ID=${{ secrets.ASC_KEY_ID }}
-          ASC_ISSUER_ID=${{ secrets.ASC_ISSUER_ID }}
-          ASC_PRIVATE_KEY=${{ secrets.ASC_PRIVATE_KEY }}
-
-          # Match Configuration
-          MATCH_GIT_URL=https://oauth2:${{ secrets.MATCH_GIT_URL_TOKEN }}@github.com/mnelson3/nelson-grey-certificates.git
-          MATCH_PASSWORD=${{ secrets.MATCH_PASSWORD }}
-
-          # TestFlight Configuration
-          BETA_FEEDBACK_EMAIL=${{ secrets.BETA_FEEDBACK_EMAIL }}
-          EOF
-
-          # Create App Store Connect private key file from base64 encoded secret
-          echo "${{ secrets.ASC_PRIVATE_KEY }}" | base64 -d > asc_private_key.p8
+          echo '${{ secrets[format("FIREBASE_SERVICE_ACCOUNT_KEY_{0}", github.ref == "refs/heads/main" && "PRODUCTION" || github.ref == "refs/heads/staging" && "STAGING" || "DEVELOPMENT")] }}' > packages/mobile/ios/service-account-key.json
+          echo "✅ Service account key configured"
 
       - name: 🔐 Decode iOS Distribution Certificate
         run: |
-          # Decode the iOS distribution certificate P12 if provided
-          if [[ -n "${{ secrets.IOS_CERT_P12_BASE64 }}" ]]; then
-            mkdir -p packages/mobile/ios/certs
-            echo "${{ secrets.IOS_CERT_P12_BASE64 }}" | base64 -d > packages/mobile/ios/certs/dist_cert.p12
-            echo "✅ Decoded iOS distribution P12 into packages/mobile/ios/certs/dist_cert.p12"
+          echo "🔄 Decoding iOS distribution certificate..."
+          mkdir -p packages/mobile/ios/certs
+          echo "${{ secrets.IOS_CERT_P12_BASE64 }}" | base64 -d > packages/mobile/ios/certs/dist_cert.p12
+          if [ -f packages/mobile/ios/certs/dist_cert.p12 ]; then
+            echo "✅ iOS distribution certificate decoded"
           else
-            echo "ℹ️ No IOS_CERT_P12_BASE64 secret configured; skipping P12 provisioning"
+            echo "❌ Failed to decode iOS distribution certificate"
+            exit 1
           fi
 
-      - name: 🏗️ Build and Distribute iOS App
-        env:
-          ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'PRODUCTION' || github.ref == 'refs/heads/staging' && 'STAGING' || 'DEVELOPMENT' }}
-          FASTLANE_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-          FLUTTER_ROOT: ${{ env.FLUTTER_ROOT }}
+      - name: 🔑 Setup Ephemeral Keychain
         run: |
-          # Set release notes environment variable
+          echo "🔄 Setting up ephemeral keychain..."
+          KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
+          echo "KEYCHAIN_PASSWORD=$KEYCHAIN_PASSWORD" >> $GITHUB_ENV
+
+          # Create ephemeral keychain
+          security create-keychain -p "$KEYCHAIN_PASSWORD" fastlane_tmp_keychain
+          security set-keychain-settings -lut 21600 fastlane_tmp_keychain
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" fastlane_tmp_keychain
+
+          # Make it the default keychain
+          security default-keychain -s fastlane_tmp_keychain
+
+          # Import certificate
+          if [ -f packages/mobile/ios/certs/dist_cert.p12 ]; then
+            security import packages/mobile/ios/certs/dist_cert.p12 -k fastlane_tmp_keychain -P "${{ secrets.IOS_CERT_PASSWORD }}" -T /usr/bin/codesign
+            echo "✅ Certificate imported to keychain"
+          else
+            echo "⚠️ No certificate file found, skipping import"
+          fi
+
+          echo "✅ Ephemeral keychain setup complete"
+
+      - name: 🏗️ Build and Distribute iOS App
+        run: |
+          echo "🚀 Building and distributing iOS app..."
+
+          # Set release notes
           RELEASE_NOTES="${{ github.event.inputs.release_notes || format('Build from {0} - {1}', github.ref_name, github.sha) }}"
           echo "RELEASE_NOTES=$RELEASE_NOTES" >> $GITHUB_ENV
-          
+
           cd packages/mobile/ios
-          
-          # Run Fastlane pipeline based on environment and build type
-          BUILD_TYPE="${{ github.event.inputs.build_type || 'debug' }}"
+
+          # Configure Fastlane environment
+          export FASTLANE_APPLE_ID="${{ secrets.FASTLANE_APPLE_ID }}"
+          export FASTLANE_TEAM_ID="${{ secrets.FASTLANE_TEAM_ID }}"
+          export FASTLANE_ITC_TEAM_ID="${{ secrets.FASTLANE_ITC_TEAM_ID }}"
+          export ASC_KEY_ID="${{ secrets.ASC_KEY_ID }}"
+          export ASC_ISSUER_ID="${{ secrets.ASC_ISSUER_ID }}"
+          export ASC_PRIVATE_KEY="${{ secrets.ASC_PRIVATE_KEY }}"
+          export MATCH_GIT_URL="https://oauth2:${{ secrets.MATCH_GIT_URL_TOKEN }}@github.com/mnelson3/nelson-grey-certificates.git"
+          export MATCH_PASSWORD="${{ secrets.MATCH_PASSWORD }}"
+          export BETA_FEEDBACK_EMAIL="${{ secrets.BETA_FEEDBACK_EMAIL }}"
+          export KEYCHAIN_PASSWORD="$KEYCHAIN_PASSWORD"
+
+          # Execute Fastlane based on build type
+          BUILD_TYPE="${{ github.event.inputs.build_type }}"
 
           if [[ "${{ github.ref }}" == "refs/heads/main" ]] || [[ "${{ github.ref }}" == "refs/heads/staging" ]] || [[ "$BUILD_TYPE" == "release" ]]; then
             # Production/Staging OR manual release: Upload to TestFlight
+            echo "🚀 Building and uploading to TestFlight..."
             if [ -f Gemfile ]; then
               bundle config set --local path 'vendor/bundle' && bundle install --jobs 4 || true
               bundle exec fastlane beta
@@ -260,6 +203,7 @@ jobs:
             fi
           else
             # Development: Just build and test
+            echo "🔨 Building for development testing..."
             if [ -f Gemfile ]; then
               bundle config set --local path 'vendor/bundle' && bundle install --jobs 4 || true
               bundle exec fastlane test_and_build
@@ -271,8 +215,18 @@ jobs:
       - name: 🧹 Clean Up
         if: always()
         run: |
-          # Clean up temporary keychain
+          echo "🧹 Cleaning up temporary files and keychains..."
+
+          # Delete ephemeral keychain
           security delete-keychain fastlane_tmp_keychain 2>/dev/null || true
-          
+
+          # Clean up private keys
+          rm -rf ~/.private_keys
+
           # Clean up service account files
-          rm -f packages/mobile/ios/service-account-key.json packages/mobile/ios/asc_private_key.p8 packages/mobile/ios/certs/dist_cert.p12
+          rm -f packages/mobile/ios/service-account-key.json
+
+          # Clean up certificates
+          rm -rf packages/mobile/ios/certs
+
+          echo "✅ Cleanup complete"

@@ -1,0 +1,175 @@
+name: 🔄 Automated Staging Deployment
+
+on:
+  schedule:
+    # Deploy to staging every weekday at 6 AM UTC (2 AM EST)
+    - cron: '0 6 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      force_deploy:
+        description: 'Force deployment even if no changes'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  NODE_VERSION: '18'
+  FLUTTER_VERSION: '3.35.7'
+
+jobs:
+  # 🔍 Check for Changes
+  check-changes:
+    name: 🔍 Check for Changes
+    runs-on: self-hosted
+    outputs:
+      has-changes: ${{ steps.check.outputs.has-changes }}
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🔍 Check for recent changes
+        id: check
+        run: |
+          # Check if there are changes in the last 24 hours
+          LAST_COMMIT_DATE=$(git log -1 --format=%ct)
+          CURRENT_TIME=$(date +%s)
+          TIME_DIFF=$((CURRENT_TIME - LAST_COMMIT_DATE))
+          ONE_DAY=$((24 * 60 * 60))
+
+          if [ $TIME_DIFF -lt $ONE_DAY ] || [ "${{ github.event.inputs.force_deploy }}" == "true" ]; then
+            echo "has-changes=true" >> $GITHUB_OUTPUT
+            echo "📝 Recent changes detected or force deploy requested"
+          else
+            echo "has-changes=false" >> $GITHUB_OUTPUT
+            echo "⏭️  No recent changes, skipping deployment"
+          fi
+
+  # 🚀 Automated Deployment
+  automated-deploy:
+    name: 🚀 Automated Staging Deployment
+    runs-on: self-hosted
+    needs: check-changes
+    if: needs.check-changes.outputs.has-changes == 'true'
+    environment: staging
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install Dependencies
+        run: npm ci
+
+      - name: 🦋 Setup Flutter
+        uses: ./.github/actions/setup-flutter
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache-bust: v3
+
+      - name: 📦 Install Flutter Dependencies
+        run: flutter pub get
+        working-directory: packages/mobile
+
+      - name: 🔧 Flutter Analyze
+        run: flutter analyze
+        working-directory: packages/mobile
+
+      - name: 🧪 Run Tests
+        run: flutter test --coverage
+        working-directory: packages/mobile
+
+      - name: 🏗️ Build Web App
+        run: npm run build
+        working-directory: packages/web
+
+      - name: 🐳 Build Docker Images
+        run: |
+          docker build -t modulo-squares-web:staging packages/web
+          docker build -t modulo-squares-api:staging packages/functions
+
+      - name: 🚀 Deploy to Staging
+        run: |
+          echo "🚀 Deploying to staging environment"
+
+          # Stop existing containers
+          docker stop modulo-squares-web-staging 2>/dev/null || true
+          docker rm modulo-squares-web-staging 2>/dev/null || true
+          docker stop modulo-squares-api-staging 2>/dev/null || true
+          docker rm modulo-squares-api-staging 2>/dev/null || true
+
+          # Run new containers
+          docker run -d \
+            --name modulo-squares-web-staging \
+            --restart unless-stopped \
+            -p 8081:80 \
+            -e ENVIRONMENT=staging \
+            modulo-squares-web:staging
+
+          docker run -d \
+            --name modulo-squares-api-staging \
+            --restart unless-stopped \
+            -p 3001:3000 \
+            -e ENVIRONMENT=staging \
+            modulo-squares-api:staging
+
+      - name: 🧪 Run Health Checks
+        run: |
+          echo "🧪 Running post-deployment health checks"
+
+          # Wait for services to start
+          sleep 30
+
+          # Check web app
+          if curl -f http://localhost:8081 > /dev/null 2>&1; then
+            echo "✅ Web app health check passed"
+          else
+            echo "❌ Web app health check failed"
+            exit 1
+          fi
+
+          # Check API
+          if curl -f http://localhost:3001/health > /dev/null 2>&1; then
+            echo "✅ API health check passed"
+          else
+            echo "❌ API health check failed"
+            exit 1
+          fi
+
+      - name: 📊 Deployment Summary
+        run: |
+          echo "## 🔄 Automated Staging Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Component | Status | URL |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|-----|" >> $GITHUB_STEP_SUMMARY
+          echo "| 🌐 Web App | ✅ Deployed | http://localhost:8081 |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔥 API | ✅ Deployed | http://localhost:3001 |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Deployment Time**: $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment**: Staging" >> $GITHUB_STEP_SUMMARY
+          echo "**Trigger**: Automated (Schedule/Changes)" >> $GITHUB_STEP_SUMMARY
+
+  # 📢 Notification
+  notify:
+    name: 📢 Deployment Notification
+    runs-on: self-hosted
+    needs: automated-deploy
+    if: always() && needs.automated-deploy.result != 'skipped'
+    steps:
+      - name: 📢 Send Notification
+        run: |
+          STATUS="${{ needs.automated-deploy.result }}"
+          if [ "$STATUS" == "success" ]; then
+            echo "✅ Automated staging deployment completed successfully"
+          else
+            echo "❌ Automated staging deployment failed"
+          fi
+
+          # Here you could integrate with Slack, Discord, etc.
+          # For zero-touch, this could trigger alerts or rollback
