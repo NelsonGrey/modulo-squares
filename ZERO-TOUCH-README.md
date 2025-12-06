@@ -1,22 +1,22 @@
 # ZERO-TOUCH GitHub Actions Runner Management
 
-This system provides fully automated, zero-maintenance GitHub Actions self-hosted runners using GitHub App authentication for token generation.
+This system provides fully automated, zero-maintenance GitHub Actions self-hosted runners using GitHub CLI authentication for token generation.
 
 ## 🎯 Overview
 
 - **Zero Manual Intervention**: Tokens refresh automatically every hour
-- **GitHub App Authentication**: No expiring PATs to manage
-- **Multi-Repository Support**: Single app manages all repositories
+- **GitHub CLI Authentication**: Simple one-time setup, no expiring PATs
+- **Multi-Repository Support**: Single authentication manages all repositories
 - **Docker + macOS Runners**: Both containerized and native runners
 - **Health Monitoring**: Automatic recovery and status reporting
 
 ## 🏗️ Architecture
 
 ```
-GitHub App
-├── JWT Generation (every 10 minutes)
-├── Installation Tokens (1-hour expiry)
-└── Runner Registration Tokens (refreshed hourly)
+GitHub CLI
+├── One-time authentication (gh auth login)
+├── Automatic token generation via API
+└── Secure credential storage
 
 Launch Agents (macOS)
 ├── Hourly token refresh
@@ -31,22 +31,52 @@ Docker Containers
 
 ## 🚀 Quick Setup
 
-### 1. Create GitHub App
+### 1. Authenticate GitHub CLI
 
-Run the setup script to create and configure your GitHub App:
+Run the one-time authentication:
+
+```bash
+gh auth login
+```
+
+Choose your preferred authentication method (GitHub.com recommended).
+
+### 2. Run Zero-Touch Setup
+
+Execute the automated setup script:
 
 ```bash
 cd /Users/marknelson/Circus/Repositories/modulo-squares
-./setup-github-app.sh
+./token-refresh.sh setup
 ```
 
-This will guide you through:
-- Creating the GitHub App with proper permissions
-- Installing it on your repositories
-- Configuring authentication
-- Testing the setup
+This will:
+- Verify GitHub CLI authentication
+- Test repository access
+- Configure automated token refresh
 
-### 2. Start Runners
+### 3. Start Runners
+
+```bash
+# Start Docker runners
+for repo in modulo-squares vehicle-vitals wishlist-wizard; do
+  cd "/Users/marknelson/Circus/Repositories/${repo}-actions-runner"
+  ./manage-docker-runner.sh start
+done
+
+# Start macOS runners
+for repo in modulo-squares vehicle-vitals wishlist-wizard; do
+  cd "/Users/marknelson/Circus/Repositories/${repo}-actions-runner/actions-runner"
+  ./run.sh &
+done
+```
+
+### 4. Verify Status
+
+Check that runners appear online in GitHub:
+- https://github.com/mnelson3/modulo-squares/settings/actions/runners
+- https://github.com/nelsongrey/vehicle-vitals/settings/actions/runners
+- https://github.com/nelsongrey/wishlist-wizard/settings/actions/runners
 
 ```bash
 # Start Docker runners
@@ -69,55 +99,62 @@ Check that runners appear online in GitHub:
 - https://github.com/nelsongrey/vehicle-vitals/settings/actions/runners
 - https://github.com/nelsongrey/wishlist-wizard/settings/actions/runners
 
-## 🔧 Manual GitHub App Setup
+## 🔧 Troubleshooting
 
-If you prefer manual setup:
+### GitHub CLI Authentication Issues
 
-### Create GitHub App
-
-1. Go to https://github.com/settings/apps/new
-2. **App name**: `Zero-Touch Runner Manager`
-3. **Homepage URL**: `https://github.com/nelsongrey`
-4. **Description**: `Automated GitHub Actions runner token management`
-
-### Permissions
-
-Under "Repository permissions":
-- **Actions**: Read and write
-- **Administration**: Read and write
-- **Contents**: Read-only
-- **Metadata**: Read-only
-
-### Installation
-
-1. Install the app on your repositories
-2. Note the **App ID** and **Installation ID**
-3. Download the private key (.pem file)
-
-### Configuration
-
-Update `.env.runner` in each repository:
+If authentication fails:
 
 ```bash
-# GitHub App Configuration
-GITHUB_APP_ID=your_app_id_here
-GITHUB_APP_INSTALLATION_ID=your_installation_id_here
-GITHUB_APP_PRIVATE_KEY_PATH=/path/to/private-key.pem
+# Re-authenticate
+gh auth login
+
+# Check status
+gh auth status
+
+# Test API access
+gh api user
+```
+
+### Repository Access Issues
+
+Ensure you have admin access to repositories:
+
+```bash
+# Check your access
+gh repo view mnelson3/modulo-squares
+gh repo view nelsongrey/vehicle-vitals
+gh repo view nelsongrey/wishlist-wizard
+```
+
+### Runner Offline Issues
+
+If runners go offline:
+
+```bash
+# Force token refresh
+./token-refresh.sh force_refresh
+
+# Check container status
+docker ps | grep runner
+
+# Restart containers
+docker-compose -f docker-compose.runner.yml restart
 ```
 
 ## 🔄 How It Works
 
 ### Token Flow
 
-1. **JWT Generation**: Script generates JWT using App ID + private key
-2. **Installation Token**: JWT exchanges for installation access token (1 hour)
-3. **Runner Token**: Installation token gets runner registration token
-4. **Auto-Refresh**: Process repeats hourly via launch agents
+1. **GitHub CLI**: Uses stored authentication credentials
+2. **API Calls**: Direct REST API calls to GitHub for token generation
+3. **Auto-Refresh**: Process repeats hourly via launch agents
 
 ### Security
 
-- **Private Keys**: Stored locally, never committed
-- **Short-Lived Tokens**: Installation tokens expire in 1 hour
+- **Stored Credentials**: GitHub CLI securely stores authentication
+- **Short-Lived Tokens**: Runner tokens expire in 1 hour
+- **Local Storage**: No sensitive data committed to repositories
 - **Scoped Access**: App only has necessary permissions
 - **No Secrets in Code**: All sensitive data in local files
 
