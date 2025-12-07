@@ -10,9 +10,21 @@ export default defineConfig({
     minify: 'terser', // Use terser for better minification
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Split vendor chunks for better caching
-          vendor: ['react', 'react-dom'],
+        manualChunks: (id) => {
+          // Vendor chunks for better caching
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'react-vendor';
+            }
+            if (id.includes('firebase')) {
+              return 'firebase-vendor';
+            }
+            return 'vendor';
+          }
+          // Game logic chunk
+          if (id.includes('shared/models') || id.includes('features/game')) {
+            return 'game-logic';
+          }
         },
       },
     },
