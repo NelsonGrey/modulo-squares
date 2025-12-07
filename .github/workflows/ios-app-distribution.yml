@@ -24,8 +24,8 @@ on:
         default: 'debug'
         type: choice
         options:
-        - debug
-        - release
+          - debug
+          - release
       release_notes:
         description: 'Release notes for this build'
         required: false
