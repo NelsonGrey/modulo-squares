@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
-name: iOS App Distribution
+name: 🍎 iOS App Distribution
 
 # iOS builds using self-hosted macOS runner
 # Automatic builds are enabled for all environments
@@ -40,6 +40,14 @@ jobs:
     environment:
       name: ${{ github.ref == 'refs/heads/main' && 'PRODUCTION' || github.ref == 'refs/heads/staging' && 'STAGING' || 'DEVELOPMENT' }}
     steps:
+      - name: iOS Build Environment Check
+        run: |
+          echo "🍎 Running on self-hosted macOS runner"
+          echo "📍 Hostname: $(hostname)"
+          echo "💰 Using self-hosted runner (cost savings)"
+          echo "🖥️  macOS version: $(sw_vers -productVersion)"
+          echo "🛠️  Xcode version: $(xcodebuild -version | head -1)"
+
       - name: 📥 Checkout Code
         uses: actions/checkout@v4
 
@@ -187,32 +195,22 @@ jobs:
           export ASC_KEY_ID="${{ secrets.ASC_KEY_ID }}"
           export ASC_ISSUER_ID="${{ secrets.ASC_ISSUER_ID }}"
           export ASC_PRIVATE_KEY="${{ secrets.ASC_PRIVATE_KEY }}"
-          export MATCH_GIT_URL="https://oauth2:${{ secrets.MATCH_GIT_URL_TOKEN }}@github.com/mnelson3/nelson-grey-certificates.git"
+          export MATCH_GIT_URL="${{ secrets.MATCH_GIT_URL }}"
           export MATCH_PASSWORD="${{ secrets.MATCH_PASSWORD }}"
           export BETA_FEEDBACK_EMAIL="${{ secrets.BETA_FEEDBACK_EMAIL }}"
           export KEYCHAIN_PASSWORD="$KEYCHAIN_PASSWORD"
 
-          # Execute Fastlane based on build type
-          BUILD_TYPE="${{ github.event.inputs.build_type }}"
+          # Execute Fastlane based on release type
+          RELEASE_TYPE="${{ github.event.inputs.release_type }}"
 
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]] || [[ "${{ github.ref }}" == "refs/heads/staging" ]] || [[ "$BUILD_TYPE" == "release" ]]; then
+          if [[ "$GITHUB_REF" == "refs/heads/main" ]] || [[ "$GITHUB_REF" == "refs/heads/staging" ]] || [[ "$RELEASE_TYPE" == "release" ]]; then
             # Production/Staging OR manual release: Upload to TestFlight
             echo "🚀 Building and uploading to TestFlight..."
-            if [ -f Gemfile ]; then
-              bundle config set --local path 'vendor/bundle' && bundle install --jobs 4 || true
-              bundle exec fastlane beta
-            else
-              fastlane beta
-            fi
+            fastlane beta
           else
             # Development: Just build and test
             echo "🔨 Building for development testing..."
-            if [ -f Gemfile ]; then
-              bundle config set --local path 'vendor/bundle' && bundle install --jobs 4 || true
-              bundle exec fastlane test_and_build
-            else
-              fastlane test_and_build
-            fi
+            fastlane build_development
           fi
 
       - name: 🧹 Clean Up
