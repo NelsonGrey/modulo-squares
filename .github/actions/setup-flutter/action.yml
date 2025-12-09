@@ -5,7 +5,7 @@ inputs:
   flutter-version:
     description: 'Flutter version to install'
     required: true
-    default: 'stable'
+    default: '3.38.3'
   cache-bust:
     description: 'Cache busting parameter'
     required: false
