@@ -8,7 +8,7 @@
     <key>ProgramArguments</key>
     <array>
         <string>/Users/marknelson/Circus/Repositories/modulo-squares/token-refresh.sh</string>
-        <string>health_check</string>
+        <string>health</string>
     </array>
 
     <key>StartInterval</key>

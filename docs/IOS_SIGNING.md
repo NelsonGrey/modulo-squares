@@ -4,7 +4,7 @@
 
 ## Overview
 
-This project uses Fastlane Match to manage iOS certificates and provisioning profiles. Certificates are stored in a separate private GitHub repository (`nelson-grey-certificates`) for security and team collaboration.
+This project uses Fastlane Match to manage iOS certificates and provisioning profiles. Certificates are stored in a separate private GitHub repository (`nelson-grey`) for security and team collaboration.
 
 ## Quick Setup
 
@@ -17,7 +17,7 @@ This project uses Fastlane Match to manage iOS certificates and provisioning pro
 
 - **Bundle ID**: `com.modulo.squares`
 - **Team ID**: Configured in Fastlane Appfile
-- **Certificates Repository**: `https://github.com/mnelson3/nelson-grey-certificates`
+- **Certificates Repository**: `https://github.com/mnelson3/nelson-grey`
 - **Match Type**: `appstore` for distribution builds
 
 ## Local Development Setup
