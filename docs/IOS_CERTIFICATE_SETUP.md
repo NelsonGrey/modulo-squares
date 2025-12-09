@@ -10,12 +10,12 @@ We use Fastlane Match to manage iOS certificates and provisioning profiles. This
 
 1. **App Store Connect Access**: You need access to the modulo-squares app in App Store Connect
 2. **Apple Developer Account**: Admin or Account Holder role
-3. **GitHub Repository**: Create a private repository called `nelson-grey-certificates`
+3. **GitHub Repository**: Create a private repository called `nelson-grey`
 4. **SSH Key or Personal Access Token**: For accessing the certificates repository
 
 ## Step 1: Create Certificates Repository
 
-1. Go to GitHub and create a new **private** repository named `nelson-grey-certificates`
+1. Go to GitHub and create a new **private** repository named `nelson-grey`
 2. Make sure it's completely empty (no README, .gitignore, or license)
 
 ## Step 2: Set Environment Variables
@@ -24,7 +24,7 @@ Set the required environment variables:
 
 ```bash
 export MATCH_PASSWORD="your_secure_password_here"
-export MATCH_GIT_URL="https://github.com/mnelson3/nelson-grey-certificates.git"
+export MATCH_GIT_URL="https://github.com/mnelson3/nelson-grey.git"
 ```
 
 Choose a strong password for `MATCH_PASSWORD` - this will encrypt your certificates.
@@ -49,7 +49,7 @@ Add the following secrets to your modulo-squares repository:
 | Secret Name | Value |
 |-------------|-------|
 | `MATCH_PASSWORD` | The password you used in Step 2 |
-| `MATCH_GIT_URL` | `https://oauth2:gho_YOUR_TOKEN@github.com/mnelson3/nelson-grey-certificates.git` |
+| `MATCH_GIT_URL` | `https://oauth2:gho_YOUR_TOKEN@github.com/mnelson3/nelson-grey.git` |
 | `ASC_PRIVATE_KEY` | Your App Store Connect API private key (base64 encoded) |
 | `ASC_KEY_ID` | Your App Store Connect API key ID |
 | `ASC_ISSUER_ID` | Your App Store Connect API issuer ID |
@@ -76,7 +76,7 @@ Trigger the iOS distribution workflow in GitHub Actions to verify everything wor
 ## Troubleshooting
 
 ### "Repository not found" error
-- Make sure the `nelson-grey-certificates` repository exists and is private
+- Make sure the `nelson-grey` repository exists and is private
 - Verify your SSH keys or personal access token has access to the repository
 
 ### "Invalid credentials" error

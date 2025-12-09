@@ -55,7 +55,7 @@ ASC_ISSUER_ID=${ASC_ISSUER_ID:-""}
 ASC_PRIVATE_KEY=${ASC_PRIVATE_KEY:-""}
 
 # Match Configuration
-MATCH_GIT_URL=https://oauth2:${MATCH_GIT_URL_TOKEN:-""}@github.com/mnelson3/nelson-grey-certificates.git
+MATCH_GIT_URL=https://oauth2:${MATCH_GIT_URL_TOKEN:-""}@github.com/mnelson3/nelson-grey.git
 MATCH_PASSWORD=${MATCH_PASSWORD:-""}
 
 # TestFlight Configuration
