@@ -50,7 +50,11 @@ runs:
         fi
         
         # Construct archive name and URL
-        FLUTTER_ARCHIVE="flutter_${OS_NAME}${ARCH_SUFFIX}_${FLUTTER_VERSION}-stable.${ARCHIVE_EXT}"
+        if [ "$FLUTTER_VERSION" = "stable" ]; then
+          FLUTTER_ARCHIVE="flutter_${OS_NAME}${ARCH_SUFFIX}_${FLUTTER_VERSION}.${ARCHIVE_EXT}"
+        else
+          FLUTTER_ARCHIVE="flutter_${OS_NAME}${ARCH_SUFFIX}_${FLUTTER_VERSION}-stable.${ARCHIVE_EXT}"
+        fi
         FLUTTER_URL="https://storage.googleapis.com/flutter_infra_release/releases/stable/${OS_NAME}/${FLUTTER_ARCHIVE}"
         
         echo "Flutter archive: $FLUTTER_ARCHIVE"
