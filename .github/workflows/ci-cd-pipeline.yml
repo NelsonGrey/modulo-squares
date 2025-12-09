@@ -42,7 +42,7 @@ on:
 
 # Environment variables for the entire workflow
 env:
-  FLUTTER_VERSION: '3.38.3'
+  FLUTTER_VERSION: '3.38.4'
   DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true' || contains(github.event.head_commit.message, '[DRY-RUN]') || contains(github.event.head_commit.message, '[SKIP-DEPLOY]') }}
   NODE_VERSION: '18'
 
