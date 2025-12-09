@@ -96,18 +96,25 @@ jobs:
           else
             echo "📦 Installing Ruby ${RUBY_VERSION}..."
             
-            # Install ruby-build if not available
-            if ! command -v ruby-build &> /dev/null; then
+            # Install/update ruby-build from source for latest definitions
+            if ! command -v ruby-build &> /dev/null || ! ruby-build --definitions | grep -q "^${RUBY_VERSION}$"; then
+              echo "📦 Installing/updating ruby-build from source..."
               if [ "$RUNNER_OS" = "macOS" ]; then
                 brew install ruby-build
               elif [ "$RUNNER_OS" = "Linux" ]; then
-                sudo apt-get update && sudo apt-get install -y ruby-build
+                # Remove old ruby-build and install from source
+                sudo apt-get remove -y ruby-build 2>/dev/null || true
+                git clone https://github.com/rbenv/ruby-build.git /tmp/ruby-build
+                cd /tmp/ruby-build
+                sudo ./install.sh
+                cd -
+                rm -rf /tmp/ruby-build
               fi
             fi
             
             # Install Ruby using ruby-build
             sudo mkdir -p "${RUBY_PATH}"
-            sudo ruby-build "${RUBY_VERSION}" "${RUBY_PATH}"
+            ruby-build "${RUBY_VERSION}" "${RUBY_PATH}"
             sudo touch "${RUBY_PATH}.complete"
             echo "✅ Ruby ${RUBY_VERSION} installed successfully"
           fi
