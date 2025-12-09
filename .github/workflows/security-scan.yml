@@ -42,7 +42,7 @@ jobs:
         if: matrix.language == 'dart'
         uses: ./.github/actions/setup-flutter
         with:
-          flutter-version: '3.38.3'
+          flutter-version: '3.38.4'
           cache-bust: v3
 
       - name: 📦 Install Flutter Dependencies
