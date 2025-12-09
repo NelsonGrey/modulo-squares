@@ -54,11 +54,10 @@ jobs:
           sudo sntp -sS time.apple.com || sudo ntpdate -u time.apple.com || echo '⚠️ NTP sync failed, continuing...'
 
       - name: 🦋 Setup Flutter
-        uses: subosito/flutter-action@v2.21.0
+        uses: ./.github/actions/setup-flutter
         with:
-          channel: stable
-          cache: true
-          architecture: arm64
+          flutter-version: 'stable'
+          cache-bust: v3
 
       - name: 🔧 Install GMP (Ruby dependency)
         run: |
