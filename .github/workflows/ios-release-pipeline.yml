@@ -54,7 +54,14 @@ jobs:
       - name: 🔧 Install GMP (Ruby dependency)
         run: |
           echo "📦 Installing GMP library..."
-          brew install gmp
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            brew install gmp
+          elif [ "$RUNNER_OS" = "Linux" ]; then
+            sudo apt-get update && sudo apt-get install -y libgmp-dev
+          else
+            echo "Unsupported OS for GMP installation: $RUNNER_OS"
+            exit 1
+          fi
           echo "✅ GMP installed successfully"
 
       - name: 💎 Setup Ruby
