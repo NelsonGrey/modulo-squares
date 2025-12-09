@@ -34,7 +34,19 @@ jobs:
       - name: 📥 Checkout Code
         uses: actions/checkout@v4
 
+      - name: 🏃 Check Runner Compatibility
+        id: check-runner
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ] && [ "$RUNNER_ARCH" = "ARM64" ]; then
+            echo "ARM64 Linux detected - skipping Flutter operations"
+            echo "skip-flutter=true" >> $GITHUB_OUTPUT
+          else
+            echo "Compatible runner - proceeding with Flutter operations"
+            echo "skip-flutter=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: 🦋 Setup Flutter
+        if: steps.check-runner.outputs.skip-flutter != 'true'
         uses: ./.github/actions/setup-flutter
         with:
           flutter-version: '3.38.4'
@@ -92,20 +104,24 @@ jobs:
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
 
       - name: Install Dependencies
+        if: steps.check-runner.outputs.skip-flutter != 'true'
         run: flutter pub get
         working-directory: packages/mobile
 
       - name: Generate Launcher Icons
+        if: steps.check-runner.outputs.skip-flutter != 'true'
         run: flutter pub run flutter_launcher_icons
         working-directory: packages/mobile
 
       - name: 🔍 Check Flutter Doctor
+        if: steps.check-runner.outputs.skip-flutter != 'true'
         run: |
           flutter doctor -v
           echo "🔧 Checking iOS setup..."
           flutter doctor --ios || echo "⚠️ iOS setup issues detected"
 
       - name: 🔧 Generate iOS Platform Files
+        if: steps.check-runner.outputs.skip-flutter != 'true'
         run: flutter create --platforms=ios .
         working-directory: packages/mobile
 
