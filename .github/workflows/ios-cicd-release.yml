@@ -52,8 +52,8 @@ on:
         required: false
         default: 'Internal Testers'
         type: string
-  release:
-    types: [published]
+      release:
+        types: [published]
 
 jobs:
   ios-workflow:
@@ -281,7 +281,7 @@ jobs:
           echo '🚀 Building and distributing iOS app...'
 
           # Set release notes
-          RELEASE_NOTES='${{ github.event.inputs.release_notes || format('Build from {0} - {1}', github.ref_name, github.sha) }}'
+          RELEASE_NOTES="${{ github.event.inputs.release_notes || format('Build from {0} - {1}', github.ref_name, github.sha) }}"
           echo 'RELEASE_NOTES=$RELEASE_NOTES' >> $GITHUB_ENV
 
           cd packages/mobile/ios
@@ -299,12 +299,12 @@ jobs:
           export KEYCHAIN_PASSWORD='$KEYCHAIN_PASSWORD'
 
           # Determine workflow mode and execute appropriate Fastlane command
-          WORKFLOW_MODE='${{ github.event.inputs.mode || '\''ci_cd'\'' }}'
+          WORKFLOW_MODE="${{ github.event.inputs.mode || 'ci_cd' }}"
 
           if [[ '$WORKFLOW_MODE' == 'release' ]]; then
             # Release mode: execute based on release_type input
-            RELEASE_TYPE='${{ github.event.inputs.release_type }}'
-            BETA_GROUP_NAME='${{ github.event.inputs.beta_group_name || '\''Internal Testers'\'' }}'
+            RELEASE_TYPE="${{ github.event.inputs.release_type }}"
+            BETA_GROUP_NAME="${{ github.event.inputs.beta_group_name || 'Internal Testers' }}"
 
             case "$RELEASE_TYPE" in
               "testflight")
