@@ -64,11 +64,11 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache-bust: v3
 
-      - name: ☕ Setup Java
-        uses: actions/setup-java@v4
+      - name: Set up Java
+        uses: actions/setup-java@v5
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: "temurin"
+          java-version: "17"
 
       - name: 🤖 Setup Android SDK
         run: |
