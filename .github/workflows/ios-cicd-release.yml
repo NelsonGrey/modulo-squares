@@ -52,8 +52,8 @@ on:
         required: false
         default: 'Internal Testers'
         type: string
-      release:
-        types: [published]
+  release:
+    types: [published]
 
 jobs:
   ios-workflow:
