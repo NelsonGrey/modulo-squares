@@ -50,3 +50,4 @@ flutter_launcher_icons:
     generate: true
     image_path: "assets/icons/icon.png"
     icon_size: 48 # min:48, max:256, default: 48
+# Test comment
