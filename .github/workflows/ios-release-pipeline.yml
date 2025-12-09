@@ -43,10 +43,16 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
 
+      - name: 🔧 Install GMP (Ruby dependency)
+        run: |
+          echo "📦 Installing GMP library..."
+          brew install gmp
+          echo "✅ GMP installed successfully"
+
       - name: 💎 Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.0'
+          ruby-version: '3.2.2'
 
       - name: 📦 Install Ruby Dependencies
         run: |
