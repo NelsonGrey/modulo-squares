@@ -103,15 +103,15 @@ jobs:
           
           if [ "$RUNNER_OS" = "macOS" ]; then
             # On macOS, use Homebrew to install Ruby (no sudo required)
-            RUBY_PATH="$(brew --prefix ruby@${RUBY_VERSION} 2>/dev/null || echo "/usr/local/opt/ruby@${RUBY_VERSION}")"
+            RUBY_PATH="$(brew --prefix ruby@3.2 2>/dev/null || echo "/usr/local/opt/ruby@3.2")"
             
-            if [ -x "${RUBY_PATH}/bin/ruby" ] && [ "$(${RUBY_PATH}/bin/ruby --version | grep "${RUBY_VERSION}" | wc -l)" -gt 0 ]; then
-              echo "✅ Ruby ${RUBY_VERSION} already installed via Homebrew"
+            if [ -x "${RUBY_PATH}/bin/ruby" ] && [ "$(${RUBY_PATH}/bin/ruby --version | grep "3.2" | wc -l)" -gt 0 ]; then
+              echo "✅ Ruby 3.2.x already installed via Homebrew"
             else
-              echo "📦 Installing Ruby ${RUBY_VERSION} via Homebrew..."
-              brew install ruby@${RUBY_VERSION}
-              RUBY_PATH="$(brew --prefix ruby@${RUBY_VERSION})"
-              echo "✅ Ruby ${RUBY_VERSION} installed successfully via Homebrew"
+              echo "📦 Installing Ruby 3.2 via Homebrew..."
+              brew install ruby@3.2
+              RUBY_PATH="$(brew --prefix ruby@3.2)"
+              echo "✅ Ruby 3.2 installed successfully via Homebrew"
             fi
           else
             # Linux approach (keep existing logic)
