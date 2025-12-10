@@ -102,6 +102,9 @@ deploy_system() {
         "mobile")
             deploy_mobile "$environment"
             ;;
+        "ios")
+            deploy_mobile_ios "$environment"
+            ;;
         "full")
             deploy_full "$environment"
             ;;
@@ -158,6 +161,77 @@ deploy_mobile() {
     else
         log_warning "GitHub CLI not installed - cannot trigger workflow"
     fi
+}
+
+# Deploy mobile iOS app directly with Fastlane
+deploy_mobile_ios() {
+    local env="$1"
+    log_header "iOS Mobile App Deployment - $env"
+
+    # Load environment configuration
+    local env_file=".env.$env"
+    if [ -f "$env_file" ]; then
+        source "$env_file"
+        log_info "Loaded environment configuration from $env_file"
+    else
+        log_warning "Environment file not found: $env_file"
+    fi
+
+    # Also load .env.local for shared secrets (ASC keys, etc.)
+    if [ -f ".env.local" ]; then
+        source .env.local
+        log_info "Loaded shared secrets from .env.local"
+    else
+        log_warning ".env.local not found - ASC secrets may be missing"
+    fi
+
+    # Check prerequisites
+    if ! command -v flutter &> /dev/null; then
+        log_error "Flutter not found. Please install Flutter SDK."
+        exit 1
+    fi
+
+    if ! command -v fastlane &> /dev/null; then
+        log_error "Fastlane not found. Please install Fastlane."
+        exit 1
+    fi
+
+    # Navigate to mobile project
+    cd packages/mobile
+
+    log_info "Building iOS app for $env..."
+
+    # Set environment variables for Fastlane (from environment files)
+    export FASTLANE_APPLE_ID="$FASTLANE_APPLE_ID"
+    export FASTLANE_TEAM_ID="$FASTLANE_TEAM_ID"
+    export FASTLANE_ITC_TEAM_ID="$FASTLANE_ITC_TEAM_ID"
+    export ASC_KEY_ID="$ASC_KEY_ID"
+    export ASC_ISSUER_ID="$ASC_ISSUER_ID"
+    export ASC_PRIVATE_KEY="$ASC_PRIVATE_KEY"
+    export MATCH_GIT_URL="$MATCH_GIT_URL"
+    export BETA_FEEDBACK_EMAIL="$BETA_FEEDBACK_EMAIL"
+
+    # Build and deploy based on environment
+    case $env in
+        "development")
+            log_info "Deploying to TestFlight (Development)..."
+            cd ios
+            fastlane beta
+            ;;
+        "staging")
+            log_info "Deploying to TestFlight (Staging)..."
+            cd ios
+            fastlane beta
+            ;;
+        "production")
+            log_info "Deploying to TestFlight (Production)..."
+            cd ios
+            fastlane beta
+            ;;
+    esac
+
+    cd "$PROJECT_ROOT"
+    log_success "iOS deployment completed for $env!"
 }
 
 # Deploy full system
@@ -472,7 +546,8 @@ show_help() {
 show_deploy_help() {
     echo "Deployment targets:"
     echo "  web      Deploy web application"
-    echo "  mobile   Deploy mobile applications"
+    echo "  mobile   Deploy mobile applications (triggers GitHub Actions)"
+    echo "  ios      Deploy iOS app directly with Fastlane"
     echo "  full     Deploy all components"
 }
 
