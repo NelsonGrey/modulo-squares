@@ -100,28 +100,37 @@ jobs:
         run: |
           echo '🔄 Setting up Ruby 3.2.2...'
           RUBY_VERSION="3.2.2"
-          RUBY_PATH="/opt/hostedtoolcache/Ruby/${RUBY_VERSION}/arm64"
           
-          # Check if Ruby is already installed
-          if [ -f "${RUBY_PATH}.complete" ] && [ -x "${RUBY_PATH}/bin/ruby" ]; then
-            echo "✅ Ruby ${RUBY_VERSION} already installed"
-          else
-            echo "📦 Installing Ruby ${RUBY_VERSION}..."
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            # On macOS, use Homebrew to install Ruby (no sudo required)
+            RUBY_PATH="$(brew --prefix ruby@${RUBY_VERSION} 2>/dev/null || echo "/usr/local/opt/ruby@${RUBY_VERSION}")"
             
-            # Install system dependencies for Ruby build
-            if [ "$RUNNER_OS" = "Linux" ]; then
+            if [ -x "${RUBY_PATH}/bin/ruby" ] && [ "$(${RUBY_PATH}/bin/ruby --version | grep "${RUBY_VERSION}" | wc -l)" -gt 0 ]; then
+              echo "✅ Ruby ${RUBY_VERSION} already installed via Homebrew"
+            else
+              echo "📦 Installing Ruby ${RUBY_VERSION} via Homebrew..."
+              brew install ruby@${RUBY_VERSION}
+              RUBY_PATH="$(brew --prefix ruby@${RUBY_VERSION})"
+              echo "✅ Ruby ${RUBY_VERSION} installed successfully via Homebrew"
+            fi
+          else
+            # Linux approach (keep existing logic)
+            RUBY_PATH="/opt/hostedtoolcache/Ruby/${RUBY_VERSION}/arm64"
+            
+            # Check if Ruby is already installed
+            if [ -f "${RUBY_PATH}.complete" ] && [ -x "${RUBY_PATH}/bin/ruby" ]; then
+              echo "✅ Ruby ${RUBY_VERSION} already installed"
+            else
+              echo "📦 Installing Ruby ${RUBY_VERSION}..."
+              
+              # Install system dependencies for Ruby build
               echo "📦 Installing Ruby build dependencies..."
               sudo apt-get update
               sudo apt-get install -y build-essential libssl-dev libreadline-dev zlib1g-dev libffi-dev libyaml-dev
-            fi
-            
-            # Install/update ruby-build from source for latest definitions
-            if ! command -v ruby-build &> /dev/null || ! ruby-build --definitions | grep -q "^${RUBY_VERSION}$"; then
-              echo "📦 Installing/updating ruby-build from source..."
-              if [ "$RUNNER_OS" = "macOS" ]; then
-                brew install ruby-build
-              elif [ "$RUNNER_OS" = "Linux" ]; then
-                # Remove old ruby-build and install from source
+              
+              # Install/update ruby-build from source for latest definitions
+              if ! command -v ruby-build &> /dev/null || ! ruby-build --definitions | grep -q "^${RUBY_VERSION}$"; then
+                echo "📦 Installing/updating ruby-build from source..."
                 sudo apt-get remove -y ruby-build 2>/dev/null || true
                 git clone https://github.com/rbenv/ruby-build.git /tmp/ruby-build
                 cd /tmp/ruby-build
@@ -129,13 +138,13 @@ jobs:
                 cd -
                 rm -rf /tmp/ruby-build
               fi
+              
+              # Install Ruby using ruby-build
+              sudo mkdir -p "${RUBY_PATH}"
+              ruby-build "${RUBY_VERSION}" "${RUBY_PATH}"
+              sudo touch "${RUBY_PATH}.complete"
+              echo "✅ Ruby ${RUBY_VERSION} installed successfully"
             fi
-            
-            # Install Ruby using ruby-build
-            sudo mkdir -p "${RUBY_PATH}"
-            ruby-build "${RUBY_VERSION}" "${RUBY_PATH}"
-            sudo touch "${RUBY_PATH}.complete"
-            echo "✅ Ruby ${RUBY_VERSION} installed successfully"
           fi
           
           # Add Ruby to PATH
