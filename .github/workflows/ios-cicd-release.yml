@@ -282,7 +282,10 @@ jobs:
           export BETA_FEEDBACK_EMAIL='${{ secrets.BETA_FEEDBACK_EMAIL }}'
 
           # Determine workflow mode and execute appropriate Fastlane command
-          WORKFLOW_MODE="${{ github.event.inputs.mode || 'ci_cd' }}"
+          WORKFLOW_MODE="ci_cd"
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            WORKFLOW_MODE="release"
+          fi
 
           if [[ '$WORKFLOW_MODE' == 'release' ]]; then
             # Release mode: execute based on release_type input
