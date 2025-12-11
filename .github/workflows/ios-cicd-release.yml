@@ -1,48 +1,21 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: 🍎 iOS CI/CD & Release Pipeline
 
-# Unified iOS workflow for CI/CD builds and formal releases
-# Handles automatic builds, TestFlight distribution, and App Store releases
+# Simplified iOS workflow for builds and releases
+# Handles local builds, TestFlight distribution, and App Store releases
 
 on:
-  push:
-    branches:
-      - main
-      - staging
-      - develop
-    paths:
-      - 'packages/mobile/**'
-      - '.github/workflows/ios-cicd-release.yml'
-      - '.github/actions/**'
-      - 'pubspec.yaml'
-      - 'firebase*.json'
   workflow_dispatch:
     inputs:
-      mode:
-        description: 'Workflow mode: CI/CD build or formal release'
-        required: true
-        default: 'ci_cd'
-        type: choice
-        options:
-          - ci_cd
-          - release
       release_type:
-        description: 'Type of release (only for release mode)'
-        required: false
-        default: 'testflight'
+        description: 'Type of build/release'
+        required: true
         type: choice
         options:
+          - build_only
           - testflight
           - app_store
           - full_pipeline
-      build_type:
-        description: 'Build type (only for CI/CD mode)'
-        required: false
-        default: 'debug'
-        type: choice
-        options:
-          - debug
-          - release
       release_notes:
         description: 'Release notes for this build/release'
         required: false
@@ -52,14 +25,23 @@ on:
         required: false
         default: 'Internal Testers'
         type: string
-  release:
-    types: [published]
+  pull_request:
+    branches:
+      - develop
+      - staging
+      - main
+    paths:
+      - 'packages/mobile/**'
+      - '.github/workflows/ios-cicd-release.yml'
+      - '.github/actions/**'
+      - 'pubspec.yaml'
+      - 'firebase*.json'
 
 jobs:
   ios-workflow:
     runs-on: [self-hosted, macos-arm64, modulo-squares]
     environment:
-      name: ${{ (github.event.inputs.mode == 'release' && github.event.inputs.release_type == 'app_store') && 'PRODUCTION' || github.ref == 'refs/heads/main' && 'PRODUCTION' || github.ref == 'refs/heads/staging' && 'STAGING' || 'DEVELOPMENT' }}
+      name: ${{ (github.event.inputs.release_type == 'app_store' || github.event.inputs.release_type == 'full_pipeline') && 'PRODUCTION' || 'DEVELOPMENT' }}
     steps:
       - name: iOS Build Environment Check
         run: |
@@ -237,7 +219,7 @@ jobs:
         run: |
           echo '🔄 Setting up Firebase service account key...'
           mkdir -p packages/mobile/ios
-          echo '${{ github.ref == 'refs/heads/main' && secrets.FIREBASE_SERVICE_ACCOUNT_KEY_PRODUCTION || github.ref == 'refs/heads/staging' && secrets.FIREBASE_SERVICE_ACCOUNT_KEY_STAGING || secrets.FIREBASE_SERVICE_ACCOUNT_KEY_DEVELOPMENT }}' > packages/mobile/ios/service-account-key.json
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY_DEVELOPMENT }}' > packages/mobile/ios/service-account-key.json
           echo '✅ Service account key configured'
 
       - name: 🔑 Setup SSH Key for Certificate Repository
@@ -281,18 +263,21 @@ jobs:
           export MATCH_PASSWORD='${{ secrets.MATCH_PASSWORD }}'
           export BETA_FEEDBACK_EMAIL='${{ secrets.BETA_FEEDBACK_EMAIL }}'
 
-          # Determine workflow mode and execute appropriate Fastlane command
-          WORKFLOW_MODE="ci_cd"
-          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
-            WORKFLOW_MODE="release"
-          fi
-
-          if [[ '$WORKFLOW_MODE' == 'release' ]]; then
-            # Release mode: execute based on release_type input
+          # Determine mode and execute appropriate Fastlane command
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            # PR: Just build and test
+            echo '🔨 Building for PR testing...'
+            fastlane build_development
+          else
+            # Manual dispatch: execute based on release_type input
             RELEASE_TYPE="${{ github.event.inputs.release_type }}"
             BETA_GROUP_NAME="${{ github.event.inputs.beta_group_name || 'Internal Testers' }}"
 
             case "$RELEASE_TYPE" in
+              "build_only")
+                echo '🔨 Building for local testing...'
+                fastlane build_development
+                ;;
               "testflight")
                 echo '🎯 Running TestFlight release...'
                 bundle exec fastlane beta
@@ -310,17 +295,6 @@ jobs:
                 exit 1
                 ;;
             esac
-          else
-            # CI/CD mode: execute based on branch
-            if [[ '$GITHUB_REF' == 'refs/heads/main' ]] || [[ '$GITHUB_REF' == 'refs/heads/staging' ]]; then
-              # Production/Staging branches: Upload to TestFlight
-              echo '🚀 Building and uploading to TestFlight (CI/CD)...'
-              fastlane beta
-            else
-              # Development branch: Just build and test
-              echo '🔨 Building for development testing (CI/CD)...'
-              fastlane build_development
-            fi
           fi
 
       - name: 🧹 Clean Up
