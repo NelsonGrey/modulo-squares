@@ -374,14 +374,16 @@ platform :ios do
     sh("rm -rf Payload")
 
     # Wait for IPA to be fully written
-    sh("while [ ! -f ./builds/ModuloSquares.ipa ] || [ ! -s ./builds/ModuloSquares.ipa ]; do sleep 1; done")
+    # sh("while [ ! -f ./builds/ModuloSquares.ipa ] || [ ! -s ./builds/ModuloSquares.ipa ]; do sleep 1; done")
 
     # Sign the app inside the IPA using Fastlane's resign
     UI.message("🔐 Signing the IPA...")
     resign(
       ipa: "./builds/ModuloSquares.ipa",
       signing_identity: ENV['CODE_SIGN_IDENTITY'],
-      provisioning_profile: ENV['PROVISIONING_PROFILE'],
+      provisioning_profile: {
+        "com.nelsongrey.modulosquares.app.ios" => ENV['sigh_com.nelsongrey.modulosquares.app.ios_appstore_profile-path']
+      },
       keychain_path: ENV['KEYCHAIN_PATH']
     )
 
