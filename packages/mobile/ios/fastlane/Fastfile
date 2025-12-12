@@ -405,7 +405,6 @@ platform :ios do
         api_key: api_key,
         ipa: signed_ipa_path,
         skip_waiting_for_build_processing: true,  # Don't wait indefinitely
-        changelog: release_notes,
         beta_app_feedback_email: feedback_email,
         beta_app_description: "Modulo Squares iOS App - Automated Build"
       )
