@@ -367,19 +367,12 @@ platform :ios do
     sh("cd ../.. && flutter build ios --release --no-codesign")
 
     # Create unsigned IPA from the app with proper structure
-    sh("mkdir -p ./builds")
-    sh("mkdir -p Payload")
-    sh("cp -r ../../build/ios/iphoneos/Runner.app Payload/")
-    sh("zip -r ./builds/ModuloSquares.ipa Payload/")
-    sh("rm -rf Payload")
-
-    # Wait for IPA to be fully written
-    # sh("while [ ! -f ./builds/ModuloSquares.ipa ] || [ ! -s ./builds/ModuloSquares.ipa ]; do sleep 1; done")
+    sh("mkdir -p ./builds && mkdir -p Payload && cp -r ../../build/ios/iphoneos/Runner.app Payload/ && zip -r ./builds/ModuloSquares.ipa Payload/ && rm -rf Payload")
 
     # Sign the app inside the IPA using Fastlane's resign
     UI.message("🔐 Signing the IPA...")
     resign(
-      ipa: "./builds/ModuloSquares.ipa",
+      ipa: "#{Dir.pwd}/builds/ModuloSquares.ipa",
       signing_identity: ENV['CODE_SIGN_IDENTITY'],
       provisioning_profile: {
         "com.nelsongrey.modulosquares.app.ios" => ENV['sigh_com.nelsongrey.modulosquares.app.ios_appstore_profile-path']
