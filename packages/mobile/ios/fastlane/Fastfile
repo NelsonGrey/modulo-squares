@@ -405,43 +405,8 @@ platform :ios do
         beta_app_description: "Modulo Squares iOS App - Automated Build"
       )
       UI.success("✅ IPA uploaded to TestFlight successfully")
-
-      # Wait for build processing with timeout and status checks
-      UI.message("⏳ Waiting for Apple to process the build...")
-      max_wait_time = 1800  # 30 minutes timeout
-      wait_interval = 30    # Check every 30 seconds
-      elapsed_time = 0
-
-      while elapsed_time < max_wait_time
-        begin
-          # Check build status using App Store Connect API
-          build_info = app_store_build_number(
-            api_key: api_key,
-            app_identifier: "com.nelsongrey.modulosquares.app.ios",
-            version: get_version_number_from_plist(plist_path: "../../ios/Runner/Info.plist"),
-            build_number: get_build_number_from_plist(plist_path: "../../ios/Runner/Info.plist")
-          )
-
-          if build_info && build_info[:processed]
-            UI.success("✅ Build processed successfully by Apple!")
-            break
-          else
-            UI.message("🔄 Build still processing... (#{elapsed_time}/#{max_wait_time}s elapsed)")
-          end
-        rescue => e
-          UI.message("⚠️ Could not check build status yet: #{e.message}")
-        end
-
-        sleep(wait_interval)
-        elapsed_time += wait_interval
-      end
-
-      if elapsed_time >= max_wait_time
-        UI.error("⏰ Timeout: Build is still processing after #{max_wait_time/60} minutes")
-        UI.message("📝 The build was uploaded successfully, but Apple is taking longer than expected to process it.")
-        UI.message("🔍 You can check the build status manually in App Store Connect or TestFlight.")
-        # Don't fail the build - the upload was successful
-      end
+      UI.message("📝 Build processing will continue asynchronously in App Store Connect")
+      UI.message("🔍 Check TestFlight status manually if needed")
 
     rescue => e
       UI.error("❌ Failed to upload to TestFlight: #{e.message}")
