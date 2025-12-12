@@ -349,6 +349,9 @@ platform :ios do
       timeout: 3600
     )
 
+    # Set KEYCHAIN_PATH environment variable
+    ENV['KEYCHAIN_PATH'] = "~/Library/Keychains/#{keychain_name}-db"
+
     # ZERO-TOUCH: Use complete automated certificate lifecycle management
     zero_touch_certificates
 
@@ -373,10 +376,14 @@ platform :ios do
     # Wait for IPA to be fully written
     sh("while [ ! -f ./builds/ModuloSquares.ipa ] || [ ! -s ./builds/ModuloSquares.ipa ]; do sleep 1; done")
 
-    # Sign the IPA using codesign with specific keychain
-    ipa_path = File.expand_path("./builds/ModuloSquares.ipa")
-    keychain_path = ENV['KEYCHAIN_PATH']
-    sh("codesign --force --sign 'Apple Distribution: Mark Nelson (P6YJUBML6P)' --keychain '#{keychain_path}' '#{ipa_path}'")
+    # Sign the app inside the IPA using Fastlane's resign
+    UI.message("🔐 Signing the IPA...")
+    resign(
+      ipa: "./builds/ModuloSquares.ipa",
+      signing_identity: ENV['CODE_SIGN_IDENTITY'],
+      provisioning_profile: ENV['PROVISIONING_PROFILE'],
+      keychain_path: ENV['KEYCHAIN_PATH']
+    )
 
     # Set up API key authentication
     private_key_content = ENV["ASC_PRIVATE_KEY"]
