@@ -381,7 +381,7 @@ platform :ios do
     )
 
     # Set the IPA path for upload
-    ipa_path = "#{Dir.pwd}/builds/ModuloSquares.ipa"
+    signed_ipa_path = "#{Dir.pwd}/builds/ModuloSquares.ipa"
 
     # Set up API key authentication
     private_key_content = ENV["ASC_PRIVATE_KEY"]
@@ -403,7 +403,7 @@ platform :ios do
       UI.message("📤 Uploading IPA to TestFlight...")
       upload_to_testflight(
         api_key: api_key,
-        ipa: ipa_path,
+        ipa: signed_ipa_path,
         skip_waiting_for_build_processing: true,  # Don't wait indefinitely
         changelog: release_notes,
         beta_app_feedback_email: feedback_email,
