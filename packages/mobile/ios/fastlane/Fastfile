@@ -380,6 +380,9 @@ platform :ios do
       keychain_path: ENV['KEYCHAIN_PATH']
     )
 
+    # Set the IPA path for upload
+    ipa_path = "#{Dir.pwd}/builds/ModuloSquares.ipa"
+
     # Set up API key authentication
     private_key_content = ENV["ASC_PRIVATE_KEY"]
     if private_key_content.nil? || private_key_content.empty?
