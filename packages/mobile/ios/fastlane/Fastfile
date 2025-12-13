@@ -422,7 +422,11 @@ platform :ios do
 
     # Clean up temporary keychain
     UI.message("🧹 Cleaning up temporary keychain...")
-    delete_keychain(name: keychain_name)
+    begin
+      delete_keychain(name: keychain_name)
+    rescue => e
+      UI.message("⚠️ Keychain cleanup failed (may already be deleted): #{e.message}")
+    end
   end
 
   desc "Run tests and build debug version"
