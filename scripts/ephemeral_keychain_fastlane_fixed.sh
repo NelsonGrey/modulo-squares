@@ -195,40 +195,8 @@ fi
 
 echo "[ephemeral-keychain] Running command: $FASTLANE_CMD"
 set -x
-
-# Run the command with heartbeat monitoring for long-running commands
-(
-  eval "$FASTLANE_CMD" &
-  CMD_PID=$!
-  
-  # Monitor the command and log heartbeat every 60 seconds
-  COUNTER=0
-  while kill -0 $CMD_PID 2>/dev/null; do
-    sleep 60
-    COUNTER=$((COUNTER + 1))
-    echo "[ephemeral-keychain] Command still running... ($((COUNTER * 60)) seconds elapsed)"
-    
-    # Kill if it runs too long (25 minutes = 1500 seconds to allow for workflow timeout)
-    if [ $COUNTER -gt 25 ]; then
-      echo "[ephemeral-keychain] ERROR: Command running too long, terminating"
-      kill -TERM $CMD_PID 2>/dev/null || true
-      sleep 5
-      kill -KILL $CMD_PID 2>/dev/null || true
-      exit 124  # Timeout exit code
-    fi
-  done
-  
-  # Wait for the command to finish and get exit code
-  wait $CMD_PID
-  exit $?
-) || {
-  EXIT_CODE=$?
-  echo "[ephemeral-keychain] ERROR: Command failed with exit code $EXIT_CODE"
-  # Don't exit here - let cleanup run via trap
-  exit $EXIT_CODE
-}
-
+eval "$FASTLANE_CMD"
 set +x
-echo "[ephemeral-keychain] Command completed successfully, cleanup will run via EXIT trap"
+echo "[ephemeral-keychain] Command completed, cleanup will run via EXIT trap"
 
 exit 0
