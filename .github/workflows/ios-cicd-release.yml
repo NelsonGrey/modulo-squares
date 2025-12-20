@@ -219,7 +219,7 @@ jobs:
         run: |
           echo '🔄 Setting up Firebase service account key...'
           mkdir -p packages/mobile/ios
-          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY_DEVELOPMENT }}' > packages/mobile/ios/service-account-key.json
+          echo '${{ github.ref == 'refs/heads/main' && secrets.FIREBASE_SERVICE_ACCOUNT_KEY_PRODUCTION || github.ref == 'refs/heads/staging' && secrets.FIREBASE_SERVICE_ACCOUNT_KEY_STAGING || secrets.FIREBASE_SERVICE_ACCOUNT_KEY_DEVELOPMENT }}' > packages/mobile/ios/service-account-key.json
           echo '✅ Service account key configured'
 
       - name: 🏗️ Build and Distribute iOS App
@@ -228,7 +228,7 @@ jobs:
 
           # Set release notes
           RELEASE_NOTES="${{ github.event.inputs.release_notes || format('Build from {0} - {1}', github.ref_name, github.sha) }}"
-          echo 'RELEASE_NOTES=$RELEASE_NOTES' >> $GITHUB_ENV
+          echo "RELEASE_NOTES=$RELEASE_NOTES" >> $GITHUB_ENV
 
           cd packages/mobile/ios
 
