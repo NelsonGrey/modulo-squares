@@ -39,7 +39,7 @@ on:
 
 jobs:
   ios-workflow:
-    runs-on: [self-hosted, macos-arm64, modulo-squares]
+    runs-on: [self-hosted, macOS, ios]
     environment:
       name: ${{ (github.event.inputs.release_type == 'app_store' || github.event.inputs.release_type == 'full_pipeline') && 'PRODUCTION' || 'DEVELOPMENT' }}
     steps:
