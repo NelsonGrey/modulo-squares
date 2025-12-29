@@ -102,26 +102,26 @@ fi
 
 echo "[ephemeral-keychain] Original keychain list: ${ORIG_KEYCHAIN_LIST[*]:-none}"
 
-# Set up ephemeral keychain as default
-echo "[ephemeral-keychain] Setting ephemeral keychain as default"
-security default-keychain -s "$KC_PATH" 2>/dev/null || {
-  echo "[ephemeral-keychain] WARNING: Failed to set default keychain"
+# Unlock and configure ephemeral keychain
+echo "[ephemeral-keychain] Unlocking and configuring ephemeral keychain"
+security unlock-keychain -p "$KC_PASS" "$KC_PATH" || {
+  echo "[ephemeral-keychain] WARNING: Failed to unlock keychain"
+}
+security set-keychain-settings -lut 7200 "$KC_PATH" || {
+  echo "[ephemeral-keychain] WARNING: Failed to set keychain settings"
 }
 
 # Add ephemeral keychain to search list
 echo "[ephemeral-keychain] Adding ephemeral keychain to search list"
-security list-keychains -d user -s "$KC_PATH" "${ORIG_KEYCHAIN_LIST[@]}" 2>/dev/null || {
+security list-keychains -d user -s "$KC_PATH" "${ORIG_KEYCHAIN_LIST[@]}" || {
   echo "[ephemeral-keychain] WARNING: Failed to update keychain list"
 }
 security list-keychains -d user
 
-# Unlock and configure ephemeral keychain
-echo "[ephemeral-keychain] Unlocking and configuring ephemeral keychain"
-security unlock-keychain -p "$KC_PASS" "$KC_PATH" 2>/dev/null || {
-  echo "[ephemeral-keychain] WARNING: Failed to unlock keychain"
-}
-security set-keychain-settings -lut 7200 "$KC_PATH" 2>/dev/null || {
-  echo "[ephemeral-keychain] WARNING: Failed to set keychain settings"
+# Set up ephemeral keychain as default
+echo "[ephemeral-keychain] Setting ephemeral keychain as default"
+security default-keychain -s "$KC_PATH" || {
+  echo "[ephemeral-keychain] WARNING: Failed to set default keychain"
 }
 
 cleanup() {
