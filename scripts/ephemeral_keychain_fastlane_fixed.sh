@@ -53,7 +53,8 @@ fi
 KC_NAME="fastlane_tmp_$(date +%s)_$$.keychain-db"
 KC_PATH="$HOME/Library/Keychains/$KC_NAME"
 # Use openssl for reliable random password generation instead of tr/urandom which can hang
-KC_PASS=$(openssl rand -base64 24 | tr -dc 'A-Za-z0-9' | head -c 24 || echo "fastlane-pass-$(date +%s)")
+# KC_PASS=$(openssl rand -base64 24 | tr -dc 'A-Za-z0-9' | head -c 24 || echo "fastlane-pass-$(date +%s)")
+KC_PASS="temp-password-123"
 
 echo "[ephemeral-keychain] Creating temporary keychain: $KC_NAME"
 security create-keychain -p "$KC_PASS" "$KC_PATH"
@@ -112,6 +113,7 @@ echo "[ephemeral-keychain] Adding ephemeral keychain to search list"
 security list-keychains -d user -s "$KC_PATH" "${ORIG_KEYCHAIN_LIST[@]}" 2>/dev/null || {
   echo "[ephemeral-keychain] WARNING: Failed to update keychain list"
 }
+security list-keychains -d user
 
 # Unlock and configure ephemeral keychain
 echo "[ephemeral-keychain] Unlocking and configuring ephemeral keychain"
