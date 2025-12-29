@@ -187,9 +187,9 @@ if [ -n "${CERT_P12_PATH:-}" ]; then
 fi
 
 # Export environment variables for Fastlane
-export MATCH_KEYCHAIN_NAME="$KC_NAME"
+export MATCH_KEYCHAIN_NAME="$KC_PATH"
 export MATCH_KEYCHAIN_PASSWORD="$KC_PASS"
-echo "[ephemeral-keychain] Exported MATCH_KEYCHAIN_NAME=$KC_NAME"
+echo "[ephemeral-keychain] Exported MATCH_KEYCHAIN_NAME=$KC_PATH"
 echo "[ephemeral-keychain] Exported MATCH_KEYCHAIN_PASSWORD=[HIDDEN]"
 
 # Export to GitHub Actions environment if available
