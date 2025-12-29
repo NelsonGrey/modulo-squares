@@ -52,7 +52,8 @@ fi
 # Unique temporary keychain name and password
 KC_NAME="fastlane_tmp_$(date +%s)_$$.keychain-db"
 KC_PATH="$HOME/Library/Keychains/$KC_NAME"
-KC_PASS=$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 24 || echo "fastlane-pass")
+# Use openssl for reliable random password generation instead of tr/urandom which can hang
+KC_PASS=$(openssl rand -base64 24 | tr -dc 'A-Za-z0-9' | head -c 24 || echo "fastlane-pass-$(date +%s)")
 
 echo "[ephemeral-keychain] Creating temporary keychain: $KC_NAME"
 security create-keychain -p "$KC_PASS" "$KC_PATH"
