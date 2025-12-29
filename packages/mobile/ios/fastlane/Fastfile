@@ -28,7 +28,7 @@ platform :ios do
       readonly: true,
       username: ENV["FASTLANE_APPLE_ID"],
       team_id: ENV["FASTLANE_TEAM_ID"],
-      keychain_name: "fastlane_tmp_keychain",
+      keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
       keychain_password: ENV["MATCH_PASSWORD"]
     )
   end
@@ -62,7 +62,7 @@ platform :ios do
           type: "development",
           readonly: true,
           api_key: api_key,
-          keychain_name: "fastlane_tmp_keychain",
+          keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
           keychain_password: ENV["MATCH_PASSWORD"]
         )
         UI.success("✅ ZERO-TOUCH SUCCESS: Reused existing development certificates across projects")
@@ -75,7 +75,7 @@ platform :ios do
             type: "development",
             readonly: false,
             api_key: api_key,
-            keychain_name: "fastlane_tmp_keychain",
+            keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
             keychain_password: ENV["MATCH_PASSWORD"]
           )
           UI.success("✅ ZERO-TOUCH: Created shared development certificates for maximum project reuse")
@@ -88,7 +88,7 @@ platform :ios do
               readonly: false,
               app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
               api_key: api_key,
-              keychain_name: "fastlane_tmp_keychain",
+              keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
               keychain_password: ENV["MATCH_PASSWORD"]
             )
             UI.success("✅ ZERO-TOUCH: Created project-specific profile while reusing shared certificates")
@@ -97,19 +97,24 @@ platform :ios do
               UI.error("❌ API key lacks permission to create provisioning profiles")
               UI.error("💡 Please ensure your App Store Connect API key has Admin role")
               UI.error("💡 Or create the provisioning profile manually in Apple Developer portal")
-              UI.message("🔄 Falling back to username/password authentication...")
+              if Helper.ci?
+                UI.error("❌ CI detected: Skipping interactive username/password fallback")
+                raise profile_error
+              else
+                UI.message("🔄 Falling back to username/password authentication...")
 
-              # Fallback to username/password for profile creation
-              match(
-                type: "development",
-                readonly: false,
-                app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
-                username: ENV["FASTLANE_APPLE_ID"],
-                team_id: ENV["FASTLANE_TEAM_ID"],
-                keychain_name: "fastlane_tmp_keychain",
-                keychain_password: ENV["MATCH_PASSWORD"]
-              )
-              UI.success("✅ ZERO-TOUCH: Created profile using username/password fallback")
+                # Fallback to username/password for profile creation
+                match(
+                  type: "development",
+                  readonly: false,
+                  app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
+                  username: ENV["FASTLANE_APPLE_ID"],
+                  team_id: ENV["FASTLANE_TEAM_ID"],
+                  keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
+                  keychain_password: ENV["MATCH_PASSWORD"]
+                )
+                UI.success("✅ ZERO-TOUCH: Created profile using username/password fallback")
+              end
             else
               raise profile_error
             end
@@ -120,6 +125,11 @@ platform :ios do
       end
     else
       # Fallback to username/password (less efficient but still zero-touch)
+      if Helper.ci?
+        UI.error("❌ CI detected: API key required for Zero Touch. Skipping interactive username/password fallback.")
+        raise "API key missing in CI environment"
+      end
+
       UI.message("🔑 Using username/password authentication (consider API key for maximum efficiency)")
 
       begin
@@ -128,7 +138,7 @@ platform :ios do
           readonly: true,
           username: ENV["FASTLANE_APPLE_ID"],
           team_id: ENV["FASTLANE_TEAM_ID"],
-          keychain_name: "fastlane_tmp_keychain",
+          keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
           keychain_password: ENV["MATCH_PASSWORD"]
         )
         UI.success("✅ ZERO-TOUCH SUCCESS: Reused existing development certificates")
@@ -141,7 +151,7 @@ platform :ios do
             app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
             username: ENV["FASTLANE_APPLE_ID"],
             team_id: ENV["FASTLANE_TEAM_ID"],
-            keychain_name: "fastlane_tmp_keychain",
+            keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
             keychain_password: ENV["MATCH_PASSWORD"]
           )
           UI.success("✅ ZERO-TOUCH: Created development certificates automatically")
@@ -183,7 +193,7 @@ platform :ios do
           readonly: true,
           app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
           api_key: api_key,
-          keychain_name: "fastlane_tmp_keychain",
+          keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
           keychain_password: ENV["MATCH_PASSWORD"]
         )
         UI.success("✅ ZERO-TOUCH SUCCESS: Reused existing certificates from shared repository")
@@ -198,7 +208,7 @@ platform :ios do
               readonly: false,
               app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
               api_key: api_key,
-              keychain_name: "fastlane_tmp_keychain",
+              keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
               keychain_password: ENV["MATCH_PASSWORD"]
             )
             UI.success("✅ ZERO-TOUCH: Created shared distribution certificates and profiles for maximum project reuse")
@@ -207,19 +217,25 @@ platform :ios do
             if profile_error.message.include?("forbidden") || profile_error.message.include?("not allowed")
               UI.error("❌ API key lacks permission to create provisioning profiles")
               UI.error("💡 Please ensure your App Store Connect API key has Admin role")
-              UI.message("🔄 Falling back to username/password authentication...")
+              
+              if Helper.ci?
+                UI.error("❌ CI detected: Skipping interactive username/password fallback")
+                raise profile_error
+              else
+                UI.message("🔄 Falling back to username/password authentication...")
 
-              # Fallback to username/password for profile creation
-              match(
-                type: "appstore",
-                readonly: false,
-                app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
-                username: ENV["FASTLANE_APPLE_ID"],
-                team_id: ENV["FASTLANE_TEAM_ID"],
-                keychain_name: "fastlane_tmp_keychain",
-                keychain_password: ENV["MATCH_PASSWORD"]
-              )
-              UI.success("✅ ZERO-TOUCH: Created profiles using username/password fallback")
+                # Fallback to username/password for profile creation
+                match(
+                  type: "appstore",
+                  readonly: false,
+                  app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
+                  username: ENV["FASTLANE_APPLE_ID"],
+                  team_id: ENV["FASTLANE_TEAM_ID"],
+                  keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
+                  keychain_password: ENV["MATCH_PASSWORD"]
+                )
+                UI.success("✅ ZERO-TOUCH: Created profiles using username/password fallback")
+              end
             else
               raise profile_error
             end
@@ -239,7 +255,7 @@ platform :ios do
           app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
           username: ENV["FASTLANE_APPLE_ID"],
           team_id: ENV["FASTLANE_TEAM_ID"],
-          keychain_name: "fastlane_tmp_keychain",
+          keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
           keychain_password: ENV["MATCH_PASSWORD"]
         )
         UI.success("✅ ZERO-TOUCH SUCCESS: Reused existing distribution certificates")
@@ -252,7 +268,7 @@ platform :ios do
             app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
             username: ENV["FASTLANE_APPLE_ID"],
             team_id: ENV["FASTLANE_TEAM_ID"],
-            keychain_name: "fastlane_tmp_keychain",
+            keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
             keychain_password: ENV["MATCH_PASSWORD"]
           )
           UI.success("✅ ZERO-TOUCH: Created distribution certificates and profiles automatically")
@@ -338,19 +354,24 @@ platform :ios do
     feedback_email = ENV["BETA_FEEDBACK_EMAIL"] || "mark.a.nelson@outlook.com"
 
     # Create temporary keychain for code signing
-    keychain_name = "fastlane_tmp_keychain"
+    keychain_name = ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain"
     keychain_password = ENV["MATCH_PASSWORD"] || "default_password"
     
-    UI.message("🔐 Creating temporary keychain for code signing...")
-    create_keychain(
-      name: keychain_name,
-      password: keychain_password,
-      unlock: true,
-      timeout: 3600
-    )
-
-    # Set KEYCHAIN_PATH environment variable
-    ENV['KEYCHAIN_PATH'] = "~/Library/Keychains/#{keychain_name}-db"
+    if ENV["MATCH_KEYCHAIN_NAME"].nil? || ENV["MATCH_KEYCHAIN_NAME"].empty?
+      UI.message("🔐 Creating temporary keychain for code signing...")
+      create_keychain(
+        name: keychain_name,
+        password: keychain_password,
+        unlock: true,
+        timeout: 3600
+      )
+      # Set KEYCHAIN_PATH environment variable for fallback
+      ENV['KEYCHAIN_PATH'] = "~/Library/Keychains/#{keychain_name}-db"
+    else
+      UI.message("🔐 Using existing ephemeral keychain: #{keychain_name}")
+      # Use the path provided by the shell script if available
+      ENV['KEYCHAIN_PATH'] = ENV["MATCH_KEYCHAIN_PATH"] || "~/Library/Keychains/#{keychain_name}"
+    end
 
     # ZERO-TOUCH: Use complete automated certificate lifecycle management
     zero_touch_certificates
@@ -416,16 +437,15 @@ platform :ios do
       UI.error("❌ Failed to upload to TestFlight: #{e.message}")
       raise e
     end
-
-    UI.message("✅ Flutter iOS build completed successfully")
-    UI.message("📦 IPA file uploaded to TestFlight")
-
-    # Clean up temporary keychain
-    UI.message("🧹 Cleaning up temporary keychain...")
-    begin
-      delete_keychain(name: keychain_name)
-    rescue => e
-      UI.message("⚠️ Keychain cleanup failed (may already be deleted): #{e.message}")
+    if ENV["MATCH_KEYCHAIN_NAME"].nil? || ENV["MATCH_KEYCHAIN_NAME"].empty?
+      UI.message("🧹 Cleaning up temporary keychain...")
+      begin
+        delete_keychain(name: keychain_name)
+      rescue => e
+        UI.message("⚠️ Keychain cleanup failed (may already be deleted): #{e.message}")
+      end
+    else
+      UI.message("🧹 Skipping keychain cleanup (managed by ephemeral_keychain script)")
     end
   end
 
