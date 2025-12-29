@@ -29,7 +29,7 @@ platform :ios do
       username: ENV["FASTLANE_APPLE_ID"],
       team_id: ENV["FASTLANE_TEAM_ID"],
       keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
-      keychain_password: ENV["MATCH_PASSWORD"]
+      keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
     )
   end
 
@@ -63,7 +63,7 @@ platform :ios do
           readonly: true,
           api_key: api_key,
           keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
-          keychain_password: ENV["MATCH_PASSWORD"]
+          keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
         )
         UI.success("✅ ZERO-TOUCH SUCCESS: Reused existing development certificates across projects")
         UI.message("💡 Certificate efficiency: Maximum reuse achieved")
@@ -76,7 +76,7 @@ platform :ios do
             readonly: false,
             api_key: api_key,
             keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
-            keychain_password: ENV["MATCH_PASSWORD"]
+            keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
           )
           UI.success("✅ ZERO-TOUCH: Created shared development certificates for maximum project reuse")
         elsif e.message.include?("No matching provisioning profiles found")
@@ -89,7 +89,7 @@ platform :ios do
               app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
               api_key: api_key,
               keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
-              keychain_password: ENV["MATCH_PASSWORD"]
+              keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
             )
             UI.success("✅ ZERO-TOUCH: Created project-specific profile while reusing shared certificates")
           rescue => profile_error
@@ -111,7 +111,7 @@ platform :ios do
                   username: ENV["FASTLANE_APPLE_ID"],
                   team_id: ENV["FASTLANE_TEAM_ID"],
                   keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
-                  keychain_password: ENV["MATCH_PASSWORD"]
+                  keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
                 )
                 UI.success("✅ ZERO-TOUCH: Created profile using username/password fallback")
               end
@@ -139,7 +139,7 @@ platform :ios do
           username: ENV["FASTLANE_APPLE_ID"],
           team_id: ENV["FASTLANE_TEAM_ID"],
           keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
-          keychain_password: ENV["MATCH_PASSWORD"]
+          keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
         )
         UI.success("✅ ZERO-TOUCH SUCCESS: Reused existing development certificates")
       rescue => e
@@ -152,7 +152,7 @@ platform :ios do
             username: ENV["FASTLANE_APPLE_ID"],
             team_id: ENV["FASTLANE_TEAM_ID"],
             keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
-            keychain_password: ENV["MATCH_PASSWORD"]
+            keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
           )
           UI.success("✅ ZERO-TOUCH: Created development certificates automatically")
         else
@@ -194,7 +194,7 @@ platform :ios do
           app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
           api_key: api_key,
           keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
-          keychain_password: ENV["MATCH_PASSWORD"]
+          keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
         )
         UI.success("✅ ZERO-TOUCH SUCCESS: Reused existing certificates from shared repository")
         UI.message("💡 Maximum efficiency achieved: No new certificates created, full reuse")
@@ -209,7 +209,7 @@ platform :ios do
               app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
               api_key: api_key,
               keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
-              keychain_password: ENV["MATCH_PASSWORD"]
+              keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
             )
             UI.success("✅ ZERO-TOUCH: Created shared distribution certificates and profiles for maximum project reuse")
             UI.message("💡 Future projects will reuse these certificates and profiles automatically")
@@ -232,7 +232,7 @@ platform :ios do
                   username: ENV["FASTLANE_APPLE_ID"],
                   team_id: ENV["FASTLANE_TEAM_ID"],
                   keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
-                  keychain_password: ENV["MATCH_PASSWORD"]
+                  keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
                 )
                 UI.success("✅ ZERO-TOUCH: Created profiles using username/password fallback")
               end
@@ -256,7 +256,7 @@ platform :ios do
           username: ENV["FASTLANE_APPLE_ID"],
           team_id: ENV["FASTLANE_TEAM_ID"],
           keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
-          keychain_password: ENV["MATCH_PASSWORD"]
+          keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
         )
         UI.success("✅ ZERO-TOUCH SUCCESS: Reused existing distribution certificates")
       rescue => e
@@ -269,7 +269,7 @@ platform :ios do
             username: ENV["FASTLANE_APPLE_ID"],
             team_id: ENV["FASTLANE_TEAM_ID"],
             keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
-            keychain_password: ENV["MATCH_PASSWORD"]
+            keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
           )
           UI.success("✅ ZERO-TOUCH: Created distribution certificates and profiles automatically")
         else
@@ -355,7 +355,7 @@ platform :ios do
 
     # Create temporary keychain for code signing
     keychain_name = ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain"
-    keychain_password = ENV["MATCH_PASSWORD"] || "default_password"
+    keychain_password = ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"] || "default_password"
     
     if ENV["MATCH_KEYCHAIN_NAME"].nil? || ENV["MATCH_KEYCHAIN_NAME"].empty?
       UI.message("🔐 Creating temporary keychain for code signing...")
