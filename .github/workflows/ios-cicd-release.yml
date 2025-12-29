@@ -192,9 +192,12 @@ jobs:
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          LANG: en_US.UTF-8
+          LC_ALL: en_US.UTF-8
         run: |
           echo '🔄 Testing App Store Connect JWT authentication...'
           ruby -e "
+          # encoding: utf-8
           require 'jwt'
           require 'openssl'
 
