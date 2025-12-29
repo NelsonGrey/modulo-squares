@@ -157,7 +157,22 @@ jobs:
           fastlane --version
           echo '✅ Fastlane installed successfully'
 
-      - name: 🔐 Setup App Store Connect Authentication
+      - name: � Install JWT Gem
+        run: |
+          echo '📦 Installing JWT gem...'
+          gem install jwt
+          echo '✅ JWT gem installed'
+
+      - name: 🔍 Debug Ruby Environment
+        run: |
+          echo '🔍 Ruby version:'
+          ruby --version
+          echo '🔍 Gem environment:'
+          gem env
+          echo '🔍 Installed gems:'
+          gem list
+
+      - name: �🔐 Setup App Store Connect Authentication
         run: |
           echo '🔄 Setting up App Store Connect authentication...'
 
