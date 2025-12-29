@@ -107,6 +107,12 @@ security default-keychain -s "$KC_PATH" 2>/dev/null || {
   echo "[ephemeral-keychain] WARNING: Failed to set default keychain"
 }
 
+# Add ephemeral keychain to search list
+echo "[ephemeral-keychain] Adding ephemeral keychain to search list"
+security list-keychains -d user -s "$KC_PATH" "${ORIG_KEYCHAIN_LIST[@]}" 2>/dev/null || {
+  echo "[ephemeral-keychain] WARNING: Failed to update keychain list"
+}
+
 # Unlock and configure ephemeral keychain
 echo "[ephemeral-keychain] Unlocking and configuring ephemeral keychain"
 security unlock-keychain -p "$KC_PASS" "$KC_PATH" 2>/dev/null || {
