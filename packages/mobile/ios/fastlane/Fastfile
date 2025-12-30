@@ -45,7 +45,7 @@ platform :ios do
       readonly: true,
       username: ENV["FASTLANE_APPLE_ID"],
       team_id: ENV["FASTLANE_TEAM_ID"],
-      keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
+      keychain_name: ENV["MATCH_KEYCHAIN_PATH"] || ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
       keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
     )
   end
@@ -79,7 +79,7 @@ platform :ios do
           type: "development",
           readonly: true,
           api_key: api_key,
-          keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
+          keychain_name: ENV["MATCH_KEYCHAIN_PATH"] || ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
           keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
         )
         UI.success("✅ ZERO-TOUCH SUCCESS: Reused existing development certificates across projects")
@@ -92,7 +92,7 @@ platform :ios do
             type: "development",
             readonly: false,
             api_key: api_key,
-            keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
+            keychain_name: ENV["MATCH_KEYCHAIN_PATH"] || ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
             keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
           )
           UI.success("✅ ZERO-TOUCH: Created shared development certificates for maximum project reuse")
@@ -105,7 +105,7 @@ platform :ios do
               readonly: false,
               app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
               api_key: api_key,
-              keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
+              keychain_name: ENV["MATCH_KEYCHAIN_PATH"] || ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
               keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
             )
             UI.success("✅ ZERO-TOUCH: Created project-specific profile while reusing shared certificates")
@@ -127,7 +127,7 @@ platform :ios do
                   app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
                   username: ENV["FASTLANE_APPLE_ID"],
                   team_id: ENV["FASTLANE_TEAM_ID"],
-                  keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
+                  keychain_name: ENV["MATCH_KEYCHAIN_PATH"] || ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
                   keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
                 )
                 UI.success("✅ ZERO-TOUCH: Created profile using username/password fallback")
@@ -155,7 +155,7 @@ platform :ios do
           readonly: true,
           username: ENV["FASTLANE_APPLE_ID"],
           team_id: ENV["FASTLANE_TEAM_ID"],
-          keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
+          keychain_name: ENV["MATCH_KEYCHAIN_PATH"] || ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
           keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
         )
         UI.success("✅ ZERO-TOUCH SUCCESS: Reused existing development certificates")
@@ -168,7 +168,7 @@ platform :ios do
             app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
             username: ENV["FASTLANE_APPLE_ID"],
             team_id: ENV["FASTLANE_TEAM_ID"],
-            keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
+            keychain_name: ENV["MATCH_KEYCHAIN_PATH"] || ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
             keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
           )
           UI.success("✅ ZERO-TOUCH: Created development certificates automatically")
@@ -181,10 +181,15 @@ platform :ios do
     # Ensure partition list is set to prevent UI prompts
     keychain_name = ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain"
     keychain_password = ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
-    # Handle both .keychain and .keychain-db extensions
-    keychain_path = File.expand_path("~/Library/Keychains/#{keychain_name}-db")
-    unless File.exist?(keychain_path)
-      keychain_path = File.expand_path("~/Library/Keychains/#{keychain_name}")
+    
+    if ENV["MATCH_KEYCHAIN_PATH"] && File.exist?(ENV["MATCH_KEYCHAIN_PATH"])
+      keychain_path = ENV["MATCH_KEYCHAIN_PATH"]
+    else
+      # Handle both .keychain and .keychain-db extensions
+      keychain_path = File.expand_path("~/Library/Keychains/#{keychain_name}-db")
+      unless File.exist?(keychain_path)
+        keychain_path = File.expand_path("~/Library/Keychains/#{keychain_name}")
+      end
     end
     
     if File.exist?(keychain_path)
@@ -223,7 +228,7 @@ platform :ios do
           readonly: true,
           app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
           api_key: api_key,
-          keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
+          keychain_name: ENV["MATCH_KEYCHAIN_PATH"] || ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
           keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
         )
         UI.success("✅ ZERO-TOUCH SUCCESS: Reused existing certificates from shared repository")
@@ -238,7 +243,7 @@ platform :ios do
               readonly: false,
               app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
               api_key: api_key,
-              keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
+              keychain_name: ENV["MATCH_KEYCHAIN_PATH"] || ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
               keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
             )
             UI.success("✅ ZERO-TOUCH: Created shared distribution certificates and profiles for maximum project reuse")
@@ -261,7 +266,7 @@ platform :ios do
                   app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
                   username: ENV["FASTLANE_APPLE_ID"],
                   team_id: ENV["FASTLANE_TEAM_ID"],
-                  keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
+                  keychain_name: ENV["MATCH_KEYCHAIN_PATH"] || ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
                   keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
                 )
                 UI.success("✅ ZERO-TOUCH: Created profiles using username/password fallback")
@@ -285,7 +290,7 @@ platform :ios do
           app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
           username: ENV["FASTLANE_APPLE_ID"],
           team_id: ENV["FASTLANE_TEAM_ID"],
-          keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
+          keychain_name: ENV["MATCH_KEYCHAIN_PATH"] || ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
           keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
         )
         UI.success("✅ ZERO-TOUCH SUCCESS: Reused existing distribution certificates")
@@ -298,7 +303,7 @@ platform :ios do
             app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
             username: ENV["FASTLANE_APPLE_ID"],
             team_id: ENV["FASTLANE_TEAM_ID"],
-            keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
+            keychain_name: ENV["MATCH_KEYCHAIN_PATH"] || ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
             keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
           )
           UI.success("✅ ZERO-TOUCH SUCCESS: Created new distribution certificates")
@@ -311,10 +316,15 @@ platform :ios do
     # Ensure partition list is set to prevent UI prompts
     keychain_name = ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain"
     keychain_password = ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
-    # Handle both .keychain and .keychain-db extensions
-    keychain_path = File.expand_path("~/Library/Keychains/#{keychain_name}-db")
-    unless File.exist?(keychain_path)
-      keychain_path = File.expand_path("~/Library/Keychains/#{keychain_name}")
+    
+    if ENV["MATCH_KEYCHAIN_PATH"] && File.exist?(ENV["MATCH_KEYCHAIN_PATH"])
+      keychain_path = ENV["MATCH_KEYCHAIN_PATH"]
+    else
+      # Handle both .keychain and .keychain-db extensions
+      keychain_path = File.expand_path("~/Library/Keychains/#{keychain_name}-db")
+      unless File.exist?(keychain_path)
+        keychain_path = File.expand_path("~/Library/Keychains/#{keychain_name}")
+      end
     end
     
     if File.exist?(keychain_path)
