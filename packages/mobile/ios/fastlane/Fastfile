@@ -321,14 +321,6 @@ platform :ios do
       set_partition_list(keychain_path, keychain_password)
     end
   end
-          )
-          UI.success("✅ ZERO-TOUCH: Created distribution certificates and profiles automatically")
-        else
-          raise e
-        end
-      end
-    end
-  end
 
   lane :certificates_all do
     certificates_development
