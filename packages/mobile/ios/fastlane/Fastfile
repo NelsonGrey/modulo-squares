@@ -294,6 +294,19 @@ platform :ios do
           UI.message("⚠️  Creating distribution certificates and profiles automatically...")
           match(
             type: "appstore",
+            readonly: false,
+            app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
+            username: ENV["FASTLANE_APPLE_ID"],
+            team_id: ENV["FASTLANE_TEAM_ID"],
+            keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
+            keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
+          )
+          UI.success("✅ ZERO-TOUCH SUCCESS: Created new distribution certificates")
+        else
+          raise e
+        end
+      end
+    end
 
     # Ensure partition list is set to prevent UI prompts
     keychain_name = ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain"
@@ -307,12 +320,7 @@ platform :ios do
     if File.exist?(keychain_path)
       set_partition_list(keychain_path, keychain_password)
     end
-            readonly: false,
-            app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
-            username: ENV["FASTLANE_APPLE_ID"],
-            team_id: ENV["FASTLANE_TEAM_ID"],
-            keychain_name: ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
-            keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
+  end
           )
           UI.success("✅ ZERO-TOUCH: Created distribution certificates and profiles automatically")
         else
