@@ -402,6 +402,22 @@ platform :ios do
     profile_content = `security cms -D -i "#{profile_path}"`
     profile_data = Plist.parse_xml(profile_content)
     entitlements = profile_data['Entitlements']
+
+    # Sanitize entitlements: remove iCloud/Ubiquity keys that cause App Store validation errors (Error 409)
+    # These keys might be present in the profile but are not valid for the App Store signature
+    keys_to_remove = [
+      'com.apple.developer.icloud-container-development-container-identifiers',
+      'com.apple.developer.icloud-services',
+      'com.apple.developer.ubiquity-kvstore-identifier',
+      'com.apple.developer.ubiquity-container-identifiers',
+      'com.apple.developer.icloud-container-identifiers'
+    ]
+    keys_to_remove.each do |key|
+      if entitlements.key?(key)
+        UI.message("⚠️ Removing problematic entitlement: #{key}")
+        entitlements.delete(key)
+      end
+    end
     
     # Save entitlements to a temporary file
     entitlements_path = "#{Dir.pwd}/builds/entitlements.plist"
