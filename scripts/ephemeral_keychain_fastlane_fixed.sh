@@ -53,8 +53,7 @@ fi
 KC_NAME="fastlane_tmp_$(date +%s)_$$.keychain-db"
 KC_PATH="$HOME/Library/Keychains/$KC_NAME"
 # Use openssl for reliable random password generation instead of tr/urandom which can hang
-# KC_PASS=$(openssl rand -base64 24 | tr -dc 'A-Za-z0-9' | head -c 24 || echo "fastlane-pass-$(date +%s)")
-KC_PASS="temp-password-123"
+KC_PASS=$(openssl rand -base64 24 | tr -dc 'A-Za-z0-9' | head -c 24 || echo "fastlane-pass-$(date +%s)")
 
 echo "[ephemeral-keychain] Creating temporary keychain: $KC_NAME"
 security create-keychain -p "$KC_PASS" "$KC_PATH"
@@ -102,26 +101,19 @@ fi
 
 echo "[ephemeral-keychain] Original keychain list: ${ORIG_KEYCHAIN_LIST[*]:-none}"
 
-# Unlock and configure ephemeral keychain
-echo "[ephemeral-keychain] Unlocking and configuring ephemeral keychain"
-security unlock-keychain -p "$KC_PASS" "$KC_PATH" || {
-  echo "[ephemeral-keychain] WARNING: Failed to unlock keychain"
-}
-security set-keychain-settings -lut 7200 "$KC_PATH" || {
-  echo "[ephemeral-keychain] WARNING: Failed to set keychain settings"
-}
-
-# Add ephemeral keychain to search list
-echo "[ephemeral-keychain] Adding ephemeral keychain to search list"
-security list-keychains -d user -s "$KC_PATH" "${ORIG_KEYCHAIN_LIST[@]}" || {
-  echo "[ephemeral-keychain] WARNING: Failed to update keychain list"
-}
-security list-keychains -d user
-
 # Set up ephemeral keychain as default
 echo "[ephemeral-keychain] Setting ephemeral keychain as default"
-security default-keychain -s "$KC_PATH" || {
+security default-keychain -s "$KC_PATH" 2>/dev/null || {
   echo "[ephemeral-keychain] WARNING: Failed to set default keychain"
+}
+
+# Unlock and configure ephemeral keychain
+echo "[ephemeral-keychain] Unlocking and configuring ephemeral keychain"
+security unlock-keychain -p "$KC_PASS" "$KC_PATH" 2>/dev/null || {
+  echo "[ephemeral-keychain] WARNING: Failed to unlock keychain"
+}
+security set-keychain-settings -lut 7200 "$KC_PATH" 2>/dev/null || {
+  echo "[ephemeral-keychain] WARNING: Failed to set keychain settings"
 }
 
 cleanup() {
@@ -189,9 +181,9 @@ if [ -n "${CERT_P12_PATH:-}" ]; then
 fi
 
 # Export environment variables for Fastlane
-export MATCH_KEYCHAIN_NAME="$KC_PATH"
+export MATCH_KEYCHAIN_NAME="$KC_NAME"
 export MATCH_KEYCHAIN_PASSWORD="$KC_PASS"
-echo "[ephemeral-keychain] Exported MATCH_KEYCHAIN_NAME=$KC_PATH"
+echo "[ephemeral-keychain] Exported MATCH_KEYCHAIN_NAME=$KC_NAME"
 echo "[ephemeral-keychain] Exported MATCH_KEYCHAIN_PASSWORD=[HIDDEN]"
 
 # Export to GitHub Actions environment if available

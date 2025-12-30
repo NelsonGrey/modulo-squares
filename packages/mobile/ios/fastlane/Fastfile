@@ -392,12 +392,29 @@ platform :ios do
 
     # Sign the app inside the IPA using Fastlane's resign
     UI.message("🔐 Signing the IPA...")
+
+    # Extract entitlements from the provisioning profile to ensure they match
+    profile_path = ENV['sigh_com.nelsongrey.modulosquares.app.ios_appstore_profile-path']
+    UI.message("📄 Extracting entitlements from profile: #{profile_path}")
+    
+    require 'plist'
+    # Use security cms to decode the profile (it's a signed plist)
+    profile_content = `security cms -D -i "#{profile_path}"`
+    profile_data = Plist.parse_xml(profile_content)
+    entitlements = profile_data['Entitlements']
+    
+    # Save entitlements to a temporary file
+    entitlements_path = "#{Dir.pwd}/builds/entitlements.plist"
+    File.write(entitlements_path, Plist::Emit.dump(entitlements))
+    UI.message("✅ Entitlements extracted to #{entitlements_path}")
+
     resign(
       ipa: "#{Dir.pwd}/builds/ModuloSquares.ipa",
       signing_identity: ENV['CODE_SIGN_IDENTITY'],
       provisioning_profile: {
-        "com.nelsongrey.modulosquares.app.ios" => ENV['sigh_com.nelsongrey.modulosquares.app.ios_appstore_profile-path']
+        "com.nelsongrey.modulosquares.app.ios" => profile_path
       },
+      entitlements: entitlements_path,
       keychain_path: ENV['KEYCHAIN_PATH']
     )
 
@@ -422,13 +439,30 @@ platform :ios do
     # Upload to TestFlight with better error handling and timeout
     begin
       UI.message("📤 Uploading IPA to TestFlight...")
-      upload_to_testflight(
-        api_key: api_key,
-        ipa: signed_ipa_path,
-        skip_waiting_for_build_processing: true,  # Don't wait indefinitely
-        beta_app_feedback_email: feedback_email,
-        beta_app_description: "Modulo Squares iOS App - Automated Build"
-      )
+      
+      # Retry logic for unstable connections
+      retries = 3
+      begin
+        upload_to_testflight(
+          api_key: api_key,
+          ipa: signed_ipa_path,
+          skip_waiting_for_build_processing: true,  # Don't wait indefinitely
+          beta_app_feedback_email: feedback_email,
+          beta_app_description: "Modulo Squares iOS App - Automated Build",
+          itms_transporter_flags: "-v" # Verbose logging and potential keep-alive
+        )
+      rescue => e
+        if (retries -= 1) > 0
+          UI.message("⚠️ Upload failed: #{e.message}")
+          UI.message("🔄 Retrying upload in 60 seconds... (#{retries} retries left)")
+          sleep(60)
+          retry
+        else
+          UI.error("❌ Upload failed after 3 attempts")
+          raise e
+        end
+      end
+      
       UI.success("✅ IPA uploaded to TestFlight successfully")
       UI.message("📝 Build processing will continue asynchronously in App Store Connect")
       UI.message("🔍 Check TestFlight status manually if needed")
