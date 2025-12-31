@@ -357,7 +357,8 @@ platform :ios do
       UI.success("✅ Development certificates: Optimized and ready")
     rescue => e
       UI.error("❌ Development certificate phase failed: #{e.message}")
-      raise e
+      UI.important("⚠️  Continuing without development certificates (non-fatal for TestFlight/AppStore)...")
+      # raise e
     end
 
     # Phase 2: Distribution Certificates (Project-Specific but Efficient)
