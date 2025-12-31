@@ -124,7 +124,7 @@ platform :ios do
     args = {
       type: type,
       readonly: false,
-      keychain_name: match_keychain_name,
+      keychain_name: match_keychain_path,
       keychain_password: match_keychain_password,
       skip_set_partition_list: false,
       include_all_certificates: true,
@@ -152,14 +152,39 @@ platform :ios do
 
     # For now, use username/password authentication due to spaceship OpenSSL compatibility issues
     # TODO: Switch back to API key authentication once spaceship is fixed
-    match(
-      type: "appstore",
-      readonly: true,
-      username: ENV["FASTLANE_APPLE_ID"],
-      team_id: ENV["FASTLANE_TEAM_ID"],
-      keychain_name: ENV["MATCH_KEYCHAIN_PATH"] || ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
-      keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
-    )
+    begin
+      match(
+        type: "appstore",
+        readonly: true,
+        username: ENV["FASTLANE_APPLE_ID"],
+        team_id: ENV["FASTLANE_TEAM_ID"],
+        keychain_name: match_keychain_path,
+        keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
+      )
+    rescue Exception => e
+      if e.message.include?("reached the maximum number of available Distribution certificates")
+        UI.important("⚠️  Reached maximum number of Distribution certificates. Revoking old certificates and retrying...")
+        
+        # Nuke existing distribution certificates
+        match_nuke(
+          type: "appstore",
+          username: ENV["FASTLANE_APPLE_ID"],
+          team_id: ENV["FASTLANE_TEAM_ID"]
+        )
+        
+        # Retry match with readonly: false to generate new ones
+        match(
+          type: "appstore",
+          readonly: false,
+          username: ENV["FASTLANE_APPLE_ID"],
+          team_id: ENV["FASTLANE_TEAM_ID"],
+          keychain_name: match_keychain_path,
+          keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
+        )
+      else
+        raise e
+      end
+    end
   end
 
   desc "Generate development certificates"
@@ -191,20 +216,20 @@ platform :ios do
           type: "development",
           readonly: true,
           api_key: api_key,
-          keychain_name: ENV["MATCH_KEYCHAIN_PATH"] || ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
+          keychain_name: match_keychain_path,
           keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
         )
         UI.success("✅ ZERO-TOUCH SUCCESS: Reused existing development certificates across projects")
         UI.message("💡 Certificate efficiency: Maximum reuse achieved")
 
-      rescue => e
+      rescue Exception => e
         if e.message.include?("No code signing identity found")
           UI.message("⚠️  No development certificates exist. Creating shared certificates for all projects...")
           match(
             type: "development",
             readonly: false,
             api_key: api_key,
-            keychain_name: ENV["MATCH_KEYCHAIN_PATH"] || ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
+            keychain_name: match_keychain_path,
             keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
           )
           UI.success("✅ ZERO-TOUCH: Created shared development certificates for maximum project reuse")
@@ -217,11 +242,11 @@ platform :ios do
               readonly: false,
               app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
               api_key: api_key,
-              keychain_name: ENV["MATCH_KEYCHAIN_PATH"] || ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
+              keychain_name: match_keychain_path,
               keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
             )
             UI.success("✅ ZERO-TOUCH: Created project-specific profile while reusing shared certificates")
-          rescue => profile_error
+          rescue Exception => profile_error
             if profile_error.message.include?("forbidden") || profile_error.message.include?("not allowed")
               UI.error("❌ API key lacks permission to create provisioning profiles")
               UI.error("💡 Please ensure your App Store Connect API key has Admin role")
@@ -239,7 +264,7 @@ platform :ios do
                   app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
                   username: ENV["FASTLANE_APPLE_ID"],
                   team_id: ENV["FASTLANE_TEAM_ID"],
-                  keychain_name: ENV["MATCH_KEYCHAIN_PATH"] || ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
+                  keychain_name: match_keychain_path,
                   keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
                 )
                 UI.success("✅ ZERO-TOUCH: Created profile using username/password fallback")
@@ -267,11 +292,11 @@ platform :ios do
           readonly: true,
           username: ENV["FASTLANE_APPLE_ID"],
           team_id: ENV["FASTLANE_TEAM_ID"],
-          keychain_name: ENV["MATCH_KEYCHAIN_PATH"] || ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
+          keychain_name: match_keychain_path,
           keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
         )
         UI.success("✅ ZERO-TOUCH SUCCESS: Reused existing development certificates")
-      rescue => e
+      rescue Exception => e
         if e.message.include?("No code signing identity found") || e.message.include?("No matching provisioning profiles found")
           UI.message("⚠️  Creating development certificates automatically...")
           match(
@@ -280,7 +305,7 @@ platform :ios do
             app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
             username: ENV["FASTLANE_APPLE_ID"],
             team_id: ENV["FASTLANE_TEAM_ID"],
-            keychain_name: ENV["MATCH_KEYCHAIN_PATH"] || ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
+            keychain_name: match_keychain_path,
             keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
           )
           UI.success("✅ ZERO-TOUCH: Created development certificates automatically")
