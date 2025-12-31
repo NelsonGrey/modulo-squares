@@ -31,6 +31,118 @@ platform :ios do
     end
   end
 
+  def ci_ios_build_number
+    explicit = ENV["IOS_BUILD_NUMBER"].to_s.strip
+    return explicit if explicit.match?(/\A\d+\z/) && explicit.to_i > 0
+
+    run_id = ENV["GITHUB_RUN_ID"].to_s.strip
+    return run_id if run_id.match?(/\A\d+\z/) && run_id.to_i > 0
+
+    Time.now.utc.strftime("%Y%m%d%H%M%S")
+  end
+
+  def match_repo_write_url
+    raw = ENV["MATCH_GIT_URL"].to_s.strip
+    raise "MATCH_GIT_URL is not set" if raw.empty?
+
+    pat = ENV["NELSON_GREY_PAT"].to_s.strip
+    return raw if pat.empty?
+
+    repo_path = nil
+    # git@github.com:owner/repo.git
+    if raw.match?(%r{\Agit@github\.com:})
+      repo_path = raw.sub(%r{\Agit@github\.com:}, "").sub(%r{\.git\z}, "")
+    elsif raw.match?(%r{\Ahttps?://github\.com/})
+      repo_path = raw.sub(%r{\Ahttps?://github\.com/}, "").sub(%r{\.git\z}, "")
+    end
+
+    return raw if repo_path.to_s.empty?
+    # Use username + PAT for write operations; keep logging disabled when running git.
+    "https://mnelson3:#{pat}@github.com/#{repo_path}.git"
+  end
+
+  def purge_match_repo_appstore_assets!
+    UI.important("🧹 Purging appstore signing assets from match repo...")
+    git_url = match_repo_write_url
+
+    repo_dir = Dir.mktmpdir("match-repo-")
+
+    begin
+      sh("git clone #{git_url.shellescape} #{repo_dir.shellescape}", log: false)
+      sh("cd #{repo_dir.shellescape} && git checkout main", log: false)
+
+      # Remove appstore provisioning profiles and distribution certs so match is forced to regenerate.
+      sh("cd #{repo_dir.shellescape} && rm -f profiles/appstore/*.mobileprovision || true", log: false)
+      sh("cd #{repo_dir.shellescape} && rm -f certs/distribution/*.cer certs/distribution/*.p12 || true", log: false)
+
+      status = sh("cd #{repo_dir.shellescape} && git status --porcelain", log: false)
+      return if status.to_s.strip.empty?
+
+      sh("cd #{repo_dir.shellescape} && git add -A", log: false)
+      sh(
+        "cd #{repo_dir.shellescape} && git -c user.email=ci@modulo-squares.local -c user.name=modulo-squares-ci commit -m \"CI: purge appstore signing assets\"",
+        log: false
+      )
+      sh("cd #{repo_dir.shellescape} && git push origin main", log: false)
+      UI.important("✅ Purged appstore signing assets in match repo")
+    ensure
+      sh("rm -rf #{repo_dir.shellescape}", log: false)
+    end
+  end
+
+  def match_keychain_path
+    ENV["MATCH_KEYCHAIN_PATH"].to_s.empty? ? match_keychain_name : ENV["MATCH_KEYCHAIN_PATH"]
+  end
+
+  def match_keychain_name
+    ENV["MATCH_KEYCHAIN_NAME"].to_s.empty? ? "fastlane_tmp_keychain" : ENV["MATCH_KEYCHAIN_NAME"]
+  end
+
+  def match_keychain_password
+    return ENV["MATCH_KEYCHAIN_PASSWORD"] unless ENV["MATCH_KEYCHAIN_PASSWORD"].to_s.empty?
+    return ENV["MATCH_PASSWORD"] unless ENV["MATCH_PASSWORD"].to_s.empty?
+    ""
+  end
+
+  def unlock_match_keychain
+    return if match_keychain_password.to_s.empty?
+    sh("security unlock-keychain -p \"#{match_keychain_password}\" \"#{match_keychain_path}\" || true")
+  end
+
+  def match_keychain_has_codesigning_identities?
+    output = sh("security find-identity -v -p codesigning \"#{match_keychain_path}\" || true", log: false)
+    return false if output.to_s.include?("0 valid identities found")
+    output.to_s.match?(/\b[1-9][0-9]*\b valid identities found/)
+  end
+
+  def ensure_match_installed_identity!(type:, app_identifier: nil, api_key: nil)
+    unlock_match_keychain
+    return if match_keychain_has_codesigning_identities?
+
+    UI.important("⚠️  No valid code signing identities found in keychain after match (#{type}). Re-running match with readonly: false to generate/import a certificate + private key.")
+
+    args = {
+      type: type,
+      readonly: false,
+      keychain_name: match_keychain_name,
+      keychain_password: match_keychain_password,
+      skip_set_partition_list: false,
+      include_all_certificates: true,
+      # Identity recovery should focus on cert/key material. Profile decoding/install
+      # can fail in CI with `security cms` "Write permissions" errors.
+      skip_provisioning_profiles: true
+    }
+    args[:app_identifier] = app_identifier if app_identifier
+    args[:api_key] = api_key if api_key
+    # Fallback to username/team_id if api_key is missing
+    unless api_key
+      args[:username] = ENV["FASTLANE_APPLE_ID"]
+      args[:team_id] = ENV["FASTLANE_TEAM_ID"]
+    end
+
+    match(args)
+  end
+
   desc "Sync code signing certificates"
   lane :sync_signing do
     # Debug: Print environment variables
@@ -228,8 +340,8 @@ platform :ios do
           readonly: true,
           app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
           api_key: api_key,
-          keychain_name: ENV["MATCH_KEYCHAIN_PATH"] || ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
-          keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
+          keychain_name: match_keychain_name,
+          keychain_password: match_keychain_password
         )
         UI.success("✅ ZERO-TOUCH SUCCESS: Reused existing certificates from shared repository")
         UI.message("💡 Maximum efficiency achieved: No new certificates created, full reuse")
@@ -243,13 +355,17 @@ platform :ios do
               readonly: false,
               app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
               api_key: api_key,
-              keychain_name: ENV["MATCH_KEYCHAIN_PATH"] || ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
-              keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
+              keychain_name: match_keychain_name,
+              keychain_password: match_keychain_password
             )
             UI.success("✅ ZERO-TOUCH: Created shared distribution certificates and profiles for maximum project reuse")
             UI.message("💡 Future projects will reuse these certificates and profiles automatically")
           rescue => profile_error
-            if profile_error.message.include?("forbidden") || profile_error.message.include?("not allowed")
+            if profile_error.message.include?("Maximum number of certificates generated")
+              UI.important("⚠️  Hit Apple's certificate limit. Purging old certificates from match repo to force regeneration...")
+              purge_match_repo_appstore_assets!
+              retry
+            elsif profile_error.message.include?("forbidden") || profile_error.message.include?("not allowed")
               UI.error("❌ API key lacks permission to create provisioning profiles")
               UI.error("💡 Please ensure your App Store Connect API key has Admin role")
               
@@ -266,8 +382,8 @@ platform :ios do
                   app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
                   username: ENV["FASTLANE_APPLE_ID"],
                   team_id: ENV["FASTLANE_TEAM_ID"],
-                  keychain_name: ENV["MATCH_KEYCHAIN_PATH"] || ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
-                  keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
+                  keychain_name: match_keychain_name,
+                  keychain_password: match_keychain_password
                 )
                 UI.success("✅ ZERO-TOUCH: Created profiles using username/password fallback")
               end
@@ -290,8 +406,8 @@ platform :ios do
           app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
           username: ENV["FASTLANE_APPLE_ID"],
           team_id: ENV["FASTLANE_TEAM_ID"],
-          keychain_name: ENV["MATCH_KEYCHAIN_PATH"] || ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
-          keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
+          keychain_name: match_keychain_name,
+          keychain_password: match_keychain_password
         )
         UI.success("✅ ZERO-TOUCH SUCCESS: Reused existing distribution certificates")
       rescue => e
@@ -303,8 +419,8 @@ platform :ios do
             app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
             username: ENV["FASTLANE_APPLE_ID"],
             team_id: ENV["FASTLANE_TEAM_ID"],
-            keychain_name: ENV["MATCH_KEYCHAIN_PATH"] || ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain",
-            keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
+            keychain_name: match_keychain_name,
+            keychain_password: match_keychain_password
           )
           UI.success("✅ ZERO-TOUCH SUCCESS: Created new distribution certificates")
         else
@@ -314,8 +430,8 @@ platform :ios do
     end
 
     # Ensure partition list is set to prevent UI prompts
-    keychain_name = ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain"
-    keychain_password = ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
+    keychain_name = match_keychain_name
+    keychain_password = match_keychain_password
     
     if ENV["MATCH_KEYCHAIN_PATH"] && File.exist?(ENV["MATCH_KEYCHAIN_PATH"])
       keychain_path = ENV["MATCH_KEYCHAIN_PATH"]
