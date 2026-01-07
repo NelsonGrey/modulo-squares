@@ -2,11 +2,11 @@
 name: 📱 Android App Distribution
 
 on:
-  push:
-    branches:
-      - main
-      - develop
-      - staging
+#  push:
+#    branches:
+#      - main
+#      - develop
+#      - staging
     paths:
       - 'packages/mobile/**'
       - '.github/workflows/android-distribution.yml'

@@ -1,11 +1,11 @@
 name: 🚀 CI/CD Pipeline - Build, Test & Deploy All Deliverables
 
 on:
-  push:
-    branches:
-      - main
-      - staging
-      - develop
+#  push:
+#    branches:
+#      - main
+#      - staging
+#      - develop
     paths:
       - 'packages/mobile/**'
       - 'packages/web/**'
