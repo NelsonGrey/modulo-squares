@@ -131,7 +131,6 @@ platform :ios do
       type: type,
       readonly: false,
       keychain_name: match_keychain_name,
-      keychain_path: ENV["MATCH_KEYCHAIN_PATH"] unless ENV["MATCH_KEYCHAIN_PATH"].to_s.empty?,
       keychain_password: match_keychain_password,
       skip_set_partition_list: false,
       include_all_certificates: true,
@@ -166,7 +165,6 @@ platform :ios do
         username: ENV["FASTLANE_APPLE_ID"],
         team_id: ENV["FASTLANE_TEAM_ID"],
         keychain_name: match_keychain_name,
-        keychain_path: ENV["MATCH_KEYCHAIN_PATH"] unless ENV["MATCH_KEYCHAIN_PATH"].to_s.empty?,
         keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
       )
     rescue Exception => e
@@ -190,7 +188,6 @@ platform :ios do
           username: ENV["FASTLANE_APPLE_ID"],
           team_id: ENV["FASTLANE_TEAM_ID"],
           keychain_name: match_keychain_name,
-          keychain_path: ENV["MATCH_KEYCHAIN_PATH"] unless ENV["MATCH_KEYCHAIN_PATH"].to_s.empty?,
           keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
         )
       else
@@ -211,14 +208,54 @@ platform :ios do
 
     private_key_content = ENV["ASC_PRIVATE_KEY"]
     if private_key_content && !private_key_content.empty? && private_key_content != "your_asc_private_key"
-      private_key_content = private_key_content.gsub("\0", "").gsub("%", "").strip
+      # Detect key format
+      is_pem = private_key_content.include?("-----BEGIN")
+      cleaned = private_key_content.gsub(/\s+/, "")
+      looks_base64 = cleaned =~ /\A[A-Za-z0-9+\/=]+\z/ && cleaned.length > 100
 
-      api_key = app_store_connect_api_key(
-        key_id: ENV["ASC_KEY_ID"],
-        issuer_id: ENV["ASC_ISSUER_ID"],
-        key_content: private_key_content,
-        is_key_content_base64: true
-      )
+      if !is_pem && looks_base64
+        UI.message("Detected ASC_PRIVATE_KEY as base64; passing directly as key_content (is_key_content_base64: true)")
+        api_key = app_store_connect_api_key(
+          key_id: ENV["ASC_KEY_ID"],
+          issuer_id: ENV["ASC_ISSUER_ID"],
+          key_content: cleaned,
+          is_key_content_base64: true,
+          in_house: false
+        )
+      else
+        # Process as PEM
+        private_key_content = private_key_content.strip
+        private_key_content = private_key_content.gsub(/\A['\"]|['\"]\z/, '')
+        private_key_content = private_key_content.gsub(/\\n/, "\n")
+        private_key_content = private_key_content.gsub(/\r\n?/, "\n")
+        private_key_content = private_key_content.lines.map { |l| l.strip }.reject { |l| l.empty? }.join("\n") + "\n"
+
+        unless private_key_content.include?("-----BEGIN PRIVATE KEY-----") || private_key_content.include?("-----BEGIN EC PRIVATE KEY-----")
+          begin
+            require 'base64'
+            decoded = Base64.decode64(private_key_content)
+            if decoded.include?("-----BEGIN")
+              private_key_content = decoded
+              UI.message("Decoded ASC_PRIVATE_KEY from base64")
+            end
+          rescue => e
+            UI.message("Failed to decode ASC_PRIVATE_KEY as base64: #{e.message}")
+          end
+        end
+
+        require 'tempfile'
+        key_file = Tempfile.new(['asc_key', '.p8'])
+        key_file.write(private_key_content)
+        key_file.close
+
+        UI.message("Created temporary ASC key file: #{key_file.path}")
+
+        api_key = app_store_connect_api_key(
+          key_id: ENV["ASC_KEY_ID"],
+          issuer_id: ENV["ASC_ISSUER_ID"],
+          key_filepath: key_file.path
+        )
+      end
 
       # ZERO-TOUCH STRATEGY: Try shared certificates first, then project-specific
       begin
@@ -229,7 +266,6 @@ platform :ios do
           readonly: true,
           api_key: api_key,
           keychain_name: match_keychain_name,
-          keychain_path: ENV["MATCH_KEYCHAIN_PATH"] unless ENV["MATCH_KEYCHAIN_PATH"].to_s.empty?,
           keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
         )
         UI.success("✅ ZERO-TOUCH SUCCESS: Reused existing development certificates across projects")
@@ -243,7 +279,6 @@ platform :ios do
             readonly: false,
             api_key: api_key,
             keychain_name: match_keychain_name,
-            keychain_path: ENV["MATCH_KEYCHAIN_PATH"] unless ENV["MATCH_KEYCHAIN_PATH"].to_s.empty?,
             keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
           )
           UI.success("✅ ZERO-TOUCH: Created shared development certificates for maximum project reuse")
@@ -257,7 +292,6 @@ platform :ios do
               app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
               api_key: api_key,
               keychain_name: match_keychain_name,
-              keychain_path: ENV["MATCH_KEYCHAIN_PATH"] unless ENV["MATCH_KEYCHAIN_PATH"].to_s.empty?,
               keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
             )
             UI.success("✅ ZERO-TOUCH: Created project-specific profile while reusing shared certificates")
@@ -280,7 +314,6 @@ platform :ios do
                   username: ENV["FASTLANE_APPLE_ID"],
                   team_id: ENV["FASTLANE_TEAM_ID"],
                   keychain_name: match_keychain_name,
-                  keychain_path: ENV["MATCH_KEYCHAIN_PATH"] unless ENV["MATCH_KEYCHAIN_PATH"].to_s.empty?,
                   keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
                 )
                 UI.success("✅ ZERO-TOUCH: Created profile using username/password fallback")
@@ -309,7 +342,6 @@ platform :ios do
           username: ENV["FASTLANE_APPLE_ID"],
           team_id: ENV["FASTLANE_TEAM_ID"],
           keychain_name: match_keychain_name,
-          keychain_path: ENV["MATCH_KEYCHAIN_PATH"] unless ENV["MATCH_KEYCHAIN_PATH"].to_s.empty?,
           keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
         )
         UI.success("✅ ZERO-TOUCH SUCCESS: Reused existing development certificates")
@@ -323,7 +355,6 @@ platform :ios do
             username: ENV["FASTLANE_APPLE_ID"],
             team_id: ENV["FASTLANE_TEAM_ID"],
             keychain_name: match_keychain_name,
-            keychain_path: ENV["MATCH_KEYCHAIN_PATH"] unless ENV["MATCH_KEYCHAIN_PATH"].to_s.empty?,
             keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
           )
           UI.success("✅ ZERO-TOUCH: Created development certificates automatically")
@@ -365,14 +396,54 @@ platform :ios do
 
     private_key_content = ENV["ASC_PRIVATE_KEY"]
     if private_key_content && !private_key_content.empty? && private_key_content != "your_asc_private_key"
-      private_key_content = private_key_content.gsub("\0", "").gsub("%", "").strip
+      # Detect key format
+      is_pem = private_key_content.include?("-----BEGIN")
+      cleaned = private_key_content.gsub(/\s+/, "")
+      looks_base64 = cleaned =~ /\A[A-Za-z0-9+\/=]+\z/ && cleaned.length > 100
 
-      api_key = app_store_connect_api_key(
-        key_id: ENV["ASC_KEY_ID"],
-        issuer_id: ENV["ASC_ISSUER_ID"],
-        key_content: private_key_content,
-        is_key_content_base64: true
-      )
+      if !is_pem && looks_base64
+        UI.message("Detected ASC_PRIVATE_KEY as base64; passing directly as key_content (is_key_content_base64: true)")
+        api_key = app_store_connect_api_key(
+          key_id: ENV["ASC_KEY_ID"],
+          issuer_id: ENV["ASC_ISSUER_ID"],
+          key_content: cleaned,
+          is_key_content_base64: true,
+          in_house: false
+        )
+      else
+        # Process as PEM
+        private_key_content = private_key_content.strip
+        private_key_content = private_key_content.gsub(/\A['\"]|['\"]\z/, '')
+        private_key_content = private_key_content.gsub(/\\n/, "\n")
+        private_key_content = private_key_content.gsub(/\r\n?/, "\n")
+        private_key_content = private_key_content.lines.map { |l| l.strip }.reject { |l| l.empty? }.join("\n") + "\n"
+
+        unless private_key_content.include?("-----BEGIN PRIVATE KEY-----") || private_key_content.include?("-----BEGIN EC PRIVATE KEY-----")
+          begin
+            require 'base64'
+            decoded = Base64.decode64(private_key_content)
+            if decoded.include?("-----BEGIN")
+              private_key_content = decoded
+              UI.message("Decoded ASC_PRIVATE_KEY from base64")
+            end
+          rescue => e
+            UI.message("Failed to decode ASC_PRIVATE_KEY as base64: #{e.message}")
+          end
+        end
+
+        require 'tempfile'
+        key_file = Tempfile.new(['asc_key', '.p8'])
+        key_file.write(private_key_content)
+        key_file.close
+
+        UI.message("Created temporary ASC key file: #{key_file.path}")
+
+        api_key = app_store_connect_api_key(
+          key_id: ENV["ASC_KEY_ID"],
+          issuer_id: ENV["ASC_ISSUER_ID"],
+          key_filepath: key_file.path
+        )
+      end
 
       # ZERO-TOUCH STRATEGY: Smart certificate reuse with project-specific profiles
       UI.message("📋 Checking for existing distribution certificates...")
@@ -384,7 +455,6 @@ platform :ios do
           app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
           api_key: api_key,
           keychain_name: match_keychain_name,
-          keychain_path: ENV["MATCH_KEYCHAIN_PATH"] unless ENV["MATCH_KEYCHAIN_PATH"].to_s.empty?,
           keychain_password: match_keychain_password
         )
         UI.success("✅ ZERO-TOUCH SUCCESS: Reused existing certificates from shared repository")
@@ -400,7 +470,6 @@ platform :ios do
               app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
               api_key: api_key,
               keychain_name: match_keychain_name,
-              keychain_path: ENV["MATCH_KEYCHAIN_PATH"] unless ENV["MATCH_KEYCHAIN_PATH"].to_s.empty?,
               keychain_password: match_keychain_password
             )
             UI.success("✅ ZERO-TOUCH: Created shared distribution certificates and profiles for maximum project reuse")
@@ -428,7 +497,6 @@ platform :ios do
                   username: ENV["FASTLANE_APPLE_ID"],
                   team_id: ENV["FASTLANE_TEAM_ID"],
                   keychain_name: match_keychain_name,
-                  keychain_path: ENV["MATCH_KEYCHAIN_PATH"] unless ENV["MATCH_KEYCHAIN_PATH"].to_s.empty?,
                   keychain_password: match_keychain_password
                 )
                 UI.success("✅ ZERO-TOUCH: Created profiles using username/password fallback")
@@ -453,7 +521,6 @@ platform :ios do
           username: ENV["FASTLANE_APPLE_ID"],
           team_id: ENV["FASTLANE_TEAM_ID"],
           keychain_name: match_keychain_name,
-          keychain_path: ENV["MATCH_KEYCHAIN_PATH"] unless ENV["MATCH_KEYCHAIN_PATH"].to_s.empty?,
           keychain_password: match_keychain_password
         )
         UI.success("✅ ZERO-TOUCH SUCCESS: Reused existing distribution certificates")
@@ -467,7 +534,6 @@ platform :ios do
             username: ENV["FASTLANE_APPLE_ID"],
             team_id: ENV["FASTLANE_TEAM_ID"],
             keychain_name: match_keychain_name,
-            keychain_path: ENV["MATCH_KEYCHAIN_PATH"] unless ENV["MATCH_KEYCHAIN_PATH"].to_s.empty?,
             keychain_password: match_keychain_password
           )
           UI.success("✅ ZERO-TOUCH SUCCESS: Created new distribution certificates")
