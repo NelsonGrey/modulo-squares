@@ -294,7 +294,14 @@ jobs:
             echo '🔨 Building for PR testing...'
             ../../../scripts/ephemeral_keychain_fastlane_fixed.sh "bundle exec fastlane build_development"
           else
-            RELEASE_TYPE="${{ github.event.inputs.release_type }}"
+            # Default to testflight if triggered by push (e.g. to develop)
+            if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
+              RELEASE_TYPE="testflight"
+              echo "🚀 Triggered by push to $GITHUB_REF_NAME; defaulting to TestFlight build."
+            else
+              RELEASE_TYPE="${{ github.event.inputs.release_type }}"
+            fi
+
             BETA_GROUP_NAME="${{ github.event.inputs.beta_group_name || 'Internal Testers' }}"
 
             case "$RELEASE_TYPE" in
