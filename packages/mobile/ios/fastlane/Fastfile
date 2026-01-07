@@ -131,6 +131,7 @@ platform :ios do
       type: type,
       readonly: false,
       keychain_name: match_keychain_name,
+      keychain_path: ENV["MATCH_KEYCHAIN_PATH"] unless ENV["MATCH_KEYCHAIN_PATH"].to_s.empty?,
       keychain_password: match_keychain_password,
       skip_set_partition_list: false,
       include_all_certificates: true,
@@ -165,6 +166,7 @@ platform :ios do
         username: ENV["FASTLANE_APPLE_ID"],
         team_id: ENV["FASTLANE_TEAM_ID"],
         keychain_name: match_keychain_name,
+        keychain_path: ENV["MATCH_KEYCHAIN_PATH"] unless ENV["MATCH_KEYCHAIN_PATH"].to_s.empty?,
         keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
       )
     rescue Exception => e
@@ -188,6 +190,7 @@ platform :ios do
           username: ENV["FASTLANE_APPLE_ID"],
           team_id: ENV["FASTLANE_TEAM_ID"],
           keychain_name: match_keychain_name,
+          keychain_path: ENV["MATCH_KEYCHAIN_PATH"] unless ENV["MATCH_KEYCHAIN_PATH"].to_s.empty?,
           keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
         )
       else
@@ -226,6 +229,7 @@ platform :ios do
           readonly: true,
           api_key: api_key,
           keychain_name: match_keychain_name,
+          keychain_path: ENV["MATCH_KEYCHAIN_PATH"] unless ENV["MATCH_KEYCHAIN_PATH"].to_s.empty?,
           keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
         )
         UI.success("✅ ZERO-TOUCH SUCCESS: Reused existing development certificates across projects")
@@ -239,6 +243,7 @@ platform :ios do
             readonly: false,
             api_key: api_key,
             keychain_name: match_keychain_name,
+            keychain_path: ENV["MATCH_KEYCHAIN_PATH"] unless ENV["MATCH_KEYCHAIN_PATH"].to_s.empty?,
             keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
           )
           UI.success("✅ ZERO-TOUCH: Created shared development certificates for maximum project reuse")
@@ -252,6 +257,7 @@ platform :ios do
               app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
               api_key: api_key,
               keychain_name: match_keychain_name,
+              keychain_path: ENV["MATCH_KEYCHAIN_PATH"] unless ENV["MATCH_KEYCHAIN_PATH"].to_s.empty?,
               keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
             )
             UI.success("✅ ZERO-TOUCH: Created project-specific profile while reusing shared certificates")
@@ -274,6 +280,7 @@ platform :ios do
                   username: ENV["FASTLANE_APPLE_ID"],
                   team_id: ENV["FASTLANE_TEAM_ID"],
                   keychain_name: match_keychain_name,
+                  keychain_path: ENV["MATCH_KEYCHAIN_PATH"] unless ENV["MATCH_KEYCHAIN_PATH"].to_s.empty?,
                   keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
                 )
                 UI.success("✅ ZERO-TOUCH: Created profile using username/password fallback")
@@ -302,6 +309,7 @@ platform :ios do
           username: ENV["FASTLANE_APPLE_ID"],
           team_id: ENV["FASTLANE_TEAM_ID"],
           keychain_name: match_keychain_name,
+          keychain_path: ENV["MATCH_KEYCHAIN_PATH"] unless ENV["MATCH_KEYCHAIN_PATH"].to_s.empty?,
           keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
         )
         UI.success("✅ ZERO-TOUCH SUCCESS: Reused existing development certificates")
@@ -315,6 +323,7 @@ platform :ios do
             username: ENV["FASTLANE_APPLE_ID"],
             team_id: ENV["FASTLANE_TEAM_ID"],
             keychain_name: match_keychain_name,
+            keychain_path: ENV["MATCH_KEYCHAIN_PATH"] unless ENV["MATCH_KEYCHAIN_PATH"].to_s.empty?,
             keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
           )
           UI.success("✅ ZERO-TOUCH: Created development certificates automatically")
@@ -375,6 +384,7 @@ platform :ios do
           app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
           api_key: api_key,
           keychain_name: match_keychain_name,
+          keychain_path: ENV["MATCH_KEYCHAIN_PATH"] unless ENV["MATCH_KEYCHAIN_PATH"].to_s.empty?,
           keychain_password: match_keychain_password
         )
         UI.success("✅ ZERO-TOUCH SUCCESS: Reused existing certificates from shared repository")
@@ -390,6 +400,7 @@ platform :ios do
               app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
               api_key: api_key,
               keychain_name: match_keychain_name,
+              keychain_path: ENV["MATCH_KEYCHAIN_PATH"] unless ENV["MATCH_KEYCHAIN_PATH"].to_s.empty?,
               keychain_password: match_keychain_password
             )
             UI.success("✅ ZERO-TOUCH: Created shared distribution certificates and profiles for maximum project reuse")
@@ -417,6 +428,7 @@ platform :ios do
                   username: ENV["FASTLANE_APPLE_ID"],
                   team_id: ENV["FASTLANE_TEAM_ID"],
                   keychain_name: match_keychain_name,
+                  keychain_path: ENV["MATCH_KEYCHAIN_PATH"] unless ENV["MATCH_KEYCHAIN_PATH"].to_s.empty?,
                   keychain_password: match_keychain_password
                 )
                 UI.success("✅ ZERO-TOUCH: Created profiles using username/password fallback")
@@ -441,6 +453,7 @@ platform :ios do
           username: ENV["FASTLANE_APPLE_ID"],
           team_id: ENV["FASTLANE_TEAM_ID"],
           keychain_name: match_keychain_name,
+          keychain_path: ENV["MATCH_KEYCHAIN_PATH"] unless ENV["MATCH_KEYCHAIN_PATH"].to_s.empty?,
           keychain_password: match_keychain_password
         )
         UI.success("✅ ZERO-TOUCH SUCCESS: Reused existing distribution certificates")
@@ -454,6 +467,7 @@ platform :ios do
             username: ENV["FASTLANE_APPLE_ID"],
             team_id: ENV["FASTLANE_TEAM_ID"],
             keychain_name: match_keychain_name,
+            keychain_path: ENV["MATCH_KEYCHAIN_PATH"] unless ENV["MATCH_KEYCHAIN_PATH"].to_s.empty?,
             keychain_password: match_keychain_password
           )
           UI.success("✅ ZERO-TOUCH SUCCESS: Created new distribution certificates")
