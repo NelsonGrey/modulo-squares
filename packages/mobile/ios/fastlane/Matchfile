@@ -5,7 +5,7 @@
 # - skip_set_partition_list improves performance
 
 git_url(ENV["MATCH_GIT_URL"])
-git_branch("main")
+git_branch("develop")
 storage_mode("git")
 type("appstore")
 username(ENV["FASTLANE_APPLE_ID"])
