@@ -82,7 +82,11 @@ jobs:
           && echo '✅ WWDR certificate present in login keychain' \
           || echo '⚠️ WWDR certificate verification inconclusive'
 
-    - name: � Validate ASC Environment Variables
+    - name: 🔍 Validate ASC Environment Variables
+      env:
+        ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+        ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
       run: |
         echo '🔍 Validating ASC Environment Variables...'
         cat << 'EOF' | ruby
@@ -171,6 +175,10 @@ jobs:
         EOF
 
     - name: 🔄 Setup App Store Connect Authentication
+      env:
+        ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+        ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
       run: |
         echo '🔄 Setting up App Store Connect authentication...'
 
@@ -194,6 +202,10 @@ jobs:
         fi
 
     - name: 🔍 Test ASC Private Key Parsing
+      env:
+        ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+        ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
       run: |
         echo '🔍 Testing ASC Private Key Parsing...'
         cat << 'EOF' | ruby
@@ -294,6 +306,10 @@ jobs:
         EOF
 
     - name: 🔄 Test JWT Generation
+      env:
+        ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+        ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
       run: |
         echo '🔄 Testing App Store Connect JWT authentication...'
         cat << 'EOF' | ruby
