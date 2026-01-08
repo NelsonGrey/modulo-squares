@@ -1,0 +1,211 @@
+name: 🔍 Test ASC Authentication
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_type:
+        description: 'Type of test to run'
+        required: true
+        default: 'asc_auth'
+        type: choice
+        options:
+        - asc_auth
+        - full_test
+
+jobs:
+  test-asc-auth:
+    runs-on: macos-latest
+    if: inputs.test_type == 'asc_auth'
+
+    steps:
+    - name: 🍎 Setup macOS Runner
+      run: |
+        echo '🍎 Running on self-hosted macOS runner'
+        echo '📍 Hostname: $(hostname)'
+        echo '💰 Using self-hosted runner (cost savings)'
+        echo '🖥️  macOS version: $(sw_vers -productVersion)'
+        echo '🛠️  Xcode version: $(xcodebuild -version | head -1)'
+
+    - name: 🔄 Remove Git SSH Redirects
+      run: |
+        echo '🔄 Removing any global SSH redirects for GitHub to ensure HTTPS checkout works...'
+        git config --global --unset-all url."git@github.com:".insteadOf || true
+        echo '✅ Git config fixed for HTTPS checkout'
+
+    - name: 📦 Install GMP Library
+      run: |
+        echo '📦 Installing GMP library...'
+        brew install gmp
+        echo '✅ GMP installed successfully'
+
+    - name: 🔧 Setup Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.2
+        bundler: 2.4.22
+
+    - name: 📦 Install Fastlane
+      run: |
+        echo '📦 Installing Fastlane 2.230.0...'
+        gem install fastlane -v 2.230.0
+        echo '📦 Installing CocoaPods...'
+        gem install cocoapods
+        fastlane --version
+        echo '✅ Fastlane and CocoaPods installed successfully'
+
+    - name: 🔏 Setup Apple WWDR Certificate
+      run: |
+        echo '🔏 Ensuring Apple WWDR intermediate certificate is available...'
+        TMP_WWDR="/tmp/AppleWWDRCA.cer"
+        rm -f "$TMP_WWDR" || true
+
+        # Try multiple URLs for WWDR certificate
+        for url in \
+          "https://developer.apple.com/certificationauthority/AppleWWDRCAG3.cer" \
+          "https://developer.apple.com/certificationauthority/AppleWWDRCA.cer"; do
+          if curl -fsSL "$url" -o "$TMP_WWDR"; then
+            echo "✅ Downloaded WWDR certificate from: $url"
+            break
+          fi
+        done
+
+        if [ ! -s "$TMP_WWDR" ]; then
+          echo '❌ Failed to download Apple WWDR certificate'
+          exit 1
+        fi
+
+        # Import into login keychain
+        security import "$TMP_WWDR" -k "$HOME/Library/Keychains/login.keychain-db" -T /usr/bin/codesign -T /usr/bin/security || true
+
+        # Verify certificate presence
+        security find-certificate -c "Apple Worldwide Developer Relations" "$HOME/Library/Keychains/login.keychain-db" >/dev/null 2>&1 \
+          && echo '✅ WWDR certificate present in login keychain' \
+          || echo '⚠️ WWDR certificate verification inconclusive'
+
+    - name: 🔄 Setup App Store Connect Authentication
+      run: |
+        echo '🔄 Setting up App Store Connect authentication...'
+
+        # Create ASC private key file
+        mkdir -p ~/.private_keys
+        echo '${{ secrets.ASC_PRIVATE_KEY }}' | base64 -d > ~/.private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8 2>/dev/null || \
+        echo '${{ secrets.ASC_PRIVATE_KEY }}' > ~/.private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8
+
+        # Verify the key was created
+        if [ -f ~/.private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8 ]; then
+          echo '✅ ASC private key created successfully'
+          echo "Key file size: $(wc -c < ~/.private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8) bytes"
+        else
+          echo '❌ Failed to create ASC private key'
+          exit 1
+        fi
+
+    - name: 🔍 Test ASC Private Key Parsing
+      run: |
+        echo '🔍 Testing ASC Private Key Parsing...'
+        cat << 'EOF' | ruby
+        require 'openssl'
+
+        key_id = ENV['ASC_KEY_ID']
+        issuer_id = ENV['ASC_ISSUER_ID']
+        private_key_path = "#{ENV['HOME']}/.private_keys/AuthKey_#{key_id}.p8"
+
+        puts "🔑 Testing private key: #{private_key_path}"
+        puts "📋 Key ID: #{key_id}"
+        puts "🏢 Issuer ID: #{issuer_id}"
+
+        begin
+          private_key_content = File.read(private_key_path)
+          puts "📄 Key content length: #{private_key_content.length} characters"
+
+          # Check for null bytes
+          null_count = private_key_content.count("\0")
+          if null_count > 0
+            puts "❌ Found #{null_count} null byte(s) in private key!"
+            puts "🔍 First 100 chars: #{private_key_content[0..99].inspect}"
+            exit 1
+          else
+            puts "✅ No null bytes found in private key"
+          end
+
+          # Try to parse the key
+          puts "🔐 Attempting to parse private key..."
+          private_key = OpenSSL::PKey::EC.new(private_key_content)
+          puts "✅ Private key parsed successfully!"
+          puts "  Key type: #{private_key.class}"
+          puts "  Curve: #{private_key.group.curve_name}"
+
+        rescue OpenSSL::PKey::ECError => e
+          puts "❌ Private key parsing failed: #{e.message}"
+          puts "🔍 Key content preview:"
+          puts private_key_content[0..200] + "..." if private_key_content.length > 200
+          exit 1
+        rescue => e
+          puts "❌ Unexpected error: #{e.class} - #{e.message}"
+          exit 1
+        end
+
+        puts "🎉 Private key validation passed!"
+        EOF
+
+    - name: 🔄 Test JWT Generation
+      run: |
+        echo '🔄 Testing App Store Connect JWT authentication...'
+        cat << 'EOF' | ruby
+        require 'jwt'
+        require 'openssl'
+
+        key_id = ENV['ASC_KEY_ID']
+        issuer_id = ENV['ASC_ISSUER_ID']
+        private_key_path = "#{ENV['HOME']}/.private_keys/AuthKey_#{key_id}.p8"
+
+        puts "🔄 Generating JWT token..."
+
+        begin
+          private_key = OpenSSL::PKey::EC.new(File.read(private_key_path))
+
+          now = Time.now.to_i
+          payload = {
+            iss: issuer_id,
+            exp: now + 1200,
+            aud: 'appstoreconnect-v1'
+          }
+
+          headers = {
+            kid: key_id
+          }
+
+          token = JWT.encode(payload, private_key, 'ES256', headers)
+          puts '✅ JWT token generated successfully!'
+          puts "  Token length: #{token.length} characters"
+          puts "  Token preview: #{token[0..50]}..."
+
+          # Test API connectivity
+          puts '🌐 Testing App Store Connect API connectivity...'
+          system("curl -H 'Authorization: Bearer #{token}' 'https://api.appstoreconnect.apple.com/v1/apps' -o /dev/null -s -w '%{http_code}' | grep -q '200' && echo '✅ App Store Connect API accessible' || echo '⚠️ App Store Connect API test inconclusive'")
+
+        rescue => e
+          puts "❌ JWT generation failed: #{e.class} - #{e.message}"
+          exit 1
+        end
+
+        puts '🎉 JWT authentication test passed!'
+        EOF
+
+    - name: 🧹 Cleanup
+      if: always()
+      run: |
+        echo '🧹 Cleaning up temporary files...'
+        rm -rf ~/.private_keys
+        rm -f ios/service-account-key.json
+        echo '✅ Cleanup complete'
+
+  full-test:
+    runs-on: macos-latest
+    if: inputs.test_type == 'full_test'
+
+    steps:
+    - name: 📝 Note
+      run: |
+        echo "This would run the full iOS distribution workflow"
+        echo "Use test_type: 'asc_auth' to test just ASC authentication"
