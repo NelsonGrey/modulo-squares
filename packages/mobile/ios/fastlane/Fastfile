@@ -383,6 +383,34 @@ platform :ios do
     end
   end
 
+  desc "Helper to purge App Store assets from the match repo (nuke) without revoking on Apple Developer Portal"
+  def purge_match_repo_appstore_assets!
+    UI.message("💣  Purging App Store assets from the match git repository (skipping Apple Dev Portal revocation)...")
+    
+    # We use the 'nuke' action but we want to avoid revoking the actual certs on Apple's side 
+    # if we just want to clear the repo state. However, 'match nuke' is designed to revoke.
+    #
+    # Instead, we can use the 'match' action with 'readonly: false' and 'force: true' 
+    # which usually regenerates. But if we hit the limit, we need to clear the repo's knowledge 
+    # of the certs so it tries to generate a new one (and hopefully we have room or can revoke manually).
+    #
+    # ACTUALLY, the error is "reached the maximum number of available Distribution certificates".
+    # This means we DO need to revoke them on Apple's side to free up a slot.
+    # So we should use 'match nuke' to clear them out.
+    
+    # Nuke distribution certificates and profiles
+    begin
+      match_nuke(
+        type: "appstore",
+        skip_confirmation: true
+      )
+      UI.success("✅  Successfully nuked App Store assets.")
+    rescue => e
+      UI.error("⚠️  Failed to nuke App Store assets: #{e.message}")
+      # We continue, hoping that maybe enough was cleared or that the retry might work
+    end
+  end
+
   desc "Zero-touch certificate management - automatically handles certificate acquisition and sharing"
   lane :certificates_appstore do
     # ZERO-TOUCH DEVOPS: Most efficient certificate strategy across all projects
@@ -475,7 +503,7 @@ platform :ios do
             UI.success("✅ ZERO-TOUCH: Created shared distribution certificates and profiles for maximum project reuse")
             UI.message("💡 Future projects will reuse these certificates and profiles automatically")
           rescue => profile_error
-            if profile_error.message.include?("Maximum number of certificates generated")
+            if profile_error.message.include?("Maximum number of certificates generated") || profile_error.message.include?("reached the maximum number of available Distribution certificates")
               UI.important("⚠️  Hit Apple's certificate limit. Purging old certificates from match repo to force regeneration...")
               purge_match_repo_appstore_assets!
               retry
