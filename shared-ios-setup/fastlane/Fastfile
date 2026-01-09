@@ -527,7 +527,32 @@ platform :ios do
       end
 
       build_info = read_build_info_from_archive
-      app_identifier = (ENV["APP_IDENTIFIER"] || ENV["APP_ID"] || ENV["FASTLANE_APP_IDENTIFIER"] || "com.nelsongrey.wishlistwizard.app.ios")
+      
+      # Helper: extract CFBundleIdentifier from the built app's Info.plist
+      def read_bundle_identifier_from_archive
+        candidates = []
+        candidates << File.expand_path(File.join(__dir__, "..", "..", "build", "ios", "archive", "*.xcarchive"))
+        candidates << File.expand_path(File.join(__dir__, "..", "build", "ios", "archive", "*.xcarchive"))
+
+        candidates.each do |pattern|
+          Dir[pattern].each do |archive|
+            next unless File.exist?(archive)
+            info_plist = File.join(archive, "Products/Applications/Runner.app/Info.plist")
+            if File.exist?(info_plist)
+              bundle_id = %x(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "#{info_plist}" 2>/dev/null).strip
+              return bundle_id unless bundle_id.empty?
+            end
+          end
+        end
+        nil
+      end
+
+      # Try to extract from archive first, fallback to env vars
+      app_identifier = read_bundle_identifier_from_archive
+      app_identifier ||= (ENV["APP_IDENTIFIER"] || ENV["APP_ID"] || ENV["FASTLANE_APP_IDENTIFIER"])
+      unless app_identifier
+        UI.user_error!("Could not determine app identifier from archive, and no APP_IDENTIFIER env var provided")
+      end
 
       UI.message("Determined app identifier: #{app_identifier}")
       UI.message("Detected build info: #{build_info}")
