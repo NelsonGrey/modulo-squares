@@ -544,15 +544,26 @@ platform :ios do
             end
           end
         end
+        # Fallback: parse Xcode project pbxproj for PRODUCT_BUNDLE_IDENTIFIER
+        begin
+          pbxproj = File.expand_path(File.join(__dir__, "..", "..", "ios", "Runner.xcodeproj", "project.pbxproj"))
+          if File.exist?(pbxproj)
+            content = File.read(pbxproj)
+            # Prefer identifiers not for RunnerTests
+            ids = content.scan(/PRODUCT_BUNDLE_IDENTIFIER\s*=\s*([^;]+);/).flatten.map(&:strip)
+            ids.reject! { |id| id.include?("RunnerTests") }
+            return ids.first unless ids.empty?
+          end
+        rescue => e
+          UI.message("Unable to read bundle identifier from pbxproj: #{e.message}")
+        end
         nil
       end
 
       # Try to extract from archive first, fallback to env vars
       app_identifier = read_bundle_identifier_from_archive
       app_identifier ||= (ENV["APP_IDENTIFIER"] || ENV["APP_ID"] || ENV["FASTLANE_APP_IDENTIFIER"])
-      unless app_identifier
-        UI.user_error!("Could not determine app identifier from archive, and no APP_IDENTIFIER env var provided")
-      end
+      app_identifier ||= "com.nelsongrey.modulosquares.app.ios"
 
       UI.message("Determined app identifier: #{app_identifier}")
       UI.message("Detected build info: #{build_info}")
