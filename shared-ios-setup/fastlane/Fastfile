@@ -223,8 +223,14 @@ platform :ios do
     # Build the iOS app using Flutter (includes Xcode build and IPA creation)
     Dir.chdir("../../") do
       UI.message("📝 Updating pubspec.yaml version for unique build number")
-      # Update pubspec.yaml version for unique build number
-      build_number = ENV["GITHUB_RUN_ID"] || Time.now.utc.strftime("%Y%m%d%H%M%S")
+      # Resolve build number: prefer GitHub RUN_NUMBER (small, increasing),
+      # fallback to RUN_ID, else UTC timestamp. Use digits only.
+      raw_bn = ENV["GITHUB_RUN_NUMBER"].to_s.strip
+      raw_bn = ENV["GITHUB_RUN_ID"].to_s.strip if raw_bn.nil? || raw_bn.empty?
+      raw_bn = Time.now.utc.strftime("%Y%m%d%H%M%S") if raw_bn.nil? || raw_bn.empty?
+      build_number = raw_bn.gsub(/\D/, "")
+      # Cap length to avoid Transporter complaints (keep last 12 digits)
+      build_number = build_number[-12..-1] || build_number
       UI.message("Build number: #{build_number}")
       pubspec_path = "pubspec.yaml"
       UI.message("Reading pubspec.yaml from: #{File.expand_path(pubspec_path)}")
