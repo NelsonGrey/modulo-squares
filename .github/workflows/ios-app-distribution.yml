@@ -184,11 +184,16 @@ jobs:
           puts '✅ JWT token generated successfully'
           EOF
 
-      - name: 📱 Generate iOS Platform Files
+      - name: 📱 Ensure iOS Platform Files
         run: |
-          echo '🔄 Generating iOS platform files...'
-          flutter create --platforms=ios .
-          echo '✅ iOS platform files generated'
+          echo '🔄 Checking iOS platform files...'
+          if [ -d "ios" ] && [ -f "ios/Runner.xcodeproj/project.pbxproj" ]; then
+            echo '✅ iOS platform already present; skipping flutter create'
+          else
+            echo '🔄 iOS platform missing; generating...'
+            flutter create --platforms=ios .
+            echo '✅ iOS platform files generated'
+          fi
 
       - name: 🔐 Setup Service Account Key
         run: |
