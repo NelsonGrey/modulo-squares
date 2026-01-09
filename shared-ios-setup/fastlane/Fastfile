@@ -215,8 +215,9 @@ platform :ios do
     sync_signing
     UI.message("✅ Signing certificates synced")
 
-    # Install CocoaPods dependencies
-    Dir.chdir("..") do
+    # Install CocoaPods dependencies in the Flutter iOS project
+    Dir.chdir("../../ios") do
+      UI.message("Running pod install in #{Dir.pwd}")
       sh("pod install")
     end
 
