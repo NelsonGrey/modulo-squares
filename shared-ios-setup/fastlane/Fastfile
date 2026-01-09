@@ -251,6 +251,19 @@ platform :ios do
       sh("ls -la build/ios || true")
       sh("ls -la build/ios/archive || true")
 
+      # Debug: print CFBundleVersion from built app if available
+      begin
+        archive_app_plist = Dir["build/ios/archive/*.xcarchive/Products/Applications/Runner.app/Info.plist"].first
+        if archive_app_plist && File.exist?(archive_app_plist)
+          UI.message("CFBundleVersion in archive Runner.app Info.plist:")
+          sh("/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' '#{archive_app_plist}' || true")
+        else
+          UI.message("No archive app Info.plist found to read CFBundleVersion")
+        end
+      rescue => e
+        UI.message("Error reading CFBundleVersion from archive Info.plist: #{e.message}")
+      end
+
       # Debug: list output IPA directory so CI logs show what was produced
       UI.message("Listing generated IPA directory: build/ios/ipa")
       sh("ls -la build/ios/ipa || true")
