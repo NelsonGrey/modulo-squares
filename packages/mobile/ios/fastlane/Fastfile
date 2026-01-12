@@ -564,6 +564,14 @@ platform :ios do
       
       if has_existing_certs
         UI.important("🔒 Match repo has existing certificates. Using READONLY mode to prevent hitting Apple's cert limit.")
+      else
+        UI.error("❌ Match repo is empty! This should not happen in a working state.")
+        UI.error("💡 MANUAL FIX REQUIRED:")
+        UI.error("   1. Go to Apple Developer Portal and revoke unused Distribution certificates")
+        UI.error("   2. Run locally: cd packages/mobile/ios && bundle exec fastlane match appstore --readonly false")
+        UI.error("   3. Commit the certificate to the Match repo")
+        UI.error("   4. Re-run this workflow")
+        raise "Match repo is empty. Cannot proceed without existing certificates."
       end
 
       # Track if we need to retry due to revoked certificates
@@ -572,7 +580,7 @@ platform :ios do
       begin
         match(
           type: "appstore",
-          readonly: has_existing_certs ? true : true,  # Always try readonly first
+          readonly: true,  # Always use readonly to prevent creating new certs
           app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
           api_key: api_key,
           keychain_name: match_keychain_name,
@@ -581,56 +589,31 @@ platform :ios do
         
         # Check for revoked certificates after match completes
         if keychain_has_revoked_certificates?(match_keychain_path)
-          UI.important("❌ Detected revoked certificates in keychain. Purging and regenerating...")
-          # Also clean up login keychain
-          delete_revoked_certificates_from_login_keychain!
-          purge_match_repo_appstore_assets!
-          should_retry_after_purge = true
-          raise "Revoked certificates detected, purging and retrying"
+          UI.important("❌ Detected revoked certificates in keychain. This is a critical state.")
+          UI.important("The certificates in Match repo are revoked, but we're in readonly mode so we can't fix it.")
+          UI.error("💡 MANUAL FIX REQUIRED:")
+          UI.error("   1. Go to Apple Developer Portal and revoke the broken Distribution certificates")
+          UI.error("   2. Manually delete them from the Match repo")
+          UI.error("   3. Create ONE new certificate and commit to Match repo")
+          UI.error("   4. Re-run this workflow")
+          raise "Revoked certificates detected in readonly mode - manual intervention required"
         end
         
         UI.success("✅ ZERO-TOUCH SUCCESS: Reused existing certificates from shared repository")
         UI.message("💡 Maximum efficiency achieved: No new certificates created, full reuse")
 
       rescue => e
-        # Retry if we purged revoked certificates
-        if should_retry_after_purge
-          should_retry_after_purge = false
-          has_existing_certs = false  # Repo was purged, no longer has certs
-          retry
-        end
-        if e.message.include?("No code signing identity found") || e.message.include?("No matching provisioning profiles found")
-          # Only create new certificates if the repo is truly empty
-          if has_existing_certs
-            UI.error("❌ Match repo has certificates but none match. This shouldn't happen.")
-            UI.error("💡 Consider manually checking the Match repo or revoking old certificates in Apple Developer Portal.")
-            raise e
-          end
-          
-          UI.message("⚠️  No distribution certificates or profiles exist. Creating ONE certificate for all projects...")
-          begin
-            match(
-              type: "appstore",
-              readonly: false,
-              app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
-              api_key: api_key,
-              keychain_name: match_keychain_name,
-              keychain_password: match_keychain_password
-            )
-            UI.success("✅ ZERO-TOUCH: Created shared distribution certificates and profiles for maximum project reuse")
-            UI.message("💡 Future projects will reuse these certificates and profiles automatically")
-          rescue => profile_error
-            if profile_error.message.include?("Maximum number of certificates generated") || profile_error.message.include?("reached the maximum number of available Distribution certificates")
-              UI.error("❌ Hit Apple's certificate limit!")
-              UI.error("💡 MANUAL ACTION REQUIRED:")
-              UI.error("   1. Go to Apple Developer Portal (https://developer.apple.com/account/resources/certificates)")
-              UI.error("   2. Revoke old/unused Distribution certificates to free up space")
-              UI.error("   3. Re-run this build after revoking certificates")
-              UI.error("   Note: We cannot automatically purge and retry because that creates certificate mismatches.")
-              raise profile_error
-            elsif profile_error.message.include?("forbidden") || profile_error.message.include?("not allowed")
-              UI.error("❌ API key lacks permission to create provisioning profiles")
-              UI.error("💡 Please ensure your App Store Connect API key has Admin role")
+        UI.error("❌ Match readonly failed: #{e.message}")
+        
+        # Don't retry, just fail with clear instructions
+        UI.error("💡 CERTIFICATE TROUBLESHOOTING:")
+        UI.error("   • Match repo may have invalid/revoked certificates")
+        UI.error("   • Go to Apple Developer Portal (https://developer.apple.com/account/resources/certificates)")
+        UI.error("   • Revoke any invalid certificates to free up space")
+        UI.error("   • Run locally to create ONE new certificate: bundle exec fastlane match appstore --readonly false")
+        UI.error("   • Push the certificate to the Match repo")
+        UI.error("   • Re-run this workflow")
+        raise e
               
               if Helper.ci?
                 UI.error("❌ CI detected: Skipping interactive username/password fallback")
