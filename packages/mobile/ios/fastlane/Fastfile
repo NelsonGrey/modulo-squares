@@ -75,6 +75,41 @@ platform :ios do
     has_revoked
   end
 
+  def delete_revoked_certificates_from_login_keychain!
+    UI.message("🧹 Checking login keychain for revoked certificates...")
+    login_keychain = File.expand_path("~/Library/Keychains/login.keychain-db")
+    unless File.exist?(login_keychain)
+      login_keychain = File.expand_path("~/Library/Keychains/login.keychain")
+    end
+    
+    output = sh("security find-identity -v -p codesigning #{login_keychain.shellescape} 2>&1 || true", log: false)
+    revoked_sha1s = []
+    output.split("\n").each do |line|
+      if line.include?("CSSMERR_TP_CERT_REVOKED")
+        # Extract SHA-1: line format is like "  3) 2E244FE8FDCAEAA5EBF500E58B6AA07E99B7E833 "Apple Distribution..." (CSSMERR_TP_CERT_REVOKED)"
+        if line =~ /\)\s+([A-F0-9]{40})\s+/
+          revoked_sha1s << $1
+          UI.message("  Found revoked cert: #{$1}")
+        end
+      end
+    end
+
+    if revoked_sha1s.empty?
+      UI.success("✅ No revoked certificates in login keychain")
+      return
+    end
+
+    UI.important("🗑️  Deleting #{revoked_sha1s.count} revoked certificate(s) from login keychain...")
+    revoked_sha1s.each do |sha1|
+      begin
+        sh("security delete-certificate -Z #{sha1} #{login_keychain.shellescape}", log: false)
+        UI.success("  ✅ Deleted revoked cert: #{sha1}")
+      rescue => e
+        UI.error("  ❌ Failed to delete cert #{sha1}: #{e.message}")
+      end
+    end
+  end
+
   def purge_match_repo_appstore_assets!
     UI.important("🧹 Purging appstore signing assets from match repo...")
     git_url = match_repo_write_url
@@ -438,6 +473,9 @@ platform :ios do
 
     UI.message("🚀 ZERO-TOUCH: Implementing maximum certificate efficiency strategy...")
 
+    # Clean up any revoked certificates from the login keychain before starting
+    delete_revoked_certificates_from_login_keychain!
+
     private_key_content = ENV["ASC_PRIVATE_KEY"]
     if private_key_content && !private_key_content.empty? && private_key_content != "your_asc_private_key"
       # Detect key format
@@ -508,6 +546,8 @@ platform :ios do
         # Check for revoked certificates after match completes
         if keychain_has_revoked_certificates?(match_keychain_path)
           UI.important("❌ Detected revoked certificates in keychain. Purging and regenerating...")
+          # Also clean up login keychain
+          delete_revoked_certificates_from_login_keychain!
           purge_match_repo_appstore_assets!
           should_retry_after_purge = true
           raise "Revoked certificates detected, purging and retrying"
