@@ -61,6 +61,20 @@ platform :ios do
     "https://mnelson3:#{pat}@github.com/#{repo_path}.git"
   end
 
+  def keychain_has_revoked_certificates?(keychain_path)
+    UI.message("🔍 Checking for revoked certificates in keychain...")
+    output = sh("security find-identity -v -p codesigning #{keychain_path.shellescape} 2>&1 || true", log: false)
+    has_revoked = output.include?("CSSMERR_TP_CERT_REVOKED")
+    if has_revoked
+      UI.important("⚠️  Found revoked certificates in keychain")
+      # Log which certificates are revoked for debugging
+      output.split("\n").each do |line|
+        UI.message("  #{line}") if line.include?("CSSMERR_TP_CERT_REVOKED")
+      end
+    end
+    has_revoked
+  end
+
   def purge_match_repo_appstore_assets!
     UI.important("🧹 Purging appstore signing assets from match repo...")
     git_url = match_repo_write_url
@@ -478,6 +492,9 @@ platform :ios do
       # ZERO-TOUCH STRATEGY: Smart certificate reuse with project-specific profiles
       UI.message("📋 Checking for existing distribution certificates...")
 
+      # Track if we need to retry due to revoked certificates
+      should_retry_after_purge = false
+
       begin
         match(
           type: "appstore",
@@ -487,10 +504,24 @@ platform :ios do
           keychain_name: match_keychain_name,
           keychain_password: match_keychain_password
         )
+        
+        # Check for revoked certificates after match completes
+        if keychain_has_revoked_certificates?(match_keychain_path)
+          UI.important("❌ Detected revoked certificates in keychain. Purging and regenerating...")
+          purge_match_repo_appstore_assets!
+          should_retry_after_purge = true
+          raise "Revoked certificates detected, purging and retrying"
+        end
+        
         UI.success("✅ ZERO-TOUCH SUCCESS: Reused existing certificates from shared repository")
         UI.message("💡 Maximum efficiency achieved: No new certificates created, full reuse")
 
       rescue => e
+        # Retry if we purged revoked certificates
+        if should_retry_after_purge
+          should_retry_after_purge = false
+          retry
+        end
         if e.message.include?("No code signing identity found") || e.message.include?("No matching provisioning profiles found")
           UI.message("⚠️  No distribution certificates or profiles exist. Creating shared certificates and profiles for all projects...")
           begin
