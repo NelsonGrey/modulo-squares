@@ -599,50 +599,34 @@ platform :ios do
             
           rescue => create_error
             if create_error.message.include?("Maximum number of certificates generated") || create_error.message.include?("reached the maximum number of available Distribution certificates")
-              UI.important("⚠️  Hit Apple's 3-certificate limit. Intelligently cleaning up old certificates...")
+              UI.important("⚠️  Hit Apple's 3-certificate limit. Using match_nuke to revoke all distribution certificates...")
               
-              # Get list of certificates from Apple Developer Portal via Match
-              # and revoke the oldest one to make room
+              # Use match_nuke to revoke certificates from Apple Developer Portal AND clean up Match repo
+              # This will free up space for creating a new certificate
               begin
-                UI.message("🧹 Checking for revocable certificates...")
+                UI.message("💣 Nuking distribution certificates to free up space...")
                 
-                # Use match's built-in certificate management to find and revoke old certs
-                # First, try to fetch the certificate list and remove the oldest
-                match_repo = match_repo_write_url
-                tmp_dir = Dir.mktmpdir("match-cleanup-")
+                # Call match_nuke to revoke from Apple Developer Portal
+                match_nuke(
+                  type: "appstore",
+                  api_key: api_key,
+                  skip_confirmation: true,
+                  readonly: false
+                )
                 
-                begin
-                  sh("git clone #{match_repo.shellescape} #{tmp_dir.shellescape}", log: false)
-                  sh("cd #{tmp_dir.shellescape} && git checkout main", log: false)
-                  
-                  # Get the oldest certificate
-                  cert_files = Dir.glob(File.join(tmp_dir, "certs", "distribution", "*.cer")).sort_by { |f| File.mtime(f) }
-                  
-                  if cert_files.length > 0
-                    oldest_cert = cert_files.first
-                    UI.message("🗑️  Removing oldest certificate: #{File.basename(oldest_cert)}")
-                    
-                    FileUtils.rm_rf(File.dirname(oldest_cert))
-                    
-                    sh("cd #{tmp_dir.shellescape} && git add -A", log: false)
-                    sh("cd #{tmp_dir.shellescape} && git -c user.email=ci@modulo-squares.local -c user.name=modulo-squares-ci commit -m 'CI: revoke oldest certificate to free up space' || true", log: false)
-                    sh("cd #{tmp_dir.shellescape} && git push origin main", log: false)
-                    
-                    UI.success("✅ Removed oldest certificate from Match repo")
-                    UI.message("🔄 Retrying certificate creation...")
-                    
-                    # Retry creation with freshly freed space
-                    should_retry_after_purge = true
-                    raise "Cleaned up old cert, retrying"
-                  else
-                    UI.error("❌ No certificates found to clean up, but hit limit. Manual intervention needed.")
-                    raise create_error
-                  end
-                ensure
-                  sh("rm -rf #{tmp_dir.shellescape}", log: false) if tmp_dir && Dir.exist?(tmp_dir)
-                end
-              rescue => cleanup_error
-                UI.error("❌ Failed to clean up certificates: #{cleanup_error.message}")
+                UI.success("✅ Revoked all distribution certificates from Apple Developer Portal")
+                UI.message("🔄 Retrying certificate creation with fresh space...")
+                
+                # Retry creation with freshly freed space
+                should_retry_after_purge = true
+                creation_attempt = 0
+                retry
+              rescue => nuke_error
+                UI.error("❌ Failed to nuke certificates: #{nuke_error.message}")
+                UI.error("💡 MANUAL FIX REQUIRED:")
+                UI.error("   1. Go to https://developer.apple.com/account/resources/certificates")
+                UI.error("   2. Manually revoke old Distribution certificates")
+                UI.error("   3. Re-run this workflow")
                 raise create_error
               end
             else
