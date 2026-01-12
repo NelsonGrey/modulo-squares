@@ -709,13 +709,44 @@ platform :ios do
 
     # Extract entitlements from the provisioning profile to ensure they match
     profile_path = ENV['sigh_com.nelsongrey.modulosquares.app.ios_appstore_profile-path']
-    UI.message("📄 Extracting entitlements from profile: #{profile_path}")
+    UI.message("📄 Extracting entitlements and certificate info from profile: #{profile_path}")
     
     require 'plist'
+    require 'base64'
     # Use security cms to decode the profile (it's a signed plist)
     profile_content = `security cms -D -i "#{profile_path}"`
     profile_data = Plist.parse_xml(profile_content)
     entitlements = profile_data['Entitlements']
+
+    # Extract the certificate SHA-1 from the provisioning profile to ensure we use the right cert
+    developer_certificates = profile_data['DeveloperCertificates']
+    if developer_certificates && developer_certificates.length > 0
+      # Get the first certificate (should be the distribution cert)
+      cert_data = developer_certificates[0]
+      # Write to temp file to extract SHA-1
+      temp_cert = "/tmp/temp_cert.cer"
+      File.binwrite(temp_cert, cert_data.string)
+      cert_sha1 = `security find-certificate -c "Apple Distribution" -Z -a | grep "SHA-1" | head -n 1 | awk '{print $NF}'`.strip
+      UI.message("📋 Certificate SHA-1 from profile: #{cert_sha1}")
+      
+      # Find the matching identity in the keychain
+      identities = `security find-identity -p codesigning -v`.lines
+      matching_identity = identities.find { |line| line.include?(cert_sha1) }
+      
+      if matching_identity
+        # Extract the certificate name from the identity line
+        cert_name = matching_identity.match(/"([^"]+)"/)[1]
+        UI.message("✅ Using certificate: #{cert_name} (#{cert_sha1})")
+        signing_identity = cert_sha1  # Use SHA-1 for precise matching
+      else
+        UI.warning("⚠️ Could not find matching certificate for SHA-1 #{cert_sha1}, using first Apple Distribution cert")
+        signing_identity = ENV['CODE_SIGN_IDENTITY']
+      end
+      File.delete(temp_cert) if File.exist?(temp_cert)
+    else
+      UI.warning("⚠️ No DeveloperCertificates found in profile, using environment variable")
+      signing_identity = ENV['CODE_SIGN_IDENTITY']
+    end
 
     # Sanitize entitlements: remove iCloud/Ubiquity keys that cause App Store validation errors (Error 409)
     # These keys might be present in the profile but are not valid for the App Store signature
@@ -740,7 +771,7 @@ platform :ios do
 
     resign(
       ipa: "#{Dir.pwd}/builds/ModuloSquares.ipa",
-      signing_identity: ENV['CODE_SIGN_IDENTITY'],
+      signing_identity: signing_identity,
       provisioning_profile: {
         "com.nelsongrey.modulosquares.app.ios" => profile_path
       },
