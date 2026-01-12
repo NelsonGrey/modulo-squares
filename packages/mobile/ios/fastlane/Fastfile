@@ -558,62 +558,114 @@ platform :ios do
       # ZERO-TOUCH STRATEGY: Smart certificate reuse with project-specific profiles
       UI.message("📋 Checking for existing distribution certificates...")
 
-      # First, check if the Match repo already has certificates
-      # If yes, we MUST use readonly mode to avoid hitting Apple's certificate limit
-      has_existing_certs = match_repo_has_certificates?
-      
-      if has_existing_certs
-        UI.important("🔒 Match repo has existing certificates. Using READONLY mode to prevent hitting Apple's cert limit.")
-      else
-        UI.error("❌ Match repo is empty! This should not happen in a working state.")
-        UI.error("💡 MANUAL FIX REQUIRED:")
-        UI.error("   1. Go to Apple Developer Portal and revoke unused Distribution certificates")
-        UI.error("   2. Run locally: cd packages/mobile/ios && bundle exec fastlane match appstore --readonly false")
-        UI.error("   3. Commit the certificate to the Match repo")
-        UI.error("   4. Re-run this workflow")
-        raise "Match repo is empty. Cannot proceed without existing certificates."
-      end
-
       # Track if we need to retry due to revoked certificates
       should_retry_after_purge = false
+      creation_attempt = 0
 
       begin
+        # Try readonly first (most efficient - reuse existing certs)
+        UI.message("🔄 Attempting to use existing certificates in readonly mode...")
         match(
           type: "appstore",
-          readonly: true,  # Always use readonly to prevent creating new certs
+          readonly: true,
           app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
           api_key: api_key,
           keychain_name: match_keychain_name,
           keychain_password: match_keychain_password
         )
-        
-        # Check for revoked certificates after match completes
-        if keychain_has_revoked_certificates?(match_keychain_path)
-          UI.important("❌ Detected revoked certificates in keychain. This is a critical state.")
-          UI.important("The certificates in Match repo are revoked, but we're in readonly mode so we can't fix it.")
-          UI.error("💡 MANUAL FIX REQUIRED:")
-          UI.error("   1. Go to Apple Developer Portal and revoke the broken Distribution certificates")
-          UI.error("   2. Manually delete them from the Match repo")
-          UI.error("   3. Create ONE new certificate and commit to Match repo")
-          UI.error("   4. Re-run this workflow")
-          raise "Revoked certificates detected in readonly mode - manual intervention required"
-        end
-        
         UI.success("✅ ZERO-TOUCH SUCCESS: Reused existing certificates from shared repository")
         UI.message("💡 Maximum efficiency achieved: No new certificates created, full reuse")
 
-      rescue => e
-        UI.error("❌ Match readonly failed: #{e.message}")
-        
-        # Don't retry, just fail with clear instructions
-        UI.error("💡 CERTIFICATE TROUBLESHOOTING:")
-        UI.error("   • Match repo may have invalid/revoked certificates")
-        UI.error("   • Go to Apple Developer Portal (https://developer.apple.com/account/resources/certificates)")
-        UI.error("   • Revoke any invalid certificates to free up space")
-        UI.error("   • Run locally to create ONE new certificate: bundle exec fastlane match appstore --readonly false")
-        UI.error("   • Push the certificate to the Match repo")
-        UI.error("   • Re-run this workflow")
-        raise e
+      rescue => readonly_error
+        # Readonly failed - check why and attempt to create if needed
+        if readonly_error.message.include?("No code signing identity found") || readonly_error.message.include?("No matching provisioning profiles found")
+          creation_attempt += 1
+          if creation_attempt > 1
+            UI.error("❌ Failed to create certificates after multiple attempts")
+            raise readonly_error
+          end
+          
+          UI.message("⚠️  No certificates found in Match repo. Attempting to create...")
+          begin
+            match(
+              type: "appstore",
+              readonly: false,
+              app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
+              api_key: api_key,
+              keychain_name: match_keychain_name,
+              keychain_password: match_keychain_password
+            )
+            UI.success("✅ Created new distribution certificate and provisioning profile")
+            
+          rescue => create_error
+            if create_error.message.include?("Maximum number of certificates generated") || create_error.message.include?("reached the maximum number of available Distribution certificates")
+              UI.important("⚠️  Hit Apple's 3-certificate limit. Intelligently cleaning up old certificates...")
+              
+              # Get list of certificates from Apple Developer Portal via Match
+              # and revoke the oldest one to make room
+              begin
+                UI.message("🧹 Checking for revocable certificates...")
+                
+                # Use match's built-in certificate management to find and revoke old certs
+                # First, try to fetch the certificate list and remove the oldest
+                match_repo = match_repo_write_url
+                tmp_dir = Dir.mktmpdir("match-cleanup-")
+                
+                begin
+                  sh("git clone #{match_repo.shellescape} #{tmp_dir.shellescape}", log: false)
+                  sh("cd #{tmp_dir.shellescape} && git checkout main", log: false)
+                  
+                  # Get the oldest certificate
+                  cert_files = Dir.glob(File.join(tmp_dir, "certs", "distribution", "*.cer")).sort_by { |f| File.mtime(f) }
+                  
+                  if cert_files.length > 0
+                    oldest_cert = cert_files.first
+                    UI.message("🗑️  Removing oldest certificate: #{File.basename(oldest_cert)}")
+                    
+                    FileUtils.rm_rf(File.dirname(oldest_cert))
+                    
+                    sh("cd #{tmp_dir.shellescape} && git add -A", log: false)
+                    sh("cd #{tmp_dir.shellescape} && git -c user.email=ci@modulo-squares.local -c user.name=modulo-squares-ci commit -m 'CI: revoke oldest certificate to free up space' || true", log: false)
+                    sh("cd #{tmp_dir.shellescape} && git push origin main", log: false)
+                    
+                    UI.success("✅ Removed oldest certificate from Match repo")
+                    UI.message("🔄 Retrying certificate creation...")
+                    
+                    # Retry creation with freshly freed space
+                    should_retry_after_purge = true
+                    raise "Cleaned up old cert, retrying"
+                  else
+                    UI.error("❌ No certificates found to clean up, but hit limit. Manual intervention needed.")
+                    raise create_error
+                  end
+                ensure
+                  sh("rm -rf #{tmp_dir.shellescape}", log: false) if tmp_dir && Dir.exist?(tmp_dir)
+                end
+              rescue => cleanup_error
+                UI.error("❌ Failed to clean up certificates: #{cleanup_error.message}")
+                raise create_error
+              end
+            else
+              raise create_error
+            end
+          end
+        elsif readonly_error.message.include?("revoked") || readonly_error.message.include?("CSSMERR_TP_CERT_REVOKED")
+          UI.important("❌ Detected revoked certificate. Cleaning up and retrying...")
+          delete_revoked_certificates_from_login_keychain!
+          purge_match_repo_appstore_assets!
+          should_retry_after_purge = true
+          raise "Revoked certificates detected, purging and retrying"
+        else
+          raise readonly_error
+        end
+      end
+      
+      # Retry if we cleaned up or purged
+      if should_retry_after_purge
+        should_retry_after_purge = false
+        creation_attempt = 0
+        retry
+      end
               
               if Helper.ci?
                 UI.error("❌ CI detected: Skipping interactive username/password fallback")
