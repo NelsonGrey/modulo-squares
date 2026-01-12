@@ -139,6 +139,34 @@ platform :ios do
     end
   end
 
+  def match_repo_has_certificates?
+    UI.message("📋 Checking if Match repo has existing certificates...")
+    git_url = match_repo_write_url
+    repo_dir = Dir.mktmpdir("match-check-")
+
+    begin
+      sh("git clone #{git_url.shellescape} #{repo_dir.shellescape}", log: false)
+      sh("cd #{repo_dir.shellescape} && git checkout main", log: false)
+
+      # Check for distribution certificates
+      cert_files = Dir.glob(File.join(repo_dir, "certs", "distribution", "*.cer"))
+      has_certs = !cert_files.empty?
+      
+      if has_certs
+        UI.success("✅ Found #{cert_files.length} certificate(s) in Match repo")
+      else
+        UI.message("📋 No certificates found in Match repo")
+      end
+      
+      return has_certs
+    rescue => e
+      UI.error("⚠️  Failed to check Match repo: #{e.message}")
+      return false
+    ensure
+      sh("rm -rf #{repo_dir.shellescape}", log: false) if repo_dir && Dir.exist?(repo_dir)
+    end
+  end
+
   def match_keychain_path
     return ENV["MATCH_KEYCHAIN_PATH"] unless ENV["MATCH_KEYCHAIN_PATH"].to_s.empty?
     # Always use the default keychain location to avoid issues with absolute paths in match
@@ -530,13 +558,21 @@ platform :ios do
       # ZERO-TOUCH STRATEGY: Smart certificate reuse with project-specific profiles
       UI.message("📋 Checking for existing distribution certificates...")
 
+      # First, check if the Match repo already has certificates
+      # If yes, we MUST use readonly mode to avoid hitting Apple's certificate limit
+      has_existing_certs = match_repo_has_certificates?
+      
+      if has_existing_certs
+        UI.important("🔒 Match repo has existing certificates. Using READONLY mode to prevent hitting Apple's cert limit.")
+      end
+
       # Track if we need to retry due to revoked certificates
       should_retry_after_purge = false
 
       begin
         match(
           type: "appstore",
-          readonly: true,
+          readonly: has_existing_certs ? true : true,  # Always try readonly first
           app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
           api_key: api_key,
           keychain_name: match_keychain_name,
@@ -560,10 +596,18 @@ platform :ios do
         # Retry if we purged revoked certificates
         if should_retry_after_purge
           should_retry_after_purge = false
+          has_existing_certs = false  # Repo was purged, no longer has certs
           retry
         end
         if e.message.include?("No code signing identity found") || e.message.include?("No matching provisioning profiles found")
-          UI.message("⚠️  No distribution certificates or profiles exist. Creating shared certificates and profiles for all projects...")
+          # Only create new certificates if the repo is truly empty
+          if has_existing_certs
+            UI.error("❌ Match repo has certificates but none match. This shouldn't happen.")
+            UI.error("💡 Consider manually checking the Match repo or revoking old certificates in Apple Developer Portal.")
+            raise e
+          end
+          
+          UI.message("⚠️  No distribution certificates or profiles exist. Creating ONE certificate for all projects...")
           begin
             match(
               type: "appstore",
@@ -577,9 +621,13 @@ platform :ios do
             UI.message("💡 Future projects will reuse these certificates and profiles automatically")
           rescue => profile_error
             if profile_error.message.include?("Maximum number of certificates generated") || profile_error.message.include?("reached the maximum number of available Distribution certificates")
-              UI.important("⚠️  Hit Apple's certificate limit. Purging old certificates from match repo to force regeneration...")
-              purge_match_repo_appstore_assets!
-              retry
+              UI.error("❌ Hit Apple's certificate limit!")
+              UI.error("💡 MANUAL ACTION REQUIRED:")
+              UI.error("   1. Go to Apple Developer Portal (https://developer.apple.com/account/resources/certificates)")
+              UI.error("   2. Revoke old/unused Distribution certificates to free up space")
+              UI.error("   3. Re-run this build after revoking certificates")
+              UI.error("   Note: We cannot automatically purge and retry because that creates certificate mismatches.")
+              raise profile_error
             elsif profile_error.message.include?("forbidden") || profile_error.message.include?("not allowed")
               UI.error("❌ API key lacks permission to create provisioning profiles")
               UI.error("💡 Please ensure your App Store Connect API key has Admin role")
