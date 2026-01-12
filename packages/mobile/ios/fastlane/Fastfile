@@ -666,33 +666,6 @@ platform :ios do
         creation_attempt = 0
         retry
       end
-              
-              if Helper.ci?
-                UI.error("❌ CI detected: Skipping interactive username/password fallback")
-                raise profile_error
-              else
-                UI.message("🔄 Falling back to username/password authentication...")
-
-                # Fallback to username/password for profile creation
-                match(
-                  type: "appstore",
-                  readonly: false,
-                  app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
-                  username: ENV["FASTLANE_APPLE_ID"],
-                  team_id: ENV["FASTLANE_TEAM_ID"],
-                  keychain_name: match_keychain_name,
-                  keychain_password: match_keychain_password
-                )
-                UI.success("✅ ZERO-TOUCH: Created profiles using username/password fallback")
-              end
-            else
-              raise profile_error
-            end
-          end
-        else
-          raise e
-        end
-      end
     else
       # Fallback for when API key is not available (less efficient but still zero-touch)
       UI.message("🔑 API key not available, using username/password (consider API key for maximum efficiency)")
