@@ -654,17 +654,18 @@ platform :ios do
           delete_revoked_certificates_from_login_keychain!
           purge_match_repo_appstore_assets!
           should_retry_after_purge = true
-          raise "Revoked certificates detected, purging and retrying"
+          creation_attempt = 0
+          retry
         else
           raise readonly_error
         end
-      end
-      
-      # Retry if we cleaned up or purged
-      if should_retry_after_purge
-        should_retry_after_purge = false
-        creation_attempt = 0
-        retry
+        
+        # If we set should_retry_after_purge flag, retry
+        if should_retry_after_purge
+          should_retry_after_purge = false
+          creation_attempt = 0
+          retry
+        end
       end
     else
       # Fallback for when API key is not available (less efficient but still zero-touch)
