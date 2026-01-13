@@ -501,8 +501,35 @@ platform :ios do
 
     UI.message("🚀 ZERO-TOUCH: Implementing maximum certificate efficiency strategy...")
 
-    # Clean up any revoked certificates from the login keychain before starting
-    delete_revoked_certificates_from_login_keychain!
+    # Clean up ALL distribution certificates from the login keychain before starting
+    # This prevents contamination where old certs without private keys interfere with signing
+    UI.message("🧹 Cleaning up all distribution certificates from login keychain...")
+    begin
+      login_keychain = File.expand_path("~/Library/Keychains/login.keychain-db")
+      
+      # Find all Apple Distribution certificates
+      cert_list = `security find-certificate -a -c "Apple Distribution" -Z "#{login_keychain}" 2>/dev/null`
+      
+      # Extract SHA-1 hashes
+      sha1_hashes = cert_list.scan(/SHA-1 hash: ([A-F0-9]{40})/).flatten
+      
+      if sha1_hashes.any?
+        UI.message("Found #{sha1_hashes.length} distribution certificate(s) in login keychain, removing them...")
+        sha1_hashes.each do |sha1|
+          begin
+            sh("security delete-certificate -Z #{sha1} \"#{login_keychain}\" 2>/dev/null || true", log: false)
+            UI.message("  ✅ Deleted certificate: #{sha1}")
+          rescue => e
+            UI.message("  ⚠️ Could not delete #{sha1}: #{e.message}")
+          end
+        end
+        UI.success("✅ Cleaned #{sha1_hashes.length} certificate(s) from login keychain")
+      else
+        UI.message("✓ No distribution certificates found in login keychain")
+      end
+    rescue => e
+      UI.message("⚠️ Login keychain cleanup had issues (non-fatal): #{e.message}")
+    end
 
     private_key_content = ENV["ASC_PRIVATE_KEY"]
     if private_key_content && !private_key_content.empty? && private_key_content != "your_asc_private_key"
