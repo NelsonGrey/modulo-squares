@@ -1,0 +1,30 @@
+name: "Master Pipeline - Minimal Test"
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Action to perform"
+        required: true
+        type: choice
+        options:
+          - test_all
+
+jobs:
+  load-config:
+    name: Load Project Configuration
+    runs-on: ubuntu-latest
+    outputs:
+      test_output: ${{ steps.config.outputs.test }}
+    steps:
+      - name: Load Config
+        id: config
+        run: echo "test=success" >> $GITHUB_OUTPUT
+
+  test-job:
+    name: Test Job
+    needs: load-config
+    runs-on: ubuntu-latest
+    steps:
+      - name: Echo
+        run: echo "Test output was ${{ needs.load-config.outputs.test_output }}"
