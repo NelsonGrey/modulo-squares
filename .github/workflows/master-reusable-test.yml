@@ -1,0 +1,41 @@
+name: "Master Pipeline - Call Reusable Test"
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Action to perform"
+        required: true
+        type: choice
+        options:
+          - test_all
+
+jobs:
+  load-config:
+    name: Load Project Configuration
+    runs-on: ubuntu-latest
+    outputs:
+      project_name: modulo-squares
+      trigger_context: test_all
+    steps:
+      - name: Echo
+        run: echo "Config loaded"
+
+  test-reusable:
+    name: Test Reusable Call
+    needs: load-config
+    if: true
+    uses: mnelson3/nelson-grey/.github/workflows/reusable/ios-build.yml@main
+    with:
+      project_name: ${{ needs.load-config.outputs.project_name }}
+      release_type: "build_only"
+      ruby_version: "3.2"
+      bundler_version: "2.4.22"
+      fastlane_version: "2.230.0"
+    secrets:
+      app_store_connect_key_id: ${{ secrets.ASC_KEY_ID }}
+      app_store_connect_issuer_id: ${{ secrets.ASC_ISSUER_ID }}
+      app_store_connect_key: ${{ secrets.ASC_PRIVATE_KEY }}
+      match_password: ${{ secrets.MATCH_PASSWORD }}
+      match_git_url: ${{ secrets.MATCH_GIT_URL }}
+      match_git_branch: ${{ secrets.MATCH_GIT_BRANCH }}
