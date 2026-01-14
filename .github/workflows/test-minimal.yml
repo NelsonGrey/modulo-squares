@@ -9,6 +9,6 @@ permissions:
 
 jobs:
   call-minimal:
-    uses: mnelson3/nelson-grey/.github/workflows/minimal-reusable.yml@80292d003fa84491b4701a3b97d317cdb3b318ab
+    uses: mnelson3/nelson-grey/.github/workflows/minimal-reusable.yml@main
     with:
       test_input: "hello"
