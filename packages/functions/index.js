@@ -1,9 +1,9 @@
-const functions = require('firebase-functions');
-const admin = require('firebase-admin');
-const express = require('express');
+import functions from 'firebase-functions';
+import admin from 'firebase-admin';
+import express from 'express';
 
 // Import shared utilities
-const { FunctionsAuthHelpers } = require('@shared/firebase-utils');
+import { FunctionsAuthHelpers } from '@shared/firebase-utils';
 
 admin.initializeApp();
 
