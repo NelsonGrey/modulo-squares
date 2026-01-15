@@ -16,12 +16,12 @@
     "clean": "rm -rf node_modules"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": "20"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "dependencies": {
     "@shared/firebase-utils": "file:../firebase-utils",
     "express": "^4.18.2",
