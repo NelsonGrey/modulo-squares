@@ -26,13 +26,12 @@ on:
         required: false
         type: boolean
         default: false
-  # Temporarily disabled to test workflow_dispatch
-  # push:
-  #   branches:
-  #     - develop
-  #     - staging
-  #     - main
-  # pull_request:
+  push:
+    branches:
+      - develop
+      - staging
+      - main
+  pull_request:
   #   branches:
   #     - develop
   #     - staging
