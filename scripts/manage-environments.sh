@@ -94,8 +94,8 @@ manage_github_secrets() {
     cd "$PROJECT_ROOT"
 
     # Load automation config
-    if [ -f ".env.automation" ]; then
-        source .env.automation
+    if [ -f ".env.automation.$ENVIRONMENT" ]; then
+        source ".env.automation.$ENVIRONMENT"
     fi
 
     # Repository information

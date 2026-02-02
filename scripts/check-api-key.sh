@@ -5,6 +5,11 @@
 
 set -e
 
+# App Store Connect env vars
+APP_STORE_CONNECT_KEY_ID="${APP_STORE_CONNECT_KEY_ID}"
+APP_STORE_CONNECT_ISSUER_ID="${APP_STORE_CONNECT_ISSUER_ID}"
+APP_STORE_CONNECT_KEY="${APP_STORE_CONNECT_KEY}"
+
 echo "🔍 ZERO-TOUCH: API Key Health Check"
 echo "==================================="
 echo ""
@@ -13,9 +18,9 @@ echo ""
 check_env_vars() {
     local missing_vars=()
 
-    if [ -z "$ASC_KEY_ID" ]; then missing_vars+=("ASC_KEY_ID"); fi
-    if [ -z "$ASC_ISSUER_ID" ]; then missing_vars+=("ASC_ISSUER_ID"); fi
-    if [ -z "$ASC_PRIVATE_KEY" ]; then missing_vars+=("ASC_PRIVATE_KEY"); fi
+    if [ -z "$APP_STORE_CONNECT_KEY_ID" ]; then missing_vars+=("APP_STORE_CONNECT_KEY_ID"); fi
+    if [ -z "$APP_STORE_CONNECT_ISSUER_ID" ]; then missing_vars+=("APP_STORE_CONNECT_ISSUER_ID"); fi
+    if [ -z "$APP_STORE_CONNECT_KEY" ]; then missing_vars+=("APP_STORE_CONNECT_KEY"); fi
 
     if [ ${#missing_vars[@]} -ne 0 ]; then
         echo "❌ Missing required environment variables:"
@@ -34,7 +39,7 @@ test_api_key() {
     echo "🔐 Testing App Store Connect API key validity..."
 
     # Decode the private key
-    local private_key_content="$ASC_PRIVATE_KEY"
+    local private_key_content="$APP_STORE_CONNECT_KEY"
     # Trim any whitespace/newlines from the secret
     private_key_content=$(echo "$private_key_content" | tr -d ' \t\n\r')
 
@@ -57,7 +62,7 @@ test_api_key() {
 
     # Generate JWT token
     local jwt_token
-    jwt_token=$(generate_jwt "$ASC_KEY_ID" "$ASC_ISSUER_ID" "$key_file") || {
+    jwt_token=$(generate_jwt "$APP_STORE_CONNECT_KEY_ID" "$APP_STORE_CONNECT_ISSUER_ID" "$key_file") || {
         echo "❌ Failed to generate JWT token"
         rm -f "$key_file"
         return 1
@@ -163,7 +168,7 @@ check_key_age() {
     # Try to extract creation date from key ID or other metadata
     # This is a best-effort check since Apple doesn't expose creation dates via API
 
-    local key_id="$ASC_KEY_ID"
+    local key_id="$APP_STORE_CONNECT_KEY_ID"
     if [[ $key_id =~ ^[A-Z0-9]{10}_[A-Z0-9]{10}_[A-Z0-9]{2}$ ]]; then
         echo "📋 Key ID format suggests this is a valid App Store Connect key"
         echo "⚠️  App Store Connect API keys expire 1 year after creation"
@@ -191,9 +196,9 @@ generate_rotation_guide() {
     echo "   cat AuthKey_XXXXX.p8 | base64 | tr -d '\n'"
     echo ""
     echo "7. 🔒 Update GitHub secrets:"
-    echo "   • ASC_KEY_ID = [new Key ID]"
-    echo "   • ASC_ISSUER_ID = [new Issuer ID]"
-    echo "   • ASC_PRIVATE_KEY = [base64 content]"
+    echo "   • APP_STORE_CONNECT_KEY_ID = [new Key ID]"
+    echo "   • APP_STORE_CONNECT_ISSUER_ID = [new Issuer ID]"
+    echo "   • APP_STORE_CONNECT_KEY = [base64 content]"
     echo ""
     echo "8. 🗑️  Delete old key from App Store Connect"
     echo ""

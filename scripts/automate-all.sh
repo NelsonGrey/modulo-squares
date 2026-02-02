@@ -34,14 +34,14 @@ validate_deployment() {
     fi
 
     # Check automation configuration
-    if [ ! -f ".env.automation" ]; then
-        log_error "Automation configuration missing: .env.automation"
+    if [ ! -f ".env.automation.$environment" ]; then
+        log_error "Automation configuration missing: .env.automation.$environment"
         exit 1
     fi
 
     # Load configurations
     source ".env.$environment"
-    source ".env.automation"
+    source ".env.automation.$environment"
 
     # Check required tools
     local required_tools=("git" "node" "npm" "firebase")
@@ -134,7 +134,7 @@ deploy_artifacts() {
 
     # Load configurations
     source ".env.$environment"
-    source ".env.automation"
+    source ".env.automation.$environment"
 
     # Deploy web application
     log_info "Deploying web application to Firebase..."

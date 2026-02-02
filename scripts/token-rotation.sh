@@ -5,6 +5,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+ENVIRONMENT="${ENVIRONMENT:-development}"
 
 # Colors
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
@@ -37,7 +38,7 @@ rotate_github_token() {
     log_info "Creating new GitHub personal access token..."
     log_warning "Manual intervention required: Create new PAT at https://github.com/settings/tokens"
     log_info "Required scopes: repo, workflow, admin:repo_hook, delete_repo"
-    log_info "Update GITHUB_TOKEN in .env.automation and repository secrets"
+    log_info "Update GITHUB_TOKEN in .env.automation.$ENVIRONMENT and repository secrets"
 
     # In a real implementation, you might use GitHub Apps or service accounts
     # For now, this is a manual process
@@ -62,7 +63,7 @@ rotate_firebase_token() {
     log_info "1. Go to Google Cloud Console → IAM & Admin → Service Accounts"
     log_info "2. Create new key for your Firebase service account"
     log_info "3. Download new JSON key"
-    log_info "4. Update FIREBASE_SERVICE_ACCOUNT_KEY in .env.automation"
+    log_info "4. Update FIREBASE_SERVICE_ACCOUNT_KEY in .env.automation.$ENVIRONMENT"
     log_info "5. Update repository secrets"
 }
 
@@ -76,7 +77,7 @@ rotate_docker_token() {
     fi
 
     log_info "To rotate Docker registry credentials:"
-    log_info "1. Update DOCKER_USERNAME and DOCKER_PASSWORD in .env.automation"
+    log_info "1. Update DOCKER_USERNAME and DOCKER_PASSWORD in .env.automation.$ENVIRONMENT"
     log_info "2. Run: docker login your-registry.com"
     log_info "3. Test: docker pull your-registry.com/test-image"
 }
@@ -93,7 +94,7 @@ rotate_npm_token() {
     log_info "To rotate NPM token:"
     log_info "1. Go to npmjs.com → Access Tokens"
     log_info "2. Generate new automation token"
-    log_info "3. Update NPM_TOKEN in .env.automation"
+    log_info "3. Update NPM_TOKEN in .env.automation.$ENVIRONMENT"
     log_info "4. Run: npm config set //registry.npmjs.org/:_authToken YOUR_NEW_TOKEN"
 }
 
@@ -113,7 +114,7 @@ rotate_all_tokens() {
     done
 
     log_success "Token rotation process completed"
-    log_warning "Remember to update .env.automation and repository secrets with new tokens"
+    log_warning "Remember to update .env.automation.$ENVIRONMENT and repository secrets with new tokens"
 }
 
 # Check token status
@@ -123,8 +124,9 @@ check_token_status() {
     cd "$PROJECT_ROOT"
 
     # Load configuration
-    if [ -f ".env.automation" ]; then
-        source .env.automation
+    ENVIRONMENT="${ENVIRONMENT:-development}"
+    if [ -f ".env.automation.$ENVIRONMENT" ]; then
+        source ".env.automation.$ENVIRONMENT"
     fi
 
     # Check GitHub token
@@ -181,7 +183,7 @@ generate_tokens() {
     echo "SESSION_SECRET=$(openssl rand -hex 32)"
     echo "API_KEY=$(openssl rand -hex 16)"
 
-    log_warning "Save these values to .env.automation"
+    log_warning "Save these values to .env.automation.$ENVIRONMENT"
 }
 
 # Main function
