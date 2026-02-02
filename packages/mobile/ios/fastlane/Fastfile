@@ -3,11 +3,11 @@ ENV["FASTLANE_SKIP_UPDATE_CHECK"] = "1"
 ENV["FASTLANE_HIDE_CHANGELOG"] = "1"
 ENV["FASTLANE_DISABLE_COLORS"] = "0"
 
-# Load environment variables from .env.local file in repository root for local development
+# Load environment variables from .env.development file in repository root for local development
 require 'dotenv'
 # Load from repository root
 repo_root = File.expand_path('../../../..', __dir__)
-Dotenv.load(File.join(repo_root, '.env.local')) if File.exist?(File.join(repo_root, '.env.local'))
+Dotenv.load(File.join(repo_root, '.env.development')) if File.exist?(File.join(repo_root, '.env.development'))
 # Also load from fastlane directory if it exists
 Dotenv.load('.env') if File.exist?('.env')
 

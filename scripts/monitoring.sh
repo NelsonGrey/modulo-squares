@@ -180,7 +180,7 @@ main() {
 
     # Load environment
     ENVIRONMENT="${ENVIRONMENT:-development}"
-    if [ -f ".env.automation" ]; then source .env.automation; fi
+    if [ -f ".env.automation.$ENVIRONMENT" ]; then source ".env.automation.$ENVIRONMENT"; fi
 
     # Single run or continuous
     if [ "${1:-}" = "--once" ]; then

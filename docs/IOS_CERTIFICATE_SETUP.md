@@ -50,9 +50,9 @@ Add the following secrets to your modulo-squares repository:
 |-------------|-------|
 | `MATCH_PASSWORD` | The password you used in Step 2 |
 | `MATCH_GIT_URL` | `https://oauth2:gho_YOUR_TOKEN@github.com/mnelson3/nelson-grey.git` |
-| `ASC_PRIVATE_KEY` | Your App Store Connect API private key (base64 encoded) |
-| `ASC_KEY_ID` | Your App Store Connect API key ID |
-| `ASC_ISSUER_ID` | Your App Store Connect API issuer ID |
+| `APP_STORE_CONNECT_KEY` | Your App Store Connect API private key (base64 encoded) |
+| `APP_STORE_CONNECT_KEY_ID` | Your App Store Connect API key ID |
+| `APP_STORE_CONNECT_ISSUER_ID` | Your App Store Connect API issuer ID |
 | `FASTLANE_APPLE_ID` | Your Apple ID email address |
 | `FASTLANE_TEAM_ID` | Your Apple Developer team ID |
 | `FASTLANE_ITC_TEAM_ID` | Your App Store Connect team ID |
@@ -65,9 +65,9 @@ Add the following secrets to your modulo-squares repository:
 3. Generate a new API key with "App Manager" access
 4. Download the private key (.p8 file)
 5. Copy the Key ID and Issuer ID
-6. Base64 encode the .p8 file content and add to `ASC_PRIVATE_KEY`
-7. Add the Key ID to `ASC_KEY_ID`
-8. Add the Issuer ID to `ASC_ISSUER_ID`
+6. Base64 encode the .p8 file content and add to `APP_STORE_CONNECT_KEY`
+7. Add the Key ID to `APP_STORE_CONNECT_KEY_ID`
+8. Add the Issuer ID to `APP_STORE_CONNECT_ISSUER_ID`
 
 ## Step 6: Test the Setup
 

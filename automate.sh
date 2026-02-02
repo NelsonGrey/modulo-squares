@@ -8,8 +8,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$SCRIPT_DIR"
 
 # Load configuration
-if [ -f ".env.automation" ]; then
-    source .env.automation
+if [ -f ".env.automation.development" ]; then
+    source .env.automation.development
 fi
 
 # Colors for output
@@ -80,8 +80,8 @@ setup_system() {
     mkdir -p config
 
     # Initialize configuration
-    if [ ! -f ".env.automation" ]; then
-        log_warning ".env.automation not found. Please copy from .env.automation.example and configure."
+    if [ ! -f ".env.automation.development" ]; then
+        log_warning ".env.automation.development not found. Please copy from .env.automation.development.example and configure."
         return 1
     fi
 
@@ -177,12 +177,12 @@ deploy_mobile_ios() {
         log_warning "Environment file not found: $env_file"
     fi
 
-    # Also load .env.local for shared secrets (ASC keys, etc.)
-    if [ -f ".env.local" ]; then
-        source .env.local
-        log_info "Loaded shared secrets from .env.local"
+    # Also load .env.development for shared secrets (ASC keys, etc.)
+    if [ -f ".env.development" ]; then
+        source .env.development
+        log_info "Loaded shared secrets from .env.development"
     else
-        log_warning ".env.local not found - ASC secrets may be missing"
+        log_warning ".env.development not found - ASC secrets may be missing"
     fi
 
     # Check prerequisites
@@ -201,13 +201,18 @@ deploy_mobile_ios() {
 
     log_info "Building iOS app for $env..."
 
+    # App Store Connect env vars
+    APP_STORE_CONNECT_KEY_ID="${APP_STORE_CONNECT_KEY_ID}"
+    APP_STORE_CONNECT_ISSUER_ID="${APP_STORE_CONNECT_ISSUER_ID}"
+    APP_STORE_CONNECT_KEY="${APP_STORE_CONNECT_KEY}"
+
     # Set environment variables for Fastlane (from environment files)
     export FASTLANE_APPLE_ID="$FASTLANE_APPLE_ID"
     export FASTLANE_TEAM_ID="$FASTLANE_TEAM_ID"
     export FASTLANE_ITC_TEAM_ID="$FASTLANE_ITC_TEAM_ID"
-    export ASC_KEY_ID="$ASC_KEY_ID"
-    export ASC_ISSUER_ID="$ASC_ISSUER_ID"
-    export ASC_PRIVATE_KEY="$ASC_PRIVATE_KEY"
+    export APP_STORE_CONNECT_KEY_ID="$APP_STORE_CONNECT_KEY_ID"
+    export APP_STORE_CONNECT_ISSUER_ID="$APP_STORE_CONNECT_ISSUER_ID"
+    export APP_STORE_CONNECT_KEY="$APP_STORE_CONNECT_KEY"
     export MATCH_GIT_URL="$MATCH_GIT_URL"
     export BETA_FEEDBACK_EMAIL="$BETA_FEEDBACK_EMAIL"
 
@@ -400,10 +405,10 @@ health_check() {
     check_prerequisites
 
     # Check configuration
-    if [ -f ".env.automation" ]; then
+    if [ -f ".env.automation.development" ]; then
         log_success "Configuration file found"
     else
-        log_error "Configuration file missing (.env.automation)"
+        log_error "Configuration file missing (.env.automation.development)"
     fi
 
     # Check scripts
@@ -485,7 +490,7 @@ setup_docker_runner() {
 
     # Check if runner token is set
     if [ -z "$RUNNER_TOKEN" ]; then
-        log_error "RUNNER_TOKEN not set in .env.automation"
+        log_error "RUNNER_TOKEN not set in .env.automation.development"
         exit 1
     fi
 

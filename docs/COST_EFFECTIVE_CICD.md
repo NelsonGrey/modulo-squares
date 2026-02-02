@@ -108,7 +108,7 @@ git commit -m "Deploy feature"
 1. **act CLI**: `brew install act`
 2. **Firebase CLI**: `npm install -g firebase-tools`
 3. **Flutter SDK**: Install from flutter.dev
-4. **Local secrets**: Create `.env.local` with test values
+4. **Local secrets**: Create `.env.development` with test values
 
 ## 📝 Best Practices
 

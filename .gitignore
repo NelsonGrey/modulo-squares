@@ -108,10 +108,11 @@ mock-*.js
 .env
 .env.*
 !.env.example
-.env.local
+.env.development
 .env.development.local
 .env.test.local
 .env.production.local
+!.env.automation.*.example
 
 # Environment-specific files (dynamically generated during CI/CD)
 packages/web/.env

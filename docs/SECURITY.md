@@ -5,7 +5,7 @@
 ### Never Commit These Files
 The following files **MUST NEVER** be committed to version control:
 
-- `packages/mobile/ios/asc_private_key.p8` - App Store Connect API private key
+- `packages/mobile/ios/app_store_connect_key.p8` - App Store Connect API private key
 - `packages/mobile/ios/*.p8` - Any .p8 private key files
 - `packages/mobile/android/app/*.jks` - Android keystores
 - `packages/mobile/android/app/*.keystore` - Android keystores
@@ -16,9 +16,9 @@ The following files **MUST NEVER** be committed to version control:
 ### Required GitHub Repository Secrets
 
 #### App Store Connect (iOS)
-- `ASC_KEY_ID` - App Store Connect API Key ID
-- `ASC_ISSUER_ID` - App Store Connect API Issuer ID
-- `ASC_PRIVATE_KEY` - Base64 encoded private key (.p8 file content)
+- `APP_STORE_CONNECT_KEY_ID` - App Store Connect API Key ID
+- `APP_STORE_CONNECT_ISSUER_ID` - App Store Connect API Issuer ID
+- `APP_STORE_CONNECT_KEY` - Base64 encoded private key (.p8 file content)
 - `FASTLANE_APPLE_ID` - Apple Developer email
 - `FASTLANE_TEAM_ID` - Apple Developer Team ID
 - `MATCH_PASSWORD` - Match repository password
@@ -47,7 +47,7 @@ The following files **MUST NEVER** be committed to version control:
 ### App Store Connect Key Compromise:
 1. Delete the compromised API key in App Store Connect
 2. Create new API key with minimal required permissions
-3. Update `ASC_KEY_ID`, `ASC_ISSUER_ID`, and `ASC_PRIVATE_KEY` secrets
+3. Update `APP_STORE_CONNECT_KEY_ID`, `APP_STORE_CONNECT_ISSUER_ID`, and `APP_STORE_CONNECT_KEY` secrets
 4. Test CI/CD pipeline with new credentials
 
 ### Firebase Token Compromise:
