@@ -819,11 +819,17 @@ platform :ios do
         timeout: 3600
       )
       # Set KEYCHAIN_PATH environment variable for fallback
-      ENV['KEYCHAIN_PATH'] = "~/Library/Keychains/#{keychain_name}-db"
+      ENV['KEYCHAIN_PATH'] = File.expand_path("~/Library/Keychains/#{keychain_name}-db")
     else
       UI.message("🔐 Using existing ephemeral keychain: #{keychain_name}")
       # Use the path provided by the shell script if available
-      ENV['KEYCHAIN_PATH'] = ENV["MATCH_KEYCHAIN_PATH"] || "~/Library/Keychains/#{keychain_name}"
+      ENV['KEYCHAIN_PATH'] = ENV["MATCH_KEYCHAIN_PATH"] || File.expand_path("~/Library/Keychains/#{keychain_name}-db")
+    end
+
+    keychain_path = ENV['KEYCHAIN_PATH']
+    if keychain_path && File.exist?(keychain_path)
+      sh("security unlock-keychain -p #{keychain_password.shellescape} #{keychain_path.shellescape} || true", log: false)
+      set_partition_list(keychain_path, keychain_password)
     end
 
     # ZERO-TOUCH: Use complete automated certificate lifecycle management
