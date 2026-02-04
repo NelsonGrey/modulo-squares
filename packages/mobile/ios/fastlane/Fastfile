@@ -242,7 +242,8 @@ platform :ios do
         username: ENV["FASTLANE_APPLE_ID"],
         team_id: ENV["FASTLANE_TEAM_ID"],
         keychain_name: match_keychain_name,
-        keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
+        keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"],
+        skip_confirmation: true
       )
     rescue Exception => e
       if e.message.include?("reached the maximum number of available Distribution certificates")
@@ -267,7 +268,10 @@ platform :ios do
           username: ENV["FASTLANE_APPLE_ID"],
           team_id: ENV["FASTLANE_TEAM_ID"],
           keychain_name: match_keychain_name,
-          keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
+          keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"],
+          skip_confirmation: true,
+          git_full_name: "Fastlane Bot",
+          git_user_email: "fastlane@example.com"
         )
       else
         raise e
@@ -358,7 +362,8 @@ platform :ios do
             readonly: false,
             api_key: api_key,
             keychain_name: match_keychain_name,
-            keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
+            keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"],
+            skip_confirmation: true
           )
           UI.success("✅ ZERO-TOUCH: Created shared development certificates for maximum project reuse")
         elsif e.message.include?("No matching provisioning profiles found")
@@ -371,7 +376,8 @@ platform :ios do
               app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
               api_key: api_key,
               keychain_name: match_keychain_name,
-              keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
+              keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"],
+              skip_confirmation: true
             )
             UI.success("✅ ZERO-TOUCH: Created project-specific profile while reusing shared certificates")
           rescue Exception => profile_error
@@ -393,7 +399,8 @@ platform :ios do
                   username: ENV["FASTLANE_APPLE_ID"],
                   team_id: ENV["FASTLANE_TEAM_ID"],
                   keychain_name: match_keychain_name,
-                  keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
+                  keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"],
+                  skip_confirmation: true
                 )
                 UI.success("✅ ZERO-TOUCH: Created profile using username/password fallback")
               end
@@ -421,7 +428,8 @@ platform :ios do
           username: ENV["FASTLANE_APPLE_ID"],
           team_id: ENV["FASTLANE_TEAM_ID"],
           keychain_name: match_keychain_name,
-          keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
+          keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"],
+          skip_confirmation: true
         )
         UI.success("✅ ZERO-TOUCH SUCCESS: Reused existing development certificates")
       rescue Exception => e
@@ -434,7 +442,8 @@ platform :ios do
             username: ENV["FASTLANE_APPLE_ID"],
             team_id: ENV["FASTLANE_TEAM_ID"],
             keychain_name: match_keychain_name,
-            keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
+            keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"],
+            skip_confirmation: true
           )
           UI.success("✅ ZERO-TOUCH: Created development certificates automatically")
         else
@@ -598,7 +607,8 @@ platform :ios do
           app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
           api_key: api_key,
           keychain_name: match_keychain_name,
-          keychain_password: match_keychain_password
+          keychain_password: match_keychain_password,
+          skip_confirmation: true
         )
         UI.success("✅ ZERO-TOUCH SUCCESS: Reused existing certificates from shared repository")
         UI.message("💡 Maximum efficiency achieved: No new certificates created, full reuse")
@@ -620,7 +630,8 @@ platform :ios do
               app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
               api_key: api_key,
               keychain_name: match_keychain_name,
-              keychain_password: match_keychain_password
+              keychain_password: match_keychain_password,
+              skip_confirmation: true
             )
             UI.success("✅ Created new distribution certificate and provisioning profile")
             
@@ -690,7 +701,8 @@ platform :ios do
           username: ENV["FASTLANE_APPLE_ID"],
           team_id: ENV["FASTLANE_TEAM_ID"],
           keychain_name: match_keychain_name,
-          keychain_password: match_keychain_password
+          keychain_password: match_keychain_password,
+          skip_confirmation: true
         )
         UI.success("✅ ZERO-TOUCH SUCCESS: Reused existing distribution certificates")
       rescue => e
@@ -703,7 +715,8 @@ platform :ios do
             username: ENV["FASTLANE_APPLE_ID"],
             team_id: ENV["FASTLANE_TEAM_ID"],
             keychain_name: match_keychain_name,
-            keychain_password: match_keychain_password
+            keychain_password: match_keychain_password,
+            skip_confirmation: true
           )
           UI.success("✅ ZERO-TOUCH SUCCESS: Created new distribution certificates")
         else
