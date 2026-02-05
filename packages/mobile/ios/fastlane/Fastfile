@@ -828,14 +828,17 @@ platform :ios do
     UI.success("📦 IPA is fully signed and ready for upload")
 
     # Set up API key authentication for TestFlight upload
-    private_key_content = ENV["APP_STORE_CONNECT_KEY"]
+    # Try new variable name first, fall back to legacy name for backward compatibility
+    private_key_content = ENV["APP_STORE_CONNECT_KEY"] || ENV["ASC_PRIVATE_KEY"]
     if private_key_content.nil? || private_key_content.empty?
-      UI.error("APP_STORE_CONNECT_KEY environment variable is not set or empty")
+      UI.error("APP_STORE_CONNECT_KEY (or legacy ASC_PRIVATE_KEY) environment variable is not set or empty")
       raise "Missing APP_STORE_CONNECT_KEY"
     end
 
     # Clean null bytes and percent signs from the key (GitHub Actions artifact)
+    # CRITICAL: Multiple passes to catch all null byte representations
     private_key_content = private_key_content.gsub("\0", "").gsub("%", "").strip
+    private_key_content = private_key_content.gsub(/\x00/, "").strip
 
     # Detect key format and prepare API key
     is_pem = private_key_content.include?("-----BEGIN")
@@ -844,9 +847,11 @@ platform :ios do
 
     if !is_pem && looks_base64
       UI.message("Detected APP_STORE_CONNECT_KEY as base64; passing directly as key_content (is_key_content_base64: true)")
+      # Additional null byte cleanup for base64 content
+      cleaned = cleaned.gsub("\0", "").gsub(/\x00/, "").strip
       api_key = app_store_connect_api_key(
-        key_id: ENV["APP_STORE_CONNECT_KEY_ID"],
-        issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],
+        key_id: ENV["APP_STORE_CONNECT_KEY_ID"] || ENV["ASC_KEY_ID"],
+        issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"] || ENV["ASC_ISSUER_ID"],
         key_content: cleaned,
         is_key_content_base64: true,
         in_house: false
@@ -856,6 +861,8 @@ platform :ios do
       private_key_content = private_key_content.gsub(/\A['\"]|['\"]\z/, '')
       private_key_content = private_key_content.gsub(/\\n/, "\n")
       private_key_content = private_key_content.gsub(/\r\n?/, "\n")
+      # CRITICAL: Remove null bytes before any OpenSSL operations
+      private_key_content = private_key_content.gsub("\0", "").gsub(/\x00/, "").strip
       private_key_content = private_key_content.lines.map { |l| l.strip }.reject { |l| l.empty? }.join("\n") + "\n"
 
       unless private_key_content.include?("-----BEGIN PRIVATE KEY-----") || private_key_content.include?("-----BEGIN EC PRIVATE KEY-----")
@@ -879,8 +886,8 @@ platform :ios do
       UI.message("Created temporary ASC key file: #{key_file.path}")
 
       api_key = app_store_connect_api_key(
-        key_id: ENV["APP_STORE_CONNECT_KEY_ID"],
-        issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],
+        key_id: ENV["APP_STORE_CONNECT_KEY_ID"] || ENV["ASC_KEY_ID"],
+        issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"] || ENV["ASC_ISSUER_ID"],
         key_filepath: key_file.path
       )
     end
@@ -954,16 +961,20 @@ platform :ios do
     UI.message("📦 Submitting version #{version} (#{build_number}) to App Store")
 
     # Set up API key authentication
-    private_key_content = ENV["APP_STORE_CONNECT_KEY"]
+    # Try new variable name first, fall back to legacy name for backward compatibility
+    private_key_content = ENV["APP_STORE_CONNECT_KEY"] || ENV["ASC_PRIVATE_KEY"]
     if private_key_content.nil? || private_key_content.empty?
-      UI.error("APP_STORE_CONNECT_KEY environment variable is not set or empty")
+      UI.error("APP_STORE_CONNECT_KEY (or legacy ASC_PRIVATE_KEY) environment variable is not set or empty")
       raise "Missing APP_STORE_CONNECT_KEY"
     end
+    # Clean null bytes and percent signs from the key (GitHub Actions artifact)
+    # CRITICAL: Multiple passes to catch all null byte representations
     private_key_content = private_key_content.gsub("\0", "").gsub("%", "").strip
+    private_key_content = private_key_content.gsub(/\x00/, "").strip
 
     api_key = app_store_connect_api_key(
-      key_id: ENV["APP_STORE_CONNECT_KEY_ID"],
-      issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],
+      key_id: ENV["APP_STORE_CONNECT_KEY_ID"] || ENV["ASC_KEY_ID"],
+      issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"] || ENV["ASC_ISSUER_ID"],
       key_content: private_key_content,
       is_key_content_base64: true
     )
