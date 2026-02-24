@@ -22,7 +22,9 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
   } catch (error, stackTrace) {
     ErrorHandler().handleFirebaseInitError(error, stackTrace);
     // Continue with limited functionality - some features may not work
@@ -56,7 +58,9 @@ class ModuloApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final FirebaseAnalyticsObserver observer = FirebaseAnalyticsObserver(analytics: FirebaseAnalytics.instance);
+    final FirebaseAnalyticsObserver observer = FirebaseAnalyticsObserver(
+      analytics: FirebaseAnalytics.instance,
+    );
     return MaterialApp(
       title: 'Modulo Squares',
       debugShowCheckedModeBanner: false,
@@ -84,7 +88,10 @@ class AuthGate extends StatelessWidget {
       await FirebaseAuth.instance.signInAnonymously();
     } catch (error) {
       if (context.mounted) {
-        ErrorHandler().showErrorSnackBar(context, ErrorHandler().getAuthErrorMessage(error));
+        ErrorHandler().showErrorSnackBar(
+          context,
+          ErrorHandler().getAuthErrorMessage(error, context),
+        );
       }
     }
   }
@@ -100,7 +107,9 @@ class AuthGate extends StatelessWidget {
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
 
         if (snapshot.hasError) {
@@ -115,7 +124,9 @@ class AuthGate extends StatelessWidget {
                   const SizedBox(height: 16),
                   const Text('Authentication Error'),
                   const SizedBox(height: 8),
-                  const Text('Please restart the app or check your connection.'),
+                  const Text(
+                    'Please restart the app or check your connection.',
+                  ),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () async {
@@ -123,7 +134,10 @@ class AuthGate extends StatelessWidget {
                         await FirebaseAuth.instance.signInAnonymously();
                       } catch (error) {
                         if (context.mounted) {
-                          ErrorHandler().showErrorSnackBar(context, ErrorHandler().getAuthErrorMessage(error));
+                          ErrorHandler().showErrorSnackBar(
+                            context,
+                            ErrorHandler().getAuthErrorMessage(error, context),
+                          );
                         }
                       }
                     },
@@ -139,7 +153,9 @@ class AuthGate extends StatelessWidget {
         if (user == null) {
           // Auto sign-in anonymously and show a loading indicator until ready.
           _attemptAnonymousSignIn(context);
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
 
         // Set analytics user id once we have a user

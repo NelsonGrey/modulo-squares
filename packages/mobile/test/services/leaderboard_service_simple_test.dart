@@ -9,7 +9,16 @@ import 'package:modulo_squares/core/services/cache_service.dart';
 import 'package:modulo_squares/core/services/error_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-@GenerateMocks([FirebaseFirestore, CollectionReference, DocumentReference, QuerySnapshot, QueryDocumentSnapshot, Query, CacheService, ErrorHandler])
+@GenerateMocks([
+  FirebaseFirestore,
+  CollectionReference,
+  DocumentReference,
+  QuerySnapshot,
+  QueryDocumentSnapshot,
+  Query,
+  CacheService,
+  ErrorHandler,
+])
 import 'leaderboard_service_test.mocks.dart';
 
 // Test version of LeaderboardService with injectable dependencies
@@ -18,18 +27,34 @@ class TestableLeaderboardService {
   final CacheService cacheService;
   final ErrorHandler errorHandler;
 
-  TestableLeaderboardService({required this.firestore, required this.cacheService, required this.errorHandler});
+  TestableLeaderboardService({
+    required this.firestore,
+    required this.cacheService,
+    required this.errorHandler,
+  });
 
-  CollectionReference get _scoresCollection => firestore.collection('modulo_leaderboard');
+  CollectionReference get _scoresCollection =>
+      firestore.collection('modulo_leaderboard');
 
-  Future<void> submitScore(BuildContext context, String playerName, int score) async {
+  Future<void> submitScore(
+    BuildContext context,
+    String playerName,
+    int score,
+  ) async {
     try {
-      await _scoresCollection.doc(playerName).set({'score': score, 'timestamp': FieldValue.serverTimestamp()}, SetOptions(merge: true));
+      await _scoresCollection.doc(playerName).set({
+        'score': score,
+        'timestamp': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
 
       await cacheService.clearLeaderboardCache();
     } catch (e) {
       errorHandler.logError('Submit score', e);
-      errorHandler.showErrorSnackBar(context, errorHandler.getFirestoreErrorMessage(e), onRetry: () => submitScore(context, playerName, score));
+      errorHandler.showErrorSnackBar(
+        context,
+        errorHandler.getFirestoreErrorMessage(e, context),
+        onRetry: () => submitScore(context, playerName, score),
+      );
     }
   }
 
@@ -55,11 +80,16 @@ class TestableLeaderboardService {
         });
   }
 
-  List<Map<String, dynamic>> getCachedTopScores({Duration maxAge = const Duration(minutes: 5)}) {
+  List<Map<String, dynamic>> getCachedTopScores({
+    Duration maxAge = const Duration(minutes: 5),
+  }) {
     return cacheService.getCachedLeaderboardData(maxAge: maxAge) ?? [];
   }
 
-  Stream<List<Map<String, dynamic>>> getTopScoresWithCache(int limit, {Duration cacheMaxAge = const Duration(minutes: 5)}) async* {
+  Stream<List<Map<String, dynamic>>> getTopScoresWithCache(
+    int limit, {
+    Duration cacheMaxAge = const Duration(minutes: 5),
+  }) async* {
     final cachedData = getCachedTopScores(maxAge: cacheMaxAge);
     if (cachedData.isNotEmpty) {
       yield cachedData;
@@ -100,7 +130,11 @@ void main() {
     mockCacheService = MockCacheService();
     mockErrorHandler = MockErrorHandler();
 
-    service = TestableLeaderboardService(firestore: mockFirestore, cacheService: mockCacheService, errorHandler: mockErrorHandler);
+    service = TestableLeaderboardService(
+      firestore: mockFirestore,
+      cacheService: mockCacheService,
+      errorHandler: mockErrorHandler,
+    );
   });
 
   group('LeaderboardService - Basic Functionality', () {
@@ -111,7 +145,9 @@ void main() {
     });
 
     test('getCachedTopScores returns cached data when available', () {
-      when(mockCacheService.getCachedLeaderboardData(maxAge: anyNamed('maxAge'))).thenReturn([
+      when(
+        mockCacheService.getCachedLeaderboardData(maxAge: anyNamed('maxAge')),
+      ).thenReturn([
         {'name': 'Player1', 'score': 100},
         {'name': 'Player2', 'score': 80},
       ]);
@@ -122,16 +158,22 @@ void main() {
         {'name': 'Player1', 'score': 100},
         {'name': 'Player2', 'score': 80},
       ]);
-      verify(mockCacheService.getCachedLeaderboardData(maxAge: Duration(minutes: 5))).called(1);
+      verify(
+        mockCacheService.getCachedLeaderboardData(maxAge: Duration(minutes: 5)),
+      ).called(1);
     });
 
     test('getCachedTopScores returns empty list when no cache', () {
-      when(mockCacheService.getCachedLeaderboardData(maxAge: anyNamed('maxAge'))).thenReturn(null);
+      when(
+        mockCacheService.getCachedLeaderboardData(maxAge: anyNamed('maxAge')),
+      ).thenReturn(null);
 
       final result = service.getCachedTopScores();
 
       expect(result, []);
-      verify(mockCacheService.getCachedLeaderboardData(maxAge: Duration(minutes: 5))).called(1);
+      verify(
+        mockCacheService.getCachedLeaderboardData(maxAge: Duration(minutes: 5)),
+      ).called(1);
     });
 
     test('refreshLeaderboardCache calls clear cache', () async {
@@ -147,7 +189,9 @@ void main() {
     test('submitScore calls Firestore with correct data', () async {
       final context = _MockBuildContext();
 
-      when(mockFirestore.collection('modulo_leaderboard')).thenReturn(mockCollection);
+      when(
+        mockFirestore.collection('modulo_leaderboard'),
+      ).thenReturn(mockCollection);
       when(mockCollection.doc('TestPlayer')).thenReturn(mockDoc);
       when(mockDoc.set(any, any)).thenAnswer((_) async {});
       when(mockCacheService.clearLeaderboardCache()).thenAnswer((_) async {});
@@ -170,17 +214,35 @@ void main() {
     test('submitScore handles errors and shows snackbar', () async {
       final context = _MockBuildContext();
 
-      when(mockFirestore.collection('modulo_leaderboard')).thenReturn(mockCollection);
+      when(
+        mockFirestore.collection('modulo_leaderboard'),
+      ).thenReturn(mockCollection);
       when(mockCollection.doc('TestPlayer')).thenReturn(mockDoc);
-      when(mockDoc.set(any, any)).thenThrow(FirebaseException(plugin: 'firestore', message: 'Network error'));
+      when(mockDoc.set(any, any)).thenThrow(
+        FirebaseException(plugin: 'firestore', message: 'Network error'),
+      );
       when(mockErrorHandler.logError(any, any)).thenReturn(null);
-      when(mockErrorHandler.getFirestoreErrorMessage(any)).thenReturn('Connection failed');
-      when(mockErrorHandler.showErrorSnackBar(any, any, onRetry: anyNamed('onRetry'))).thenReturn(null);
+      when(
+        mockErrorHandler.getFirestoreErrorMessage(any, any),
+      ).thenReturn('Connection failed');
+      when(
+        mockErrorHandler.showErrorSnackBar(
+          any,
+          any,
+          onRetry: anyNamed('onRetry'),
+        ),
+      ).thenReturn(null);
 
       await service.submitScore(context, 'TestPlayer', 150);
 
       verify(mockErrorHandler.logError('Submit score', any)).called(1);
-      verify(mockErrorHandler.showErrorSnackBar(context, 'Connection failed', onRetry: anyNamed('onRetry'))).called(1);
+      verify(
+        mockErrorHandler.showErrorSnackBar(
+          context,
+          'Connection failed',
+          onRetry: anyNamed('onRetry'),
+        ),
+      ).called(1);
     });
   });
 
@@ -216,8 +278,14 @@ void main() {
       ];
 
       for (final testCase in testCases) {
-        final docData = {'score': testCase['input'], 'timestamp': Timestamp.now()};
-        final transformed = {'name': 'TestPlayer', 'score': docData['score'] ?? 0};
+        final docData = {
+          'score': testCase['input'],
+          'timestamp': Timestamp.now(),
+        };
+        final transformed = {
+          'name': 'TestPlayer',
+          'score': docData['score'] ?? 0,
+        };
 
         expect(transformed['score'], testCase['expected']);
       }
@@ -225,44 +293,69 @@ void main() {
   });
 
   group('LeaderboardService - Integration Tests', () {
-    test('getTopScoresWithCache yields cached data first when available', () async {
-      final cachedData = [
-        {'name': 'Player1', 'score': 100},
-      ];
+    test(
+      'getTopScoresWithCache yields cached data first when available',
+      () async {
+        final cachedData = [
+          {'name': 'Player1', 'score': 100},
+        ];
 
-      when(mockCacheService.getCachedLeaderboardData(maxAge: anyNamed('maxAge'))).thenReturn(cachedData);
+        when(
+          mockCacheService.getCachedLeaderboardData(maxAge: anyNamed('maxAge')),
+        ).thenReturn(cachedData);
 
-      // Mock the Firestore chain
-      when(mockFirestore.collection('modulo_leaderboard')).thenReturn(mockCollection);
-      when(mockCollection.orderBy('score', descending: true)).thenReturn(mockQuery);
-      when(mockQuery.limit(10)).thenReturn(mockQuery);
-      when(mockQuery.snapshots()).thenAnswer((_) => Stream.value(mockQuerySnapshot));
+        // Mock the Firestore chain
+        when(
+          mockFirestore.collection('modulo_leaderboard'),
+        ).thenReturn(mockCollection);
+        when(
+          mockCollection.orderBy('score', descending: true),
+        ).thenReturn(mockQuery);
+        when(mockQuery.limit(10)).thenReturn(mockQuery);
+        when(
+          mockQuery.snapshots(),
+        ).thenAnswer((_) => Stream.value(mockQuerySnapshot));
 
-      final mockDocs = [mockDocSnapshot];
-      when(mockQuerySnapshot.docs).thenReturn(mockDocs);
-      when(mockDocSnapshot.id).thenReturn('Player1');
-      when(mockDocSnapshot.data()).thenReturn({'score': 100, 'timestamp': Timestamp.now()});
-      when(mockCacheService.cacheLeaderboardData(any)).thenAnswer((_) async {});
+        final mockDocs = [mockDocSnapshot];
+        when(mockQuerySnapshot.docs).thenReturn(mockDocs);
+        when(mockDocSnapshot.id).thenReturn('Player1');
+        when(
+          mockDocSnapshot.data(),
+        ).thenReturn({'score': 100, 'timestamp': Timestamp.now()});
+        when(
+          mockCacheService.cacheLeaderboardData(any),
+        ).thenAnswer((_) async {});
 
-      final stream = service.getTopScoresWithCache(10);
-      final results = await stream.toList();
+        final stream = service.getTopScoresWithCache(10);
+        final results = await stream.toList();
 
-      expect(results.length, 2);
-      expect(results[0], cachedData); // Cached data first
-    });
+        expect(results.length, 2);
+        expect(results[0], cachedData); // Cached data first
+      },
+    );
 
     test('getTopScoresWithCache yields only live data when no cache', () async {
-      when(mockCacheService.getCachedLeaderboardData(maxAge: anyNamed('maxAge'))).thenReturn(null);
+      when(
+        mockCacheService.getCachedLeaderboardData(maxAge: anyNamed('maxAge')),
+      ).thenReturn(null);
 
-      when(mockFirestore.collection('modulo_leaderboard')).thenReturn(mockCollection);
-      when(mockCollection.orderBy('score', descending: true)).thenReturn(mockQuery);
+      when(
+        mockFirestore.collection('modulo_leaderboard'),
+      ).thenReturn(mockCollection);
+      when(
+        mockCollection.orderBy('score', descending: true),
+      ).thenReturn(mockQuery);
       when(mockQuery.limit(10)).thenReturn(mockQuery);
-      when(mockQuery.snapshots()).thenAnswer((_) => Stream.value(mockQuerySnapshot));
+      when(
+        mockQuery.snapshots(),
+      ).thenAnswer((_) => Stream.value(mockQuerySnapshot));
 
       final mockDocs = [mockDocSnapshot];
       when(mockQuerySnapshot.docs).thenReturn(mockDocs);
       when(mockDocSnapshot.id).thenReturn('Player1');
-      when(mockDocSnapshot.data()).thenReturn({'score': 100, 'timestamp': Timestamp.now()});
+      when(
+        mockDocSnapshot.data(),
+      ).thenReturn({'score': 100, 'timestamp': Timestamp.now()});
       when(mockCacheService.cacheLeaderboardData(any)).thenAnswer((_) async {});
 
       final stream = service.getTopScoresWithCache(10);

@@ -7,6 +7,7 @@ interface Props {
 interface State {
   hasError: boolean;
   error?: Error;
+  errorId?: string;
 }
 
 class ErrorBoundary extends Component<Props, State> {
@@ -19,7 +20,33 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    // Generate unique error ID for tracking
+    const errorId = `error-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Log to console for development
     console.error('Uncaught error:', error, errorInfo);
+    console.error(`Error ID: ${errorId}`);
+
+    // Report to Firebase Crashlytics if available
+    // Uncomment when Firebase is configured:
+    // if (typeof window !== 'undefined' && (window as any).firebase?.crashlytics) {
+    //   (window as any).firebase.crashlytics().recordError(error);
+    // }
+
+    // Report to Sentry if available
+    // Uncomment when Sentry is installed:
+    // if (typeof window !== 'undefined' && (window as any).Sentry) {
+    //   (window as any).Sentry.captureException(error, {
+    //     contexts: {
+    //       react: {
+    //         componentStack: errorInfo.componentStack,
+    //       },
+    //     },
+    //   });
+    // }
+
+    // Update state with error ID
+    this.setState({ errorId });
   }
 
   public render() {
@@ -46,6 +73,13 @@ class ErrorBoundary extends Component<Props, State> {
                 Reload Page
               </button>
             </div>
+            {this.state.errorId && (
+              <div className="mt-4 p-3 bg-gray-50 rounded border border-gray-200">
+                <p className="text-xs text-gray-600">
+                  Error ID: <code className="font-mono">{this.state.errorId}</code>
+                </p>
+              </div>
+            )}
             {process.env.NODE_ENV === 'development' && this.state.error && (
               <details className="mt-4">
                 <summary className="cursor-pointer text-sm text-gray-600 hover:text-gray-800">
