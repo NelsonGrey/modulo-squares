@@ -4,7 +4,7 @@ import { getAuth, connectAuthEmulator } from 'firebase/auth';
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
 import { getStorage, connectStorageEmulator } from 'firebase/storage';
-import * as admin from 'firebase-admin';
+import admin from 'firebase-admin';
 /**
  * Initialize Firebase app with singleton pattern
  */
@@ -108,7 +108,12 @@ export class AuthHelpers {
  * Firestore CRUD helpers for Firebase Functions
  */
 export class FirestoreCrudHelpers {
-    static db = admin.firestore();
+    static get db() {
+        if (!admin.apps.length) {
+            admin.initializeApp();
+        }
+        return admin.firestore();
+    }
     /**
      * Create a document with standard metadata
      */

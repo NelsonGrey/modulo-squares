@@ -4,7 +4,7 @@ import { getAuth, Auth, connectAuthEmulator } from 'firebase/auth';
 import { getFirestore, Firestore, connectFirestoreEmulator } from 'firebase/firestore';
 import { getFunctions, Functions, connectFunctionsEmulator } from 'firebase/functions';
 import { getStorage, FirebaseStorage, connectStorageEmulator } from 'firebase/storage';
-import * as admin from 'firebase-admin';
+import admin from 'firebase-admin';
 
 export interface FirebaseConfig {
   apiKey: string;
@@ -138,7 +138,13 @@ export class AuthHelpers {
  * Firestore CRUD helpers for Firebase Functions
  */
 export class FirestoreCrudHelpers {
-  private static db = admin.firestore();
+  private static get db(): admin.firestore.Firestore {
+    if (!admin.apps.length) {
+      admin.initializeApp();
+    }
+
+    return admin.firestore();
+  }
 
   /**
    * Create a document with standard metadata
