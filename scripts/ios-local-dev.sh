@@ -3,7 +3,7 @@ set -euo pipefail
 
 ################################################################################
 # Local iOS development script
-# Sets up environment and runs Fastlane commands with proper keychain handling
+# Sets up environment and runs Fastlane commands in keychainless mode
 ################################################################################
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -26,8 +26,8 @@ if [ ! -f "packages/mobile/ios/fastlane/Fastfile" ]; then
     exit 1
 fi
 
-# Setup local keychain
-echo -e "${YELLOW}🔐 Setting up local development keychain...${NC}"
+# Run local iOS preflight
+echo -e "${YELLOW}🔐 Validating local iOS signing environment...${NC}"
 "$SCRIPT_DIR/setup-local-keychain.sh"
 
 # Change to iOS directory
@@ -90,12 +90,12 @@ COMMAND=${1:-"help"}
 
 case $COMMAND in
     "sync")
-        echo -e "${BLUE}🔄 Generating local development certificates...${NC}"
-        bundle exec fastlane generate_local_certificates
+        echo -e "${BLUE}🔄 Validating signing configuration...${NC}"
+        bundle exec fastlane sync_signing
         ;;
     "build")
         echo -e "${BLUE}🏗️ Building iOS app...${NC}"
-        bundle exec fastlane build_debug
+        bundle exec fastlane build_development
         ;;
     "test")
         echo -e "${BLUE}🧪 Running tests...${NC}"
@@ -107,11 +107,11 @@ case $COMMAND in
         ;;
     "release")
         echo -e "${BLUE}🚀 Building and uploading to App Store...${NC}"
-        bundle exec fastlane release
+        bundle exec fastlane full_release_pipeline submit_to_app_store:true
         ;;
     "clean")
         echo -e "${BLUE}🧹 Cleaning build artifacts...${NC}"
-        bundle exec fastlane clean
+        rm -rf ../build ../Pods ../Podfile.lock ~/Library/Developer/Xcode/DerivedData/*
         ;;
     "help"|*)
         echo -e "${BLUE}📋 Available commands:${NC}"

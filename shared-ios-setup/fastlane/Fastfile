@@ -171,27 +171,13 @@ platform :ios do
 
   desc "Sync code signing certificates and provisioning profiles"
   lane :sync_signing do
-    # Sync certificates and profiles without encryption (unencrypted storage)
-    # Allow installing into a specific keychain if provided by CI
-    keychain_name = ENV['MATCH_KEYCHAIN_NAME']
-    keychain_password = ENV['MATCH_KEYCHAIN_PASSWORD']
-
-    # Use the path as the keychain name if available
-    keychain_name = ENV["MATCH_KEYCHAIN_PATH"] unless ENV["MATCH_KEYCHAIN_PATH"].to_s.empty?
-
-    match_opts = {
+    # Sync certificates and profiles without explicit keychain orchestration.
+    match(
       type: "appstore",
       readonly: false,
       verbose: true,
       api_key_path: nil
-    }
-    match_opts[:keychain_name] = keychain_name
-    match_opts[:keychain_password] = keychain_password unless keychain_password.to_s.empty?
-
-    match(match_opts)
-
-    # Set partition list for codesign access
-    set_partition_list(keychain_name, keychain_password)
+    )
   end
 
   desc "Build and sign iOS app for App Store distribution"
@@ -316,25 +302,18 @@ platform :ios do
             UI.message("Found env key #{env_key} => #{codesign_identity}") if env_key
           end
 
-          # Fallback: try to detect an identity SHA from the system keychain
+          # Fallback: try to detect an identity SHA from environment
           if codesign_identity.nil? || codesign_identity.to_s.empty?
-            UI.message("Attempting to detect a signing identity from the keychain via 'security find-identity'...")
-            begin
-              identity_sha = %x(security find-identity -v -p codesigning 2>/dev/null | grep -Eo '[0-9A-F]{40}' | head -n1).strip
-              unless identity_sha.to_s.empty?
-                codesign_identity = identity_sha
-                UI.message("Detected identity SHA: #{codesign_identity}")
-              end
-            rescue => e
-              UI.message("Error running security find-identity: #{e.message}")
+            env_identity = ENV["IOS_CODESIGN_IDENTITY"].to_s.strip
+            unless env_identity.empty?
+              codesign_identity = env_identity
+              UI.message("Detected identity from IOS_CODESIGN_IDENTITY")
             end
           end
 
           # If still missing, list identities and fail with a clear message
           if codesign_identity.nil? || codesign_identity.to_s.empty?
-            UI.message("No codesign identity found via env or keychain. Listing available identities for debugging:")
-            sh("security find-identity -v -p codesigning || true")
-            UI.user_error!("No codesign identity found. Ensure match installed the certificate and the runner has access to the keychain identity.")
+            UI.user_error!("No codesign identity found. Set IOS_CODESIGN_IDENTITY or provide sigh_* certificate variables.")
           end
 
           Dir.glob("#{archive}/Products/Applications/Runner.app/Frameworks/*.framework").each do |framework|

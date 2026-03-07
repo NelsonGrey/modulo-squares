@@ -40,7 +40,7 @@ echo "   - Go to https://developer.apple.com/account/resources/certificates/list
 echo "   - Click '+' to create new certificate"
 echo "   - Select 'iOS Distribution (App Store and Ad Hoc)'"
 echo "   - Follow instructions to create and download .cer file"
-echo "   - Double-click .cer file to install in Keychain"
+echo "   - Add certificate to your Apple Developer account/signing setup"
 echo ""
 echo "4. Provisioning Profile:"
 echo "   - Go to https://developer.apple.com/account/resources/profiles/list"

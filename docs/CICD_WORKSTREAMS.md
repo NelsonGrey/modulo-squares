@@ -4,7 +4,7 @@
 - iOS distribution is zero-touch:
   - App Store Connect auth via API key secrets.
   - Match repo access over HTTPS token (`MATCH_GIT_URL_TOKEN`) to `mnelson3/nelson-grey`.
-  - Ephemeral keychain wrapper used for Fastlane.
+  - Keychainless Fastlane wrapper used for CI execution.
 - Branch/environment mapping is consistent with repo environments.
 - Self-hosted runners are resilient (auto-restart + watchdog).
 
@@ -17,7 +17,7 @@
 ### WS1 — iOS distribution (DONE)
 Deliverables:
 - Workflow uses ASC API key auth + Match HTTPS token.
-- Workflow uses ephemeral keychain wrapper.
+- Workflow uses keychainless wrapper.
 - Secrets cleanup always runs.
 
 Acceptance:

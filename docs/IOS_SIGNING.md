@@ -1,15 +1,15 @@
 # iOS Release Signing Configuration
 
-> **Updated**: This project now uses Fastlane Match for automated certificate management. See the [iOS Certificate Setup Guide](./IOS_CERTIFICATE_SETUP.md) for the current setup process.
+> **Updated**: This project now uses automatic signing with App Store Connect API authentication (keychainless workflow).
 
 ## Overview
 
-This project uses Fastlane Match to manage iOS certificates and provisioning profiles. Certificates are stored in a separate private GitHub repository (`nelson-grey`) for security and team collaboration.
+This project uses automatic signing and App Store Connect API key authentication for iOS release builds.
 
 ## Quick Setup
 
 1. **Follow the setup guide**: [iOS Certificate Setup Guide](./IOS_CERTIFICATE_SETUP.md)
-2. **Run the setup script**: `./scripts/setup-ios-certificates.sh`
+2. **Run the setup script**: `./scripts/ios-local-dev.sh sync`
 3. **Configure GitHub secrets** as documented in the setup guide
 4. **Test the build** using GitHub Actions
 
@@ -17,12 +17,12 @@ This project uses Fastlane Match to manage iOS certificates and provisioning pro
 
 - **Bundle ID**: `com.modulo.squares`
 - **Team ID**: Configured in Fastlane Appfile
-- **Certificates Repository**: `https://github.com/mnelson3/nelson-grey`
-- **Match Type**: `appstore` for distribution builds
+- **Signing Mode**: Automatic signing
+- **Auth Mode**: App Store Connect API key
 
 ## Local Development Setup
 
-For local development and testing, use the provided scripts to avoid keychain password prompts:
+For local development and testing, use the provided scripts in keychainless mode:
 
 ### Quick Local Setup
 
@@ -31,8 +31,9 @@ For local development and testing, use the provided scripts to avoid keychain pa
    export FASTLANE_APPLE_ID="your-apple-id@example.com"
    export FASTLANE_PASSWORD="your-app-specific-password"
    export FASTLANE_TEAM_ID="your-team-id"
-   export MATCH_GIT_URL_TOKEN="your-github-token"
-   export MATCH_PASSWORD="your-match-password"
+   export APP_STORE_CONNECT_KEY_ID="your-key-id"
+   export APP_STORE_CONNECT_ISSUER_ID="your-issuer-id"
+   export APP_STORE_CONNECT_KEY="your-base64-or-pem-key"
    export BETA_FEEDBACK_EMAIL="your-email@example.com"
    ```
 
@@ -53,16 +54,15 @@ For local development and testing, use the provided scripts to avoid keychain pa
 
 ### What the Local Script Does
 
-- Creates a dedicated development keychain that doesn't require password prompts
-- Sets up environment variables for Fastlane
-- Runs Fastlane commands with proper keychain isolation
-- Handles cleanup automatically
+- Validates required environment variables
+- Configures Fastlane for automatic signing
+- Runs build/upload lanes without direct keychain orchestration
 
 ### Available Commands
 
 ```bash
 ./scripts/ios-local-dev.sh help    # Show all available commands
-./scripts/ios-local-dev.sh sync    # Sync certificates and profiles
+./scripts/ios-local-dev.sh sync    # Validate signing configuration
 ./scripts/ios-local-dev.sh build   # Build debug version
 ./scripts/ios-local-dev.sh test    # Run tests and build
 ./scripts/ios-local-dev.sh beta    # Build and upload to TestFlight
@@ -71,18 +71,10 @@ For local development and testing, use the provided scripts to avoid keychain pa
 
 ### Troubleshooting Local Builds
 
-If you still see keychain dialogs:
+If signing fails:
 
-1. **Delete existing keychains**:
-   ```bash
-   security delete-keychain ~/Library/Keychains/modulo-squares-dev.keychain-db
-   ```
-
-2. **Reset keychain search list**:
-   ```bash
-   security list-keychains -d user -s ~/Library/Keychains/login.keychain-db
-   ```
-
+1. **Verify API key variables** (`APP_STORE_CONNECT_KEY_ID`, `APP_STORE_CONNECT_ISSUER_ID`, `APP_STORE_CONNECT_KEY`)
+2. **Verify team ID** (`FASTLANE_TEAM_ID`)
 3. **Run setup again**:
    ```bash
    ./scripts/ios-local-dev.sh sync

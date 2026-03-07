@@ -24,6 +24,7 @@ This comprehensive documentation covers all aspects of the Modulo Squares projec
 
 ### For Game Design
 - **[Game Mechanics](GAME_MECHANICS.md)** - Rules, scoring, algorithms
+- **[iOS Gameplay Refocus Plan](IOS_GAMEPLAY_REFOCUS_PLAN.md)** - iOS-first challenge and retention roadmap
 
 ### For Development
 - **[Developer Guide](DEVELOPER_GUIDE.md)** - Setup, development workflow
@@ -89,6 +90,7 @@ This comprehensive documentation covers all aspects of the Modulo Squares projec
 |----------|---------|----------|
 | [iOS Certificate Setup](IOS_CERTIFICATE_SETUP.md) | Apple signing certificates | iOS developers |
 | [iOS CI/CD Integration](IOS_CICD_INTEGRATION_GUIDE.md) | iOS build automation | iOS developers, DevOps |
+| [iOS Gameplay Refocus Plan](IOS_GAMEPLAY_REFOCUS_PLAN.md) | Gameplay-first iOS execution plan | Product, game devs, iOS developers |
 | [Android Signing](ANDROID_SIGNING.md) | Android signing configuration | Android developers |
 | [Mobile Config Setup](MOBILE_CONFIG_SETUP.md) | Platform-specific configuration | Mobile developers |
 

@@ -9,6 +9,16 @@ class LeaderboardService {
   static final CollectionReference _scoresCollection = _firestore.collection(
     'modulo_leaderboard',
   );
+  static final CollectionReference _dailyLeaderboardCollection = _firestore
+      .collection('modulo_daily_leaderboard');
+
+  static CollectionReference<Map<String, dynamic>> _dailyScoresCollection(
+    int challengeId,
+  ) {
+    return _dailyLeaderboardCollection
+        .doc(challengeId.toString())
+        .collection('scores');
+  }
 
   /// Submit a score for a player. Overwrites if player already exists.
   static Future<void> submitScore(
@@ -98,5 +108,91 @@ class LeaderboardService {
   /// Force refresh leaderboard cache
   static Future<void> refreshLeaderboardCache() async {
     await CacheService().clearLeaderboardCache();
+  }
+
+  /// Submit a score to a daily challenge leaderboard bucket.
+  static Future<bool> submitDailyScore(
+    BuildContext context,
+    int challengeId,
+    String playerName,
+    int score,
+  ) async {
+    try {
+      if (challengeId <= 0) {
+        throw ArgumentError('Invalid challenge id');
+      }
+      if (playerName.isEmpty || playerName.length > 50) {
+        throw ArgumentError('Invalid player name: must be 1-50 characters');
+      }
+      if (score < 0 || score > 999999) {
+        throw ArgumentError('Invalid score: must be between 0-999999');
+      }
+
+      await _dailyScoresCollection(challengeId).doc(playerName).set({
+        'score': score,
+        'challengeId': challengeId,
+        'timestamp': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      return true;
+    } catch (e) {
+      ErrorHandler().logError('Submit daily score', e);
+      if (context.mounted) {
+        ErrorHandler().showErrorSnackBar(
+          context,
+          ErrorHandler().getFirestoreErrorMessage(e, context),
+          onRetry:
+              () => submitDailyScore(context, challengeId, playerName, score),
+        );
+      }
+      return false;
+    }
+  }
+
+  /// Get top scores for a specific daily challenge.
+  static Stream<List<Map<String, dynamic>>> getTopDailyScores(
+    int challengeId,
+    int limit,
+  ) async* {
+    try {
+      await for (final snapshot
+          in _dailyScoresCollection(
+            challengeId,
+          ).orderBy('score', descending: true).limit(limit).snapshots()) {
+        final data =
+            snapshot.docs.map((doc) {
+              final d = doc.data();
+              return {'name': doc.id, 'score': d['score'] ?? 0};
+            }).toList();
+
+        yield data;
+      }
+    } catch (error) {
+      ErrorHandler().logError('Get top daily scores stream', error);
+      yield <Map<String, dynamic>>[];
+    }
+  }
+
+  /// Best-effort rank lookup for a player in a daily challenge.
+  /// Returns 1-based rank or null if rank cannot be determined.
+  static Future<int?> getDailyRank(int challengeId, String playerName) async {
+    try {
+      if (challengeId <= 0 || playerName.isEmpty) return null;
+
+      final snapshot =
+          await _dailyScoresCollection(
+            challengeId,
+          ).orderBy('score', descending: true).limit(1000).get();
+
+      final docs = snapshot.docs;
+      for (int i = 0; i < docs.length; i++) {
+        if (docs[i].id == playerName) {
+          return i + 1;
+        }
+      }
+      return null;
+    } catch (error) {
+      ErrorHandler().logError('Get daily rank', error);
+      return null;
+    }
   }
 }

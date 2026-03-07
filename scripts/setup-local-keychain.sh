@@ -2,54 +2,33 @@
 set -euo pipefail
 
 ################################################################################
-# Local development keychain setup for iOS builds
-# Creates a dedicated development keychain that doesn't require password prompts
+# Local iOS environment preflight (keychainless)
+# Validates required variables for automatic signing + ASC API key workflow
 ################################################################################
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(dirname "$SCRIPT_DIR")"
+echo "🔎 Running local iOS signing preflight (keychainless mode)..."
 
-# Configuration
-DEV_KEYCHAIN_NAME="modulo-squares-dev.keychain-db"
-DEV_KEYCHAIN_PATH="$HOME/Library/Keychains/$DEV_KEYCHAIN_NAME"
-DEV_KEYCHAIN_PASSWORD="dev-password-123"
+required_vars=(
+  APP_STORE_CONNECT_KEY_ID
+  APP_STORE_CONNECT_ISSUER_ID
+  APP_STORE_CONNECT_KEY
+  FASTLANE_TEAM_ID
+)
 
-echo "🔐 Setting up local development keychain..."
+missing_vars=()
+for var_name in "${required_vars[@]}"; do
+  if [ -z "${!var_name:-}" ]; then
+    missing_vars+=("$var_name")
+  fi
+done
 
-# Check if development keychain already exists
-if [ -f "$DEV_KEYCHAIN_PATH" ]; then
-    echo "✅ Development keychain already exists at $DEV_KEYCHAIN_PATH"
-else
-    echo "📝 Creating development keychain: $DEV_KEYCHAIN_NAME"
-    security create-keychain -p "$DEV_KEYCHAIN_PASSWORD" "$DEV_KEYCHAIN_PATH"
+if [ ${#missing_vars[@]} -gt 0 ]; then
+  echo "❌ Missing required environment variables:"
+  printf '  - %s\n' "${missing_vars[@]}"
+  echo ""
+  echo "Set these before running Fastlane lanes."
+  exit 1
 fi
 
-# Add development keychain to search list if not already there
-echo "🔍 Checking keychain search list..."
-KEYCHAIN_LIST=$(security list-keychains -d user | tr -d '"' | tr -d ' ')
-if [[ "$KEYCHAIN_LIST" != *"$DEV_KEYCHAIN_NAME"* ]]; then
-    echo "➕ Adding development keychain to search list"
-    security list-keychains -d user -s "$DEV_KEYCHAIN_PATH" $KEYCHAIN_LIST
-else
-    echo "✅ Development keychain already in search list"
-fi
-
-# Unlock the keychain
-echo "🔓 Unlocking development keychain"
-security unlock-keychain -p "$DEV_KEYCHAIN_PASSWORD" "$DEV_KEYCHAIN_PATH"
-
-# Set keychain settings to not require password
-echo "⚙️ Configuring keychain settings (no password prompts)"
-security set-keychain-settings -u "$DEV_KEYCHAIN_PATH"
-
-# Export environment variables for Fastlane
-export MATCH_KEYCHAIN_NAME="$DEV_KEYCHAIN_NAME"
-export MATCH_KEYCHAIN_PASSWORD="$DEV_KEYCHAIN_PASSWORD"
-
-echo "✅ Development keychain setup complete!"
-echo "📋 Environment variables set:"
-echo "   MATCH_KEYCHAIN_NAME=$MATCH_KEYCHAIN_NAME"
-echo "   MATCH_KEYCHAIN_PASSWORD=$MATCH_KEYCHAIN_PASSWORD"
-echo ""
-echo "🚀 You can now run Fastlane commands that will use this keychain"
-echo "💡 To clean up later, run: security delete-keychain \"$DEV_KEYCHAIN_PATH\""
+echo "✅ Environment preflight passed"
+echo "ℹ️  Using automatic signing + App Store Connect API key (no keychain setup)"

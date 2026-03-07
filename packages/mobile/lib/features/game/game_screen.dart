@@ -14,6 +14,8 @@ import 'package:modulo_squares/features/game/widgets/game_app_bar_actions.dart';
 import 'package:modulo_squares/features/game/widgets/game_dialogs.dart';
 import 'package:modulo_squares/core/services/analytics_service.dart';
 import 'package:modulo_squares/core/services/ad_service.dart';
+import 'package:modulo_squares/core/services/leaderboard_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class GameScreen extends StatelessWidget {
   const GameScreen({super.key});
@@ -55,8 +57,10 @@ class _GameScreenContent extends StatefulWidget {
   State<_GameScreenContent> createState() => _GameScreenContentState();
 }
 
-class _GameScreenContentState extends State<_GameScreenContent> with GameDialogs {
+class _GameScreenContentState extends State<_GameScreenContent>
+    with GameDialogs {
   late final AnalyticsService _analyticsService;
+  bool _isTerminalDialogOpen = false;
 
   @override
   void initState() {
@@ -69,15 +73,18 @@ class _GameScreenContentState extends State<_GameScreenContent> with GameDialogs
     final gameProvider = context.watch<GameProvider>();
     final purchaseService = getIt<PurchaseService>();
 
+    _handleTerminalGameStates(gameProvider);
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(AppLocalizations.of(context).appTitle),
+        title: Text(AppLocalizations.of(context)!.appTitle),
         actions: [
           GameAppBarActions(
             onShowLeaderboard: () => _showLeaderboardDialog(context),
             onShowInstructions: () => _showInstructions(context),
             onShowSpecialTilesInfo: () => _showSpecialTilesInfo(context),
-            onShowPurchaseDialog: () => _showPurchaseDialog(context, purchaseService),
+            onShowPurchaseDialog:
+                () => _showPurchaseDialog(context, purchaseService),
           ),
         ],
       ),
@@ -90,10 +97,177 @@ class _GameScreenContentState extends State<_GameScreenContent> with GameDialogs
           const SizedBox(height: 20),
           _buildGrid(context, gameProvider),
           const SizedBox(height: 40),
-          _buildRestartButton(context, gameProvider),
+          _buildActionButtons(context, gameProvider),
         ],
       ),
     );
+  }
+
+  void _handleTerminalGameStates(GameProvider gameProvider) {
+    if (_isTerminalDialogOpen) return;
+
+    if (gameProvider.isLevelComplete) {
+      _isTerminalDialogOpen = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          _isTerminalDialogOpen = false;
+          return;
+        }
+        _showLevelCompleteDialog(context, gameProvider);
+      });
+      return;
+    }
+
+    if (gameProvider.isGameOver) {
+      _isTerminalDialogOpen = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          _isTerminalDialogOpen = false;
+          return;
+        }
+        _showGameOverDialog(context, gameProvider);
+      });
+    }
+  }
+
+  void _showLevelCompleteDialog(
+    BuildContext context,
+    GameProvider gameProvider,
+  ) {
+    final int levelNum = gameProvider.level;
+    final int score = gameProvider.gameBoard.score;
+    final int stars = gameProvider.lastCompletedStars ?? 1;
+    final bool isDaily = gameProvider.isDailyChallengeMode;
+    final int? challengeId = gameProvider.activeDailyChallengeId;
+    final int bestStars =
+        isDaily
+            ? (gameProvider.dailyBestStarsForChallenge(challengeId ?? 0) ??
+                stars)
+            : (gameProvider.bestStarsForLevel(levelNum) ?? stars);
+    final int bestScore =
+        isDaily
+            ? (gameProvider.dailyBestScoreForChallenge(challengeId ?? 0) ??
+                score)
+            : (gameProvider.bestScoreForLevel(levelNum) ?? score);
+    final String nextLabel = isDaily ? 'Replay Daily Challenge' : 'Next Level';
+    final String bestLabel =
+        isDaily
+            ? 'Best Daily Result: ${_formatStars(bestStars)}'
+            : 'Best for Level $levelNum: ${_formatStars(bestStars)}';
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(AppLocalizations.of(context)!.youWin),
+          content: Text(
+            '${AppLocalizations.of(context)!.winMessage(score)}\n\n'
+            'Stars: ${_formatStars(stars)}\n'
+            '$bestLabel\n'
+            'Best Score: $bestScore'
+            '${gameProvider.lastCompletionImprovedBest ? '\nNew personal best!' : ''}',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                String? submissionFeedback;
+                if (isDaily && challengeId != null) {
+                  final playerName = _currentPlayerName();
+                  final submitted = await LeaderboardService.submitDailyScore(
+                    context,
+                    challengeId,
+                    playerName,
+                    score,
+                  );
+                  _analyticsService.logDailySubmit(
+                    challengeId: challengeId,
+                    score: score,
+                    submitted: submitted,
+                  );
+
+                  final rank =
+                      submitted
+                          ? await LeaderboardService.getDailyRank(
+                            challengeId,
+                            playerName,
+                          )
+                          : null;
+                  _analyticsService.logDailyRankAvailable(
+                    challengeId: challengeId,
+                    rankAvailable: rank != null,
+                    rank: rank,
+                  );
+
+                  if (!submitted) {
+                    submissionFeedback =
+                        'Could not submit daily score. Please try again.';
+                  } else if (rank != null) {
+                    submissionFeedback =
+                        'Daily score submitted. Current rank: #$rank';
+                  } else {
+                    submissionFeedback = 'Daily score submitted.';
+                  }
+                }
+                Navigator.of(dialogContext).pop();
+                if (submissionFeedback != null && mounted) {
+                  _showDailySubmissionFeedback(submissionFeedback);
+                }
+                gameProvider.completeLevel(() {});
+              },
+              child: Text(nextLabel),
+            ),
+          ],
+        );
+      },
+    ).whenComplete(() {
+      if (mounted) {
+        setState(() {
+          _isTerminalDialogOpen = false;
+        });
+      } else {
+        _isTerminalDialogOpen = false;
+      }
+    });
+  }
+
+  String _formatStars(int stars) {
+    final int clamped = stars.clamp(1, 3);
+    return '$clamped/3';
+  }
+
+  void _showGameOverDialog(BuildContext context, GameProvider gameProvider) {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(AppLocalizations.of(context)!.gameOver),
+          content: Text(
+            AppLocalizations.of(
+              context,
+            )!.gameOverMessage(gameProvider.gameBoard.score),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                gameProvider.restartWithAd(() => gameProvider.restartLevel());
+              },
+              child: Text(AppLocalizations.of(context)!.playAgain),
+            ),
+          ],
+        );
+      },
+    ).whenComplete(() {
+      if (mounted) {
+        setState(() {
+          _isTerminalDialogOpen = false;
+        });
+      } else {
+        _isTerminalDialogOpen = false;
+      }
+    });
   }
 
   Widget _buildLevelInfo(GameProvider gameProvider) {
@@ -122,21 +296,72 @@ class _GameScreenContentState extends State<_GameScreenContent> with GameDialogs
 
   Widget _buildRestartButton(BuildContext context, GameProvider gameProvider) {
     return ElevatedButton(
-      onPressed: () => gameProvider.restartWithAd(() => gameProvider.restartLevel()),
-      child: Text(AppLocalizations.of(context).restart),
+      onPressed:
+          () => gameProvider.restartWithAd(() => gameProvider.restartLevel()),
+      child: Text(AppLocalizations.of(context)!.restart),
+    );
+  }
+
+  Widget _buildActionButtons(BuildContext context, GameProvider gameProvider) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _buildRestartButton(context, gameProvider),
+        const SizedBox(width: 12),
+        ElevatedButton(
+          onPressed: () {
+            if (gameProvider.isDailyChallengeMode) {
+              gameProvider.exitDailyChallengeMode();
+            } else {
+              gameProvider.startDailyChallenge();
+            }
+          },
+          child: Text(
+            gameProvider.isDailyChallengeMode
+                ? 'Exit Daily'
+                : 'Daily Challenge',
+          ),
+        ),
+      ],
     );
   }
 
   void _showLeaderboardDialog(BuildContext context) {
     _analyticsService.logViewLeaderboard();
+    final provider = context.read<GameProvider>();
+    if (provider.isDailyChallengeMode &&
+        provider.activeDailyChallengeId != null) {
+      showDailyLeaderboardDialog(context, provider.activeDailyChallengeId!);
+      return;
+    }
     showLeaderboardDialog(context);
+  }
+
+  String _currentPlayerName() {
+    final user = FirebaseAuth.instance.currentUser;
+    final displayName = user?.displayName?.trim();
+    if (displayName != null && displayName.isNotEmpty) {
+      return displayName;
+    }
+    final uid = user?.uid;
+    if (uid != null && uid.isNotEmpty) {
+      final shortUid = uid.length <= 8 ? uid : uid.substring(0, 8);
+      return 'Player-$shortUid';
+    }
+    return 'Anonymous';
+  }
+
+  void _showDailySubmissionFeedback(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
+    );
   }
 
   void _showInstructions(BuildContext context) {
     _analyticsService.logViewInstructions();
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const InstructionsScreen()),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const InstructionsScreen()));
   }
 
   void _showSpecialTilesInfo(BuildContext context) {
@@ -144,7 +369,10 @@ class _GameScreenContentState extends State<_GameScreenContent> with GameDialogs
     showSpecialTilesInfo(context);
   }
 
-  void _showPurchaseDialog(BuildContext context, PurchaseService purchaseService) {
+  void _showPurchaseDialog(
+    BuildContext context,
+    PurchaseService purchaseService,
+  ) {
     showPurchaseDialog(context, purchaseService);
   }
 
@@ -152,19 +380,16 @@ class _GameScreenContentState extends State<_GameScreenContent> with GameDialogs
     String effect = '';
     switch (tile.type) {
       case game_board.TileType.obstacle:
-        effect = AppLocalizations.of(context).obstacleTooltip;
+        effect = 'Obstacle tile blocks movement.';
         break;
       case game_board.TileType.bonus:
-        effect = AppLocalizations.of(context).bonusTooltip;
+        effect = 'Bonus tile has special scoring behavior.';
         break;
       case game_board.TileType.normal:
         return;
     }
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(effect),
-        duration: const Duration(seconds: 2),
-      ),
+      SnackBar(content: Text(effect), duration: const Duration(seconds: 2)),
     );
   }
 }

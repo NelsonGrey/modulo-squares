@@ -93,7 +93,7 @@ The Master CI/CD Pipeline is already configured correctly to:
    - `APP_STORE_CONNECT_KEY_ID` → `ASC_KEY_ID`
    - `APP_STORE_CONNECT_ISSUER_ID` → `ASC_ISSUER_ID`
    - `APP_STORE_CONNECT_KEY` → `ASC_PRIVATE_KEY`
-   - `MATCH_GIT_PASSWORD`, `MATCH_GIT_URL`, `KEYCHAIN_PASSWORD`
+  - `MATCH_GIT_PASSWORD`, `MATCH_GIT_URL`, `APP_STORE_CONNECT_KEY_ID`, `APP_STORE_CONNECT_ISSUER_ID`, `APP_STORE_CONNECT_KEY`
 
 2. Call the reusable `ios-build.yml` workflow with `release_type: "testflight"`
 
@@ -113,7 +113,7 @@ export ASC_ISSUER_ID="your-issuer-id"
 export ASC_PRIVATE_KEY="your-base64-key"
 export MATCH_GIT_PASSWORD="your-match-password"
 export MATCH_GIT_URL="git@github.com:mnelson3/nelson-grey.git"
-export MATCH_KEYCHAIN_PASSWORD="your-keychain-password"
+export FASTLANE_TEAM_ID="your-team-id"
 export GITHUB_RUN_NUMBER="1"
 
 # Test the fastlane lane

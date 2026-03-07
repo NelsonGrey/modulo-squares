@@ -41,26 +41,12 @@ export FASTLANE_SKIP_UPDATE_CHECK=1
 export FASTLANE_HIDE_CHANGELOG=1
 export FASTLANE_DISABLE_COLORS=0
 
-# Set keychain password if not already set
-if [ -z "$MATCH_KEYCHAIN_PASSWORD" ]; then
-    export MATCH_KEYCHAIN_PASSWORD="$KEYCHAIN_PASSWORD"
-fi
-
 # Set NELSON_GREY_PAT for Match repo write operations if not already set
 if [ -z "$NELSON_GREY_PAT" ]; then
     export NELSON_GREY_PAT="$MATCH_GIT_URL_TOKEN"
 fi
 
-# Ensure the keychain is properly configured
-echo "🔐 Preparing keychain for code signing..."
-KEYCHAIN_PATH=~/Library/Keychains/fastlane_tmp_keychain-db
-if [ -f "$KEYCHAIN_PATH" ]; then
-    # Unlock the keychain to prevent prompts during certificate import
-    security unlock-keychain -p "$MATCH_KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH" 2>/dev/null || true
-    # Set key partition list to allow fastlane to use certificates without prompts
-    security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MATCH_KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH" 2>/dev/null || true
-    echo "✅ Keychain prepared"
-fi
+echo "🔐 Using keychainless signing mode (automatic signing + ASC API key)..."
 
 echo "✅ Environment variables loaded:"
 echo "   App ID: $FASTLANE_APPLE_ID"

@@ -26,40 +26,104 @@ class MockAnalyticsService implements AnalyticsService {
   Future<void> logAppOpen() async => loggedEvents.add('app_open');
 
   @override
-  Future<void> logViewInstructions() async => loggedEvents.add('view_instructions');
+  Future<void> logViewInstructions() async =>
+      loggedEvents.add('view_instructions');
 
   @override
-  Future<void> logViewLeaderboard() async => loggedEvents.add('view_leaderboard');
+  Future<void> logViewLeaderboard() async =>
+      loggedEvents.add('view_leaderboard');
 
   @override
-  Future<void> logRestart({required int level}) async => loggedEvents.add('restart');
+  Future<void> logRestart({required int level}) async =>
+      loggedEvents.add('restart');
 
   @override
-  Future<void> logLevelStart({required int level, required int rows, required int cols}) async => loggedEvents.add('level_start');
+  Future<void> logLevelStart({
+    required int level,
+    required int rows,
+    required int cols,
+  }) async => loggedEvents.add('level_start');
 
   @override
-  Future<void> logLevelComplete({required int level, required int score}) async => loggedEvents.add('level_complete');
+  Future<void> logLevelComplete({
+    required int level,
+    required int score,
+  }) async => loggedEvents.add('level_complete');
 
   @override
-  Future<void> logOutOfMoves({required int level, required int score}) async => loggedEvents.add('out_of_moves');
+  Future<void> logOutOfMoves({required int level, required int score}) async =>
+      loggedEvents.add('out_of_moves');
 
   @override
-  Future<void> logGameOverNoMoves({required int score}) async => loggedEvents.add('game_over_no_moves');
+  Future<void> logGameOverNoMoves({required int score}) async =>
+      loggedEvents.add('game_over_no_moves');
 
   @override
-  Future<void> logMove({required String type}) async => loggedEvents.add('move');
+  Future<void> logMove({required String type}) async =>
+      loggedEvents.add('move');
 
   @override
-  Future<void> logSpecialTilesInfo() async => loggedEvents.add('view_special_tiles');
+  Future<void> logSpecialTilesInfo() async =>
+      loggedEvents.add('view_special_tiles');
 
   @override
-  Future<void> logMercySpawn({required int penalty}) async => loggedEvents.add('mercy_spawn');
+  Future<void> logMercySpawn({required int penalty}) async =>
+      loggedEvents.add('mercy_spawn');
 
   @override
-  Future<void> logAdImpression({String format = 'interstitial', String? trigger, int? levelNum}) async => loggedEvents.add('ad_impression');
+  Future<void> logAdImpression({
+    String format = 'interstitial',
+    String? trigger,
+    int? levelNum,
+  }) async => loggedEvents.add('ad_impression');
 
   @override
-  Future<void> logAdDismissed({String format = 'interstitial', String? trigger, int? levelNum}) async => loggedEvents.add('ad_dismissed');
+  Future<void> logAdDismissed({
+    String format = 'interstitial',
+    String? trigger,
+    int? levelNum,
+  }) async => loggedEvents.add('ad_dismissed');
+
+  @override
+  Future<void> logDailyStart({required int challengeId}) async =>
+      loggedEvents.add('daily_start');
+
+  @override
+  Future<void> logDailySubmit({
+    required int challengeId,
+    required int score,
+    required bool submitted,
+  }) async => loggedEvents.add('daily_submit');
+
+  @override
+  Future<void> logDailyRankAvailable({
+    required int challengeId,
+    required bool rankAvailable,
+    int? rank,
+  }) async => loggedEvents.add('daily_rank_available');
+
+  @override
+  Future<void> logLevelRetry({
+    required int level,
+    required bool isDaily,
+  }) async => loggedEvents.add('level_retry');
+
+  @override
+  Future<void> logLevelFailReason({
+    required int level,
+    required String reason,
+    required int score,
+    required bool isDaily,
+  }) async => loggedEvents.add('level_fail_reason');
+
+  @override
+  Future<void> logLevelStarResult({
+    required int level,
+    required int stars,
+    required int score,
+    required int mercySpawns,
+    required bool isDaily,
+  }) async => loggedEvents.add('level_star_result');
 }
 
 class MockAdService implements AdService {
@@ -78,7 +142,11 @@ class MockAdService implements AdService {
   void loadInterstitial() {}
 
   @override
-  Future<void> showInterstitial({String? trigger, int? levelNum, void Function()? onClosed}) async {
+  Future<void> showInterstitial({
+    String? trigger,
+    int? levelNum,
+    void Function()? onClosed,
+  }) async {
     adShown = true;
     lastTrigger = trigger;
     lastLevelNum = levelNum;
@@ -153,46 +221,56 @@ void main() {
   });
 
   group('GameScreen Integration Tests', () {
-    testWidgets('GameScreen initializes with GameProvider and displays game elements', (WidgetTester tester) async {
-      // Set up a larger test screen to avoid overflow
-      tester.view.physicalSize = const Size(1080, 1920);
-      tester.view.devicePixelRatio = 1.0;
+    testWidgets(
+      'GameScreen initializes with GameProvider and displays game elements',
+      (WidgetTester tester) async {
+        // Set up a larger test screen to avoid overflow
+        tester.view.physicalSize = const Size(1080, 1920);
+        tester.view.devicePixelRatio = 1.0;
 
-      await tester.pumpWidget(
-        ChangeNotifierProvider<GameProvider>(
-          create:
-              (_) => GameProvider(
-                initialState: GameState(gameBoard: GameBoard(level: 1), level: 1, highScore: 100, remainingMoves: 20),
-                analyticsService: mockAnalytics,
-                adService: mockAdService,
-              ),
-          child: MaterialApp(
-            localizationsDelegates: const [
-              AppLocalizations.delegate,
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
-            supportedLocales: const [Locale('en')],
-            home: const GameScreen(),
+        await tester.pumpWidget(
+          ChangeNotifierProvider<GameProvider>(
+            create:
+                (_) => GameProvider(
+                  initialState: GameState(
+                    gameBoard: GameBoard(level: 1),
+                    level: 1,
+                    highScore: 100,
+                    remainingMoves: 20,
+                  ),
+                  analyticsService: mockAnalytics,
+                  adService: mockAdService,
+                ),
+            child: MaterialApp(
+              localizationsDelegates: const [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: const [Locale('en')],
+              home: const GameScreen(),
+            ),
           ),
-        ),
-      );
+        );
 
-      // Wait for initialization
-      await tester.pumpAndSettle();
+        // Wait for initialization
+        await tester.pumpAndSettle();
 
-      // Verify basic UI elements are present
-      expect(find.text('Modulo Squares'), findsOneWidget); // App title
-      expect(find.byType(ElevatedButton), findsOneWidget); // Restart button
-      expect(find.text('Restart'), findsOneWidget);
+        // Verify basic UI elements are present
+        expect(find.text('Modulo Squares'), findsOneWidget); // App title
+        expect(find.byType(ElevatedButton), findsOneWidget); // Restart button
+        expect(find.text('Restart'), findsOneWidget);
 
-      // Reset screen size
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
+        // Reset screen size
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      },
+    );
 
-    testWidgets('GameScreen displays level and score information', (WidgetTester tester) async {
+    testWidgets('GameScreen displays level and score information', (
+      WidgetTester tester,
+    ) async {
       // Set up a larger test screen to avoid overflow
       tester.view.physicalSize = const Size(1080, 1920);
       tester.view.devicePixelRatio = 1.0;
@@ -201,7 +279,12 @@ void main() {
         ChangeNotifierProvider<GameProvider>(
           create:
               (_) => GameProvider(
-                initialState: GameState(gameBoard: GameBoard(level: 1), level: 1, highScore: 100, remainingMoves: 20),
+                initialState: GameState(
+                  gameBoard: GameBoard(level: 1),
+                  level: 1,
+                  highScore: 100,
+                  remainingMoves: 20,
+                ),
                 analyticsService: mockAnalytics,
                 adService: mockAdService,
               ),
@@ -233,7 +316,9 @@ void main() {
       tester.view.resetDevicePixelRatio();
     });
 
-    testWidgets('GameScreen restart button triggers ad service and analytics', (WidgetTester tester) async {
+    testWidgets('GameScreen restart button triggers ad service and analytics', (
+      WidgetTester tester,
+    ) async {
       // Set up a larger test screen to avoid overflow
       tester.view.physicalSize = const Size(1080, 1920);
       tester.view.devicePixelRatio = 1.0;
@@ -242,7 +327,12 @@ void main() {
         ChangeNotifierProvider<GameProvider>(
           create:
               (_) => GameProvider(
-                initialState: GameState(gameBoard: GameBoard(level: 1), level: 1, highScore: 100, remainingMoves: 20),
+                initialState: GameState(
+                  gameBoard: GameBoard(level: 1),
+                  level: 1,
+                  highScore: 100,
+                  remainingMoves: 20,
+                ),
                 analyticsService: mockAnalytics,
                 adService: mockAdService,
               ),
@@ -274,7 +364,9 @@ void main() {
       tester.view.resetDevicePixelRatio();
     });
 
-    testWidgets('GameScreen app bar actions trigger appropriate services', (WidgetTester tester) async {
+    testWidgets('GameScreen app bar actions trigger appropriate services', (
+      WidgetTester tester,
+    ) async {
       // Set up a larger test screen to avoid overflow
       tester.view.physicalSize = const Size(1080, 1920);
       tester.view.devicePixelRatio = 1.0;
@@ -283,7 +375,12 @@ void main() {
         ChangeNotifierProvider<GameProvider>(
           create:
               (_) => GameProvider(
-                initialState: GameState(gameBoard: GameBoard(level: 1), level: 1, highScore: 100, remainingMoves: 20),
+                initialState: GameState(
+                  gameBoard: GameBoard(level: 1),
+                  level: 1,
+                  highScore: 100,
+                  remainingMoves: 20,
+                ),
                 analyticsService: mockAnalytics,
                 adService: mockAdService,
               ),
@@ -305,10 +402,18 @@ void main() {
       // Debug: Check what widgets are actually rendered
       print('App bar widgets: ${find.byType(AppBar).evaluate().length}');
       print('Icon buttons: ${find.byType(IconButton).evaluate().length}');
-      print('Leaderboard icons: ${find.byIcon(Icons.leaderboard).evaluate().length}');
-      print('Menu book icons: ${find.byIcon(Icons.menu_book_outlined).evaluate().length}');
-      print('Help outline icons: ${find.byIcon(Icons.help_outline).evaluate().length}');
-      print('Shopping cart icons: ${find.byIcon(Icons.shopping_cart).evaluate().length}');
+      print(
+        'Leaderboard icons: ${find.byIcon(Icons.leaderboard).evaluate().length}',
+      );
+      print(
+        'Menu book icons: ${find.byIcon(Icons.menu_book_outlined).evaluate().length}',
+      );
+      print(
+        'Help outline icons: ${find.byIcon(Icons.help_outline).evaluate().length}',
+      );
+      print(
+        'Shopping cart icons: ${find.byIcon(Icons.shopping_cart).evaluate().length}',
+      );
 
       // Test leaderboard action (first in row, should be hittable)
       final leaderboardButton = find.byIcon(Icons.leaderboard);
@@ -330,48 +435,58 @@ void main() {
       tester.view.resetDevicePixelRatio();
     });
 
-    testWidgets('GameScreen integrates with GameProvider for game state management', (WidgetTester tester) async {
-      // Set up a larger test screen to avoid overflow
-      tester.view.physicalSize = const Size(1080, 1920);
-      tester.view.devicePixelRatio = 1.0;
+    testWidgets(
+      'GameScreen integrates with GameProvider for game state management',
+      (WidgetTester tester) async {
+        // Set up a larger test screen to avoid overflow
+        tester.view.physicalSize = const Size(1080, 1920);
+        tester.view.devicePixelRatio = 1.0;
 
-      await tester.pumpWidget(
-        ChangeNotifierProvider<GameProvider>(
-          create:
-              (_) => GameProvider(
-                initialState: GameState(gameBoard: GameBoard(level: 1), level: 1, highScore: 100, remainingMoves: 20),
-                analyticsService: mockAnalytics,
-                adService: mockAdService,
-              ),
-          child: MaterialApp(
-            localizationsDelegates: const [
-              AppLocalizations.delegate,
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
-            supportedLocales: const [Locale('en')],
-            home: const GameScreen(),
+        await tester.pumpWidget(
+          ChangeNotifierProvider<GameProvider>(
+            create:
+                (_) => GameProvider(
+                  initialState: GameState(
+                    gameBoard: GameBoard(level: 1),
+                    level: 1,
+                    highScore: 100,
+                    remainingMoves: 20,
+                  ),
+                  analyticsService: mockAnalytics,
+                  adService: mockAdService,
+                ),
+            child: MaterialApp(
+              localizationsDelegates: const [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: const [Locale('en')],
+              home: const GameScreen(),
+            ),
           ),
-        ),
-      );
+        );
 
-      await tester.pumpAndSettle();
+        await tester.pumpAndSettle();
 
-      // Verify that the GameProvider is properly integrated
-      final BuildContext context = tester.element(find.byType(GameScreen));
-      final gameProvider = Provider.of<GameProvider>(context, listen: false);
+        // Verify that the GameProvider is properly integrated
+        final BuildContext context = tester.element(find.byType(GameScreen));
+        final gameProvider = Provider.of<GameProvider>(context, listen: false);
 
-      expect(gameProvider, isNotNull);
-      expect(gameProvider.level, 1);
-      expect(gameProvider.highScore, 100); // From SharedPreferences mock
+        expect(gameProvider, isNotNull);
+        expect(gameProvider.level, 1);
+        expect(gameProvider.highScore, 100); // From SharedPreferences mock
 
-      // Reset screen size
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
+        // Reset screen size
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      },
+    );
 
-    testWidgets('GameScreen handles level completion with ad integration', (WidgetTester tester) async {
+    testWidgets('GameScreen handles level completion with ad integration', (
+      WidgetTester tester,
+    ) async {
       // Set up a larger test screen to avoid overflow
       tester.view.physicalSize = const Size(1080, 1920);
       tester.view.devicePixelRatio = 1.0;
@@ -380,7 +495,12 @@ void main() {
         ChangeNotifierProvider<GameProvider>(
           create:
               (_) => GameProvider(
-                initialState: GameState(gameBoard: GameBoard(level: 1), level: 1, highScore: 100, remainingMoves: 20),
+                initialState: GameState(
+                  gameBoard: GameBoard(level: 1),
+                  level: 1,
+                  highScore: 100,
+                  remainingMoves: 20,
+                ),
                 analyticsService: mockAnalytics,
                 adService: mockAdService,
               ),
@@ -416,7 +536,9 @@ void main() {
       tester.view.resetDevicePixelRatio();
     });
 
-    testWidgets('GameScreen displays game grid and handles user interactions', (WidgetTester tester) async {
+    testWidgets('GameScreen displays game grid and handles user interactions', (
+      WidgetTester tester,
+    ) async {
       // Set up a larger test screen to avoid overflow
       tester.view.physicalSize = const Size(1080, 1920);
       tester.view.devicePixelRatio = 1.0;
@@ -425,7 +547,12 @@ void main() {
         ChangeNotifierProvider<GameProvider>(
           create:
               (_) => GameProvider(
-                initialState: GameState(gameBoard: GameBoard(level: 1), level: 1, highScore: 100, remainingMoves: 20),
+                initialState: GameState(
+                  gameBoard: GameBoard(level: 1),
+                  level: 1,
+                  highScore: 100,
+                  remainingMoves: 20,
+                ),
                 analyticsService: mockAnalytics,
                 adService: mockAdService,
               ),
@@ -459,7 +586,9 @@ void main() {
       tester.view.resetDevicePixelRatio();
     });
 
-    testWidgets('GameScreen analytics integration tracks user actions', (WidgetTester tester) async {
+    testWidgets('GameScreen analytics integration tracks user actions', (
+      WidgetTester tester,
+    ) async {
       // Set up a larger test screen to avoid overflow
       tester.view.physicalSize = const Size(1080, 1920);
       tester.view.devicePixelRatio = 1.0;
@@ -468,7 +597,12 @@ void main() {
         ChangeNotifierProvider<GameProvider>(
           create:
               (_) => GameProvider(
-                initialState: GameState(gameBoard: GameBoard(level: 1), level: 1, highScore: 100, remainingMoves: 20),
+                initialState: GameState(
+                  gameBoard: GameBoard(level: 1),
+                  level: 1,
+                  highScore: 100,
+                  remainingMoves: 20,
+                ),
                 analyticsService: mockAnalytics,
                 adService: mockAdService,
               ),
@@ -507,7 +641,9 @@ void main() {
       tester.view.resetDevicePixelRatio();
     });
 
-    testWidgets('GameScreen handles localization correctly', (WidgetTester tester) async {
+    testWidgets('GameScreen handles localization correctly', (
+      WidgetTester tester,
+    ) async {
       // Set up a larger test screen to avoid overflow
       tester.view.physicalSize = const Size(1080, 1920);
       tester.view.devicePixelRatio = 1.0;
@@ -516,7 +652,12 @@ void main() {
         ChangeNotifierProvider<GameProvider>(
           create:
               (_) => GameProvider(
-                initialState: GameState(gameBoard: GameBoard(level: 1), level: 1, highScore: 100, remainingMoves: 20),
+                initialState: GameState(
+                  gameBoard: GameBoard(level: 1),
+                  level: 1,
+                  highScore: 100,
+                  remainingMoves: 20,
+                ),
                 analyticsService: mockAnalytics,
                 adService: mockAdService,
               ),

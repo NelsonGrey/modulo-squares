@@ -142,7 +142,7 @@ jobs:
 | No MATCH_PASSWORD | Add `MATCH_PASSWORD` to env vars |
 | Repo not found | Check MATCH_GIT_URL format & token |
 | Certificate expired | `fastlane match appstore --force` |
-| Keychain locked | Add MATCH_PASSWORD to CI secrets |
+| Signing/auth failure | Verify APP_STORE_CONNECT_* secrets and FASTLANE_TEAM_ID |
 
 ## 📝 Project-Specific Variables to Change
 

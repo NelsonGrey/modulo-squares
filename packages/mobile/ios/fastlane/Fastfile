@@ -3,669 +3,109 @@ ENV["FASTLANE_SKIP_UPDATE_CHECK"] = "1"
 ENV["FASTLANE_HIDE_CHANGELOG"] = "1"
 ENV["FASTLANE_DISABLE_COLORS"] = "0"
 
-# Load environment variables from .env.development file in repository root for local development
-require 'dotenv'
-# Load from repository root
-repo_root = File.expand_path('../../../..', __dir__)
-Dotenv.load(File.join(repo_root, '.env.development')) if File.exist?(File.join(repo_root, '.env.development'))
-# Also load from fastlane directory if it exists
-Dotenv.load('.env') if File.exist?('.env')
+require "dotenv"
+require "base64"
+require "tempfile"
+
+repo_root = File.expand_path("../../../..", __dir__)
+Dotenv.load(File.join(repo_root, ".env.development")) if File.exist?(File.join(repo_root, ".env.development"))
+Dotenv.load(".env") if File.exist?(".env")
 
 default_platform(:ios)
 
 platform :ios do
-  # Helper to set key partition list to avoid UI prompts
-  def set_partition_list(keychain_path, keychain_password)
-    UI.message("🔐 Setting key partition list for keychain: #{keychain_path}")
-    # Use system security command to allow access to the key by apple tools (codesign, etc.)
-    # This prevents the UI prompt for keychain access
-    cmd = "security set-key-partition-list -S apple-tool:,apple: -s -k #{keychain_password.shellescape} #{keychain_path.shellescape}"
-    
-    # Execute command and suppress output unless it fails
-    begin
-      sh(cmd, log: false)
-      UI.success("✅ Key partition list set successfully")
-    rescue => e
-      UI.error("⚠️ Failed to set key partition list: #{e.message}")
-      # Don't fail the build, just warn
-    end
-  end
-
   def ci_ios_build_number
     explicit = ENV["IOS_BUILD_NUMBER"].to_s.strip
     return explicit if explicit.match?(/\A\d+\z/) && explicit.to_i > 0
 
-    run_id = ENV["GITHUB_RUN_ID"].to_s.strip
-    return run_id if run_id.match?(/\A\d+\z/) && run_id.to_i > 0
+    run_number = ENV["GITHUB_RUN_NUMBER"].to_s.strip
+    return run_number if run_number.match?(/\A\d+\z/) && run_number.to_i > 0
 
     Time.now.utc.strftime("%Y%m%d%H%M%S")
   end
 
-  def match_repo_write_url
-    raw = ENV["MATCH_GIT_URL"].to_s.strip
-    raise "MATCH_GIT_URL is not set" if raw.empty?
+  def normalized_private_key_content
+    raw = ENV["APP_STORE_CONNECT_KEY"].to_s
+    raise "Missing APP_STORE_CONNECT_KEY" if raw.strip.empty?
 
-    pat = ENV["NELSON_GREY_PAT"].to_s.strip
-    return raw if pat.empty?
+    cleaned = raw.gsub("\0", "").gsub(/\x00/, "").gsub("%", "").strip
+    return cleaned if cleaned.include?("-----BEGIN")
 
-    repo_path = nil
-    # git@github.com:owner/repo.git
-    if raw.match?(%r{\Agit@github\.com:})
-      repo_path = raw.sub(%r{\Agit@github\.com:}, "").sub(%r{\.git\z}, "")
-    elsif raw.match?(%r{\Ahttps?://github\.com/})
-      repo_path = raw.sub(%r{\Ahttps?://github\.com/}, "").sub(%r{\.git\z}, "")
-    end
+    packed = cleaned.gsub(/\s+/, "")
+    looks_base64 = packed.match?(/\A[A-Za-z0-9+\/=]+\z/) && packed.length > 100
+    return packed if looks_base64
 
-    return raw if repo_path.to_s.empty?
-    # Use username + PAT for write operations; keep logging disabled when running git.
-    "https://mnelson3:#{pat}@github.com/#{repo_path}.git"
+    cleaned
   end
 
-  def keychain_has_revoked_certificates?(keychain_path)
-    UI.message("🔍 Checking for revoked certificates in keychain...")
-    output = sh("security find-identity -v -p codesigning #{keychain_path.shellescape} 2>&1 || true", log: false)
-    has_revoked = output.include?("CSSMERR_TP_CERT_REVOKED")
-    if has_revoked
-      UI.important("⚠️  Found revoked certificates in keychain")
-      # Log which certificates are revoked for debugging
-      output.split("\n").each do |line|
-        UI.message("  #{line}") if line.include?("CSSMERR_TP_CERT_REVOKED")
-      end
-    end
-    has_revoked
-  end
+  def app_store_api_key
+    key_id = ENV["APP_STORE_CONNECT_KEY_ID"].to_s.strip
+    issuer_id = ENV["APP_STORE_CONNECT_ISSUER_ID"].to_s.strip
+    raise "Missing APP_STORE_CONNECT_KEY_ID" if key_id.empty?
+    raise "Missing APP_STORE_CONNECT_ISSUER_ID" if issuer_id.empty?
 
-  def delete_revoked_certificates_from_login_keychain!
-    UI.message("🧹 Checking login keychain for revoked certificates...")
-    login_keychain = File.expand_path("~/Library/Keychains/login.keychain-db")
-    unless File.exist?(login_keychain)
-      login_keychain = File.expand_path("~/Library/Keychains/login.keychain")
-    end
-    
-    output = sh("security find-identity -v -p codesigning #{login_keychain.shellescape} 2>&1 || true", log: false)
-    revoked_sha1s = []
-    output.split("\n").each do |line|
-      if line.include?("CSSMERR_TP_CERT_REVOKED")
-        # Extract SHA-1: line format is like "  3) 2E244FE8FDCAEAA5EBF500E58B6AA07E99B7E833 "Apple Distribution..." (CSSMERR_TP_CERT_REVOKED)"
-        if line =~ /\)\s+([A-F0-9]{40})\s+/
-          revoked_sha1s << $1
-          UI.message("  Found revoked cert: #{$1}")
-        end
-      end
-    end
+    key_content = normalized_private_key_content
+    if key_content.include?("-----BEGIN")
+      key_content = key_content.gsub(/\A['\"]|['\"]\z/, "")
+      key_content = key_content.gsub(/\\n/, "\n").gsub(/\r\n?/, "\n")
+      key_content = key_content.lines.map(&:strip).reject(&:empty?).join("\n") + "\n"
 
-    if revoked_sha1s.empty?
-      UI.success("✅ No revoked certificates in login keychain")
-      return
-    end
-
-    UI.important("🗑️  Deleting #{revoked_sha1s.count} revoked certificate(s) from login keychain...")
-    revoked_sha1s.each do |sha1|
-      begin
-        sh("security delete-certificate -Z #{sha1} #{login_keychain.shellescape}", log: false)
-        UI.success("  ✅ Deleted revoked cert: #{sha1}")
-      rescue => e
-        UI.error("  ❌ Failed to delete cert #{sha1}: #{e.message}")
-      end
-    end
-  end
-
-  def purge_match_repo_appstore_assets!
-    UI.important("🧹 Purging appstore signing assets from match repo...")
-    git_url = match_repo_write_url
-
-    repo_dir = Dir.mktmpdir("match-repo-")
-
-    begin
-      sh("git clone #{git_url.shellescape} #{repo_dir.shellescape}", log: false)
-      sh("cd #{repo_dir.shellescape} && git checkout main", log: false)
-
-      # Remove appstore provisioning profiles and distribution certs so match is forced to regenerate.
-      sh("cd #{repo_dir.shellescape} && rm -f profiles/appstore/*.mobileprovision || true", log: false)
-      sh("cd #{repo_dir.shellescape} && rm -f certs/distribution/*.cer certs/distribution/*.p12 || true", log: false)
-
-      status = sh("cd #{repo_dir.shellescape} && git status --porcelain", log: false)
-      return if status.to_s.strip.empty?
-
-      sh("cd #{repo_dir.shellescape} && git add -A", log: false)
-      sh(
-        "cd #{repo_dir.shellescape} && git -c user.email=ci@modulo-squares.local -c user.name=modulo-squares-ci commit -m \"CI: purge appstore signing assets\"",
-        log: false
-      )
-      sh("cd #{repo_dir.shellescape} && git push origin main", log: false)
-      UI.important("✅ Purged appstore signing assets in match repo")
-    ensure
-      sh("rm -rf #{repo_dir.shellescape}", log: false)
-    end
-  end
-
-  def match_repo_has_certificates?
-    UI.message("📋 Checking if Match repo has existing certificates...")
-    git_url = match_repo_write_url
-    repo_dir = Dir.mktmpdir("match-check-")
-
-    begin
-      sh("git clone #{git_url.shellescape} #{repo_dir.shellescape}", log: false)
-      sh("cd #{repo_dir.shellescape} && git checkout main", log: false)
-
-      # Check for distribution certificates
-      cert_files = Dir.glob(File.join(repo_dir, "certs", "distribution", "*.cer"))
-      has_certs = !cert_files.empty?
-      
-      if has_certs
-        UI.success("✅ Found #{cert_files.length} certificate(s) in Match repo")
-      else
-        UI.message("📋 No certificates found in Match repo")
-      end
-      
-      return has_certs
-    rescue => e
-      UI.error("⚠️  Failed to check Match repo: #{e.message}")
-      return false
-    ensure
-      sh("rm -rf #{repo_dir.shellescape}", log: false) if repo_dir && Dir.exist?(repo_dir)
-    end
-  end
-
-  def match_keychain_path
-    return ENV["MATCH_KEYCHAIN_PATH"] unless ENV["MATCH_KEYCHAIN_PATH"].to_s.empty?
-    # Always use the default keychain location to avoid issues with absolute paths in match
-    File.join(Dir.home, "Library", "Keychains", "#{match_keychain_name}-db")
-  end
-
-  def match_keychain_name
-    return ENV["MATCH_KEYCHAIN_NAME"] unless ENV["MATCH_KEYCHAIN_NAME"].to_s.empty?
-    if !ENV["MATCH_KEYCHAIN_PATH"].to_s.empty?
-      return File.basename(ENV["MATCH_KEYCHAIN_PATH"]).sub(/\.keychain-db$/, "").sub(/\.keychain$/, "")
-    end
-    "fastlane_build_keychain"
-  end
-
-  def match_keychain_password
-    return ENV["MATCH_KEYCHAIN_PASSWORD"] unless ENV["MATCH_KEYCHAIN_PASSWORD"].to_s.empty?
-    return ENV["MATCH_PASSWORD"] unless ENV["MATCH_PASSWORD"].to_s.empty?
-    ""
-  end
-
-  def unlock_match_keychain
-    return if match_keychain_password.to_s.empty?
-    sh("security unlock-keychain -p \"#{match_keychain_password}\" \"#{match_keychain_path}\" || true")
-  end
-
-  def match_keychain_has_codesigning_identities?
-    output = sh("security find-identity -v -p codesigning \"#{match_keychain_path}\" || true", log: false)
-    return false if output.to_s.include?("0 valid identities found")
-    output.to_s.match?(/\b[1-9][0-9]*\b valid identities found/)
-  end
-
-  def ensure_match_installed_identity!(type:, app_identifier: nil, api_key: nil)
-    unlock_match_keychain
-    return if match_keychain_has_codesigning_identities?
-
-    UI.important("⚠️  No valid code signing identities found in keychain after match (#{type}). Re-running match with readonly: false to generate/import a certificate + private key.")
-
-    args = {
-      type: type,
-      readonly: false,
-      keychain_name: match_keychain_name,
-      keychain_password: match_keychain_password,
-      skip_set_partition_list: false,
-      include_all_certificates: true,
-      # Identity recovery should focus on cert/key material. Profile decoding/install
-      # can fail in CI with `security cms` "Write permissions" errors.
-      skip_provisioning_profiles: true
-    }
-    args[:app_identifier] = app_identifier if app_identifier
-    args[:api_key] = api_key if api_key
-    # Fallback to username/team_id if api_key is missing
-    unless api_key
-      args[:username] = ENV["FASTLANE_APPLE_ID"]
-      args[:team_id] = ENV["FASTLANE_TEAM_ID"]
-    end
-
-    match(args)
-  end
-
-  desc "Sync code signing certificates"
-  lane :sync_signing do
-    # Debug: Print environment variables
-    UI.message("MATCH_GIT_URL: #{ENV["MATCH_GIT_URL"]}")
-    UI.message("FASTLANE_APPLE_ID: #{ENV["FASTLANE_APPLE_ID"]}")
-    UI.message("FASTLANE_TEAM_ID: #{ENV["FASTLANE_TEAM_ID"]}")
-
-    # For now, use username/password authentication due to spaceship OpenSSL compatibility issues
-    # TODO: Switch back to API key authentication once spaceship is fixed
-    begin
-      match(
-        type: "appstore",
-        readonly: true,
-        username: ENV["FASTLANE_APPLE_ID"],
-        team_id: ENV["FASTLANE_TEAM_ID"],
-        keychain_name: match_keychain_name,
-        keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"],
-        skip_confirmation: true
-      )
-    rescue Exception => e
-      if e.message.include?("reached the maximum number of available Distribution certificates")
-        UI.important("⚠️  Reached maximum number of Distribution certificates. Revoking old certificates and retrying...")
-        
-        # Nuke existing distribution certificates and purge match repo to ensure fresh start
-        match_nuke(
-          type: "appstore",
-          # username/team_id inferred from env or provide if needed
-          skip_confirmation: true,
-          git_url: match_repo_write_url
-        )
-        
-        purge_match_repo_appstore_assets!
-
-        # Retry match with readonly: false to generate new ones
-        match(
-          type: "appstore",
-          readonly: false,
-          force: true,
-          git_url: match_repo_write_url,
-          username: ENV["FASTLANE_APPLE_ID"],
-          team_id: ENV["FASTLANE_TEAM_ID"],
-          keychain_name: match_keychain_name,
-          keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"],
-          skip_confirmation: true,
-          git_full_name: "Fastlane Bot",
-          git_user_email: "fastlane@example.com"
-        )
-      else
-        raise e
-      end
-    end
-  end
-
-  desc "Generate development certificates"
-  lane :certificates_development do
-    # ZERO-TOUCH CERTIFICATE MANAGEMENT
-    # Strategy: Maximize certificate reuse across all projects
-    # 1. Try to use existing shared development certificates first
-    # 2. Create project-specific profiles only when necessary
-    # 3. Never require human intervention
-
-    UI.message("🚀 ZERO-TOUCH: Attempting maximum certificate efficiency...")
-
-    private_key_content = ENV["APP_STORE_CONNECT_KEY"]
-    if private_key_content && !private_key_content.empty? && private_key_content != "your_asc_private_key"
-      # Clean null bytes and percent signs from the key (GitHub Actions artifact)
-      private_key_content = private_key_content.gsub("\0", "").gsub("%", "").strip
-      
-      # Detect key format
-      is_pem = private_key_content.include?("-----BEGIN")
-      cleaned = private_key_content.gsub(/\s+/, "")
-      looks_base64 = cleaned =~ /\A[A-Za-z0-9+\/=]+\z/ && cleaned.length > 100
-
-      if !is_pem && looks_base64
-        UI.message("Detected APP_STORE_CONNECT_KEY as base64; passing directly as key_content (is_key_content_base64: true)")
-        api_key = app_store_connect_api_key(
-          key_id: ENV["APP_STORE_CONNECT_KEY_ID"],
-          issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],
-          key_content: cleaned,
-          is_key_content_base64: true,
-          in_house: false
-        )
-      else
-        # Process as PEM
-        private_key_content = private_key_content.gsub(/\A['\"]|['\"]\z/, '')
-        private_key_content = private_key_content.gsub(/\A['\"]|['\"]\z/, '')
-        private_key_content = private_key_content.gsub(/\\n/, "\n")
-        private_key_content = private_key_content.gsub(/\r\n?/, "\n")
-        private_key_content = private_key_content.lines.map { |l| l.strip }.reject { |l| l.empty? }.join("\n") + "\n"
-
-        unless private_key_content.include?("-----BEGIN PRIVATE KEY-----") || private_key_content.include?("-----BEGIN EC PRIVATE KEY-----")
-          begin
-            require 'base64'
-            decoded = Base64.decode64(private_key_content)
-            if decoded.include?("-----BEGIN")
-              private_key_content = decoded
-              UI.message("Decoded APP_STORE_CONNECT_KEY from base64")
-            end
-          rescue => e
-            UI.message("Failed to decode APP_STORE_CONNECT_KEY as base64: #{e.message}")
-          end
-        end
-
-        require 'tempfile'
-        key_file = Tempfile.new(['asc_key', '.p8'])
-        key_file.write(private_key_content)
-        key_file.close
-
-        UI.message("Created temporary ASC key file: #{key_file.path}")
-
-        api_key = app_store_connect_api_key(
-          key_id: ENV["APP_STORE_CONNECT_KEY_ID"],
-          issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],
-          key_filepath: key_file.path
-        )
+      unless key_content.include?("-----BEGIN PRIVATE KEY-----") || key_content.include?("-----BEGIN EC PRIVATE KEY-----")
+        decoded = Base64.decode64(key_content)
+        key_content = decoded if decoded.include?("-----BEGIN")
       end
 
-      # ZERO-TOUCH STRATEGY: Try shared certificates first, then project-specific
-      begin
-        # Step 1: Try to use any existing development certificates (maximum reuse)
-        UI.message("📋 Checking for existing development certificates...")
-        match(
-          type: "development",
-          readonly: true,
-          api_key: api_key,
-          keychain_name: match_keychain_name,
-          keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
-        )
-        UI.success("✅ ZERO-TOUCH SUCCESS: Reused existing development certificates across projects")
-        UI.message("💡 Certificate efficiency: Maximum reuse achieved")
-
-      rescue Exception => e
-        if e.message.include?("No code signing identity found")
-          UI.message("⚠️  No development certificates exist. Creating shared certificates for all projects...")
-          match(
-            type: "development",
-            readonly: false,
-            api_key: api_key,
-            keychain_name: match_keychain_name,
-            keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"],
-            skip_confirmation: true
-          )
-          UI.success("✅ ZERO-TOUCH: Created shared development certificates for maximum project reuse")
-        elsif e.message.include?("No matching provisioning profiles found")
-          # Try to create project-specific profile, but handle permission errors gracefully
-          UI.message("📱 Attempting to create project-specific development profile for modulo-squares...")
-          begin
-            match(
-              type: "development",
-              readonly: false,
-              app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
-              api_key: api_key,
-              keychain_name: match_keychain_name,
-              keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"],
-              skip_confirmation: true
-            )
-            UI.success("✅ ZERO-TOUCH: Created project-specific profile while reusing shared certificates")
-          rescue Exception => profile_error
-            if profile_error.message.include?("forbidden") || profile_error.message.include?("not allowed")
-              UI.error("❌ API key lacks permission to create provisioning profiles")
-              UI.error("💡 Please ensure your App Store Connect API key has Admin role")
-              UI.error("💡 Or create the provisioning profile manually in Apple Developer portal")
-              if Helper.ci?
-                UI.error("❌ CI detected: Skipping interactive username/password fallback")
-                raise profile_error
-              else
-                UI.message("🔄 Falling back to username/password authentication...")
-
-                # Fallback to username/password for profile creation
-                match(
-                  type: "development",
-                  readonly: false,
-                  app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
-                  username: ENV["FASTLANE_APPLE_ID"],
-                  team_id: ENV["FASTLANE_TEAM_ID"],
-                  keychain_name: match_keychain_name,
-                  keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"],
-                  skip_confirmation: true
-                )
-                UI.success("✅ ZERO-TOUCH: Created profile using username/password fallback")
-              end
-            else
-              raise profile_error
-            end
-          end
-        else
-          raise e
-        end
-      end
-    else
-      # Fallback to username/password (less efficient but still zero-touch)
-      if Helper.ci?
-        UI.error("❌ CI detected: API key required for Zero Touch. Skipping interactive username/password fallback.")
-        raise "API key missing in CI environment"
-      end
-
-      UI.message("🔑 Using username/password authentication (consider API key for maximum efficiency)")
-
-      begin
-        match(
-          type: "development",
-          readonly: true,
-          username: ENV["FASTLANE_APPLE_ID"],
-          team_id: ENV["FASTLANE_TEAM_ID"],
-          keychain_name: match_keychain_name,
-          keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"],
-          skip_confirmation: true
-        )
-        UI.success("✅ ZERO-TOUCH SUCCESS: Reused existing development certificates")
-      rescue Exception => e
-        if e.message.include?("No code signing identity found") || e.message.include?("No matching provisioning profiles found")
-          UI.message("⚠️  Creating development certificates automatically...")
-          match(
-            type: "development",
-            readonly: false,
-            app_identifier: ["com.nelsongrey.modulosquares.app.ios"],
-            username: ENV["FASTLANE_APPLE_ID"],
-            team_id: ENV["FASTLANE_TEAM_ID"],
-            keychain_name: match_keychain_name,
-            keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"],
-            skip_confirmation: true
-          )
-          UI.success("✅ ZERO-TOUCH: Created development certificates automatically")
-        else
-          raise e
-        end
-      end
-    end
-
-    # Ensure partition list is set to prevent UI prompts
-    keychain_name = ENV["MATCH_KEYCHAIN_NAME"] || "fastlane_tmp_keychain"
-    keychain_password = ENV["MATCH_KEYCHAIN_PASSWORD"] || ENV["MATCH_PASSWORD"]
-    
-    if ENV["MATCH_KEYCHAIN_PATH"] && File.exist?(ENV["MATCH_KEYCHAIN_PATH"])
-      keychain_path = ENV["MATCH_KEYCHAIN_PATH"]
-    else
-      # Handle both .keychain and .keychain-db extensions
-      keychain_path = File.expand_path("~/Library/Keychains/#{keychain_name}-db")
-      unless File.exist?(keychain_path)
-        keychain_path = File.expand_path("~/Library/Keychains/#{keychain_name}")
-      end
-    end
-    
-    if File.exist?(keychain_path)
-      set_partition_list(keychain_path, keychain_password)
-    end
-  end
-
-  desc "Helper to purge App Store assets from the match repo (nuke) without revoking on Apple Developer Portal"
-  def purge_match_repo_appstore_assets!
-    UI.message("💣  Purging App Store assets from the match git repository (skipping Apple Dev Portal revocation)...")
-    
-    # We use the 'nuke' action but we want to avoid revoking the actual certs on Apple's side 
-    # if we just want to clear the repo state. However, 'match nuke' is designed to revoke.
-    #
-    # Instead, we can use the 'match' action with 'readonly: false' and 'force: true' 
-    # which usually regenerates. But if we hit the limit, we need to clear the repo's knowledge 
-    # of the certs so it tries to generate a new one (and hopefully we have room or can revoke manually).
-    #
-    # ACTUALLY, the error is "reached the maximum number of available Distribution certificates".
-    # This means we DO need to revoke them on Apple's side to free up a slot.
-    # So we should use 'match nuke' to clear them out.
-    
-    # Nuke distribution certificates and profiles
-    begin
-      match_nuke(
-        type: "appstore",
-        skip_confirmation: true
-      )
-      UI.success("✅  Successfully nuked App Store assets.")
-    rescue => e
-      UI.error("⚠️  Failed to nuke App Store assets: #{e.message}")
-      # We continue, hoping that maybe enough was cleared or that the retry might work
-    end
-  end
-
-  desc "Sync App Store code signing certificates - simplified for zero-touch CI/CD"
-  lane :certificates_appstore do
-    UI.message("🔐 Syncing App Store code signing certificates...")
-
-    # Clean up ALL distribution certificates from the login keychain before starting
-    # This prevents contamination where old certs without private keys interfere with signing
-    UI.message("🧹 Cleaning up all distribution certificates from login keychain...")
-    begin
-      login_keychain = File.expand_path("~/Library/Keychains/login.keychain-db")
-      
-      # Find all Apple Distribution certificates
-      cert_list = `security find-certificate -a -c "Apple Distribution" -Z "#{login_keychain}" 2>/dev/null`
-      
-      # Extract SHA-1 hashes
-      sha1_hashes = cert_list.scan(/SHA-1 hash: ([A-F0-9]{40})/).flatten
-      
-      if sha1_hashes.any?
-        UI.message("Found #{sha1_hashes.length} distribution certificate(s) in login keychain, removing them...")
-        sha1_hashes.each do |sha1|
-          begin
-            sh("security delete-certificate -Z #{sha1} \"#{login_keychain}\" 2>/dev/null || true", log: false)
-            UI.message("  ✅ Deleted certificate: #{sha1}")
-          rescue => e
-            UI.message("  ⚠️ Could not delete #{sha1}: #{e.message}")
-          end
-        end
-        UI.success("✅ Cleaned #{sha1_hashes.length} certificate(s) from login keychain")
-      else
-        UI.message("✓ No distribution certificates found in login keychain")
-      end
-    rescue => e
-      UI.message("⚠️ Login keychain cleanup had issues (non-fatal): #{e.message}")
-    end
-
-    # Ensure keychain is unlocked and configured for cert access
-    keychain_name = ENV['MATCH_KEYCHAIN_NAME']
-    keychain_password = ENV['MATCH_KEYCHAIN_PASSWORD']
-    if keychain_name && keychain_password
-      keychain_path = File.expand_path("~/Library/Keychains/#{keychain_name}.keychain-db")
-      system("security unlock-keychain -p '#{keychain_password}' '#{keychain_path}' || true")
-      system("security set-key-partition-list -S apple-tool:,apple:,codesign: -s -t private -k '#{keychain_password}' '#{keychain_path}' 2>/dev/null || true")
-    end
-
-    # Set up API key authentication for match
-    private_key_content = ENV["APP_STORE_CONNECT_KEY"]
-    if private_key_content.nil? || private_key_content.empty?
-      UI.error("APP_STORE_CONNECT_KEY environment variable is not set or empty")
-      raise "Missing APP_STORE_CONNECT_KEY"
-    end
-
-    # Clean null bytes and percent signs from the key (GitHub Actions artifact)
-    private_key_content = private_key_content.gsub("\0", "").gsub("%", "").strip
-
-    # Detect key format
-    is_pem = private_key_content.include?("-----BEGIN")
-    cleaned = private_key_content.gsub(/\s+/, "")
-    looks_base64 = cleaned =~ /\A[A-Za-z0-9+\/=]+\z/ && cleaned.length > 100
-
-    if !is_pem && looks_base64
-      UI.message("Detected APP_STORE_CONNECT_KEY as base64; passing directly as key_content (is_key_content_base64: true)")
-      api_key = app_store_connect_api_key(
-        key_id: ENV["APP_STORE_CONNECT_KEY_ID"],
-        issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],
-        key_content: cleaned,
-        is_key_content_base64: true,
-        in_house: false
-      )
-    else
-      # Process as PEM
-      private_key_content = private_key_content.gsub(/\A['\"]|['\"]\z/, '')
-      private_key_content = private_key_content.gsub(/\A['\"]|['\"]\z/, '')
-      private_key_content = private_key_content.gsub(/\\n/, "\n")
-      private_key_content = private_key_content.gsub(/\r\n?/, "\n")
-      private_key_content = private_key_content.lines.map { |l| l.strip }.reject { |l| l.empty? }.join("\n") + "\n"
-
-      unless private_key_content.include?("-----BEGIN PRIVATE KEY-----") || private_key_content.include?("-----BEGIN EC PRIVATE KEY-----")
-        begin
-          require 'base64'
-          decoded = Base64.decode64(private_key_content)
-          if decoded.include?("-----BEGIN")
-            private_key_content = decoded
-            UI.message("Decoded APP_STORE_CONNECT_KEY from base64")
-          end
-        rescue => e
-          UI.message("Failed to decode APP_STORE_CONNECT_KEY as base64: #{e.message}")
-        end
-      end
-
-      require 'tempfile'
-      key_file = Tempfile.new(['asc_key', '.p8'])
-      key_file.write(private_key_content)
+      key_file = Tempfile.new(["app_store_connect_key", ".p8"])
+      key_file.write(key_content)
       key_file.close
 
-      UI.message("Created temporary ASC key file: #{key_file.path}")
-
-      api_key = app_store_connect_api_key(
-        key_id: ENV["APP_STORE_CONNECT_KEY_ID"],
-        issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],
+      return app_store_connect_api_key(
+        key_id: key_id,
+        issuer_id: issuer_id,
         key_filepath: key_file.path
       )
     end
 
-    # Try to sync appstore certificates
-    UI.message("🔄 Attempting to use existing certificates...")
-    begin
-      match(
-        type: "appstore",
-        readonly: true,
-        git_url: ENV['MATCH_GIT_URL'],
-        keychain_name: ENV['MATCH_KEYCHAIN_NAME'],
-        keychain_password: ENV['MATCH_KEYCHAIN_PASSWORD'],
-        api_key: api_key
-      )
-      UI.success("✅ Using existing certificates")
+    app_store_connect_api_key(
+      key_id: key_id,
+      issuer_id: issuer_id,
+      key_content: key_content.gsub(/\s+/, ""),
+      is_key_content_base64: true,
+      in_house: false
+    )
+  end
 
-    rescue => e
-      if e.message.include?("No code signing identity found") || e.message.include?("No matching provisioning profiles found")
-        UI.message("⚠️ Creating new certificates...")
-        begin
-          # Ensure keychain is unlocked BEFORE creating certs
-          if keychain_name && keychain_password
-            keychain_path = File.expand_path("~/Library/Keychains/#{keychain_name}.keychain-db")
-            system("security unlock-keychain -p '#{keychain_password}' '#{keychain_path}' || true")
-            system("security set-key-partition-list -S apple-tool:,apple:,codesign: -s -t private -k '#{keychain_password}' '#{keychain_path}' 2>/dev/null || true")
-          end
+  def ensure_xcode_automatic_signing!
+    team_id = ENV["FASTLANE_TEAM_ID"].to_s.strip
+    raise "Missing FASTLANE_TEAM_ID" if team_id.empty?
 
-          match(
-            type: "appstore",
-            readonly: false,
-            git_url: ENV['MATCH_GIT_URL'],
-            keychain_name: ENV['MATCH_KEYCHAIN_NAME'],
-            keychain_password: ENV['MATCH_KEYCHAIN_PASSWORD'],
-            api_key: api_key
-          )
-          UI.success("✅ Created new certificates")
+    update_code_signing_settings(
+      use_automatic_signing: true,
+      path: "Runner.xcodeproj",
+      targets: ["Runner"],
+      team_id: team_id
+    )
 
-        rescue => create_error
-          if create_error.message.include?("Maximum number of certificates") || create_error.message.include?("reached the maximum number")
-            UI.important("⚠️ Hit Apple's certificate limit. Using match_nuke...")
-            
-            begin
-              match_nuke(
-                type: "appstore",
-                skip_confirmation: true,
-                readonly: false,
-                api_key: api_key
-              )
-              
-              UI.success("✅ Revoked old certificates")
-              retry
-            rescue => nuke_error
-              UI.error("❌ Failed to nuke certificates: #{nuke_error.message}")
-              raise create_error
-            end
-          else
-            raise create_error
-          end
-        end
-      else
-        raise e
-      end
-    end
+    team_id
+  end
 
-    UI.success("✅ App Store code signing certificates synced successfully")
+  desc "Validate App Store Connect configuration"
+  lane :sync_signing do
+    app_store_api_key
+    ensure_xcode_automatic_signing!
+    UI.success("✅ Signing configuration validated (automatic signing + App Store Connect API)")
+  end
+
+  desc "Validate development signing configuration"
+  lane :certificates_development do
+    sync_signing
+    UI.success("✅ Development signing uses automatic signing (no keychain orchestration)")
+  end
+
+  desc "Validate App Store signing configuration"
+  lane :certificates_appstore do
+    sync_signing
+    UI.success("✅ App Store signing uses automatic signing (no keychain orchestration)")
   end
 
   lane :certificates_all do
@@ -673,128 +113,48 @@ platform :ios do
     certificates_appstore
   end
 
-  desc "ZERO-TOUCH CERTIFICATE LIFECYCLE - Complete automated certificate management for all projects"
+  desc "ZERO-TOUCH CERTIFICATE LIFECYCLE"
   lane :zero_touch_certificates do
-    # ZERO-TOUCH CERTIFICATE LIFECYCLE MANAGEMENT
-    # This lane implements the complete automated certificate strategy:
-    # 1. Assess current certificate state
-    # 2. Reuse existing certificates when possible (maximum efficiency)
-    # 3. Create new certificates only when necessary
-    # 4. Ensure all projects can share certificates
-    # 5. Provide detailed status reporting
-    # 6. Never require human intervention
-
-    UI.message("🤖 ZERO-TOUCH CERTIFICATE LIFECYCLE: Starting automated assessment...")
-
-    # Phase 1: Development Certificates (Maximum Reuse Strategy)
-    UI.message("📋 Phase 1: Development Certificate Assessment")
-    begin
-      certificates_development
-      UI.success("✅ Development certificates: Optimized and ready")
-    rescue => e
-      UI.error("❌ Development certificate phase failed: #{e.message}")
-      UI.important("⚠️  Continuing without development certificates (non-fatal for TestFlight/AppStore)...")
-      # raise e
-    end
-
-    # Phase 2: Distribution Certificates (Project-Specific but Efficient)
-    UI.message("📋 Phase 2: Distribution Certificate Assessment")
-    begin
-      certificates_appstore
-      UI.success("✅ Distribution certificates: Optimized and ready")
-    rescue => e
-      UI.error("❌ Distribution certificate phase failed: #{e.message}")
-      raise e
-    end
-
-    # Phase 3: Status Report and Optimization Recommendations
-    UI.message("📊 Phase 3: Certificate Status Report")
-    UI.success("🎉 ZERO-TOUCH COMPLETE: All certificates optimized for maximum efficiency")
-    UI.message("💡 Benefits achieved:")
-    UI.message("   • Maximum certificate reuse across all projects")
-    UI.message("   • Automatic certificate lifecycle management")
-    UI.message("   • Zero human intervention required")
-    UI.message("   • Shared certificate pool for development")
-    UI.message("   • Project-specific profiles for distribution")
-    UI.message("   • Future projects will automatically reuse these certificates")
-
-    # Future enhancement: Certificate expiration monitoring
-    UI.message("🔮 Future: Automatic certificate renewal 30 days before expiration")
+    certificates_all
+    UI.success("✅ Zero-touch signing configuration is ready")
   end
 
   desc "Build iOS app for development without code signing"
   lane :build_development do
-    # Build the Flutter iOS app without code signing for development
     sh("cd ../.. && flutter build ios --debug --no-codesign")
-
-    # For development builds without certificates, just copy the .app file
-    # Firebase App Distribution can accept .app files for development
     app_path = "../../build/ios/iphoneos/Runner.app"
     output_dir = "./fastlane/builds"
     sh("mkdir -p #{output_dir}")
     sh("cp -r #{app_path} #{output_dir}/")
-
-    UI.message("Development build completed. App available at: #{output_dir}/Runner.app")
-    UI.message("Note: This app is not code signed and can only be installed on jailbroken devices or with manual signing")
+    UI.message("Development build completed: #{output_dir}/Runner.app")
   end
 
-  desc "Upload to TestFlight - ZERO-TOUCH with build_app (gym) code signing"
+  desc "Upload to TestFlight using automatic signing"
   lane :beta do |options|
     release_notes = options[:release_notes] || ENV["RELEASE_NOTES"] || "Automated build for TestFlight"
-    feedback_email = ENV["BETA_FEEDBACK_EMAIL"] || "mark.a.nelson@outlook.com"
+    build_number = ci_ios_build_number
 
-    build_number = ENV["GITHUB_RUN_NUMBER"] || "1"
     increment_build_number(build_number: build_number)
     UI.message("Using iOS build number: #{build_number}")
 
-    # Sync code signing certificates for TestFlight (distribution/appstore).
-    # Development certificates are not required for this build.
-    certificates_appstore
+    api_key = app_store_api_key
+    team_id = ensure_xcode_automatic_signing!
 
-    # Set environment variables for code signing in Xcode build
-    ENV['PROVISIONING_PROFILE'] = ENV['sigh_com.nelsongrey.modulosquares.app.ios_appstore']
-    ENV['CODE_SIGN_IDENTITY'] = ENV['sigh_com.nelsongrey.modulosquares.app.ios_appstore_certificate-name']
-    ENV['DEVELOPMENT_TEAM'] = ENV['sigh_com.nelsongrey.modulosquares.app.ios_appstore_team-id']
-
-    # Clean up CocoaPods to ensure fresh build state
     sh("rm -rf ../Pods")
     sh("rm -f ../Podfile.lock")
-    
-    # Clear derived data safely
     clear_derived_data
-    
-    # Ensure dependencies are available
+
     Dir.chdir("../../") do
       sh("rm -rf build")
       sh("flutter clean || true")
       sh("flutter pub get")
     end
 
-    # Install pods with updates (since we cleared them)
     Dir.chdir("..") do
       sh("rm -f Podfile.lock")
       sh("pod install --repo-update")
     end
 
-    # Build using build_app (gym) for reliable, signed artifact creation
-    # This lets Xcode handle signing directly without manual intervention
-    app_id = "com.nelsongrey.modulosquares.app.ios"
-    profile_name = ENV["sigh_#{app_id}_appstore_profile-name"]
-    team_id = ENV["sigh_#{app_id}_appstore_team-id"] || ENV["FASTLANE_TEAM_ID"]
-    cert_name = ENV["sigh_#{app_id}_appstore_certificate-name"] || "Apple Distribution"
-
-    # Configure code signing for the Runner project before building
-    update_code_signing_settings(
-      use_automatic_signing: false,
-      path: "Runner.xcodeproj",
-      targets: ["Runner"],
-      code_sign_identity: cert_name,
-      bundle_identifier: app_id,
-      profile_name: profile_name,
-      team_id: team_id
-    )
-
-    # Build and sign the IPA using Xcode (gym handles all signing automatically)
     build_app(
       scheme: "Runner",
       workspace: "Runner.xcworkspace",
@@ -803,314 +163,102 @@ platform :ios do
       output_directory: "./builds",
       output_name: "ModuloSquares.ipa",
       export_options: {
-        provisioningProfiles: {
-          app_id => profile_name
-        }
-      }
+        signingStyle: "automatic",
+        teamID: team_id
+      },
+      xcargs: "-allowProvisioningUpdates"
     )
 
-    # Get IPA path from lane context (gym sets this automatically)
     ipa_path = lane_context[SharedValues::IPA_OUTPUT_PATH]
-    
-    # Verify IPA was created successfully
-    unless File.exist?(ipa_path)
-       UI.user_error!("gym failed to create IPA at #{ipa_path}")
-    end
+    UI.user_error!("IPA not found at #{ipa_path}") unless ipa_path && File.exist?(ipa_path)
+    UI.user_error!("IPA file is empty at #{ipa_path}") unless File.size(ipa_path) > 0
 
-    # Verify IPA has content
-    unless File.size(ipa_path) > 0
-       UI.user_error!("IPA file is empty at #{ipa_path}")
-    end
-    
-    UI.success("✅ IPA created and signed successfully at #{ipa_path}")
+    upload_to_testflight(
+      api_key: api_key,
+      ipa: ipa_path,
+      skip_waiting_for_build_processing: true,
+      changelog: release_notes
+    )
 
-    # IPA is already signed by gym/build_app - no need to resign
-    UI.success("📦 IPA is fully signed and ready for upload")
-
-    # Set up API key authentication for TestFlight upload
-    private_key_content = ENV["APP_STORE_CONNECT_KEY"]
-    if private_key_content.nil? || private_key_content.empty?
-      UI.error("APP_STORE_CONNECT_KEY environment variable is not set or empty")
-      raise "Missing APP_STORE_CONNECT_KEY"
-    end
-
-    # Clean null bytes and percent signs from the key (GitHub Actions artifact)
-    # CRITICAL: Multiple passes to catch all null byte representations
-    private_key_content = private_key_content.gsub("\0", "").gsub("%", "").strip
-    private_key_content = private_key_content.gsub(/\x00/, "").strip
-
-    # Detect key format and prepare API key
-    is_pem = private_key_content.include?("-----BEGIN")
-    cleaned = private_key_content.gsub(/\s+/, "")
-    looks_base64 = cleaned =~ /\A[A-Za-z0-9+\/=]+\z/ && cleaned.length > 100
-
-    if !is_pem && looks_base64
-      UI.message("Detected APP_STORE_CONNECT_KEY as base64; passing directly as key_content (is_key_content_base64: true)")
-      # Additional null byte cleanup for base64 content
-      cleaned = cleaned.gsub("\0", "").gsub(/\x00/, "").strip
-      api_key = app_store_connect_api_key(
-        key_id: ENV["APP_STORE_CONNECT_KEY_ID"],
-        issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],
-        key_content: cleaned,
-        is_key_content_base64: true,
-        in_house: false
-      )
-    else
-      # Process as PEM
-      private_key_content = private_key_content.gsub(/\A['\"]|['\"]\z/, '')
-      private_key_content = private_key_content.gsub(/\\n/, "\n")
-      private_key_content = private_key_content.gsub(/\r\n?/, "\n")
-      # CRITICAL: Remove null bytes before any OpenSSL operations
-      private_key_content = private_key_content.gsub("\0", "").gsub(/\x00/, "").strip
-      private_key_content = private_key_content.lines.map { |l| l.strip }.reject { |l| l.empty? }.join("\n") + "\n"
-
-      unless private_key_content.include?("-----BEGIN PRIVATE KEY-----") || private_key_content.include?("-----BEGIN EC PRIVATE KEY-----")
-        begin
-          require 'base64'
-          decoded = Base64.decode64(private_key_content)
-          if decoded.include?("-----BEGIN")
-            private_key_content = decoded
-            UI.message("Decoded APP_STORE_CONNECT_KEY from base64")
-          end
-        rescue => e
-          UI.message("Failed to decode APP_STORE_CONNECT_KEY as base64: #{e.message}")
-        end
-      end
-
-      require 'tempfile'
-      key_file = Tempfile.new(['app_store_connect_key', '.p8'])
-      key_file.write(private_key_content)
-      key_file.close
-
-      UI.message("Created temporary App Store Connect key file: #{key_file.path}")
-
-      api_key = app_store_connect_api_key(
-        key_id: ENV["APP_STORE_CONNECT_KEY_ID"],
-        issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],
-        key_filepath: key_file.path
-      )
-    end
-
-    # Upload to TestFlight
-    begin
-      UI.message("📤 Uploading IPA to TestFlight...")
-      
-      upload_to_testflight(
-        api_key: api_key,
-        ipa: ipa_path,
-        skip_waiting_for_build_processing: true
-      )
-
-      UI.success("✅ IPA uploaded to TestFlight successfully")
-      UI.message("📝 Build processing will continue asynchronously in App Store Connect")
-      UI.message("🔍 Check TestFlight status at: https://appstoreconnect.apple.com")
-
-    rescue => e
-      UI.error("❌ Failed to upload to TestFlight: #{e.message}")
-      raise e
-    end
+    UI.success("✅ Uploaded to TestFlight")
   end
 
   desc "Run tests and build debug version"
   lane :test_and_build do
-    # Install Flutter dependencies
     Dir.chdir("../../") do
       sh("flutter pub get")
-    end
-
-    # Run Flutter tests
-    Dir.chdir("../../") do
       sh("flutter test")
-    end
-
-    # Build Flutter iOS app in debug mode
-    Dir.chdir("../../") do
       sh("flutter build ios --debug --no-codesign")
     end
   end
 
-  # Helper method to get version number from plist
   def get_version_number_from_plist(plist_path:)
-    require 'plist'
+    require "plist"
     plist = Plist.parse_xml(plist_path)
-    plist['CFBundleShortVersionString']
+    plist["CFBundleShortVersionString"]
   end
 
-  # Helper method to get build number from plist
   def get_build_number_from_plist(plist_path:)
-    require 'plist'
+    require "plist"
     plist = Plist.parse_xml(plist_path)
-    plist['CFBundleVersion']
+    plist["CFBundleVersion"]
   end
 
   desc "Submit app to App Store Review"
   lane :submit_to_app_store do |options|
-    # ZERO-TOUCH APP STORE SUBMISSION
-    # Automatically handles the complete App Store submission process
-    # 1. Prepare metadata and screenshots
-    # 2. Submit for review
-    # 3. Handle submission status and notifications
+    api_key = app_store_api_key
 
-    UI.message("🚀 ZERO-TOUCH: Starting automated App Store submission...")
-
-    # Get version info
-    version = get_version_number_from_plist(plist_path: "../../ios/Runner/Info.plist")
-    build_number = get_build_number_from_plist(plist_path: "../../ios/Runner/Info.plist")
-
-    UI.message("📦 Submitting version #{version} (#{build_number}) to App Store")
-
-    # Set up API key authentication
-    private_key_content = ENV["APP_STORE_CONNECT_KEY"]
-    if private_key_content.nil? || private_key_content.empty?
-      UI.error("APP_STORE_CONNECT_KEY environment variable is not set or empty")
-      raise "Missing APP_STORE_CONNECT_KEY"
-    end
-    # Clean null bytes and percent signs from the key (GitHub Actions artifact)
-    # CRITICAL: Multiple passes to catch all null byte representations
-    private_key_content = private_key_content.gsub("\0", "").gsub("%", "").strip
-    private_key_content = private_key_content.gsub(/\x00/, "").strip
-
-    api_key = app_store_connect_api_key(
-      key_id: ENV["APP_STORE_CONNECT_KEY_ID"],
-      issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],
-      key_content: private_key_content,
-      is_key_content_base64: true
-    )
-
-    # Submit to App Store
     deliver(
       api_key: api_key,
       submit_for_review: true,
-      automatic_release: false,  # Manual release after approval
-      force: true,  # Skip HTML report verification
-      skip_metadata: false,  # Include metadata updates
-      skip_screenshots: false,  # Include screenshot updates
-      skip_binary_upload: true,  # Binary already uploaded via TestFlight
+      automatic_release: false,
+      force: true,
+      skip_binary_upload: true,
+      skip_metadata: false,
+      skip_screenshots: false,
       submission_information: {
         add_id_info_uses_idfa: false,
         export_compliance_encryption_updated: false,
         export_compliance_uses_encryption: false
       },
       release_notes: {
-        'en-US' => options[:release_notes] || "Bug fixes and performance improvements"
+        "en-US" => options[:release_notes] || "Bug fixes and performance improvements"
       }
     )
 
-    UI.success("✅ App successfully submitted to App Store Review!")
-    UI.message("⏳ Apple review process typically takes 1-3 days")
-    UI.message("📱 You'll receive email notifications about review status")
+    version = get_version_number_from_plist(plist_path: "../../ios/Runner/Info.plist")
+    build = get_build_number_from_plist(plist_path: "../../ios/Runner/Info.plist")
+    UI.success("✅ Submitted version #{version} (#{build}) to App Store review")
   end
 
   desc "Promote TestFlight build to App Store"
   lane :promote_to_app_store do |options|
-    # ZERO-TOUCH PROMOTION: TestFlight → App Store
-    # Automatically promotes a successful TestFlight build to App Store submission
-    # 1. Verify TestFlight build is ready
-    # 2. Prepare App Store metadata
-    # 3. Submit for App Store review
-
-    UI.message("🚀 ZERO-TOUCH: Promoting TestFlight build to App Store...")
-
-    # This lane would typically be called after TestFlight testing is complete
-    # For now, it assumes the build is ready for promotion
-
-    release_notes = options[:release_notes] || "Build #{get_build_number_from_plist(plist_path: '../../ios/Runner/Info.plist')} - Ready for App Store"
-
-    # Call the submit lane
+    release_notes = options[:release_notes] || "Ready for App Store release"
     submit_to_app_store(release_notes: release_notes)
-
-    UI.success("✅ TestFlight build successfully promoted to App Store!")
   end
 
-  desc "Manage TestFlight beta groups and testers"
+  desc "Manage TestFlight beta groups"
   lane :manage_beta_groups do |options|
-    # ZERO-TOUCH BETA MANAGEMENT
-    # Automatically manages TestFlight beta groups and tester access
-    # 1. Create/update beta groups
-    # 2. Add/remove testers
-    # 3. Manage group permissions
-
-    UI.message("🚀 ZERO-TOUCH: Managing TestFlight beta groups...")
-
-    private_key_content = ENV["APP_STORE_CONNECT_KEY"]
-    if private_key_content.nil? || private_key_content.empty?
-      UI.error("APP_STORE_CONNECT_KEY environment variable is not set or empty")
-      raise "Missing APP_STORE_CONNECT_KEY"
-    end
-    private_key_content = private_key_content.gsub("\0", "").gsub("%", "").strip
-
-    api_key = app_store_connect_api_key(
-      key_id: ENV["APP_STORE_CONNECT_KEY_ID"],
-      issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],
-      key_content: private_key_content,
-      is_key_content_base64: true
-    )
-
-    # Create or update beta group
+    api_key = app_store_api_key
     beta_group_name = options[:group_name] || "Internal Testers"
-    beta_group_is_internal = options[:internal] || true
-
-    begin
-      # Check if beta group exists
-      beta_groups = app_store_connect(
-        api_key: api_key,
-        get_beta_groups: true
-      )
-
-      existing_group = beta_groups.find { |group| group['attributes']['name'] == beta_group_name }
-
-      if existing_group
-        UI.message("✅ Beta group '#{beta_group_name}' already exists")
-      else
-        # Create new beta group
-        app_store_connect(
-          api_key: api_key,
-          create_beta_group: {
-            name: beta_group_name,
-            is_internal_group: beta_group_is_internal
-          }
-        )
-        UI.success("✅ Created new beta group: #{beta_group_name}")
-      end
-
-    rescue => e
-      UI.error("❌ Failed to manage beta groups: #{e.message}")
-      raise e
-    end
+    UI.message("Beta group management requested for '#{beta_group_name}'.")
+    UI.message("Use App Store Connect UI/API automation to maintain tester membership.")
+    UI.message("API key validated: #{api_key ? 'yes' : 'no'}")
   end
 
   desc "Complete automated release pipeline: TestFlight → App Store"
   lane :full_release_pipeline do |options|
-    # ZERO-TOUCH COMPLETE RELEASE PIPELINE
-    # End-to-end automated release from development to App Store
-    # 1. Build and upload to TestFlight
-    # 2. Manage beta testing
-    # 3. Submit to App Store
+    beta(release_notes: options[:release_notes])
 
-    UI.message("🚀 ZERO-TOUCH: Starting complete automated release pipeline...")
-
-    # Step 1: Ensure certificates are ready
-    UI.message("📋 Step 1: Preparing certificates...")
-    zero_touch_certificates
-
-    # Step 2: Build and upload to TestFlight
-    UI.message("📋 Step 2: Building and uploading to TestFlight...")
-    beta
-
-    # Step 3: Manage beta groups (optional)
     if options[:manage_beta]
-      UI.message("📋 Step 3: Managing beta groups...")
       manage_beta_groups(group_name: options[:beta_group_name])
     end
 
-    # Step 4: Submit to App Store (if requested)
     if options[:submit_to_app_store]
-      UI.message("📋 Step 4: Submitting to App Store...")
-      sleep(300)  # Wait 5 minutes for TestFlight processing
+      sleep(300)
       submit_to_app_store(release_notes: options[:release_notes])
     end
 
-    UI.success("✅ Complete automated release pipeline finished!")
-    UI.message("🎉 Your app is now in TestFlight (and optionally submitted to App Store)")
+    UI.success("✅ Complete automated release pipeline finished")
   end
 end

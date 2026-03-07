@@ -120,8 +120,7 @@ jobs:
           if [ ! -s "$TMP_WWDR" ]; then
             echo '⚠️ WWDR certificate download unavailable; continuing without import'
           else
-            security import "$TMP_WWDR" -k "$HOME/Library/Keychains/login.keychain-db" -T /usr/bin/codesign -T /usr/bin/security || true
-            echo '✅ WWDR certificate imported'
+            echo '✅ WWDR certificate downloaded (keychainless workflow: skipping keychain import)'
           fi
 
       - name: 🔐 Setup App Store Connect Authentication

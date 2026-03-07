@@ -10,21 +10,20 @@ class Tile {
   /// The numerical value of this tile (null for obstacles).
   final int? value;
 
-  const Tile({
-    this.type = TileType.normal,
-    this.value,
-  });
+  const Tile({this.type = TileType.normal, this.value});
 
   /// Creates a copy of this tile with optional property overrides.
   Tile copyWith({TileType? type, int? value}) {
-    return Tile(
-      type: type ?? this.type,
-      value: value ?? this.value,
-    );
+    return Tile(type: type ?? this.type, value: value ?? this.value);
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Tile && runtimeType == other.runtimeType && type == other.type && value == other.value;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Tile &&
+          runtimeType == other.runtimeType &&
+          type == other.type &&
+          value == other.value;
 
   @override
   int get hashCode => type.hashCode ^ value.hashCode;
@@ -57,6 +56,108 @@ class GameBoard {
   // Static random instance for better performance
   static final Random _random = Random();
 
+  static List<List<Tile>>? _presetGridForLevel(int level) {
+    switch (level) {
+      case 1:
+        return [
+          [
+            const Tile(value: 2),
+            const Tile(value: 4),
+            const Tile(),
+            const Tile(),
+          ],
+          [const Tile(), const Tile(value: 3), const Tile(), const Tile()],
+          [const Tile(), const Tile(), const Tile(value: 6), const Tile()],
+          [const Tile(), const Tile(), const Tile(), const Tile()],
+        ];
+      case 2:
+        return [
+          [
+            const Tile(value: 2),
+            const Tile(value: 8),
+            const Tile(),
+            const Tile(),
+          ],
+          [
+            const Tile(type: TileType.obstacle),
+            const Tile(value: 3),
+            const Tile(value: 9),
+            const Tile(),
+          ],
+          [const Tile(), const Tile(), const Tile(value: 4), const Tile()],
+          [const Tile(), const Tile(), const Tile(), const Tile()],
+        ];
+      case 3:
+        return [
+          [
+            const Tile(value: 3),
+            const Tile(value: 6),
+            const Tile(),
+            const Tile(),
+          ],
+          [
+            const Tile(value: 2),
+            const Tile(type: TileType.bonus, value: 5),
+            const Tile(),
+            const Tile(),
+          ],
+          [
+            const Tile(),
+            const Tile(value: 4),
+            const Tile(value: 8),
+            const Tile(),
+          ],
+          [const Tile(), const Tile(), const Tile(), const Tile()],
+        ];
+      case 4:
+        return [
+          [
+            const Tile(value: 5),
+            const Tile(value: 5),
+            const Tile(),
+            const Tile(type: TileType.obstacle),
+          ],
+          [
+            const Tile(),
+            const Tile(value: 2),
+            const Tile(value: 7),
+            const Tile(),
+          ],
+          [
+            const Tile(),
+            const Tile(type: TileType.obstacle),
+            const Tile(value: 4),
+            const Tile(),
+          ],
+          [const Tile(), const Tile(), const Tile(), const Tile()],
+        ];
+      case 5:
+        return [
+          [
+            const Tile(value: 3),
+            const Tile(value: 9),
+            const Tile(),
+            const Tile(),
+          ],
+          [
+            const Tile(value: 2),
+            const Tile(type: TileType.obstacle),
+            const Tile(value: 6),
+            const Tile(),
+          ],
+          [
+            const Tile(),
+            const Tile(type: TileType.bonus, value: 4),
+            const Tile(value: 8),
+            const Tile(),
+          ],
+          [const Tile(), const Tile(), const Tile(), const Tile()],
+        ];
+      default:
+        return null;
+    }
+  }
+
   GameBoard._({
     required this.rows,
     required this.cols,
@@ -85,24 +186,38 @@ class GameBoard {
     );
   }
 
-  factory GameBoard({
-    required int level,
-  }) {
-    // Levels range from 1..10. Grid size starts at 4x4 and increases by 1 each level.
-    final int clampedLevel = level < 1 ? 1 : (level > 10 ? 10 : level);
-    final int size = 4 + (clampedLevel - 1); // L1:4, L2:5, ..., L10:13
-    final rows = size;
-    final cols = size;
-    final maxValue = 10 + (clampedLevel - 1) * 5;
-    List<List<Tile>> grid = List.generate(
-        rows,
-        (_) => List.generate(cols, (_) {
-              // Randomly assign special tiles for challenge
-              int roll = _random.nextInt(100);
-              if (roll < 5) return Tile(type: TileType.obstacle); // 5% obstacle
-              if (roll < 8) return Tile(type: TileType.bonus, value: _random.nextInt(maxValue) + 1); // 3% bonus
-              return Tile(type: TileType.normal, value: _random.nextInt(maxValue) + 1);
-            }));
+  factory GameBoard({required int level}) {
+    final int clampedLevel = level < 1 ? 1 : level;
+    const int rows = 4;
+    const int cols = 4;
+    const int maxValue = 9;
+
+    final preset = _presetGridForLevel(clampedLevel);
+    if (preset != null) {
+      return GameBoard._(
+        rows: rows,
+        cols: cols,
+        maxValue: maxValue,
+        grid: preset,
+        score: 0,
+        level: clampedLevel,
+      );
+    }
+
+    final int emptyChance = max(12, 28 - (clampedLevel * 2));
+    final int obstacleChance = clampedLevel >= 4 ? 4 : 0;
+    final int bonusChance = clampedLevel >= 3 ? 3 : 1;
+
+    List<List<Tile>> grid = _generateProceduralGrid(
+      rng: _random,
+      rows: rows,
+      cols: cols,
+      maxValue: maxValue,
+      emptyChance: emptyChance,
+      obstacleChance: obstacleChance,
+      bonusChance: bonusChance,
+    );
+
     return GameBoard._(
       rows: rows,
       cols: cols,
@@ -113,11 +228,68 @@ class GameBoard {
     );
   }
 
-  GameBoard copyWith({
-    List<List<Tile>>? grid,
-    int? score,
-    int? level,
+  factory GameBoard.dailyChallenge({required int seed, int difficulty = 6}) {
+    const int rows = 4;
+    const int cols = 4;
+    const int maxValue = 9;
+
+    final rng = Random(seed);
+    final int clampedDifficulty = difficulty.clamp(1, 20);
+    final int emptyChance = max(10, 22 - clampedDifficulty);
+    final int obstacleChance = 5 + (clampedDifficulty >= 10 ? 1 : 0);
+    final int bonusChance = 3;
+
+    final grid = _generateProceduralGrid(
+      rng: rng,
+      rows: rows,
+      cols: cols,
+      maxValue: maxValue,
+      emptyChance: emptyChance,
+      obstacleChance: obstacleChance,
+      bonusChance: bonusChance,
+    );
+
+    return GameBoard._(
+      rows: rows,
+      cols: cols,
+      maxValue: maxValue,
+      grid: grid,
+      score: 0,
+      level: clampedDifficulty,
+    );
+  }
+
+  static List<List<Tile>> _generateProceduralGrid({
+    required Random rng,
+    required int rows,
+    required int cols,
+    required int maxValue,
+    required int emptyChance,
+    required int obstacleChance,
+    required int bonusChance,
   }) {
+    List<List<Tile>> grid = List.generate(
+      rows,
+      (_) => List.generate(cols, (_) {
+        final int roll = rng.nextInt(100);
+        if (roll < emptyChance) return const Tile();
+        if (roll < emptyChance + obstacleChance)
+          return const Tile(type: TileType.obstacle);
+        if (roll < emptyChance + obstacleChance + bonusChance) {
+          return Tile(type: TileType.bonus, value: rng.nextInt(maxValue) + 1);
+        }
+        return Tile(type: TileType.normal, value: rng.nextInt(maxValue) + 1);
+      }),
+    );
+
+    if (!_hasPotentialMove(grid, rows, cols)) {
+      grid = _seedGuaranteedMove(grid, rows, cols, maxValue, rng);
+    }
+
+    return grid;
+  }
+
+  GameBoard copyWith({List<List<Tile>>? grid, int? score, int? level}) {
     return GameBoard._(
       rows: rows,
       cols: cols,
@@ -128,7 +300,90 @@ class GameBoard {
     );
   }
 
-  bool isInBounds(int row, int col) => row >= 0 && row < rows && col >= 0 && col < cols;
+  bool isInBounds(int row, int col) =>
+      row >= 0 && row < rows && col >= 0 && col < cols;
+
+  static bool _hasPotentialMove(List<List<Tile>> grid, int rows, int cols) {
+    for (int i = 0; i < rows; i++) {
+      for (int j = 0; j < cols; j++) {
+        final current = grid[i][j];
+        if (current.value == null || current.type == TileType.obstacle)
+          continue;
+
+        for (final dir in const [
+          [-1, 0],
+          [1, 0],
+          [0, -1],
+          [0, 1],
+        ]) {
+          final ni = i + dir[0];
+          final nj = j + dir[1];
+          if (ni < 0 || ni >= rows || nj < 0 || nj >= cols) continue;
+
+          final neighbor = grid[ni][nj];
+          if (neighbor.type == TileType.obstacle) continue;
+          if (neighbor.value == null) return true;
+          if (current.value! <= neighbor.value!) return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  static List<List<Tile>> _seedGuaranteedMove(
+    List<List<Tile>> input,
+    int rows,
+    int cols,
+    int maxValue,
+    Random rng,
+  ) {
+    final seeded = input.map((row) => List<Tile>.from(row)).toList();
+
+    if (rows < 1 || cols < 2) return seeded;
+
+    final int row = rng.nextInt(rows);
+    final int col = rng.nextInt(cols - 1);
+    final int source = (rng.nextInt(maxValue) + 1).clamp(1, maxValue);
+    final int factor = rng.nextInt(2) + 2;
+    final int target = (source * factor).clamp(1, maxValue);
+
+    seeded[row][col] = Tile(type: TileType.normal, value: source);
+    seeded[row][col + 1] = Tile(type: TileType.normal, value: target);
+
+    return seeded;
+  }
+
+  GameBoard _applyDeterministicCollision({
+    required int sourceRow,
+    required int sourceCol,
+    required int targetRow,
+    required int targetCol,
+    required Tile sourceTile,
+    required Tile targetTile,
+  }) {
+    final newGrid = List.generate(rows, (i) => List<Tile>.from(grid[i]));
+    final int sourceVal = sourceTile.value!;
+    final int targetVal = targetTile.value!;
+    final int remainder = targetVal % sourceVal;
+
+    int nextScore = score + 1;
+    if (targetTile.type == TileType.bonus) {
+      nextScore += 2;
+    }
+
+    if (remainder == 0) {
+      newGrid[targetRow][targetCol] = Tile(type: targetTile.type, value: null);
+    } else {
+      newGrid[targetRow][targetCol] = Tile(
+        type: targetTile.type,
+        value: remainder,
+      );
+    }
+
+    newGrid[sourceRow][sourceCol] = const Tile();
+    return copyWith(grid: newGrid, score: nextScore);
+  }
 
   GameBoard? move(int row, int col, int dRow, int dCol) {
     if (!isInBounds(row, col)) return null;
@@ -143,9 +398,10 @@ class GameBoard {
     if (fromTile.type == TileType.obstacle) return null;
     if (toTile.type == TileType.obstacle) return null;
 
-    // Move rules:
-    // - If target is empty, move the source value into the target.
-    // - If source <= target, replace target with (target % source). If result == 0 the cell becomes empty.
+    // Deterministic move rules:
+    // - If target is empty, move source into target.
+    // - If source <= target, replace target with (target % source); if result is 0 the target clears.
+    // - Source always clears after a collision.
     // - Otherwise the move is invalid.
     if (fromTile.value != null) {
       if (toTile.value == null) {
@@ -156,25 +412,14 @@ class GameBoard {
       }
 
       if (fromTile.value! <= toTile.value!) {
-        final newGrid = List.generate(rows, (i) => List<Tile>.from(grid[i]));
-        final int sourceVal = fromTile.value!;
-        final int targetVal = toTile.value!;
-        final int remainder = targetVal % sourceVal;
-        // Base score +1; bonus tile grants +5 extra on collision
-        int newScore = score + 1;
-        TileType newType = toTile.type;
-
-        if (remainder == 0) {
-          // Modulo achieved: both tiles become empty
-          newGrid[newRow][newCol] = Tile(type: newType, value: null);
-          newGrid[row][col] = const Tile();
-        } else {
-          // Not zero: source respawns; target becomes (target+source)*remainder
-          final int newValue = (targetVal + sourceVal) * remainder;
-          newGrid[newRow][newCol] = Tile(type: newType, value: newValue);
-          newGrid[row][col] = Tile(type: TileType.normal, value: _random.nextInt(maxValue) + 1);
-        }
-        return copyWith(grid: newGrid, score: newScore);
+        return _applyDeterministicCollision(
+          sourceRow: row,
+          sourceCol: col,
+          targetRow: newRow,
+          targetCol: newCol,
+          sourceTile: fromTile,
+          targetTile: toTile,
+        );
       }
     }
     return null;
@@ -185,7 +430,8 @@ class GameBoard {
     if (dRow == 0 && dCol == 0) return null;
 
     Tile fromTile = grid[row][col];
-    if (fromTile.value == null || fromTile.type == TileType.obstacle) return null;
+    if (fromTile.value == null || fromTile.type == TileType.obstacle)
+      return null;
 
     int curRow = row;
     int curCol = col;
@@ -211,22 +457,14 @@ class GameBoard {
       Tile toTile = grid[nextRow][nextCol];
       if (toTile.value == null || toTile.type == TileType.obstacle) return null;
       if (fromTile.value! <= toTile.value!) {
-        final newGrid = List.generate(rows, (i) => List<Tile>.from(grid[i]));
-        final int sourceVal = fromTile.value!;
-        final int targetVal = toTile.value!;
-        final int remainder = targetVal % sourceVal;
-        int newScore = score + 1;
-        TileType newType = toTile.type;
-
-        if (remainder == 0) {
-          newGrid[nextRow][nextCol] = Tile(type: newType, value: null);
-          newGrid[row][col] = const Tile();
-        } else {
-          final int newValue = (targetVal + sourceVal) * remainder;
-          newGrid[nextRow][nextCol] = Tile(type: newType, value: newValue);
-          newGrid[row][col] = Tile(type: TileType.normal, value: _random.nextInt(maxValue) + 1);
-        }
-        return copyWith(grid: newGrid, score: newScore);
+        return _applyDeterministicCollision(
+          sourceRow: row,
+          sourceCol: col,
+          targetRow: nextRow,
+          targetCol: nextCol,
+          sourceTile: fromTile,
+          targetTile: toTile,
+        );
       }
       return null;
     }
@@ -257,27 +495,21 @@ class GameBoard {
     }
 
     if (fromTile.value! <= toTile.value!) {
-      final newGrid = List.generate(rows, (i) => List<Tile>.from(grid[i]));
-      final int sourceVal = fromTile.value!;
-      final int targetVal = toTile.value!;
-      final int remainder = targetVal % sourceVal;
-      int newScore = score + 1;
-      TileType newType = toTile.type;
-      if (remainder == 0) {
-        newGrid[nextRow][nextCol] = Tile(type: newType, value: null);
-        newGrid[row][col] = const Tile();
-      } else {
-        final int newValue = (targetVal + sourceVal) * remainder;
-        newGrid[nextRow][nextCol] = Tile(type: newType, value: newValue);
-        newGrid[row][col] = Tile(type: TileType.normal, value: _random.nextInt(maxValue) + 1);
-      }
-      return copyWith(grid: newGrid, score: newScore);
+      return _applyDeterministicCollision(
+        sourceRow: row,
+        sourceCol: col,
+        targetRow: nextRow,
+        targetCol: nextCol,
+        sourceTile: fromTile,
+        targetTile: toTile,
+      );
     }
 
     return null;
   }
 
-  bool isBoardClear() => grid.every((row) => row.every((cell) => cell.value == null));
+  bool isBoardClear() =>
+      grid.every((row) => row.every((cell) => cell.value == null));
 
   // Count tiles that currently have a value.
   int nonEmptyTileCount() {
@@ -311,7 +543,8 @@ class GameBoard {
         }
       }
     }
-    if (sr == null || sc == null || v == null) return null; // zero tiles or invalid
+    if (sr == null || sc == null || v == null)
+      return null; // zero tiles or invalid
 
     // Try adjacent empty normal cell first (up, down, left, right)
     final dirs = const [
@@ -360,13 +593,14 @@ class GameBoard {
     for (int i = 0; i < rows; i++) {
       for (int j = 0; j < cols; j++) {
         Tile current = grid[i][j];
-        if (current.value == null || current.type == TileType.obstacle) continue;
+        if (current.value == null || current.type == TileType.obstacle)
+          continue;
 
         for (var dir in [
           [-1, 0],
           [1, 0],
           [0, -1],
-          [0, 1]
+          [0, 1],
         ]) {
           int ni = i + dir[0];
           int nj = j + dir[1];
@@ -374,9 +608,12 @@ class GameBoard {
           if (!isInBounds(ni, nj)) continue;
           Tile neighbor = grid[ni][nj];
           // Empty normal cell adjacent
-          if (neighbor.value == null && neighbor.type == TileType.normal) return true;
+          if (neighbor.value == null && neighbor.type == TileType.normal)
+            return true;
           // Colliding into a tile
-          if (neighbor.value != null && current.value! <= neighbor.value! && neighbor.type != TileType.obstacle) {
+          if (neighbor.value != null &&
+              current.value! <= neighbor.value! &&
+              neighbor.type != TileType.obstacle) {
             return true;
           }
         }

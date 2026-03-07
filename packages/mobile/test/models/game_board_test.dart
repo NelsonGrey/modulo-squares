@@ -7,8 +7,16 @@ void main() {
       final board = GameBoard(level: 1);
       expect(board.grid.length, 4);
       expect(board.grid[0].length, 4);
-      // All cells should be Tile, and most should have value != null
-      expect(board.grid.expand((row) => row).where((cell) => cell.value != null || cell.type != TileType.normal).length, 16);
+      // All cells should be Tile instances
+      expect(board.grid.expand((row) => row).length, 16);
+      // Board generation should include at least one playable numbered tile
+      expect(
+        board.grid
+            .expand((row) => row)
+            .where((cell) => cell.value != null)
+            .isNotEmpty,
+        true,
+      );
     });
 
     test('move returns null for out-of-bounds', () {
@@ -98,7 +106,10 @@ void main() {
         ],
       );
       final obstacleResult = board.move(0, 0, 0, 1);
-      expect(obstacleResult, null); // Should not be able to move through obstacle
+      expect(
+        obstacleResult,
+        null,
+      ); // Should not be able to move through obstacle
     });
 
     test('slide moves tile through empty spaces', () {
@@ -114,28 +125,38 @@ void main() {
       // Slide right from position 0 - should move through empty spaces
       final result = board.slide(0, 0, 0, 1);
       expect(result, isNotNull); // Should successfully move
-      expect(result?.grid[0][0].value, null); // Original position should be empty
+      expect(
+        result?.grid[0][0].value,
+        null,
+      ); // Original position should be empty
       expect(result?.score, board.score + 1); // Should get 1 point for moving
     });
 
-    test('mercySpawnHelperTile adds helper tile when only one tile remains', () {
-      var board = GameBoard.fromGrid(
-        rows: 2,
-        cols: 2,
-        maxValue: 10,
-        grid: [
-          [Tile(value: 5), Tile()],
-          [Tile(), Tile()],
-        ],
-      );
+    test(
+      'mercySpawnHelperTile adds helper tile when only one tile remains',
+      () {
+        var board = GameBoard.fromGrid(
+          rows: 2,
+          cols: 2,
+          maxValue: 10,
+          grid: [
+            [Tile(value: 5), Tile()],
+            [Tile(), Tile()],
+          ],
+        );
 
-      final result = board.mercySpawnHelperTile();
-      expect(result, isNotNull);
-      expect(result?.score, board.score - 5); // Should have score penalty
-      // Should have spawned another tile with value 5
-      final spawnedTiles = result!.grid.expand((row) => row).where((tile) => tile.value == 5).toList();
-      expect(spawnedTiles.length, 2);
-    });
+        final result = board.mercySpawnHelperTile();
+        expect(result, isNotNull);
+        expect(result?.score, board.score - 5); // Should have score penalty
+        // Should have spawned another tile with value 5
+        final spawnedTiles =
+            result!.grid
+                .expand((row) => row)
+                .where((tile) => tile.value == 5)
+                .toList();
+        expect(spawnedTiles.length, 2);
+      },
+    );
 
     test('mercySpawnHelperTile returns null when multiple tiles exist', () {
       var board = GameBoard.fromGrid(
@@ -200,25 +221,42 @@ void main() {
       final board1 = GameBoard(level: 1);
       expect(board1.rows, 4);
       expect(board1.cols, 4);
-      expect(board1.maxValue, 10);
+      expect(board1.maxValue, 9);
 
       final board2 = GameBoard(level: 2);
-      expect(board2.rows, 5);
-      expect(board2.cols, 5);
-      expect(board2.maxValue, 15);
+      expect(board2.rows, 4);
+      expect(board2.cols, 4);
+      expect(board2.maxValue, 9);
 
       final board10 = GameBoard(level: 10);
-      expect(board10.rows, 13);
-      expect(board10.cols, 13);
-      expect(board10.maxValue, 55);
+      expect(board10.rows, 4);
+      expect(board10.cols, 4);
+      expect(board10.maxValue, 9);
     });
 
-    test('level is clamped between 1 and 10', () {
+    test('level is clamped to minimum only', () {
       final boardLow = GameBoard(level: 0);
       expect(boardLow.level, 1); // Should clamp to minimum of 1
 
       final boardHigh = GameBoard(level: 15);
-      expect(boardHigh.level, 10); // Should clamp to maximum of 10
+      expect(boardHigh.level, 15); // Higher levels are supported
+    });
+
+    test('daily challenge board is deterministic for the same seed', () {
+      final boardA = GameBoard.dailyChallenge(seed: 20260307);
+      final boardB = GameBoard.dailyChallenge(seed: 20260307);
+
+      expect(boardA.grid, boardB.grid);
+      expect(boardA.level, boardB.level);
+      expect(boardA.rows, 4);
+      expect(boardA.cols, 4);
+    });
+
+    test('daily challenge board changes for different seeds', () {
+      final boardA = GameBoard.dailyChallenge(seed: 20260307);
+      final boardB = GameBoard.dailyChallenge(seed: 20260308);
+
+      expect(boardA.grid == boardB.grid, false);
     });
 
     test('move handles bonus tile collision correctly', () {
@@ -234,7 +272,10 @@ void main() {
 
       final result = board.move(0, 0, 0, 1);
       expect(result, isNotNull);
-      expect(result?.score, board.score + 1); // Base +1
+      expect(
+        result?.score,
+        board.score + 3,
+      ); // Base +1 plus bonus target reward
     });
 
     test('move handles modulo zero result (perfect division)', () {
@@ -251,7 +292,10 @@ void main() {
       final result = board.move(0, 0, 0, 1);
       expect(result, isNotNull);
       expect(result?.grid[0][1].value, null); // Target becomes empty
-      expect(result?.grid[0][0].value, null); // Source also becomes empty on perfect division
+      expect(
+        result?.grid[0][0].value,
+        null,
+      ); // Source also becomes empty on perfect division
       expect(result?.score, board.score + 1);
     });
 
@@ -268,8 +312,8 @@ void main() {
 
       final result = board.move(0, 0, 0, 1);
       expect(result, isNotNull);
-      expect(result?.grid[0][1].value, (7 + 3) * (7 % 3)); // (10) * 1 = 10
-      expect(result?.grid[0][0].value, isNotNull); // Source respawns
+      expect(result?.grid[0][1].value, 7 % 3); // Deterministic modulo result
+      expect(result?.grid[0][0].value, null); // Source clears after collision
       expect(result?.score, board.score + 1);
     });
 
@@ -334,7 +378,10 @@ void main() {
 
       final result = board.slide(0, 0, 0, 1); // Slide right
       expect(result, isNotNull);
-      expect(result?.grid[0][3].value, null); // Perfect division: target becomes empty
+      expect(
+        result?.grid[0][3].value,
+        null,
+      ); // Perfect division: target becomes empty
       expect(result?.grid[0][0].value, null); // Source also becomes empty
       expect(result?.score, board.score + 1);
     });
@@ -360,13 +407,22 @@ void main() {
         cols: 5,
         maxValue: 10,
         grid: [
-          [Tile(value: 2), Tile(), Tile(type: TileType.obstacle), Tile(), Tile()],
+          [
+            Tile(value: 2),
+            Tile(),
+            Tile(type: TileType.obstacle),
+            Tile(),
+            Tile(),
+          ],
         ],
       );
 
       final result = board.slide(0, 0, 0, 1); // Slide right
       expect(result, isNotNull);
-      expect(result?.grid[0][1].value, 2); // Should stop before obstacle at position 1
+      expect(
+        result?.grid[0][1].value,
+        2,
+      ); // Should stop before obstacle at position 1
       expect(result?.grid[0][0].value, null);
       expect(result?.score, board.score + 1);
     });
@@ -388,25 +444,44 @@ void main() {
       expect(result?.score, board.score - 5); // Penalty applied
 
       // Should have two tiles with value 5 now
-      final tilesWith5 = result!.grid.expand((row) => row).where((tile) => tile.value == 5).toList();
+      final tilesWith5 =
+          result!.grid
+              .expand((row) => row)
+              .where((tile) => tile.value == 5)
+              .toList();
       expect(tilesWith5.length, 2);
     });
 
-    test('mercySpawnHelperTile spawns in any empty cell if no adjacent available', () {
-      var board = GameBoard.fromGrid(
-        rows: 3,
-        cols: 3,
-        maxValue: 10,
-        grid: [
-          [Tile(type: TileType.obstacle), Tile(type: TileType.obstacle), Tile(type: TileType.obstacle)],
-          [Tile(type: TileType.obstacle), Tile(value: 3), Tile(type: TileType.obstacle)],
-          [Tile(type: TileType.obstacle), Tile(type: TileType.obstacle), Tile(type: TileType.obstacle)],
-        ],
-      );
+    test(
+      'mercySpawnHelperTile spawns in any empty cell if no adjacent available',
+      () {
+        var board = GameBoard.fromGrid(
+          rows: 3,
+          cols: 3,
+          maxValue: 10,
+          grid: [
+            [
+              Tile(type: TileType.obstacle),
+              Tile(type: TileType.obstacle),
+              Tile(type: TileType.obstacle),
+            ],
+            [
+              Tile(type: TileType.obstacle),
+              Tile(value: 3),
+              Tile(type: TileType.obstacle),
+            ],
+            [
+              Tile(type: TileType.obstacle),
+              Tile(type: TileType.obstacle),
+              Tile(type: TileType.obstacle),
+            ],
+          ],
+        );
 
-      final result = board.mercySpawnHelperTile();
-      expect(result, null); // No empty normal cells available
-    });
+        final result = board.mercySpawnHelperTile();
+        expect(result, null); // No empty normal cells available
+      },
+    );
 
     test('hasMoves detects moves through empty spaces', () {
       var board = GameBoard.fromGrid(
@@ -420,7 +495,10 @@ void main() {
         ],
       );
 
-      expect(board.hasMoves(), true); // Can slide 2 through empty spaces to collide with 4
+      expect(
+        board.hasMoves(),
+        true,
+      ); // Can slide 2 through empty spaces to collide with 4
     });
 
     test('hasMoves returns false when no valid moves exist', () {
@@ -434,7 +512,10 @@ void main() {
         ],
       );
 
-      expect(board.hasMoves(), false); // 5 > 3 so can't collide, obstacles block movement
+      expect(
+        board.hasMoves(),
+        false,
+      ); // 5 > 3 so can't collide, obstacles block movement
     });
 
     test('hasMoves considers bonus tiles as valid collision targets', () {
@@ -474,28 +555,28 @@ void main() {
       expect(copy2.type, TileType.bonus);
     });
 
-    test('GameBoard handles large grids correctly', () {
-      final board = GameBoard(level: 10); // 13x13 grid
-      expect(board.rows, 13);
-      expect(board.cols, 13);
-      expect(board.grid.length, 13);
-      expect(board.grid[0].length, 13);
+    test('GameBoard keeps a fixed 4x4 grid at high levels', () {
+      final board = GameBoard(level: 25);
+      expect(board.rows, 4);
+      expect(board.cols, 4);
+      expect(board.grid.length, 4);
+      expect(board.grid[0].length, 4);
     });
 
-    test('move preserves tile types during respawn', () {
+    test('move preserves target tile type after collision', () {
       var board = GameBoard.fromGrid(
         rows: 2,
         cols: 2,
         maxValue: 10,
         grid: [
-          [Tile(value: 2), Tile(value: 4)],
+          [Tile(value: 2), Tile(type: TileType.bonus, value: 5)],
           [Tile(), Tile()],
         ],
       );
 
       final result = board.move(0, 0, 0, 1);
       expect(result, isNotNull);
-      expect(result?.grid[0][0].type, TileType.normal); // Respawned tile should be normal type
+      expect(result?.grid[0][1].type, TileType.bonus);
     });
   });
 }
