@@ -180,6 +180,59 @@ jobs:
         run: |
           set -euo pipefail
 
+          XCODEBUILD_PATH="$(command -v xcodebuild || true)"
+          POD_PATH="$(command -v pod || true)"
+          RUBY_PATH="$(command -v ruby || true)"
+          FLUTTER_PATH="$(command -v flutter || true)"
+
+          XCODE_VERSION="N/A"
+          if [ -n "$XCODEBUILD_PATH" ]; then
+            XCODE_VERSION="$(xcodebuild -version 2>/dev/null | paste -sd '; ' - || true)"
+          fi
+
+          RUBY_VERSION="N/A"
+          if [ -n "$RUBY_PATH" ]; then
+            RUBY_VERSION="$(ruby --version 2>/dev/null || true)"
+          fi
+
+          POD_VERSION="N/A"
+          if [ -n "$POD_PATH" ]; then
+            POD_VERSION="$(pod --version 2>/dev/null || true)"
+          fi
+
+          FLUTTER_VERSION="N/A"
+          if [ -n "$FLUTTER_PATH" ]; then
+            FLUTTER_VERSION="$(flutter --version 2>/dev/null | head -n 1 || true)"
+          fi
+
+          echo "Runner diagnostics:"
+          echo "- Hostname: $(hostname)"
+          echo "- macOS: $(sw_vers -productVersion)"
+          echo "- xcodebuild: ${XCODEBUILD_PATH:-missing}"
+          echo "- Xcode version: $XCODE_VERSION"
+          echo "- ruby: ${RUBY_PATH:-missing}"
+          echo "- Ruby version: $RUBY_VERSION"
+          echo "- pod: ${POD_PATH:-missing}"
+          echo "- CocoaPods version: $POD_VERSION"
+          echo "- flutter: ${FLUTTER_PATH:-missing}"
+          echo "- Flutter version: $FLUTTER_VERSION"
+
+          {
+            echo "## iOS Runner Diagnostics"
+            echo ""
+            echo "- Hostname: $(hostname)"
+            echo "- macOS: $(sw_vers -productVersion)"
+            echo "- xcodebuild: ${XCODEBUILD_PATH:-missing}"
+            echo "- Xcode version: $XCODE_VERSION"
+            echo "- ruby: ${RUBY_PATH:-missing}"
+            echo "- Ruby version: $RUBY_VERSION"
+            echo "- pod: ${POD_PATH:-missing}"
+            echo "- CocoaPods version: $POD_VERSION"
+            echo "- flutter: ${FLUTTER_PATH:-missing}"
+            echo "- Flutter version: $FLUTTER_VERSION"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
           echo "Checking Xcode CLI availability..."
           if ! command -v xcodebuild >/dev/null 2>&1; then
             echo "::error::xcodebuild not found on runner. Install Xcode and CLI tools."
