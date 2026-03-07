@@ -1,0 +1,94 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run md move script",
+			"type": "shell",
+			"command": "python3",
+			"args": [
+				"/tmp/md_move.py"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Check git status all repos",
+			"type": "shell",
+			"command": "sh",
+			"args": [
+				"-lc",
+				"echo '--- modulo-squares ---' && git -C /Users/marknelson/Circus/Repositories/modulo-squares status -s && echo '--- stream-control ---' && git -C /Users/marknelson/Circus/Repositories/stream-control status -s && echo '--- vehicle-vitals ---' && git -C /Users/marknelson/Circus/Repositories/vehicle-vitals status -s && echo '--- wishlist-wizard ---' && git -C /Users/marknelson/Circus/Repositories/wishlist-wizard status -s && echo '--- nelson-grey ---' && git -C /Users/marknelson/Circus/Repositories/nelson-grey status -s"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Git status modulo-squares",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"-C",
+				"/Users/marknelson/Circus/Repositories/modulo-squares",
+				"status",
+				"-s"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Git status stream-control",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"-C",
+				"/Users/marknelson/Circus/Repositories/stream-control",
+				"status",
+				"-s"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Git status vehicle-vitals",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"-C",
+				"/Users/marknelson/Circus/Repositories/vehicle-vitals",
+				"status",
+				"-s"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Git status wishlist-wizard",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"-C",
+				"/Users/marknelson/Circus/Repositories/wishlist-wizard",
+				"status",
+				"-s"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Git status nelson-grey",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"-C",
+				"/Users/marknelson/Circus/Repositories/nelson-grey",
+				"status",
+				"-s"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Check iOS runner readiness",
+			"type": "shell",
+			"command": "sh",
+			"args": [
+				"-lc",
+				"cd /Users/marknelson/Circus/Repositories/modulo-squares && ./scripts/check-ios-runner-readiness.sh --show-versions"
+			],
+			"isBackground": false
+		}
+	]
+}
