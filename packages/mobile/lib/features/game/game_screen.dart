@@ -5,6 +5,7 @@ import 'package:modulo_squares/features/game/models/game_state.dart';
 import 'package:modulo_squares/shared/models/game_board.dart' as game_board;
 import 'package:modulo_squares/l10n/app_localizations.dart';
 import 'package:modulo_squares/features/game/instructions_screen.dart';
+import 'package:modulo_squares/features/game/leaderboard_screen.dart';
 import 'package:modulo_squares/core/services/purchase_service.dart';
 import 'package:modulo_squares/core/di/service_locator.dart';
 import 'package:modulo_squares/features/game/widgets/game_level_info.dart';
@@ -329,16 +330,20 @@ class _GameScreenContentState extends State<_GameScreenContent>
   void _showLeaderboardDialog(BuildContext context) {
     _analyticsService.logViewLeaderboard();
     final provider = context.read<GameProvider>();
-    if (provider.isDailyChallengeMode &&
-        provider.activeDailyChallengeId != null) {
-      showDailyLeaderboardDialog(context, provider.activeDailyChallengeId!);
-      return;
-    }
-    showLeaderboardDialog(context);
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder:
+            (_) => LeaderboardScreen(
+              playerName: _currentPlayerName(),
+              challengeId: provider.activeDailyChallengeId,
+              startOnDaily: provider.isDailyChallengeMode,
+            ),
+      ),
+    );
   }
 
   String _currentPlayerName() {
-    final user = FirebaseAuth.instance.currentUser;
+    final user = _safeCurrentUser();
     final displayName = user?.displayName?.trim();
     if (displayName != null && displayName.isNotEmpty) {
       return displayName;
@@ -349,6 +354,14 @@ class _GameScreenContentState extends State<_GameScreenContent>
       return 'Player-$shortUid';
     }
     return 'Anonymous';
+  }
+
+  User? _safeCurrentUser() {
+    try {
+      return FirebaseAuth.instance.currentUser;
+    } catch (_) {
+      return null;
+    }
   }
 
   void _showDailySubmissionFeedback(String message) {

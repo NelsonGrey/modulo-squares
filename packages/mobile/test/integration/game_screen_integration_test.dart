@@ -259,8 +259,9 @@ void main() {
 
         // Verify basic UI elements are present
         expect(find.text('Modulo Squares'), findsOneWidget); // App title
-        expect(find.byType(ElevatedButton), findsOneWidget); // Restart button
+        expect(find.byType(ElevatedButton), findsNWidgets(2));
         expect(find.text('Restart'), findsOneWidget);
+        expect(find.text('Daily Challenge'), findsOneWidget);
 
         // Reset screen size
         tester.view.resetPhysicalSize();

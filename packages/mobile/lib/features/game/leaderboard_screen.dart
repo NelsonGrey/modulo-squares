@@ -1,0 +1,194 @@
+import 'package:flutter/material.dart';
+import 'package:modulo_squares/core/services/leaderboard_service.dart';
+import 'package:modulo_squares/l10n/app_localizations.dart';
+
+class LeaderboardScreen extends StatefulWidget {
+  const LeaderboardScreen({
+    super.key,
+    required this.playerName,
+    this.challengeId,
+    this.startOnDaily = false,
+  });
+
+  final String playerName;
+  final int? challengeId;
+  final bool startOnDaily;
+
+  @override
+  State<LeaderboardScreen> createState() => _LeaderboardScreenState();
+}
+
+class _LeaderboardScreenState extends State<LeaderboardScreen>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(
+      length: 2,
+      vsync: this,
+      initialIndex: widget.startOnDaily ? 1 : 0,
+    );
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Leaderboards'),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [Tab(text: 'Global'), Tab(text: 'Daily')],
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _LeaderboardList(
+            title: l10n.globalLeaderboard,
+            stream: LeaderboardService.getTopScores(25),
+            emptyText: l10n.noScoresYet,
+          ),
+          _DailyLeaderboardTab(
+            challengeId: widget.challengeId,
+            playerName: widget.playerName,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DailyLeaderboardTab extends StatelessWidget {
+  const _DailyLeaderboardTab({
+    required this.challengeId,
+    required this.playerName,
+  });
+
+  final int? challengeId;
+  final String playerName;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    if (challengeId == null) {
+      return Center(
+        child: Text(
+          'Daily leaderboard becomes available after entering Daily Challenge mode.',
+          textAlign: TextAlign.center,
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Daily Challenge: $challengeId',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 6),
+                  FutureBuilder<int?>(
+                    future: LeaderboardService.getDailyRank(
+                      challengeId!,
+                      playerName,
+                    ),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Text('Checking your rank...');
+                      }
+                      if (snapshot.hasError) {
+                        return const Text('Could not fetch your rank yet.');
+                      }
+                      final rank = snapshot.data;
+                      if (rank == null) {
+                        return const Text(
+                          'No rank yet. Complete and submit your daily score to appear on the board.',
+                        );
+                      }
+                      return Text('Your current rank: #$rank');
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        Expanded(
+          child: _LeaderboardList(
+            title: 'Daily Top Scores',
+            stream: LeaderboardService.getTopDailyScores(challengeId!, 25),
+            emptyText: l10n.noScoresYet,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _LeaderboardList extends StatelessWidget {
+  const _LeaderboardList({
+    required this.title,
+    required this.stream,
+    required this.emptyText,
+  });
+
+  final String title;
+  final Stream<List<Map<String, dynamic>>> stream;
+  final String emptyText;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: StreamBuilder<List<Map<String, dynamic>>>(
+        stream: stream,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                'Failed to load $title. Please try again.',
+                textAlign: TextAlign.center,
+              ),
+            );
+          }
+          final rows = snapshot.data ?? const <Map<String, dynamic>>[];
+          if (rows.isEmpty) {
+            return Center(child: Text(emptyText));
+          }
+
+          return ListView.separated(
+            itemCount: rows.length,
+            separatorBuilder: (_, _) => const Divider(height: 1),
+            itemBuilder: (context, index) {
+              final row = rows[index];
+              return ListTile(
+                leading: CircleAvatar(child: Text('#${index + 1}')),
+                title: Text(row['name']?.toString() ?? 'Unknown'),
+                trailing: Text(row['score']?.toString() ?? '0'),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
