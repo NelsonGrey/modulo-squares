@@ -1,6 +1,7 @@
 import functions from 'firebase-functions';
 import admin from 'firebase-admin';
 import express from 'express';
+import { fileURLToPath } from 'url';
 
 // Import shared utilities
 import { FunctionsAuthHelpers } from '@shared/firebase-utils';
@@ -21,7 +22,7 @@ app.get('/health', (req, res) => {
 });
 
 // Cloud Function to validate and process leaderboard submissions
-exports.submitScore = functions.https.onCall(async (data, context) => {
+export const submitScore = functions.https.onCall(async (data, context) => {
   // Verify user is authenticated
   const user = FunctionsAuthHelpers.verifyAuthenticated(context);
   const { uid, email } = user;
@@ -77,7 +78,7 @@ exports.submitScore = functions.https.onCall(async (data, context) => {
 });
 
 // Cloud Function to get top scores
-exports.getTopScores = functions.https.onCall(async (data, context) => {
+export const getTopScores = functions.https.onCall(async (data, context) => {
   const limit = data.limit || 10;
 
   try {
@@ -100,7 +101,7 @@ exports.getTopScores = functions.https.onCall(async (data, context) => {
 });
 
 // Cloud Function to validate purchases (server-side validation)
-exports.validatePurchase = functions.https.onCall(async (data, context) => {
+export const validatePurchase = functions.https.onCall(async (data, context) => {
   // Verify user is authenticated
   const user = FunctionsAuthHelpers.verifyAuthenticated(context);
   const { uid } = user;
@@ -129,7 +130,9 @@ exports.validatePurchase = functions.https.onCall(async (data, context) => {
 });
 
 // Start Express server for Docker deployment
-if (require.main === module) {
+const entryFile = process.argv[1] ?? '';
+const currentFile = fileURLToPath(import.meta.url);
+if (entryFile === currentFile) {
   const PORT = process.env.PORT || 3000;
   const server = app.listen(PORT, () => {
     console.log(`🚀 Modulo Squares API running on port ${PORT}`);
@@ -167,4 +170,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = app;
+export default app;
