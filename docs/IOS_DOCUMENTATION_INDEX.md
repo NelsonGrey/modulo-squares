@@ -52,6 +52,16 @@ This collection provides everything needed to set up iOS projects with professio
 - GitHub Actions workflows
 - Documentation templates
 
+### 5. iOS Runner Readiness Check
+**File**: [`../scripts/check-ios-runner-readiness.sh`](../scripts/check-ios-runner-readiness.sh)
+**Purpose**: Fast local validation that a macOS self-hosted runner is ready for iOS CI jobs
+**Use When**: Before running manual iOS validation or diagnosing runner failures
+**Includes**:
+- Xcode command/toolchain checks
+- Xcode license/first-launch readiness check
+- Optional CocoaPods/Flutter presence checks
+- Suggested remediation commands on failure
+
 ## 🚀 Quick Start for New Projects
 
 ### Option 1: Use the Template (Recommended)

@@ -108,6 +108,31 @@ Use the management script for common operations:
 ./scripts/manage-macos-runner.sh update
 ```
 
+## ✅ Runner Readiness Check
+
+Use the readiness script before running iOS validation/deploy workflows:
+
+```bash
+# Basic readiness check
+./scripts/check-ios-runner-readiness.sh
+
+# Include detected tool versions
+./scripts/check-ios-runner-readiness.sh --show-versions
+```
+
+The script checks:
+- Required commands (`xcodebuild`, `xcode-select`, `ruby`)
+- Optional commands (`pod`, `flutter`)
+- Active Xcode developer directory
+- Xcode first-launch/license readiness
+
+If readiness fails due to Xcode setup, run:
+
+```bash
+sudo xcodebuild -license accept
+sudo xcodebuild -runFirstLaunch
+```
+
 ## 🔧 Advanced Configuration
 
 ### Environment Variables
