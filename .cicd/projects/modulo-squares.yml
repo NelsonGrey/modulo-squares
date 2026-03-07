@@ -24,7 +24,7 @@ targets:
         enabled: true
 
   android:
-    enabled: true
+    enabled: false
     path: "packages/mobile/android"
     signing:
       keystore_ref: "${ANDROID_KEYSTORE_PATH}"
