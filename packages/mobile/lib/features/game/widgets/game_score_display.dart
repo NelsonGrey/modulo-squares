@@ -13,10 +13,11 @@ class GameScoreDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Semantics(
       label: 'Current score: $currentScore, High score: $highScore',
       child: Text(
-        '${AppLocalizations.of(context).score} $currentScore ${AppLocalizations.of(context).highScore} $highScore',
+        '${l10n.score} $currentScore ${l10n.highScore} $highScore',
         style: const TextStyle(fontSize: 16),
       ),
     );

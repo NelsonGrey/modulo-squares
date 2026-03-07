@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:modulo_squares/core/services/error_handler.dart';
 import 'package:modulo_squares/core/services/cache_service.dart';
 
@@ -20,12 +21,21 @@ class LeaderboardService {
         .collection('scores');
   }
 
+  static bool get _isFirebaseReady {
+    try {
+      return Firebase.apps.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Submit a score for a player. Overwrites if player already exists.
   static Future<void> submitScore(
     BuildContext context,
     String playerName,
     int score,
   ) async {
+    if (!_isFirebaseReady) return;
     try {
       // Client-side validation
       if (playerName.isEmpty || playerName.length > 50) {
@@ -56,6 +66,10 @@ class LeaderboardService {
 
   /// Get top scores as a stream from Firestore
   static Stream<List<Map<String, dynamic>>> getTopScores(int limit) async* {
+    if (!_isFirebaseReady) {
+      yield <Map<String, dynamic>>[];
+      return;
+    }
     try {
       await for (final snapshot
           in FirebaseFirestore.instance
@@ -117,6 +131,7 @@ class LeaderboardService {
     String playerName,
     int score,
   ) async {
+    if (!_isFirebaseReady) return false;
     try {
       if (challengeId <= 0) {
         throw ArgumentError('Invalid challenge id');
@@ -153,6 +168,10 @@ class LeaderboardService {
     int challengeId,
     int limit,
   ) async* {
+    if (!_isFirebaseReady) {
+      yield <Map<String, dynamic>>[];
+      return;
+    }
     try {
       await for (final snapshot
           in _dailyScoresCollection(
@@ -175,6 +194,7 @@ class LeaderboardService {
   /// Best-effort rank lookup for a player in a daily challenge.
   /// Returns 1-based rank or null if rank cannot be determined.
   static Future<int?> getDailyRank(int challengeId, String playerName) async {
+    if (!_isFirebaseReady) return null;
     try {
       if (challengeId <= 0 || playerName.isEmpty) return null;
 
