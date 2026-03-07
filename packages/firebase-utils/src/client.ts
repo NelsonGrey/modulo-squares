@@ -5,6 +5,9 @@ import { getFirestore, Firestore, connectFirestoreEmulator } from 'firebase/fire
 import { getFunctions, Functions, connectFunctionsEmulator } from 'firebase/functions';
 import { getStorage, FirebaseStorage, connectStorageEmulator } from 'firebase/storage';
 import admin from 'firebase-admin';
+import { createRequire } from 'module';
+
+const nodeRequire = createRequire(import.meta.url);
 
 export interface FirebaseConfig {
   apiKey: string;
@@ -366,7 +369,7 @@ export class FunctionsAuthHelpers {
    */
   static verifyAuthenticated(context: any): { uid: string; email?: string; token: any } {
     if (!context.auth) {
-      const { HttpsError } = require('firebase-functions');
+      const { HttpsError } = nodeRequire('firebase-functions/v1/https');
       throw new HttpsError('unauthenticated', 'User must be authenticated');
     }
 
@@ -406,7 +409,7 @@ export class FunctionsAuthHelpers {
 
     for (const [key, value] of Object.entries(requiredClaims)) {
       if (user.token[key] !== value) {
-        const { HttpsError } = require('firebase-functions');
+        const { HttpsError } = nodeRequire('firebase-functions/v1/https');
         throw new HttpsError('permission-denied', `Missing required claim: ${key}=${value}`);
       }
     }
