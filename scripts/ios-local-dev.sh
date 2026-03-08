@@ -28,7 +28,7 @@ fi
 
 # Run local iOS preflight
 echo -e "${YELLOW}🔐 Validating local iOS signing environment...${NC}"
-"$SCRIPT_DIR/setup-local-keychain.sh"
+"$SCRIPT_DIR/setup-local-signing.sh"
 
 # Change to iOS directory
 cd packages/mobile/ios

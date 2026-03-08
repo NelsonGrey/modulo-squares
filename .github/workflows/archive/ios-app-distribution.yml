@@ -210,7 +210,7 @@ jobs:
 
           cd ios
           bundle install
-          chmod +x ../../../scripts/ephemeral_keychain_fastlane_fixed.sh
+          chmod +x ../../../scripts/ci-fastlane-wrapper.sh
 
           export FASTLANE_APPLE_ID='${{ secrets.FASTLANE_APPLE_ID }}'
           export FASTLANE_TEAM_ID='${{ secrets.FASTLANE_TEAM_ID }}'
@@ -312,7 +312,7 @@ jobs:
 
           if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
             echo '🔨 Building for PR testing...'
-            ../../../scripts/ephemeral_keychain_fastlane_fixed.sh "bundle exec fastlane build_development"
+            ../../../scripts/ci-fastlane-wrapper.sh "bundle exec fastlane build_development"
           else
             # Default to testflight if triggered by push (e.g. to develop)
             if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
@@ -327,19 +327,19 @@ jobs:
             case "$RELEASE_TYPE" in
               "build_only")
                 echo '🔨 Building for local testing...'
-                ../../../scripts/ephemeral_keychain_fastlane_fixed.sh "bundle exec fastlane build_development"
+                ../../../scripts/ci-fastlane-wrapper.sh "bundle exec fastlane build_development"
                 ;;
               "testflight")
                 echo '🎯 Running TestFlight release...'
-                ../../../scripts/ephemeral_keychain_fastlane_fixed.sh "bundle exec fastlane beta"
+                ../../../scripts/ci-fastlane-wrapper.sh "bundle exec fastlane beta"
                 ;;
               "app_store")
                 echo '🏪 Running App Store submission...'
-                ../../../scripts/ephemeral_keychain_fastlane_fixed.sh "bundle exec fastlane submit_to_app_store release_notes:\"$RELEASE_NOTES\""
+                ../../../scripts/ci-fastlane-wrapper.sh "bundle exec fastlane submit_to_app_store release_notes:\"$RELEASE_NOTES\""
                 ;;
               "full_pipeline")
                 echo '🚀 Running complete release pipeline...'
-                ../../../scripts/ephemeral_keychain_fastlane_fixed.sh "bundle exec fastlane full_release_pipeline release_notes:\"$RELEASE_NOTES\" manage_beta:true beta_group_name:\"$BETA_GROUP_NAME\" submit_to_app_store:true"
+                ../../../scripts/ci-fastlane-wrapper.sh "bundle exec fastlane full_release_pipeline release_notes:\"$RELEASE_NOTES\" manage_beta:true beta_group_name:\"$BETA_GROUP_NAME\" submit_to_app_store:true"
                 ;;
               *)
                 echo "❌ Unknown release type: $RELEASE_TYPE"
@@ -351,7 +351,7 @@ jobs:
       - name: 🧹 Clean Up
         if: always()
         run: |
-          echo '🧹 Cleaning up temporary files and keychains...'
+          echo '🧹 Cleaning up temporary files...'
           rm -rf ~/.private_keys
           rm -f ios/service-account-key.json
           echo '✅ Cleanup complete'
