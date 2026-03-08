@@ -65,34 +65,30 @@ class LeaderboardService {
   }
 
   /// Get top scores as a stream from Firestore
-  static Stream<List<Map<String, dynamic>>> getTopScores(int limit) async* {
+  static Stream<List<Map<String, dynamic>>> getTopScores(int limit) {
     if (!_isFirebaseReady) {
-      yield <Map<String, dynamic>>[];
-      return;
+      return Stream<List<Map<String, dynamic>>>.value(<Map<String, dynamic>>[]);
     }
-    try {
-      await for (final snapshot
-          in FirebaseFirestore.instance
-              .collection('modulo_leaderboard')
-              .orderBy('score', descending: true)
-              .limit(limit)
-              .snapshots()) {
-        final data =
-            snapshot.docs.map((doc) {
-              final data = doc.data();
-              return {'name': doc.id, 'score': data['score'] ?? 0};
-            }).toList();
 
-        // Cache the fresh data
-        CacheService().cacheLeaderboardData(data);
+    return FirebaseFirestore.instance
+        .collection('modulo_leaderboard')
+        .orderBy('score', descending: true)
+        .limit(limit)
+        .snapshots()
+        .map((snapshot) {
+          final data =
+              snapshot.docs.map((doc) {
+                final row = doc.data();
+                return {'name': doc.id, 'score': row['score'] ?? 0};
+              }).toList();
 
-        yield data;
-      }
-    } catch (error) {
-      ErrorHandler().logError('Get top scores stream', error);
-      // Yield empty list on error to prevent stream from breaking
-      yield <Map<String, dynamic>>[];
-    }
+          CacheService().cacheLeaderboardData(data);
+          return data;
+        })
+        .handleError((error) {
+          ErrorHandler().logError('Get top scores stream', error);
+        })
+        .asBroadcastStream();
   }
 
   /// Get cached leaderboard data if available, otherwise empty list
@@ -167,28 +163,25 @@ class LeaderboardService {
   static Stream<List<Map<String, dynamic>>> getTopDailyScores(
     int challengeId,
     int limit,
-  ) async* {
+  ) {
     if (!_isFirebaseReady) {
-      yield <Map<String, dynamic>>[];
-      return;
+      return Stream<List<Map<String, dynamic>>>.value(<Map<String, dynamic>>[]);
     }
-    try {
-      await for (final snapshot
-          in _dailyScoresCollection(
-            challengeId,
-          ).orderBy('score', descending: true).limit(limit).snapshots()) {
-        final data =
-            snapshot.docs.map((doc) {
-              final d = doc.data();
-              return {'name': doc.id, 'score': d['score'] ?? 0};
-            }).toList();
 
-        yield data;
-      }
-    } catch (error) {
-      ErrorHandler().logError('Get top daily scores stream', error);
-      yield <Map<String, dynamic>>[];
-    }
+    return _dailyScoresCollection(challengeId)
+        .orderBy('score', descending: true)
+        .limit(limit)
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs.map((doc) {
+            final row = doc.data();
+            return {'name': doc.id, 'score': row['score'] ?? 0};
+          }).toList();
+        })
+        .handleError((error) {
+          ErrorHandler().logError('Get top daily scores stream', error);
+        })
+        .asBroadcastStream();
   }
 
   /// Best-effort rank lookup for a player in a daily challenge.

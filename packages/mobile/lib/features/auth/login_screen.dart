@@ -4,9 +4,17 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:modulo_squares/core/services/error_handler.dart';
+import 'package:modulo_squares/core/auth/auth_fallback_policy.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({
+    super.key,
+    this.anonymousSignIn,
+    this.initializeGoogleSignIn = true,
+  });
+
+  final Future<void> Function()? anonymousSignIn;
+  final bool initializeGoogleSignIn;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -18,7 +26,9 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    _initializeGoogleSignIn();
+    if (widget.initializeGoogleSignIn) {
+      _initializeGoogleSignIn();
+    }
   }
 
   Future<void> _initializeGoogleSignIn() async {
@@ -117,16 +127,22 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _signInAnonymously(BuildContext context) async {
     try {
-      await FirebaseAuth.instance.signInAnonymously();
+      if (widget.anonymousSignIn != null) {
+        await widget.anonymousSignIn!.call();
+      } else {
+        await FirebaseAuth.instance.signInAnonymously();
+      }
     } on FirebaseAuthException catch (e) {
+      final decision = evaluateAnonymousSignInError(e);
       if (kDebugMode) {
         debugPrint('Anonymous sign-in failed: ${e.code} - ${e.message}');
       }
       if (context.mounted) {
         ErrorHandler().showErrorSnackBar(
           context,
-          ErrorHandler().getAuthErrorMessage(e, context),
-          onRetry: () => _signInAnonymously(context),
+          decision.message,
+          onRetry:
+              decision.allowRetry ? () => _signInAnonymously(context) : null,
         );
       }
     } catch (e) {
