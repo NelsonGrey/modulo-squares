@@ -5,20 +5,27 @@ import 'package:modulo_squares/features/auth/login_screen.dart';
 import 'package:modulo_squares/l10n/app_localizations.dart';
 
 void main() {
+  Widget _buildLoginTestApp() {
+    return MaterialApp(
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [Locale('en')],
+      home: LoginScreen(
+        initializeGoogleSignIn: false,
+        anonymousSignIn: _noOpAnonymousSignIn,
+      ),
+    );
+  }
+
   group('LoginScreen Integration Tests', () {
-    testWidgets('LoginScreen displays all authentication options', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          localizationsDelegates: const [
-            AppLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: const [Locale('en')],
-          home: const LoginScreen(),
-        ),
-      );
+    testWidgets('LoginScreen displays all authentication options', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(_buildLoginTestApp());
 
       await tester.pumpAndSettle();
 
@@ -30,19 +37,10 @@ void main() {
       expect(find.text('Play as Guest'), findsOneWidget);
     });
 
-    testWidgets('LoginScreen Google sign-in button is displayed and tappable', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          localizationsDelegates: const [
-            AppLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: const [Locale('en')],
-          home: const LoginScreen(),
-        ),
-      );
+    testWidgets('LoginScreen Google sign-in button is displayed and tappable', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(_buildLoginTestApp());
 
       await tester.pumpAndSettle();
 
@@ -56,19 +54,10 @@ void main() {
       // This test ensures the UI interaction works correctly
     });
 
-    testWidgets('LoginScreen Apple sign-in button is displayed and tappable', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          localizationsDelegates: const [
-            AppLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: const [Locale('en')],
-          home: const LoginScreen(),
-        ),
-      );
+    testWidgets('LoginScreen Apple sign-in button is displayed and tappable', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(_buildLoginTestApp());
 
       await tester.pumpAndSettle();
 
@@ -82,19 +71,10 @@ void main() {
       // This test ensures the UI interaction works correctly
     });
 
-    testWidgets('LoginScreen guest sign-in button is displayed and tappable', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          localizationsDelegates: const [
-            AppLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: const [Locale('en')],
-          home: const LoginScreen(),
-        ),
-      );
+    testWidgets('LoginScreen guest sign-in button is displayed and tappable', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(_buildLoginTestApp());
 
       await tester.pumpAndSettle();
 
@@ -108,19 +88,10 @@ void main() {
       // This test ensures the UI interaction works correctly
     });
 
-    testWidgets('LoginScreen handles localization correctly', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          localizationsDelegates: const [
-            AppLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: const [Locale('en')],
-          home: const LoginScreen(),
-        ),
-      );
+    testWidgets('LoginScreen handles localization correctly', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(_buildLoginTestApp());
 
       await tester.pumpAndSettle();
 
@@ -130,41 +101,26 @@ void main() {
       expect(find.byType(Column), findsOneWidget);
     });
 
-    testWidgets('LoginScreen has proper layout structure', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          localizationsDelegates: const [
-            AppLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: const [Locale('en')],
-          home: const LoginScreen(),
-        ),
-      );
+    testWidgets('LoginScreen has proper layout structure', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(_buildLoginTestApp());
 
       await tester.pumpAndSettle();
 
       // Verify layout structure
-      expect(find.byType(ElevatedButton), findsNWidgets(2)); // Google and Apple buttons
+      expect(
+        find.byType(ElevatedButton),
+        findsNWidgets(2),
+      ); // Google and Apple buttons
       expect(find.byType(OutlinedButton), findsOneWidget); // Guest button
       expect(find.byType(SizedBox), findsNWidgets(4)); // Spacing widgets
     });
 
-    testWidgets('LoginScreen buttons are properly styled', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          localizationsDelegates: const [
-            AppLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: const [Locale('en')],
-          home: const LoginScreen(),
-        ),
-      );
+    testWidgets('LoginScreen buttons are properly styled', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(_buildLoginTestApp());
 
       await tester.pumpAndSettle();
 
@@ -173,28 +129,37 @@ void main() {
       final appleButton = find.text('Sign in with Apple');
       final guestButton = find.text('Play as Guest');
 
-      expect(tester.widget<ElevatedButton>(find.ancestor(of: googleButton, matching: find.byType(ElevatedButton))), isNotNull);
-      expect(tester.widget<ElevatedButton>(find.ancestor(of: appleButton, matching: find.byType(ElevatedButton))), isNotNull);
-      expect(tester.widget<OutlinedButton>(find.ancestor(of: guestButton, matching: find.byType(OutlinedButton))), isNotNull);
+      expect(
+        tester.widget<ElevatedButton>(
+          find.ancestor(
+            of: googleButton,
+            matching: find.byType(ElevatedButton),
+          ),
+        ),
+        isNotNull,
+      );
+      expect(
+        tester.widget<ElevatedButton>(
+          find.ancestor(of: appleButton, matching: find.byType(ElevatedButton)),
+        ),
+        isNotNull,
+      );
+      expect(
+        tester.widget<OutlinedButton>(
+          find.ancestor(of: guestButton, matching: find.byType(OutlinedButton)),
+        ),
+        isNotNull,
+      );
     });
 
-    testWidgets('LoginScreen renders correctly on different screen sizes', (WidgetTester tester) async {
+    testWidgets('LoginScreen renders correctly on different screen sizes', (
+      WidgetTester tester,
+    ) async {
       // Test on a smaller screen
       tester.view.physicalSize = const Size(360, 640);
       tester.view.devicePixelRatio = 1.0;
 
-      await tester.pumpWidget(
-        MaterialApp(
-          localizationsDelegates: const [
-            AppLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: const [Locale('en')],
-          home: const LoginScreen(),
-        ),
-      );
+      await tester.pumpWidget(_buildLoginTestApp());
 
       await tester.pumpAndSettle();
 
@@ -209,3 +174,5 @@ void main() {
     });
   });
 }
+
+Future<void> _noOpAnonymousSignIn() async {}

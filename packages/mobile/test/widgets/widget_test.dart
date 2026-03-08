@@ -13,7 +13,9 @@ void main() {
     setupServiceLocator();
   });
 
-  testWidgets('GameScreen displays score and restart button', (WidgetTester tester) async {
+  testWidgets('GameScreen displays score and restart button', (
+    WidgetTester tester,
+  ) async {
     // Increase the test surface to avoid overflow with the square grid + controls
     final view = tester.view;
     view.physicalSize = const Size(1200, 2200);
@@ -31,21 +33,22 @@ void main() {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        supportedLocales: [
-          Locale('en', ''),
-        ],
+        supportedLocales: [Locale('en', '')],
         home: GameScreen(),
       ),
     );
     // Allow initial async state (e.g., SharedPreferences load) to settle
     await tester.pumpAndSettle();
 
+    final ctx = tester.element(find.byType(Scaffold));
+    final l10n = AppLocalizations.of(ctx);
+    expect(l10n, isNotNull);
+
     // Verify score label using localization key prefix
-    expect(find.textContaining(AppLocalizations.of(tester.element(find.byType(Scaffold))).score.split(':').first), findsWidgets);
+    expect(find.textContaining(l10n!.score.split(':').first), findsWidgets);
 
     // Verify Restart button by localized label
-    final ctx = tester.element(find.byType(Scaffold));
-    expect(find.text(AppLocalizations.of(ctx).restart), findsOneWidget);
+    expect(find.text(l10n.restart), findsOneWidget);
   });
 
   group('GridCellWidget', () {
@@ -53,10 +56,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: GridCellWidget(
-              tile: const Tile(value: 5),
-              isSelected: false,
-            ),
+            body: GridCellWidget(tile: const Tile(value: 5), isSelected: false),
           ),
         ),
       );
@@ -82,7 +82,9 @@ void main() {
       expect(find.text('5'), findsNothing);
     });
 
-    testWidgets('displays bonus tile with value and star', (WidgetTester tester) async {
+    testWidgets('displays bonus tile with value and star', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -102,10 +104,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: GridCellWidget(
-              tile: const Tile(value: 3),
-              isSelected: true,
-            ),
+            body: GridCellWidget(tile: const Tile(value: 3), isSelected: true),
           ),
         ),
       );
@@ -119,10 +118,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: GridCellWidget(
-              tile: const Tile(),
-              isSelected: false,
-            ),
+            body: GridCellWidget(tile: const Tile(), isSelected: false),
           ),
         ),
       );
