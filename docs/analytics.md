@@ -86,6 +86,21 @@ Future<void> setUserIdFromAuth(User? user) async {
 - **`view_leaderboard`**: User opens leaderboard screen
 - **`view_special_tiles`**: User views special tiles information
 
+### Leaderboard Events
+- **`leaderboard_tab_changed`**: Parameters: `{tab, is_daily_context, challenge_id?}`
+- **`leaderboard_tab_restored`**: Parameters: `{tab, is_daily_context, challenge_id?}`
+- **`weekly_leaderboard_control_changed`**: Parameters: `{control, value, is_daily_context, challenge_id?}`
+- **`weekly_leaderboard_control_restored`**: Parameters: `{control, value, is_daily_context, challenge_id?}`
+
+#### Leaderboard Parameter Reference
+- **`tab`**: `global | daily | weekly`
+- **`control`**: `week | top_limit`
+- **`value`**:
+  - for `control=week`: ISO week id used by leaderboard buckets
+  - for `control=top_limit`: one of `10 | 25 | 50`
+- **`is_daily_context`**: `1` when opened from Daily Challenge flow, else `0`
+- **`challenge_id`**: optional daily challenge identifier when available
+
 ### Gameplay Events
 - **`level_start`**: Parameters: `{level_num, rows, cols}`
 - **`level_complete`**: Parameters: `{level_num, score}`
@@ -137,6 +152,11 @@ await AnalyticsService.instance.logAdImpression(
 #### Leaderboard Screen (`lib/features/leaderboard/leaderboard_screen.dart`)
 - Leaderboard view events
 
+#### Game Leaderboard Screen (`lib/features/game/leaderboard_screen.dart`)
+- Tab interaction and restoration events (`leaderboard_tab_changed`, `leaderboard_tab_restored`)
+- Weekly control interaction and restoration events (`weekly_leaderboard_control_changed`, `weekly_leaderboard_control_restored`)
+- Context enrichment for all above events (`is_daily_context`, optional `challenge_id`)
+
 #### Auth Flow
 - Instructions view tracking
 - Special tiles info tracking
@@ -161,7 +181,8 @@ killall -9 SpringBoard
 1. **Launch App**: Check Firebase DebugView for `app_open` event
 2. **Play Game**: Verify `level_start`, `move`, and `level_complete` events
 3. **View Ads**: Confirm `ad_impression` and `ad_dismissed` events
-4. **Check User ID**: Verify anonymous user ID is set correctly
+4. **Open Leaderboards**: Confirm tab and weekly-control events appear with expected params
+5. **Check User ID**: Verify anonymous user ID is set correctly
 
 ### Testing Analytics
 ```dart
@@ -219,7 +240,8 @@ The service gracefully handles Firebase unavailability:
 2. **Engagement**: Session duration, level completion rates
 3. **Monetization**: Ad impression/dismissal rates, revenue per user
 4. **Retention**: Daily/weekly active users, return rates
-5. **Game Balance**: Level difficulty, mercy spawn frequency
+5. **Leaderboard Funnel**: tab preference, weekly depth usage, week-browsing behavior
+6. **Game Balance**: Level difficulty, mercy spawn frequency
 
 ### A/B Testing Setup
 Future A/B tests can use custom parameters:
@@ -267,6 +289,6 @@ await analytics.logEvent(
 
 ---
 
-**Last Updated**: October 2025
+**Last Updated**: March 2026
 **Analytics Version**: 1.0
 **Firebase Analytics SDK**: 10.4.0
