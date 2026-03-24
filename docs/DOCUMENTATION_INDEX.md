@@ -29,6 +29,7 @@ This comprehensive documentation covers all aspects of the Modulo Squares projec
 ### For Development
 - **[Developer Guide](DEVELOPER_GUIDE.md)** - Setup, development workflow
 - **[Testing](TESTING.md)** - Testing strategies and frameworks
+- **[Analytics](ANALYTICS.md)** - Event taxonomy, parameters, and validation
 
 ### For Operations
 - **[Performance & Scalability](PERFORMANCE_SCALABILITY.md)** - Optimization and monitoring
