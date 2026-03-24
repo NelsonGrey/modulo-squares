@@ -90,6 +90,7 @@ class _WeeklyLeaderboardTab extends StatefulWidget {
 class _WeeklyLeaderboardTabState extends State<_WeeklyLeaderboardTab> {
   late final List<int> _recentWeeks;
   late int _selectedWeekId;
+  int _selectedTopLimit = 25;
 
   @override
   void initState() {
@@ -137,6 +138,29 @@ class _WeeklyLeaderboardTabState extends State<_WeeklyLeaderboardTab> {
                         _selectedWeekId = value;
                       });
                     },
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Leaderboard Depth',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children:
+                        [10, 25, 50].map((limit) {
+                          return ChoiceChip(
+                            label: Text('Top $limit'),
+                            selected: _selectedTopLimit == limit,
+                            onSelected: (selected) {
+                              if (!selected) return;
+                              setState(() {
+                                _selectedTopLimit = limit;
+                              });
+                            },
+                          );
+                        }).toList(),
                   ),
                   const SizedBox(height: 6),
                   FutureBuilder<({int weekId, int rank, String badge})?>(
@@ -289,7 +313,10 @@ class _WeeklyLeaderboardTabState extends State<_WeeklyLeaderboardTab> {
         Expanded(
           child: _LeaderboardList(
             title: 'Weekly Top Scores',
-            stream: LeaderboardService.getTopWeeklyScores(_selectedWeekId, 25),
+            stream: LeaderboardService.getTopWeeklyScores(
+              _selectedWeekId,
+              _selectedTopLimit,
+            ),
             emptyText: l10n.noScoresYet,
             includeBadge: true,
           ),
