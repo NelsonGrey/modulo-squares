@@ -632,6 +632,34 @@ Avoid these patterns when adding or changing analytics instrumentation.
   - Why it hurts: breakages are discovered only after production impact.
   - Preferred approach: update matrix and run compatibility checklist before release.
 
+## Reviewer Checklist (Analytics PRs)
+
+Use this checklist during code review when a PR introduces or changes analytics behavior.
+
+### Schema and Naming
+- [ ] Event names match Approved Event Registry (or registry is updated in same PR).
+- [ ] Parameter names are consistent with Shared Parameter Dictionary.
+- [ ] Parameter types are stable (`string_value` vs `int_value`) across all emit points.
+
+### Compatibility and Migration
+- [ ] Query Compatibility Matrix impact is documented.
+- [ ] If replacing events/params, dual-write plan and removal timeline are present.
+- [ ] Event Deprecation Policy is followed for any rename/removal.
+
+### Validation Quality
+- [ ] PR includes DebugView evidence (event names and key parameters).
+- [ ] PR includes BigQuery validation summary for affected cookbook queries.
+- [ ] Null-rate and segmentation context expectations are explicitly checked (`is_daily_context`, `challenge_id` when applicable).
+
+### Operational Readiness
+- [ ] Dashboard Ownership Map reflects any report or owner changes.
+- [ ] Alert/runbook implications are addressed.
+- [ ] Analytics Schema Changelog has a dated entry describing the change.
+
+### Approval Guidance
+1. Request changes if any schema-impacting update lacks migration or validation evidence.
+2. Approve only after docs, compatibility, and ownership updates are complete.
+
 ### Compatibility Checklist (Pre-Release)
 1. Confirm every modified event/parameter appears in the matrix with an explicit mitigation.
 2. Run all 5 cookbook queries in staging and compare row counts against previous release baseline.
