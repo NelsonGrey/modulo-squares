@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:modulo_squares/core/services/leaderboard_service.dart';
 import 'package:modulo_squares/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -24,6 +26,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   static const String _leaderboardTabIndexPrefKey = 'leaderboardTabIndex';
   late final TabController _tabController;
   late final int _activeWeekId;
+  late int _lastTrackedTabIndex;
 
   @override
   void initState() {
@@ -33,9 +36,46 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
       vsync: this,
       initialIndex: widget.startOnDaily ? 1 : 0,
     );
+    _lastTrackedTabIndex = _tabController.index;
     _tabController.addListener(_onTabChanged);
     _restoreActiveTabIndex();
     _activeWeekId = LeaderboardService.currentWeekId();
+  }
+
+  FirebaseAnalytics? get _analyticsSafe {
+    try {
+      if (Firebase.apps.isEmpty) return null;
+      return FirebaseAnalytics.instance;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String _tabNameForIndex(int index) {
+    return switch (index) {
+      0 => 'global',
+      1 => 'daily',
+      2 => 'weekly',
+      _ => 'unknown',
+    };
+  }
+
+  Future<void> _logLeaderboardTabChanged(int index) async {
+    final analytics = _analyticsSafe;
+    if (analytics == null) return;
+    await analytics.logEvent(
+      name: 'leaderboard_tab_changed',
+      parameters: {'tab': _tabNameForIndex(index)},
+    );
+  }
+
+  Future<void> _logLeaderboardTabRestored(int index) async {
+    final analytics = _analyticsSafe;
+    if (analytics == null) return;
+    await analytics.logEvent(
+      name: 'leaderboard_tab_restored',
+      parameters: {'tab': _tabNameForIndex(index)},
+    );
   }
 
   Future<void> _restoreActiveTabIndex() async {
@@ -49,6 +89,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
 
     if (_tabController.index != savedIndex) {
       _tabController.animateTo(savedIndex);
+      _logLeaderboardTabRestored(savedIndex);
     }
   }
 
@@ -59,7 +100,11 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
 
   void _onTabChanged() {
     if (_tabController.indexIsChanging) return;
+    if (_lastTrackedTabIndex == _tabController.index) return;
+
+    _lastTrackedTabIndex = _tabController.index;
     _persistActiveTabIndex(_tabController.index);
+    _logLeaderboardTabChanged(_tabController.index);
   }
 
   @override
