@@ -60,21 +60,41 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     };
   }
 
+  Map<String, Object> _leaderboardContextParams() {
+    final params = <String, Object>{
+      'is_daily_context': widget.startOnDaily ? 1 : 0,
+    };
+    if (widget.challengeId != null) {
+      params['challenge_id'] = widget.challengeId!;
+    }
+    return params;
+  }
+
   Future<void> _logLeaderboardTabChanged(int index) async {
     final analytics = _analyticsSafe;
     if (analytics == null) return;
+
+    final params = <String, Object>{
+      'tab': _tabNameForIndex(index),
+      ..._leaderboardContextParams(),
+    };
     await analytics.logEvent(
       name: 'leaderboard_tab_changed',
-      parameters: {'tab': _tabNameForIndex(index)},
+      parameters: params,
     );
   }
 
   Future<void> _logLeaderboardTabRestored(int index) async {
     final analytics = _analyticsSafe;
     if (analytics == null) return;
+
+    final params = <String, Object>{
+      'tab': _tabNameForIndex(index),
+      ..._leaderboardContextParams(),
+    };
     await analytics.logEvent(
       name: 'leaderboard_tab_restored',
-      parameters: {'tab': _tabNameForIndex(index)},
+      parameters: params,
     );
   }
 
@@ -144,6 +164,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
           _WeeklyLeaderboardTab(
             weekId: _activeWeekId,
             playerName: widget.playerName,
+            challengeId: widget.challengeId,
+            isDailyContext: widget.startOnDaily,
           ),
         ],
       ),
@@ -152,10 +174,17 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
 }
 
 class _WeeklyLeaderboardTab extends StatefulWidget {
-  const _WeeklyLeaderboardTab({required this.weekId, required this.playerName});
+  const _WeeklyLeaderboardTab({
+    required this.weekId,
+    required this.playerName,
+    required this.isDailyContext,
+    this.challengeId,
+  });
 
   final int weekId;
   final String playerName;
+  final bool isDailyContext;
+  final int? challengeId;
 
   @override
   State<_WeeklyLeaderboardTab> createState() => _WeeklyLeaderboardTabState();
@@ -178,15 +207,31 @@ class _WeeklyLeaderboardTabState extends State<_WeeklyLeaderboardTab> {
     }
   }
 
+  Map<String, Object> _weeklyContextParams() {
+    final params = <String, Object>{
+      'is_daily_context': widget.isDailyContext ? 1 : 0,
+    };
+    if (widget.challengeId != null) {
+      params['challenge_id'] = widget.challengeId!;
+    }
+    return params;
+  }
+
   Future<void> _logWeeklyControlChanged({
     required String control,
     required int value,
   }) async {
     final analytics = _analyticsSafe;
     if (analytics == null) return;
+
+    final params = <String, Object>{
+      'control': control,
+      'value': value,
+      ..._weeklyContextParams(),
+    };
     await analytics.logEvent(
       name: 'weekly_leaderboard_control_changed',
-      parameters: {'control': control, 'value': value},
+      parameters: params,
     );
   }
 
@@ -196,9 +241,15 @@ class _WeeklyLeaderboardTabState extends State<_WeeklyLeaderboardTab> {
   }) async {
     final analytics = _analyticsSafe;
     if (analytics == null) return;
+
+    final params = <String, Object>{
+      'control': control,
+      'value': value,
+      ..._weeklyContextParams(),
+    };
     await analytics.logEvent(
       name: 'weekly_leaderboard_control_restored',
-      parameters: {'control': control, 'value': value},
+      parameters: params,
     );
   }
 
