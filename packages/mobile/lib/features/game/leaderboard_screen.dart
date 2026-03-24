@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:modulo_squares/core/services/leaderboard_service.dart';
 import 'package:modulo_squares/l10n/app_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LeaderboardScreen extends StatefulWidget {
   const LeaderboardScreen({
@@ -88,6 +89,7 @@ class _WeeklyLeaderboardTab extends StatefulWidget {
 }
 
 class _WeeklyLeaderboardTabState extends State<_WeeklyLeaderboardTab> {
+  static const String _weeklyTopLimitPrefKey = 'weeklyLeaderboardTopLimit';
   late final List<int> _recentWeeks;
   late int _selectedWeekId;
   int _selectedTopLimit = 25;
@@ -100,6 +102,23 @@ class _WeeklyLeaderboardTabState extends State<_WeeklyLeaderboardTab> {
         _recentWeeks.contains(widget.weekId)
             ? widget.weekId
             : _recentWeeks.first;
+    _restoreWeeklyTopLimit();
+  }
+
+  Future<void> _restoreWeeklyTopLimit() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getInt(_weeklyTopLimitPrefKey);
+    if (!mounted || saved == null) return;
+    if (![10, 25, 50].contains(saved)) return;
+
+    setState(() {
+      _selectedTopLimit = saved;
+    });
+  }
+
+  Future<void> _persistWeeklyTopLimit(int limit) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_weeklyTopLimitPrefKey, limit);
   }
 
   @override
@@ -158,6 +177,7 @@ class _WeeklyLeaderboardTabState extends State<_WeeklyLeaderboardTab> {
                               setState(() {
                                 _selectedTopLimit = limit;
                               });
+                              _persistWeeklyTopLimit(limit);
                             },
                           );
                         }).toList(),
