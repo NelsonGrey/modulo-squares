@@ -598,6 +598,40 @@ Copy this into your pull request when adding or modifying analytics behavior:
 - Alert/runbook updates needed:
 ```
 
+## Common Anti-Patterns
+
+Avoid these patterns when adding or changing analytics instrumentation.
+
+1. **Silent Event Renames**
+  - Anti-pattern: replacing an event name without dual-write or changelog updates.
+  - Why it hurts: dashboards suddenly flatline and query joins fail.
+  - Preferred approach: emit old + new names during compatibility window and follow Event Deprecation Policy.
+
+2. **Mixed-Type Parameter Reuse**
+  - Anti-pattern: writing the same parameter key as `string_value` in one event and `int_value` in another.
+  - Why it hurts: BigQuery queries become brittle and null-heavy.
+  - Preferred approach: keep each shared key type-stable and document in Shared Parameter Dictionary.
+
+3. **Overloaded Parameter Semantics**
+  - Anti-pattern: reusing a key like `value` for unrelated concepts without a discriminator.
+  - Why it hurts: downstream metrics become ambiguous.
+  - Preferred approach: pair generalized keys with explicit context keys (for example `control` + `value`).
+
+4. **Missing Context on Segmentation Events**
+  - Anti-pattern: emitting leaderboard events without `is_daily_context` or optional `challenge_id` where applicable.
+  - Why it hurts: attribution analysis and funnel comparisons break.
+  - Preferred approach: preserve context contract across emit points and monitor null-rate thresholds.
+
+5. **No Validation Evidence in PRs**
+  - Anti-pattern: merging analytics changes without DebugView/BigQuery confirmation.
+  - Why it hurts: bad payloads can ship unnoticed.
+  - Preferred approach: include PR template snippet with concrete validation evidence.
+
+6. **Breaking Query Compatibility Without Matrix Update**
+  - Anti-pattern: modifying event parameters but skipping Query Compatibility Matrix updates.
+  - Why it hurts: breakages are discovered only after production impact.
+  - Preferred approach: update matrix and run compatibility checklist before release.
+
 ### Compatibility Checklist (Pre-Release)
 1. Confirm every modified event/parameter appears in the matrix with an explicit mitigation.
 2. Run all 5 cookbook queries in staging and compare row counts against previous release baseline.
