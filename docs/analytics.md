@@ -959,6 +959,114 @@ If events disappear between DebugView and BigQuery, it's almost always a paramet
 **Q: Is there a cost to logging events?**
 A: Firebase Analytics is free for all events. BigQuery export consumes BigQuery quota (storage and query costs); large datasets may incur charges. See [COST_EFFECTIVE_CICD.md](../docs/COST_EFFECTIVE_CICD.md) for Firebase and BigQuery pricing considerations. Sampling parameters in the Firebase console can reduce BigQuery costs by discarding a percentage of events.
 
+## Best Practices Guide
+
+### Event Design
+
+**DO:**
+- **Log intentional user actions**: Tab taps, control changes, feature interactions. One event per semantic action.
+- **Parameterize context**: Use parameters (`is_daily_context`, `challenge_id`) instead of creating separate events for each context variation (e.g., don't create `daily_tab_changed` and `weekly_tab_changed` events; instead use parameters).
+- **Use enums for parameters**: Define allowed values (`tab: "global" | "daily" | "weekly"`) and validate on the client side. This prevents invalid values from appearing in the event stream.
+- **Include high-cardinality identifiers as parameters**: `challenge_id`, `user_id`, `session_id` should be parameters, not event names (event names should be low-cardinality for grouping).
+- **Document parameter semantics**: Include examples and allowed values in the event registry. Ambiguous parameters cause bugs downstream.
+- **Test in DebugView before deploying**: Every event schema change should be validated in DebugView with the actual app behavior before reaching production.
+- **Version your events**: When making breaking changes, create `event_v2` and deprecate `event_v1` rather than renaming (renaming breaks data continuity).
+
+**DON'T:**
+- **Don't log personally identifiable information (PII)**: Usernames, email, real names, locations, phone numbers. Firebase keeps event logs; PII violates privacy.
+- **Don't log authentication tokens or secrets**: Session tokens, API keys, passwords should never appear in events.
+- **Don't create overly specific event names**: Don't create `leaderboard_tab_tapped_at_3pm_on_tuesday` for events. Use a single `tab_changed` event with parameters for context.
+- **Don't assume parameter order matters**: Event parameters are a map, not ordered. `{tab: "daily", control: "week"}` is identical to `{control: "week", tab: "daily"}`.
+- **Don't log the same information in multiple parameters**: Avoid `{tab_name: "daily", tab_id: 1, tab_label: "Daily"}`. Pick one canonical parameter name.
+- **Don't send raw JSON objects as event parameter values**: Firebase expects strings, numbers, or arrays. Passing `{nested: {object: true}}` will be rejected or serialized unexpectedly.
+- **Don't rely on null values to mean "not set"**: If a parameter is optional, omit it entirely instead of setting it to null (null may be converted to the string "null").
+- **Don't log streaming data (coordinates, accelerometer, GPS)**: High-frequency sensor data doesn't belong in analytics events. Use telemetry APIs or stream processing instead.
+
+### Parameter Guidelines
+
+**DO:**
+- **Use consistent naming**: `tab` for leaderboard tabs, `control` for leaderboard controls. Avoid `selected_tab`, `current_tab`, `tab_name` for the same concept.
+- **Use snake_case consistently**: `is_daily_context`, `challenge_id`. Never mix `camelCase` with `snake_case`.
+- **Declare types explicitly**: Document whether each parameter is string, number, boolean. Types are strict in BigQuery.
+- **Validate ranges**: For numeric parameters, enforce allowed values (e.g., `top_limit` must be one of `[10, 25, 50]`). Reject invalid values in the app.
+- **Use consistent string values**: `is_daily_context: true/false` (boolean) is better than `context: "daily"/"global"` (string enum). Fewer cardinality, smaller event size.
+- **Include contextual parameters in every event of a category**: If `leaderboard_tab_changed` includes `is_daily_context`, then `leaderboard_tab_restored` should too, so queries don't have to handle missing parameters.
+- **Test edge cases**: Empty strings, zero, negative numbers, very long strings. Verify the app handles and logs these correctly.
+
+**DON'T:**
+- **Don't rename parameter types mid-release**: If `top_limit` was logged as a string `"10"` in v1, don't switch to numeric `10` in v2 without deprecation. This breaks old data.
+- **Don't mix boolean and string for the same concept**: `is_daily: true` vs `context_type: "daily"` in different events. Pick one convention and stick to it.
+- **Don't create parameters with unbounded cardinality**: Avoid `parameter: user_id` (millions of unique values; wastes quota). Use Firebase user ID feature instead.
+- **Don't log dynamic property values that change frequently**: `app_version`, `device_model` are better handled as app-level properties set once, not in every event.
+- **Don't assume "undefined" parameters are safe**: If a parameter is missing and the schema requires it, the entire event may be rejected by BigQuery validation.
+
+### Schema Evolution
+
+**DO:**
+- **Plan schema additions before the release**: Announce new events/parameters in the PR checklist so reviewers know what to expect in downstream queries.
+- **Use the deprecation window**: Give dashboards 1 release + 30 days to migrate off old event/parameter names before retiring them. Publish a deprecation notice in DOCUMENTATION_INDEX.md.
+- **Check backward compatibility**: Before merging a schema change, verify that the 5 cookbook queries still work and don't have sudden data drops.
+- **Test with sampled data**: If changing an event that already has production data, test queries on real BigQuery data (not just sandbox) to catch surprises.
+- **Document why parameters are optional**: If a parameter is conditional (e.g., `challenge_id` only appears when in a challenge), explain in the event registry exactly when it's present.
+- **Coordinate with analytics owners**: Use the [Analytics Onboarding Checklist](#analytics-onboarding-checklist) and [@analytics-owner](#ownership-contacts) approval before shipping schema changes.
+
+**DON'T:**
+- **Don't ship unnamed events or parameters**: Every event and parameter must be in the [Approved Event Registry](#approved-event-registry) before it goes to production.
+- **Don't change parameter semantics without renaming**: If `challenge_id` was a leaderboard challenge ID and you want it to mean "any challenge ID," create `challenge_context_id` instead. Reuse causes confusion.
+- **Don't break producer-consumer contracts**: Inform mobile team, analytics team, and dashboard owners before changing event definitions. Coordinate PRs if possible.
+- **Don't deploy schema changes on Friday**: Schema changes have 1-2 hour latency. If something breaks, you'll be debugging over the weekend. Deploy earlier in the week.
+
+### Query and Dashboard Best Practices
+
+**DO:**
+- **Use the cookbook queries as templates**: The [5 BigQuery Query Cookbook](#bigquery-query-cookbook) patterns are tested and compatible with the event schema. Start with them and customize.
+- **Aggregate by user_pseudo_id, not user_id**: Firebase's `user_pseudo_id` is stable and available even for anonymous users. `user_id` (set via setUserId) is only available for identified users.
+- **Filter by date using `event_date` or `TIMESTAMP_MICROS(event_timestamp)`**: Always use UTC and be aware of [BigQuery Time Zone and Date Bucketing](#bigquery-time-zone-and-date-bucketing) edge cases.
+- **Use UNNEST for parameters**: `SELECT * FROM table, UNNEST(event_params) AS param WHERE param.key = 'tab'` is the standard pattern.
+- **Cache expensive queries**: If a query takes > 10 seconds, materialize results to a table and refresh daily (via scheduled query or ETL).
+- **Join production BigQuery exports with Firestore for rich context**: Use `user_pseudo_id` to join events with user profiles in Firestore for additional attributes.
+- **Set up alerts for null-rate spikes**: Every metric query should have an alert for unexpected null-rate increases (sign of a data pipeline break).
+
+**DON'T:**
+- **Don't query real-time data (same day)**: Production dashboards are 1-2 hours behind. If you need today's results, use DebugView or query raw events in near-real-time tables (if available).
+- **Don't assume event ordering within a session**: If you need precise event order, use `event_timestamp` to sort, not the row order from BigQuery.
+- **Don't forget DISTINCT when counting users**: `SELECT COUNT(*) FROM events` counts events, not users. Use `COUNT(DISTINCT user_pseudo_id)` for user counts.
+- **Don't hardcode event names**: Define canonical event names as constants in your analytics module, not as magic strings in queries. This reduces typos.
+- **Don't create huge JOIN expressions**: Dashboards with 10+ table joins are slow and unmaintainable. If you need that much context, prepares a materialized view first.
+- **Don't expose raw parameters in dashboards**: If a parameter has 1,000 unique values, show a top-10 breakdown instead of a dropdown with all 1,000 options.
+
+### Incident Response Best Practices
+
+**DO:**
+- **Check DebugView immediately when events drop**: It's the fastest way to rule out client-side bugs vs server issues.
+- **Use the [Dashboard Ownership Map](#dashboard-ownership-map) to route incidents**: Quickly identify who owns a dashboard and contact them.
+- **Log incident facts in the [Quarterly Audit Report](#quarterly-audit-report-template)**: "On 2026-03-24, leaderboard_tab_changed events dropped 50% for 2 hours due to Firebase quota limits." Prevents repeat incidents.
+- **Create a runbook for each high-priority dashboard**: Step-by-step troubleshooting, escalation contacts, common fixes.
+- **Set MTTD (Mean Time To Detect) targets**: "Any events dropping to 0 for 5+ minutes should trigger an alert." Measure actual MTTD and improve root causes.
+- **Communicate with downstream teams**: If a data quality issue exists, notify product teams and update dashboard caveats.
+
+**DON'T:**
+- **Don't assume "no events" means fraud or user churn**: Could be a deployment issue, Firebase outage, or client-side logging bug. Investigate systematically using the [Troubleshooting](#troubleshooting) section.
+- **Don't over-respond to noise**: Event counts naturally vary by time of day. Thresholds should be based on historical baselines, not static numbers.
+- **Don't silence alerts permanently**: If an alert triggers repeatedly, don't mute it; fix the root cause or adjust the threshold.
+- **Don't forget to update the Monthly Maintenance Cadence**: Mark incidents, document root causes, and assign follow-ups to prevent recurrence.
+
+### Review and Approval Best Practices
+
+**DO:**
+- **Use the [PR Impact Template](#pr-impact-template-snippet)**: Every analytics PR should include a summary of schema changes, compatibility impact, and testing evidence.
+- **Reference the [Reviewer Checklist](#reviewer-checklist)** when approving: Verify naming, compatibility, validation quality, and readiness before approving.
+- **Ask for DebugView evidence**: Require screenshots or logs showing the event appears in DebugView before approving schema changes.
+- **Review the [Common Anti-Patterns](#common-anti-patterns)** beforehand**: Many recurring issues are documented there and can be caught in review.
+- **Coordinate timing with the release manager**: Schema changes should go out with mobile releases, not mid-sprint. Sync with [@release-manager](#ownership-contacts).
+- **Require updated documentation**: If events or parameters change, the PR should also update the [Approved Event Registry](#approved-event-registry) and parameter dictionary.
+
+**DON'T:**
+- **Don't approve PRs without evidence**: Require actual test results, DebugView screenshots, or BigQuery query results—not just "I think it will work."
+- **Don't approve breaking changes without deprecation**: If an event/parameter name changes, require the deprecation policy be applied.
+- **Don't skip the compatibility matrix**: Verify that the [Query Compatibility Matrix](#query-compatibility-matrix) changes don't break cookbook queries.
+- **Don't approve during code review conflicts**: If there's disagreement about event naming or schema, escalate to [@analytics-owner](#ownership-contacts) before merging.
+
 ## Future Enhancements
 
 - **Custom Dashboards**: Real-time analytics views
