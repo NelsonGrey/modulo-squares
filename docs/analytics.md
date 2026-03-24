@@ -1067,6 +1067,185 @@ A: Firebase Analytics is free for all events. BigQuery export consumes BigQuery 
 - **Don't skip the compatibility matrix**: Verify that the [Query Compatibility Matrix](#query-compatibility-matrix) changes don't break cookbook queries.
 - **Don't approve during code review conflicts**: If there's disagreement about event naming or schema, escalate to [@analytics-owner](#ownership-contacts) before merging.
 
+## Integration Checklist: Adding a New Event
+
+Use this step-by-step checklist when adding a new analytics event. Each phase should be completed before proceeding to the next. Estimated time: 2-3 hours for a straightforward event, 1 day for complex events with multiple parameters.
+
+### Phase 1: Design (30 minutes)
+
+- [ ] **Define the event semantics**: What user action or system state change does this event represent?
+  - Example: "User switches leaderboard tab" → `leaderboard_tab_changed`
+  - Avoid: "User interaction event" (too vague)
+- [ ] **Choose the event name**: Use snake_case, lowercase, descriptive (max 40 chars). Cross-check against existing events in the [Approved Event Registry](#approved-event-registry) for naming consistency.
+  - NEW events: `context_feature_action` (e.g., `leaderboard_tab_changed`)
+  - DEPRECATIONS: Append `_legacy` or `_v1` to old name, not new name
+- [ ] **List required parameters**: What context is essential to understand the event?
+  - Which are always present (required)?
+  - Which are conditional (optional)?
+- [ ] **Define parameter names and types**: Use consistent naming (`is_daily_context`, not `daily_context` or `is_daily`). Decide types: string enums, numeric IDs, boolean flags.
+  - Example: `{tab: string, is_daily_context: boolean, challenge_id?: string}`
+- [ ] **Document allowed values**: If a parameter is an enum, list all valid values.
+  - Example: `tab` ∈ `{global, daily, weekly}`
+- [ ] **Check Firebase limits**: Total event size ~500 bytes, max 25 params. Count bytes if params are long.
+  - If over budget, split into two events or move to user properties
+- [ ] **Reference the event in design doc**: Link this analytics event from the feature design doc or issue. Ensure product and engineering agree on the tracking.
+- [ ] **Follow naming conventions**: Compare against [Best Practices: Parameter Guidelines](#parameter-guidelines). Align with existing parameter names if tracking similar concepts.
+
+### Phase 2: Implementation (1 hour)
+
+- [ ] **Add event to the AnalyticsService**: Create a method that invokes `logEvent()` with the event name and parameters.
+  ```dart
+  Future<void> logLeaderboardTabChanged({
+    required String tab,
+    required bool isDailyContext,
+    String? challengeId,
+  }) async {
+    final analytics = _analyticsSafe;
+    if (analytics == null) return;
+    
+    await analytics.logEvent(
+      name: 'leaderboard_tab_changed',
+      parameters: {
+        'tab': tab,
+        'is_daily_context': isDailyContext,
+        if (challengeId != null) 'challenge_id': challengeId,
+      },
+    );
+  }
+  ```
+- [ ] **Validate parameters in code**: Enforce enum values, type checks, and range constraints before logging.
+  ```dart
+  assert(
+    ['global', 'daily', 'weekly'].contains(tab),
+    'Invalid tab: $tab'
+  );
+  ```
+- [ ] **Call the event at the right place**: Fire the event immediately after the user action, on the main thread (AnalyticsService is thread-safe).
+  - Leaderboard tab taps → Fire in `onTabSelected()` callback
+  - Don't fire in render/build methods (too frequent)
+- [ ] **Test with DebugView in the emulator/simulator**: 
+  - Run `flutter run --debug`
+  - Trigger the user action
+  - Check Firebase Console → Analytics → DebugView
+  - Verify the event appears with correct name, parameters, and types (within 1 minute)
+- [ ] **Capture DebugView screenshots**: Include them in the PR for evidence (required for approval).
+- [ ] **Test offline behavior**: Disconnect network, trigger event, reconnect. Verify the event appears in DebugView when connectivity is restored.
+- [ ] **Test on a real device**: Emulator networking can differ from production. Test on an iPhone/Android if possible.
+- [ ] **Check for duplicate logging**: Ensure the event fires exactly once per user action (not multiple times on screen redraws).
+
+### Phase 3: Documentation (45 minutes)
+
+- [ ] **Add event to the Approved Event Registry**: Add a new row in the registry table with:
+  - Event name: `leaderboard_tab_changed`
+  - Category: `user_interaction` or `gameplay`
+  - Required params: `tab, is_daily_context`
+  - Optional params: `challenge_id`
+  - Owner: `@game-feature-owner` or `@analytics-owner`
+  - Status: `active`
+- [ ] **Document all parameters in the Shared Parameter Dictionary**: Add entries for any new parameters, including:
+  - Type (string, number, boolean)
+  - Allowed values (if enum)
+  - Example payload
+  - Semantics (when is it set? what does it mean?)
+- [ ] **Add a BigQuery query example in the Cookbook**: Write and test a sample query that uses the new event.
+  ```sql
+  -- Count daily leaderboard interactions by user
+  SELECT
+    user_pseudo_id,
+    COUNT(*) as interaction_count,
+    ARRAY_AGG(DISTINCT param.value.string_value) as tabs_viewed
+  FROM `project.analytics_*.events_*`
+  CROSS JOIN UNNEST(event_params) AS param
+  WHERE event_name = 'leaderboard_tab_changed'
+    AND DATE(TIMESTAMP_MICROS(event_timestamp), 'US/Pacific') = '2026-03-24'
+    AND param.key = 'tab'
+  GROUP BY user_pseudo_id
+  ```
+- [ ] **Update the Query Compatibility Matrix**: List which cookbook queries use the new event. If the event is incompatible with an existing query, document the workaround.
+- [ ] **Write an FAQ entry** (if non-obvious): Add Q&A to the [FAQ](#frequently-asked-questions) if you anticipate common questions about this event.
+  - Example: "Q: When is `challenge_id` included? A: Only when the leaderboard is filtered to a specific challenge."
+- [ ] **Link from docs/DOCUMENTATION_INDEX.md**: Ensure the event is discoverable from the main documentation index.
+
+### Phase 4: Code Review Validation (30 minutes)
+
+- [ ] **Create a PR with all changes**: Include implementation, tests, and documentation.
+- [ ] **Use the PR Impact Template**: Include the [PR Impact Template Snippet](#pr-impact-template-snippet) in the PR description:
+  ```markdown
+  ## Analytics Impact
+  - **New Events**: `leaderboard_tab_changed`
+  - **New Parameters**: `is_daily_context`, `challenge_id`
+  - **Breaking Changes**: None
+  - **Compatibility**: All cookbook queries still work
+  - **DebugView Evidence**: [attach screenshot]
+  ```
+- [ ] **Request review from @analytics-owner**: Approval required for schema changes.
+- [ ] **Address reviewer comments**: 
+  - If naming is questioned, be prepared to rename (do it before shipping)
+  - If compatibility is questioned, run queries in BigQuery and show results
+  - If documentation is incomplete, add missing details before merge
+- [ ] **Verify compatibility matrix passes**: Reviewer will check all 5 cookbook queries still work.
+- [ ] **Link to the feature issue/design doc**: Ensure traceability for product context.
+
+### Phase 5: Release and Deployment (30 minutes)
+
+- [ ] **Merge to develop branch**: Ensure CI passes (no secrets, pre-commit checks).
+- [ ] **Coordinate with mobile release**: Analytics events need to be released with the app version that logs them. Don't merge events mid-release cycle.
+- [ ] **Tag the release**: When mobile app version tags, events are live.
+- [ ] **Wait for production export**: Events logged in production take 1-2 hours to appear in BigQuery. Don't expect real-time dashboards to show new events immediately.
+- [ ] **Validate in production after 2 hours**: 
+  - Run your BigQuery cookbook query against production data
+  - Verify event count > 0 and parameters are populated
+  - If null-rate > 5%, investigate immediately (likely a schema mismatch)
+- [ ] **Add to documentation changelog**: Update the [Schema Changelog](#schema-changelog) with:
+  ```markdown
+  **2026-03-24**: Added leaderboard_tab_changed event with tab, is_daily_context, challenge_id parameters. @game-feature-owner.
+  ```
+- [ ] **Notify downstream users**: Send a message to `#notifications` or relevant channel about the new event so analysts know to expect it.
+- [ ] **Set up any new dashboards**: If this event powers a new dashboard, create it now that production data is flowing.
+- [ ] **Create a runbook** (if event is critical): If this event is business-critical, add it to the [Dashboard Ownership Map](#dashboard-ownership-map) and create a troubleshooting runbook.
+
+### Phase 6: Post-Launch Monitoring (Ongoing, 15 minutes daily for 1 week)
+
+- [ ] **Monitor null-rate**: Set a threshold (default 5%) and alert if null-rate spikes. Check daily for the first week.
+- [ ] **Monitor event count trend**: Event volume should be consistent with user activity. Sudden drops indicate a bug.
+- [ ] **Check no queries broke**: Verify the 5 cookbook queries still run without errors or performance regression.
+- [ ] **Review incident logs**: If any production incidents related to this event, add to the [Quarterly Audit Report](#quarterly-audit-report-template).
+- [ ] **Collect feedback**: Ask product and engineering teams if the event is meeting their needs. Adjust parameters in the next release if feedback suggests improvements.
+
+### Common Integration Pitfalls and How to Avoid Them
+
+| Pitfall | Why It Happens | Prevention |
+|---------|---|---|
+| Event appears in DebugView but not in BigQuery 2+ hours later | Parameter type mismatch (FirebaseAnalytics logged string "10" but schema expects number) | Verify in DebugView that raw_value types match schema; use `int` in Dart for numbers, not `String("10")` |
+| Same event fires 5+ times per action | Event called in Widget.build() method | Fire events in callbacks (onTap, onChanged), not render methods |
+| Null-rate jumps to 50% after release | Parameter renamed but old queries hardcoded old name | Use deprecation policy: launch old+new param names together for 1 release |
+| Integration takes 3 days instead of 3 hours | Skipped DebugView validation early, discovered schema errors too late | Do Phase 2 (Implementation) + DebugView test before starting Phase 3 (Documentation) |
+| Reviewer rejects PR for naming | Event name inconsistent with existing events | Check [Approved Event Registry](#approved-event-registry) before coding; propose naming early |
+| BigQuery query returns 0 rows | Event name typo in query (case-sensitive) | Define event names as constants in AnalyticsService; reuse the same constant in queries |
+| Event fires in old app versions but new schema expects it | Didn't coordinate release timing | Always release analytics changes with the mobile app version increment, not separately |
+
+### Troubleshooting Integration Issues
+
+**DebugView shows 0 events but code calls analytics.logEvent():**
+- Check `_analyticsSafe` is not returning null (Firebase not initialized)
+- Verify you're on the main thread (AnalyticsService.logEvent is not awaited; check logs for exceptions)
+- Ensure Firebase project credentials are correct in `firebase.json`
+- Restart the emulator
+
+**DebugView shows event with null/truncated parameters:**
+- Check parameter value length (>2048 chars are truncated)
+- Verify parameter type (Dart String is logged as string_value; int as int_value; bool as bool_value in raw_value)
+- Check for special characters in parameter names (must be [a-z0-9_]; no hyphens or spaces)
+
+**BigQuery query returns "event_params is not a repeated field" error:**
+- Use UNNEST(event_params) to flatten the repeated field into rows
+- Verify the event_table includes `event_params` column (should be automatic for Firebase exports)
+
+**Event count in BigQuery is 10x lower than expected:**
+- Check if sampling is enabled in Firebase console (may discard 90% of events)
+- Verify parameter validation in code isn't rejecting valid events (add logging to catch assertions)
+- Check if old app versions without the event are still in active use (diluting counts)
+
 ## Future Enhancements
 
 - **Custom Dashboards**: Real-time analytics views
