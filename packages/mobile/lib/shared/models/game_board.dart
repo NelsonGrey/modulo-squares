@@ -59,108 +59,6 @@ class GameBoard {
   // Static random instance for better performance
   static final Random _random = Random();
 
-  static List<List<Tile>>? _presetGridForLevel(int level) {
-    switch (level) {
-      case 1:
-        return [
-          [
-            const Tile(value: 2),
-            const Tile(value: 4),
-            const Tile(),
-            const Tile(),
-          ],
-          [const Tile(), const Tile(value: 3), const Tile(), const Tile()],
-          [const Tile(), const Tile(), const Tile(value: 6), const Tile()],
-          [const Tile(), const Tile(), const Tile(), const Tile()],
-        ];
-      case 2:
-        return [
-          [
-            const Tile(value: 2),
-            const Tile(value: 8),
-            const Tile(),
-            const Tile(),
-          ],
-          [
-            const Tile(type: TileType.obstacle),
-            const Tile(value: 3),
-            const Tile(value: 9),
-            const Tile(),
-          ],
-          [const Tile(), const Tile(), const Tile(value: 4), const Tile()],
-          [const Tile(), const Tile(), const Tile(), const Tile()],
-        ];
-      case 3:
-        return [
-          [
-            const Tile(value: 3),
-            const Tile(value: 6),
-            const Tile(),
-            const Tile(),
-          ],
-          [
-            const Tile(value: 2),
-            const Tile(type: TileType.bonus, value: 5),
-            const Tile(),
-            const Tile(),
-          ],
-          [
-            const Tile(),
-            const Tile(value: 4),
-            const Tile(value: 8),
-            const Tile(),
-          ],
-          [const Tile(), const Tile(), const Tile(), const Tile()],
-        ];
-      case 4:
-        return [
-          [
-            const Tile(value: 5),
-            const Tile(value: 5),
-            const Tile(),
-            const Tile(type: TileType.obstacle),
-          ],
-          [
-            const Tile(),
-            const Tile(value: 2),
-            const Tile(value: 7),
-            const Tile(),
-          ],
-          [
-            const Tile(),
-            const Tile(type: TileType.obstacle),
-            const Tile(value: 4),
-            const Tile(),
-          ],
-          [const Tile(), const Tile(), const Tile(), const Tile()],
-        ];
-      case 5:
-        return [
-          [
-            const Tile(value: 3),
-            const Tile(value: 9),
-            const Tile(),
-            const Tile(),
-          ],
-          [
-            const Tile(value: 2),
-            const Tile(type: TileType.obstacle),
-            const Tile(value: 6),
-            const Tile(),
-          ],
-          [
-            const Tile(),
-            const Tile(type: TileType.bonus, value: 4),
-            const Tile(value: 8),
-            const Tile(),
-          ],
-          [const Tile(), const Tile(), const Tile(), const Tile()],
-        ];
-      default:
-        return null;
-    }
-  }
-
   GameBoard._({
     required this.rows,
     required this.cols,
@@ -200,29 +98,19 @@ class GameBoard {
     int solveDepth = 10,
   }) {
     final int clampedLevel = level < 1 ? 1 : level;
-    const int rows = 4;
-    const int cols = 4;
+    final int size = (clampedLevel + 1).clamp(2, 6);
+    final int rows = size;
+    final int cols = size;
     const int maxValue = 9;
 
-    final preset = _presetGridForLevel(clampedLevel);
-    if (preset != null) {
-      return GameBoard._(
-        rows: rows,
-        cols: cols,
-        maxValue: maxValue,
-        grid: preset,
-        score: 0,
-        level: clampedLevel,
-        comboStreak: 0,
-      );
-    }
-
-    final int emptyChance =
-        (emptyChanceOverride ?? max(12, 28 - (clampedLevel * 2))).clamp(8, 60);
-    final int obstacleChance =
-        (obstacleChanceOverride ?? (clampedLevel >= 4 ? 4 : 0)).clamp(0, 25);
-    final int bonusChance = (bonusChanceOverride ?? (clampedLevel >= 3 ? 3 : 1))
-        .clamp(0, 20);
+    // Standard mode boards are intended to start filled.
+    final int emptyChance = (emptyChanceOverride ?? 0).clamp(0, 25);
+    final int obstacleChance = (obstacleChanceOverride ??
+            min(12, max(0, clampedLevel - 3)))
+        .clamp(0, 25);
+    final int bonusChance =
+        (bonusChanceOverride ?? min(10, 1 + (clampedLevel ~/ 3))).clamp(0, 20);
+    final int effectiveSolveDepth = size <= 4 ? solveDepth : 0;
 
     List<List<Tile>> grid = _generateProceduralGrid(
       rng: _random,
@@ -232,7 +120,7 @@ class GameBoard {
       emptyChance: emptyChance,
       obstacleChance: obstacleChance,
       bonusChance: bonusChance,
-      solveDepth: solveDepth,
+      solveDepth: effectiveSolveDepth,
     );
 
     return GameBoard._(
@@ -326,7 +214,8 @@ class GameBoard {
         grid: grid,
       );
 
-      if (candidate._isLikelySolvable(maxDepth: solveDepth)) {
+      if (solveDepth <= 0 ||
+          candidate._isLikelySolvable(maxDepth: solveDepth)) {
         return grid;
       }
     }

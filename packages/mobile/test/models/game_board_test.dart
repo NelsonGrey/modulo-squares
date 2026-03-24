@@ -5,10 +5,10 @@ void main() {
   group('GameBoard', () {
     test('initializes with correct size and non-null values', () {
       final board = GameBoard(level: 1);
-      expect(board.grid.length, 4);
-      expect(board.grid[0].length, 4);
+      expect(board.grid.length, 2);
+      expect(board.grid[0].length, 2);
       // All cells should be Tile instances
-      expect(board.grid.expand((row) => row).length, 16);
+      expect(board.grid.expand((row) => row).length, 4);
       // Board generation should include at least one playable numbered tile
       expect(
         board.grid
@@ -23,8 +23,8 @@ void main() {
       final board = GameBoard(level: 1);
       expect(board.move(-1, 0, 1, 0), null);
       expect(board.move(0, -1, 0, 1), null);
-      expect(board.move(4, 0, 1, 0), null);
-      expect(board.move(0, 4, 0, 1), null);
+      expect(board.move(2, 0, 1, 0), null);
+      expect(board.move(0, 2, 0, 1), null);
     });
 
     test('reset clears score and reinitializes grid', () {
@@ -32,8 +32,8 @@ void main() {
       board = board.copyWith(score: 5);
       board = board.reset();
       expect(board.score, 0);
-      expect(board.grid.length, 4);
-      expect(board.grid[0].length, 4);
+      expect(board.grid.length, 2);
+      expect(board.grid[0].length, 2);
     });
 
     test('isBoardClear returns true only if all cells are empty', () {
@@ -210,27 +210,32 @@ void main() {
       final board = GameBoard(level: 1);
 
       expect(board.isInBounds(0, 0), true);
-      expect(board.isInBounds(3, 3), true);
+      expect(board.isInBounds(1, 1), true);
       expect(board.isInBounds(-1, 0), false);
       expect(board.isInBounds(0, -1), false);
-      expect(board.isInBounds(4, 0), false);
-      expect(board.isInBounds(0, 4), false);
+      expect(board.isInBounds(2, 0), false);
+      expect(board.isInBounds(0, 2), false);
     });
 
-    test('level affects board size and max value', () {
+    test('level affects board size and keeps max value stable', () {
       final board1 = GameBoard(level: 1);
-      expect(board1.rows, 4);
-      expect(board1.cols, 4);
+      expect(board1.rows, 2);
+      expect(board1.cols, 2);
       expect(board1.maxValue, 9);
 
       final board2 = GameBoard(level: 2);
-      expect(board2.rows, 4);
-      expect(board2.cols, 4);
+      expect(board2.rows, 3);
+      expect(board2.cols, 3);
       expect(board2.maxValue, 9);
 
+      final board3 = GameBoard(level: 3);
+      expect(board3.rows, 4);
+      expect(board3.cols, 4);
+      expect(board3.maxValue, 9);
+
       final board10 = GameBoard(level: 10);
-      expect(board10.rows, 4);
-      expect(board10.cols, 4);
+      expect(board10.rows, 6);
+      expect(board10.cols, 6);
       expect(board10.maxValue, 9);
     });
 
@@ -555,12 +560,12 @@ void main() {
       expect(copy2.type, TileType.bonus);
     });
 
-    test('GameBoard keeps a fixed 4x4 grid at high levels', () {
+    test('GameBoard grows grid size with level and caps at 6x6', () {
       final board = GameBoard(level: 25);
-      expect(board.rows, 4);
-      expect(board.cols, 4);
-      expect(board.grid.length, 4);
-      expect(board.grid[0].length, 4);
+      expect(board.rows, 6);
+      expect(board.cols, 6);
+      expect(board.grid.length, 6);
+      expect(board.grid[0].length, 6);
     });
 
     test('move preserves target tile type after collision', () {
