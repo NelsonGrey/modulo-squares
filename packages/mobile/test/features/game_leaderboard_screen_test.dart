@@ -32,6 +32,7 @@ void main() {
 
     expect(find.text('Weekly Ladder'), findsOneWidget);
     expect(find.textContaining('Season Summary'), findsOneWidget);
+    expect(find.text('Recent Weeks'), findsOneWidget);
     expect(find.byType(DropdownButton<int>), findsOneWidget);
   });
 }
