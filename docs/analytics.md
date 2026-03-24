@@ -773,6 +773,23 @@ Use this policy when renaming, removing, or replacing analytics events/parameter
 - **A/B Testing**: Experiment framework integration
 - **Cohort Analysis**: User segmentation and retention
 
+## Ownership Contacts Appendix
+
+Use role aliases instead of personal names so the document remains stable across team changes.
+
+| Role Alias | Scope | Primary Channel | Escalation Channel | Typical Response SLA |
+|------------|-------|-----------------|--------------------|----------------------|
+| `@analytics-owner` | Analytics schema governance, compatibility approvals | `#analytics-alerts` | `#eng-oncall` | 1 business day |
+| `@mobile-oncall` | Runtime instrumentation regressions in mobile app | `#eng-oncall` | `#incident-war-room` | 30 minutes (active incident) |
+| `@game-feature-owner` | Daily/weekly challenge flow attribution and UX signal integrity | `#gameplay-dev` | `#analytics-alerts` | 4 business hours |
+| `@product-analyst` | Dashboard interpretation, KPI drift triage | `#product-analytics` | `#analytics-alerts` | 1 business day |
+| `@release-manager` | Release go/no-go decisions for analytics-impacting changes | `#release-coordination` | `#eng-oncall` | Same day |
+
+### Contact Usage Rules
+1. Mention both primary and backup role aliases for Sev-1/Sev-2 analytics incidents.
+2. For dashboard breakages, include the affected query number from the Query Compatibility Matrix.
+3. For schema changes, notify `@analytics-owner` before removing deprecated events/parameters.
+
 ---
 
 **Last Updated**: March 2026
