@@ -1246,6 +1246,215 @@ Use this step-by-step checklist when adding a new analytics event. Each phase sh
 - Verify parameter validation in code isn't rejecting valid events (add logging to catch assertions)
 - Check if old app versions without the event are still in active use (diluting counts)
 
+## Query Templates Gallery
+
+These reusable templates complement the cookbook and are intended for fast copy/paste adaptation.
+
+### How to Use These Templates
+
+1. Replace `project_id.analytics_property_id.events_*` with your export table.
+2. Replace date windows in `_TABLE_SUFFIX` with the desired range.
+3. Keep parameter extraction patterns consistent (`UNNEST(event_params)`).
+4. Prefer UTC for stable daily aggregates; convert timezone only when needed.
+
+### Template 1: Daily Event Volume (Baseline)
+
+```sql
+SELECT
+  PARSE_DATE('%Y%m%d', event_date) AS day,
+  event_name,
+  COUNT(*) AS event_count
+FROM `project_id.analytics_property_id.events_*`
+WHERE _TABLE_SUFFIX BETWEEN '20260301' AND '20260331'
+  AND event_name IN (
+    'leaderboard_tab_changed',
+    'leaderboard_tab_restored',
+    'weekly_leaderboard_control_changed',
+    'weekly_leaderboard_control_restored'
+  )
+GROUP BY day, event_name
+ORDER BY day, event_name;
+```
+
+Use when validating rollout health and checking for abrupt drops after a release.
+
+### Template 2: Parameter Null-Rate by Event
+
+```sql
+WITH extracted AS (
+  SELECT
+    event_name,
+    (SELECT ep.value.string_value FROM UNNEST(event_params) ep WHERE ep.key = 'tab') AS tab,
+    (SELECT ep.value.string_value FROM UNNEST(event_params) ep WHERE ep.key = 'control') AS control,
+    (SELECT ep.value.string_value FROM UNNEST(event_params) ep WHERE ep.key = 'value') AS value,
+    (SELECT ep.value.string_value FROM UNNEST(event_params) ep WHERE ep.key = 'challenge_id') AS challenge_id
+  FROM `project_id.analytics_property_id.events_*`
+  WHERE _TABLE_SUFFIX BETWEEN '20260320' AND '20260324'
+    AND event_name LIKE '%leaderboard%'
+)
+SELECT
+  event_name,
+  COUNT(*) AS total_rows,
+  SAFE_DIVIDE(COUNTIF(tab IS NULL), COUNT(*)) AS tab_null_rate,
+  SAFE_DIVIDE(COUNTIF(control IS NULL), COUNT(*)) AS control_null_rate,
+  SAFE_DIVIDE(COUNTIF(value IS NULL), COUNT(*)) AS value_null_rate,
+  SAFE_DIVIDE(COUNTIF(challenge_id IS NULL), COUNT(*)) AS challenge_id_null_rate
+FROM extracted
+GROUP BY event_name
+ORDER BY total_rows DESC;
+```
+
+Use for schema validation and alert tuning when new parameters launch.
+
+### Template 3: Distinct User Reach and Session Reach
+
+```sql
+WITH base AS (
+  SELECT
+    event_name,
+    user_pseudo_id,
+    (SELECT ep.value.int_value FROM UNNEST(event_params) ep WHERE ep.key = 'ga_session_id') AS ga_session_id
+  FROM `project_id.analytics_property_id.events_*`
+  WHERE _TABLE_SUFFIX BETWEEN '20260320' AND '20260324'
+    AND event_name IN ('leaderboard_tab_changed', 'weekly_leaderboard_control_changed')
+)
+SELECT
+  event_name,
+  COUNT(*) AS events,
+  COUNT(DISTINCT user_pseudo_id) AS unique_users,
+  COUNT(DISTINCT CONCAT(user_pseudo_id, '-', CAST(ga_session_id AS STRING))) AS unique_sessions
+FROM base
+GROUP BY event_name
+ORDER BY events DESC;
+```
+
+Use to measure adoption breadth without conflating repeated actions from the same users.
+
+### Template 4: Enum Distribution Quality Check
+
+```sql
+WITH tabs AS (
+  SELECT
+    (SELECT ep.value.string_value FROM UNNEST(event_params) ep WHERE ep.key = 'tab') AS tab
+  FROM `project_id.analytics_property_id.events_*`
+  WHERE _TABLE_SUFFIX BETWEEN '20260320' AND '20260324'
+    AND event_name = 'leaderboard_tab_changed'
+)
+SELECT
+  COALESCE(tab, 'NULL_OR_MISSING') AS tab_value,
+  COUNT(*) AS row_count,
+  SAFE_DIVIDE(COUNT(*), SUM(COUNT(*)) OVER()) AS pct
+FROM tabs
+GROUP BY tab_value
+ORDER BY row_count DESC;
+```
+
+Use to catch invalid enum values (anything outside `global|daily|weekly`) and data quality drift.
+
+### Template 5: Challenge-Level Engagement
+
+```sql
+SELECT
+  (SELECT ep.value.string_value FROM UNNEST(event_params) ep WHERE ep.key = 'challenge_id') AS challenge_id,
+  COUNT(*) AS events,
+  COUNT(DISTINCT user_pseudo_id) AS unique_users
+FROM `project_id.analytics_property_id.events_*`
+WHERE _TABLE_SUFFIX BETWEEN '20260320' AND '20260324'
+  AND event_name IN ('leaderboard_tab_changed', 'weekly_leaderboard_control_changed')
+GROUP BY challenge_id
+HAVING challenge_id IS NOT NULL
+ORDER BY events DESC
+LIMIT 100;
+```
+
+Use to compare challenge-specific leaderboard usage and identify underperforming challenges.
+
+### Template 6: Release Regression Guardrail (Pre vs Post)
+
+```sql
+WITH pre AS (
+  SELECT COUNT(*) AS c
+  FROM `project_id.analytics_property_id.events_*`
+  WHERE _TABLE_SUFFIX BETWEEN '20260310' AND '20260316'
+    AND event_name = 'leaderboard_tab_changed'
+),
+post AS (
+  SELECT COUNT(*) AS c
+  FROM `project_id.analytics_property_id.events_*`
+  WHERE _TABLE_SUFFIX BETWEEN '20260317' AND '20260323'
+    AND event_name = 'leaderboard_tab_changed'
+)
+SELECT
+  pre.c AS pre_count,
+  post.c AS post_count,
+  SAFE_DIVIDE(post.c - pre.c, NULLIF(pre.c, 0)) AS pct_change;
+```
+
+Use after app releases to detect sudden telemetry regressions.
+
+### Template 7: Hourly Pattern (UTC)
+
+```sql
+SELECT
+  TIMESTAMP_TRUNC(TIMESTAMP_MICROS(event_timestamp), HOUR) AS hour_utc,
+  event_name,
+  COUNT(*) AS event_count
+FROM `project_id.analytics_property_id.events_*`
+WHERE _TABLE_SUFFIX BETWEEN '20260320' AND '20260324'
+  AND event_name LIKE 'leaderboard_%'
+GROUP BY hour_utc, event_name
+ORDER BY hour_utc, event_name;
+```
+
+Use to identify outages, ingestion stalls, and unusual hourly traffic shifts.
+
+### Template 8: Fast Incident Triage Snapshot
+
+```sql
+WITH latest_day AS (
+  SELECT
+    event_name,
+    COUNT(*) AS c
+  FROM `project_id.analytics_property_id.events_*`
+  WHERE _TABLE_SUFFIX = FORMAT_DATE('%Y%m%d', DATE_SUB(CURRENT_DATE('UTC'), INTERVAL 1 DAY))
+    AND event_name LIKE 'leaderboard_%'
+  GROUP BY event_name
+),
+prior_7d_avg AS (
+  SELECT
+    event_name,
+    AVG(c) AS avg_c
+  FROM (
+    SELECT
+      event_name,
+      _TABLE_SUFFIX AS d,
+      COUNT(*) AS c
+    FROM `project_id.analytics_property_id.events_*`
+    WHERE _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d', DATE_SUB(CURRENT_DATE('UTC'), INTERVAL 8 DAY))
+      AND FORMAT_DATE('%Y%m%d', DATE_SUB(CURRENT_DATE('UTC'), INTERVAL 2 DAY))
+      AND event_name LIKE 'leaderboard_%'
+    GROUP BY event_name, d
+  )
+  GROUP BY event_name
+)
+SELECT
+  l.event_name,
+  l.c AS latest_count,
+  p.avg_c AS prior_7d_avg,
+  SAFE_DIVIDE(l.c - p.avg_c, NULLIF(p.avg_c, 0)) AS deviation
+FROM latest_day l
+LEFT JOIN prior_7d_avg p USING (event_name)
+ORDER BY ABS(deviation) DESC;
+```
+
+Use during incidents to prioritize which events have the largest deviations from baseline.
+
+### Template Maintenance Rules
+
+1. Keep template event names aligned with the Approved Event Registry.
+2. If a parameter is deprecated, annotate affected templates in the same PR.
+3. Validate every template at least once per month as part of the monthly maintenance cadence.
+
 ## Future Enhancements
 
 - **Custom Dashboards**: Real-time analytics views
