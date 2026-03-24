@@ -741,6 +741,26 @@ Use this policy when renaming, removing, or replacing analytics events/parameter
 2. Keep parameter types stable (`int_value` stays numeric, `string_value` stays string).
 3. Avoid overloading one parameter with mixed semantic meanings.
 
+## Metrics Glossary
+
+Use these definitions consistently across dashboards, runbooks, and quarterly audit reports.
+
+| Metric / Term | Definition | Formula / Interpretation |
+|---------------|------------|--------------------------|
+| Null-Rate | Percentage of events where a required/expected parameter is missing | `(missing_param_events / total_events_in_scope) * 100` |
+| Dual-Write Window | Period where old and replacement schema are emitted in parallel | Ends only after compatibility checks and owner sign-off |
+| MTTD | Mean Time To Detect incident conditions | `avg(detection_time - incident_start_time)` |
+| MTTR | Mean Time To Resolve incidents to verified healthy state | `avg(resolution_time - incident_start_time)` |
+| Alert Precision | Share of fired alerts that were true actionable incidents | `true_positive_alerts / total_alerts_fired` |
+| Alert Recall | Share of true incidents detected by alerts | `detected_incidents / total_incidents` |
+| Baseline Variance | Percent deviation from rolling baseline used by thresholds | `((current - baseline) / baseline) * 100` |
+| Compatibility Pass | Outcome indicating schema changes did not break critical queries | All cookbook queries pass with acceptable variance and null-rate |
+
+### Glossary Usage Notes
+1. Include explicit metric formulas in incident notes when reporting MTTD, MTTR, or baseline variance.
+2. Treat null-rate thresholds as metric-specific; default to 5% only when no stricter threshold exists.
+3. If a new operational metric is introduced, add it here in the same PR.
+
 ## Troubleshooting
 
 ### Common Issues
