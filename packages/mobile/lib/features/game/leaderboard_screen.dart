@@ -169,6 +169,39 @@ class _WeeklyLeaderboardTabState extends State<_WeeklyLeaderboardTab> {
   late int _selectedWeekId;
   int _selectedTopLimit = 25;
 
+  FirebaseAnalytics? get _analyticsSafe {
+    try {
+      if (Firebase.apps.isEmpty) return null;
+      return FirebaseAnalytics.instance;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _logWeeklyControlChanged({
+    required String control,
+    required int value,
+  }) async {
+    final analytics = _analyticsSafe;
+    if (analytics == null) return;
+    await analytics.logEvent(
+      name: 'weekly_leaderboard_control_changed',
+      parameters: {'control': control, 'value': value},
+    );
+  }
+
+  Future<void> _logWeeklyControlRestored({
+    required String control,
+    required int value,
+  }) async {
+    final analytics = _analyticsSafe;
+    if (analytics == null) return;
+    await analytics.logEvent(
+      name: 'weekly_leaderboard_control_restored',
+      parameters: {'control': control, 'value': value},
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -187,9 +220,12 @@ class _WeeklyLeaderboardTabState extends State<_WeeklyLeaderboardTab> {
     if (!mounted || saved == null) return;
     if (!_recentWeeks.contains(saved)) return;
 
+    if (_selectedWeekId == saved) return;
+
     setState(() {
       _selectedWeekId = saved;
     });
+    _logWeeklyControlRestored(control: 'week', value: saved);
   }
 
   Future<void> _persistSelectedWeekId(int weekId) async {
@@ -203,9 +239,12 @@ class _WeeklyLeaderboardTabState extends State<_WeeklyLeaderboardTab> {
     if (!mounted || saved == null) return;
     if (![10, 25, 50].contains(saved)) return;
 
+    if (_selectedTopLimit == saved) return;
+
     setState(() {
       _selectedTopLimit = saved;
     });
+    _logWeeklyControlRestored(control: 'top_limit', value: saved);
   }
 
   Future<void> _persistWeeklyTopLimit(int limit) async {
@@ -245,10 +284,13 @@ class _WeeklyLeaderboardTabState extends State<_WeeklyLeaderboardTab> {
                             .toList(),
                     onChanged: (value) {
                       if (value == null) return;
+                      if (value == _selectedWeekId) return;
+
                       setState(() {
                         _selectedWeekId = value;
                       });
                       _persistSelectedWeekId(value);
+                      _logWeeklyControlChanged(control: 'week', value: value);
                     },
                   ),
                   const SizedBox(height: 8),
@@ -267,10 +309,16 @@ class _WeeklyLeaderboardTabState extends State<_WeeklyLeaderboardTab> {
                             selected: _selectedTopLimit == limit,
                             onSelected: (selected) {
                               if (!selected) return;
+                              if (_selectedTopLimit == limit) return;
+
                               setState(() {
                                 _selectedTopLimit = limit;
                               });
                               _persistWeeklyTopLimit(limit);
+                              _logWeeklyControlChanged(
+                                control: 'top_limit',
+                                value: limit,
+                              );
                             },
                           );
                         }).toList(),
