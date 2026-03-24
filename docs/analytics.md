@@ -761,6 +761,70 @@ Use these definitions consistently across dashboards, runbooks, and quarterly au
 2. Treat null-rate thresholds as metric-specific; default to 5% only when no stricter threshold exists.
 3. If a new operational metric is introduced, add it here in the same PR.
 
+## Known Limitations
+
+### Export Latency
+Firebase Analytics events are batched and exported asynchronously. Production dashboards typically show data with a **1-2 hour delay**:
+
+| Scenario | Typical Latency | Maximum | Notes |
+|----------|-----------------|---------|-------|
+| Event collection to local app | < 100ms | N/A | In-app real-time observability |
+| Local app to Firebase backend | ~1 minute | 5 minutes | Batching and network dependent |
+| Firebase backend to BigQuery export | 30 minutes - 2 hours | 3-4 hours | Standard Firebase export window |
+| **Total end-to-end latency** | **~1-2 hours** | **~4 hours** | All dashboards rely on BigQuery exports |
+
+**Implication**: Fresh deployments or event schema changes won't appear in production dashboards for 1-2 hours. Use DebugView for immediate validation.
+
+### DebugView vs Production
+Firebase's DebugView shows events in real-time but with differences from production:
+
+| Characteristic | DebugView | Production |
+|---|---|---|
+| Event delivery | Real-time (< 1 minute) | Batched (1-2 hour export delay) |
+| Sample of users | Single debug device | 100% of users (if unsampled) |
+| Validation | More lenient (show expected events) | Strict (export only valid events) |
+| Schema matching | Best-effort conversion | Type-strict validation |
+| Parameters | All custom params | Only schematized parameters |
+
+**Implication**: If an event appears in DebugView but not in BigQuery production data 2+ hours later, check:
+1. Parameter types (must match schema)
+2. Parameter count (dropped params count as event loss)
+3. Event naming (case-sensitive; exact match required)
+
+### Sampling and Event Loss
+Firebase Analytics automatically handles sampling and drops invalid events:
+
+1. **Sampling**: If enabled in Firebase console for cost control, ~1% or more of users' events may be discarded. Production tables in BigQuery show `analytics_<property>.events_*` only for _included_ users/events.
+2. **Type Validation**: Custom parameters that don't match their declared schema type are dropped silently; the event is still logged but the parameter is missing.
+3. **Quota Enforcement**: Events exceeding Firebase's size limits (~500 bytes per event) are rejected. Large payloads should be split.
+
+**Implication**: Always validate via DebugView _before_ checking production. A 100% null-rate in production may indicate sampling, sampling + type mismatch, or missing feature flag enabling the event tracking.
+
+### BigQuery Time Zone and Date Bucketing
+BigQuery export timestamps are in UTC. Events logged at 11 PM California time appear in the _next day's_ partition in BigQuery:
+
+```sql
+-- Events on "2026-03-24" in PT timezone may appear in:
+SELECT COUNT(*) FROM `project.analytics_<property>.events_*`
+WHERE DATE(TIMESTAMP_MICROS(event_timestamp), 'US/Pacific') = '2026-03-24'
+  AND event_name = 'leaderboard_tab_changed'
+-- This query will be slower due to timezone conversion; pre-compute if repeated
+```
+
+**Implication**: Always use UTC for queries or explicitly convert. Aggregating by event date without timezone correction skews results by up to 24 hours for US-based users.
+
+### Parameter Constraints
+Custom parameters have Firebase enforced limits:
+
+| Constraint | Limit | Consequence |
+|---|---|---|
+| Max parameters per event | 25 | Excess parameters silently dropped |
+| Max string length per parameter | 2048 characters | Truncated to 2046, logged as-is |
+| Parameter name length | 40 characters | Names longer than 40 chars rejected |
+| Reserved parameter names | Prefix `firebase_*`, `ga_*` | Events rejected if conflicting |
+
+**Implication**: Leaderboard context parameters (`tab`, `control`, `value`, `week_id`, `challenge_id`) are all < 40 chars and unconstrained. If new parameters are added, validate names and content length in code review.
+
 ## Troubleshooting
 
 ### Common Issues
