@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -36,25 +36,51 @@ void main() async {
   // Setup dependency injection
   setupServiceLocator();
 
-  try {
-    // Configure consent and ad request settings before initializing ads (mobile only)
-    if (!kIsWeb) {
-      await getIt<ConsentService>().configure().timeout(
-        const Duration(seconds: 8),
-      );
-      await getIt<AdService>().initialize().timeout(const Duration(seconds: 8));
-      await getIt<PurchaseService>().initialize().timeout(
-        const Duration(seconds: 8),
+  Future<void> runInitStep(String label, Future<void> Function() step) async {
+    try {
+      await step();
+    } catch (error, stackTrace) {
+      ErrorHandler().logError(
+        'Service initialization: $label',
+        error,
+        stackTrace,
       );
     }
-    await CacheService().initialize().timeout(const Duration(seconds: 8));
-    await AssetService().preloadAssets().timeout(const Duration(seconds: 8));
-    if (!kIsWeb) {
+  }
+
+  // Configure services independently so one timeout does not block the rest.
+  if (!kIsWeb) {
+    await runInitStep(
+      'consent',
+      () => getIt<ConsentService>().configure().timeout(
+        const Duration(seconds: 8),
+      ),
+    );
+    await runInitStep(
+      'ads',
+      () => getIt<AdService>().initialize().timeout(const Duration(seconds: 8)),
+    );
+    await runInitStep(
+      'purchases',
+      () => getIt<PurchaseService>().initialize().timeout(
+        const Duration(seconds: 8),
+      ),
+    );
+  }
+
+  await runInitStep(
+    'cache',
+    () => CacheService().initialize().timeout(const Duration(seconds: 8)),
+  );
+  await runInitStep(
+    'assets',
+    () => AssetService().preloadAssets().timeout(const Duration(seconds: 8)),
+  );
+
+  if (!kIsWeb) {
+    await runInitStep('preload interstitial', () async {
       getIt<AdService>().loadInterstitial();
-    }
-  } catch (error, stackTrace) {
-    ErrorHandler().logError('Service initialization', error, stackTrace);
-    // Continue - services will handle their own errors gracefully
+    });
   }
 
   runApp(const ModuloApp());
@@ -159,16 +185,23 @@ class _AuthGateState extends State<AuthGate> {
       if (!mounted) return;
       final decision = evaluateAnonymousSignInError(error);
 
+      // In non-release builds, skip auth wall for hard backend policy blocks.
+      if (!decision.allowRetry && !kReleaseMode) {
+        _continueOffline();
+        return;
+      }
+
       setState(() {
         _authTimedOut = true;
         _authMessage = decision.message;
         _retryAuthAllowed = decision.allowRetry;
       });
     } finally {
-      if (!mounted) return;
-      setState(() {
-        _isSigningIn = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isSigningIn = false;
+        });
+      }
     }
   }
 
