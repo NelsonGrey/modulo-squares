@@ -21,6 +21,7 @@ class LeaderboardScreen extends StatefulWidget {
 
 class _LeaderboardScreenState extends State<LeaderboardScreen>
     with SingleTickerProviderStateMixin {
+  static const String _leaderboardTabIndexPrefKey = 'leaderboardTabIndex';
   late final TabController _tabController;
   late final int _activeWeekId;
 
@@ -32,11 +33,35 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
       vsync: this,
       initialIndex: widget.startOnDaily ? 1 : 0,
     );
+    _tabController.addListener(_onTabChanged);
+    _restoreActiveTabIndex();
     _activeWeekId = LeaderboardService.currentWeekId();
+  }
+
+  Future<void> _restoreActiveTabIndex() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedIndex = prefs.getInt(_leaderboardTabIndexPrefKey);
+    if (!mounted || savedIndex == null) return;
+    if (savedIndex < 0 || savedIndex >= _tabController.length) return;
+
+    if (_tabController.index != savedIndex) {
+      _tabController.animateTo(savedIndex);
+    }
+  }
+
+  Future<void> _persistActiveTabIndex(int index) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_leaderboardTabIndexPrefKey, index);
+  }
+
+  void _onTabChanged() {
+    if (_tabController.indexIsChanging) return;
+    _persistActiveTabIndex(_tabController.index);
   }
 
   @override
   void dispose() {
+    _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
     super.dispose();
   }

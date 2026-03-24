@@ -10,6 +10,8 @@ void main() {
   testWidgets('Game leaderboard screen shows global daily and weekly tabs', (
     WidgetTester tester,
   ) async {
+    SharedPreferences.setMockInitialValues({});
+
     final view = tester.view;
     view.physicalSize = const Size(1200, 2200);
     view.devicePixelRatio = 1.0;
@@ -126,5 +128,36 @@ void main() {
       find.byType(DropdownButton<int>),
     );
     expect(weekDropdown.value, savedWeekId);
+  });
+
+  testWidgets('Leaderboard screen restores saved active tab selection', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({'leaderboardTabIndex': 2});
+
+    final view = tester.view;
+    view.physicalSize = const Size(1200, 2200);
+    view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      view.resetPhysicalSize();
+      view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: [Locale('en')],
+        home: LeaderboardScreen(playerName: 'Tester'),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Weekly Ladder'), findsOneWidget);
   });
 }
