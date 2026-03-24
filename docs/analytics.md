@@ -666,6 +666,35 @@ Use this checklist during code review when a PR introduces or changes analytics 
 3. If any query returns null-heavy output (>5% unexpected nulls), block schema removal and keep dual-write.
 4. Update Analytics Schema Changelog with compatibility impact and expected dashboard owner actions.
 
+## Release Sign-Off Checklist (Analytics)
+
+Complete this checklist before shipping a release with analytics-impacting changes.
+
+### Data Integrity
+- [ ] Event names and parameter keys match Approved Event Registry.
+- [ ] Parameter types are stable and unchanged where required.
+- [ ] Segmentation-critical fields (`is_daily_context`, `challenge_id` where applicable) meet expected null-rate thresholds.
+
+### Query and Dashboard Health
+- [ ] All required cookbook queries execute successfully on staging export.
+- [ ] Query outputs are within acceptable variance versus previous release baseline.
+- [ ] Dashboard Ownership Map owners reviewed any schema-impacting updates.
+
+### Alert and Runbook Readiness
+- [ ] Operational thresholds still reflect expected behavior after change.
+- [ ] Alert Owners and First Response Runbook references are up to date.
+- [ ] Incident channel routing and escalation template are still valid.
+
+### Migration and Deprecation
+- [ ] Dual-write window is active for renamed/replaced events.
+- [ ] Planned removal date is documented for deprecated schema.
+- [ ] Event Deprecation Policy conditions are satisfied for go/no-go.
+
+### Approvals
+- [ ] Analytics owner sign-off recorded.
+- [ ] Primary dashboard owner sign-off recorded.
+- [ ] Release manager acknowledges analytics readiness in release notes.
+
 ## Analytics Schema Changelog
 
 Use this section to track event/parameter changes that can impact dashboards, alerts, and downstream queries.
