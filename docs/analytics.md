@@ -149,6 +149,50 @@ Use this registry as the source of truth for event naming. New analytics work sh
 2. Keep parameter names and types stable once dashboards depend on them.
 3. If an event is superseded, mark Status as `Deprecated` and follow the Event Deprecation Policy.
 
+### Shared Parameter Dictionary
+
+This dictionary standardizes commonly reused analytics parameters across leaderboard and gameplay events.
+
+| Parameter | BigQuery Type | Allowed Values / Format | Example | Notes |
+|-----------|---------------|-------------------------|---------|-------|
+| `tab` | `string_value` | `global`, `daily`, `weekly` | `weekly` | Used by leaderboard tab events |
+| `control` | `string_value` | `week`, `top_limit` | `top_limit` | Used by weekly leaderboard control events |
+| `value` | `int_value` | For `control=week`: ISO week id; for `control=top_limit`: `10`, `25`, `50` | `25` | Keep numeric for query consistency |
+| `is_daily_context` | `int_value` | `0`, `1` | `1` | `1` means leaderboard opened from daily flow |
+| `challenge_id` | `int_value` | Positive integer challenge identifier | `2026114` | Optional; present when daily challenge context is known |
+| `week_id` | `int_value` | ISO week id used by weekly leaderboard bucket | `202611` | Used by weekly rank and submit events |
+| `rank_available` | `int_value` | `0`, `1` | `1` | Boolean encoded as int for analytics filtering |
+| `submitted` | `int_value` | `0`, `1` | `0` | Indicates score submission outcome |
+
+#### Example Payloads
+
+`leaderboard_tab_changed`
+```json
+{
+  "tab": "weekly",
+  "is_daily_context": 1,
+  "challenge_id": 2026114
+}
+```
+
+`weekly_leaderboard_control_changed`
+```json
+{
+  "control": "top_limit",
+  "value": 25,
+  "is_daily_context": 0
+}
+```
+
+`weekly_rank_available`
+```json
+{
+  "week_id": 202611,
+  "rank_available": 1,
+  "rank": 7
+}
+```
+
 ## Implementation Details
 
 ### Event Logging
