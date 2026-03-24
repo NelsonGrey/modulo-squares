@@ -31,6 +31,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Weekly Ladder'), findsOneWidget);
+    expect(find.textContaining('Season Summary'), findsOneWidget);
     expect(find.byType(DropdownButton<int>), findsOneWidget);
   });
 }

@@ -350,4 +350,27 @@ class LeaderboardService {
       return null;
     }
   }
+
+  /// Best rank snapshot across a set of recent weekly ladders.
+  /// Returns null when no rank is found in any provided week.
+  static Future<({int weekId, int rank, String badge})?>
+  getBestWeeklySeasonSnapshot({
+    required String playerName,
+    required List<int> weekIds,
+  }) async {
+    if (!_isFirebaseReady) return null;
+    if (playerName.isEmpty || weekIds.isEmpty) return null;
+
+    ({int weekId, int rank, String badge})? best;
+    for (final weekId in weekIds) {
+      final rank = await getWeeklyRank(weekId, playerName);
+      if (rank == null) continue;
+
+      if (best == null || rank < best.rank) {
+        best = (weekId: weekId, rank: rank, badge: weeklyBadgeForRank(rank));
+      }
+    }
+
+    return best;
+  }
 }

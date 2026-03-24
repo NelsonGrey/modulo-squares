@@ -139,6 +139,40 @@ class _WeeklyLeaderboardTabState extends State<_WeeklyLeaderboardTab> {
                     },
                   ),
                   const SizedBox(height: 6),
+                  FutureBuilder<({int weekId, int rank, String badge})?>(
+                    future: LeaderboardService.getBestWeeklySeasonSnapshot(
+                      playerName: widget.playerName,
+                      weekIds: _recentWeeks,
+                    ),
+                    builder: (context, snapshot) {
+                      final titleStyle = Theme.of(context).textTheme.bodyMedium
+                          ?.copyWith(fontWeight: FontWeight.w700);
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Row(
+                          children: [
+                            Text('Season Summary', style: titleStyle),
+                            const SizedBox(width: 8),
+                            const SizedBox(
+                              height: 14,
+                              width: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          ],
+                        );
+                      }
+                      if (snapshot.hasError || snapshot.data == null) {
+                        return const Text(
+                          'Season Summary: No rank in recent weeks yet.',
+                        );
+                      }
+
+                      final best = snapshot.data!;
+                      return Text(
+                        'Season Summary: Best #${best.rank} (${best.badge}) in week ${best.weekId}',
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 6),
                   FutureBuilder<int?>(
                     future: LeaderboardService.getWeeklyRank(
                       _selectedWeekId,
