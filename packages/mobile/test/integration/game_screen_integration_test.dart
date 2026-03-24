@@ -103,6 +103,27 @@ class MockAnalyticsService implements AnalyticsService {
   }) async => loggedEvents.add('daily_rank_available');
 
   @override
+  Future<void> logWeeklySubmit({
+    required int weekId,
+    required int score,
+    required bool submitted,
+  }) async => loggedEvents.add('weekly_submit');
+
+  @override
+  Future<void> logWeeklyRankAvailable({
+    required int weekId,
+    required bool rankAvailable,
+    int? rank,
+  }) async => loggedEvents.add('weekly_rank_available');
+
+  @override
+  Future<void> logWeeklyBadgeEarned({
+    required int weekId,
+    required String badge,
+    required int rank,
+  }) async => loggedEvents.add('weekly_badge_earned');
+
+  @override
   Future<void> logLevelRetry({
     required int level,
     required bool isDaily,
@@ -317,7 +338,7 @@ void main() {
       tester.view.resetDevicePixelRatio();
     });
 
-    testWidgets('GameScreen restart button triggers ad service and analytics', (
+    testWidgets('GameScreen restart button respects ad frequency gating', (
       WidgetTester tester,
     ) async {
       // Set up a larger test screen to avoid overflow
@@ -356,9 +377,9 @@ void main() {
       await tester.tap(find.text('Restart'));
       await tester.pumpAndSettle();
 
-      // Verify ad service was called
-      expect(mockAdService.adShown, true);
-      expect(mockAdService.lastTrigger, 'restart');
+      // Restart ads are gated by consecutive failures and should not show immediately.
+      expect(mockAdService.adShown, false);
+      expect(mockAdService.lastTrigger, null);
 
       // Reset screen size
       tester.view.resetPhysicalSize();
@@ -485,7 +506,7 @@ void main() {
       },
     );
 
-    testWidgets('GameScreen handles level completion with ad integration', (
+    testWidgets('GameScreen level completion respects ad frequency gating', (
       WidgetTester tester,
     ) async {
       // Set up a larger test screen to avoid overflow
@@ -528,9 +549,9 @@ void main() {
       gameProvider.completeLevel(() {});
       await tester.pumpAndSettle();
 
-      // Verify ad was shown for level completion
-      expect(mockAdService.adShown, true);
-      expect(mockAdService.lastTrigger, 'level_complete');
+      // Completion ads are gated and should not show on first completion.
+      expect(mockAdService.adShown, false);
+      expect(mockAdService.lastTrigger, null);
 
       // Reset screen size
       tester.view.resetPhysicalSize();
