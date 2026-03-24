@@ -516,6 +516,21 @@ Use this matrix before analytics schema changes to identify which cookbook queri
 | Query 4: Weekly Browsing Breadth | `weekly_leaderboard_control_changed` | `control`, `value` | Distinct-week breadth inflated/empty | Ensure `control=week` rows keep ISO week id in `value` |
 | Query 5: Challenge-Specific Engagement | All 4 leaderboard interaction events | `is_daily_context`, `challenge_id` | Cannot attribute usage to challenge contexts | Keep optional `challenge_id` contract, validate null-rate alerts |
 
+### Dashboard Ownership Map
+
+| Query | Dashboard / Report | Primary Owner | Backup Owner | Refresh Cadence | Incident Channel |
+|------|---------------------|---------------|--------------|-----------------|------------------|
+| Query 1: Leaderboard Tab Preference | Leaderboard Engagement Overview | Product Analyst | Mobile Engineer On-Call | Daily | #analytics-alerts |
+| Query 2: Daily vs Non-Daily Context Mix | Daily Challenge Funnel | Game Feature Owner | Product Analyst | Daily | #analytics-alerts |
+| Query 3: Weekly Top-Limit Selection Distribution | Weekly Ladder UX Health | Game UX Owner | QA Engineer | Daily | #analytics-alerts |
+| Query 4: Weekly Browsing Breadth | Weekly Retention Deep-Dive | Product Analyst | Analytics Owner | Weekly | #analytics-alerts |
+| Query 5: Challenge-Specific Engagement | Challenge Attribution Report | Analytics Owner | Mobile Engineer On-Call | Daily | #analytics-alerts |
+
+#### Ownership Rules
+1. Primary Owner is responsible for first triage within business hours.
+2. Backup Owner takes over when primary is unavailable or incident exceeds 4 hours.
+3. Changes to dashboard/report naming must be reflected in this table in the same PR.
+
 ### Compatibility Checklist (Pre-Release)
 1. Confirm every modified event/parameter appears in the matrix with an explicit mitigation.
 2. Run all 5 cookbook queries in staging and compare row counts against previous release baseline.
