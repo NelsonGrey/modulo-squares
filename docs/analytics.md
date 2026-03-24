@@ -531,6 +531,36 @@ Use this matrix before analytics schema changes to identify which cookbook queri
 2. Backup Owner takes over when primary is unavailable or incident exceeds 4 hours.
 3. Changes to dashboard/report naming must be reflected in this table in the same PR.
 
+## Analytics Onboarding Checklist
+
+Use this checklist before opening a PR that adds or changes analytics behavior.
+
+### Design
+- [ ] Confirm existing event names do not already cover the use case (check Approved Event Registry).
+- [ ] Define required parameters and parameter types (`string_value` vs `int_value`).
+- [ ] Identify dashboard/query consumers that will use the new signal.
+
+### Implementation
+- [ ] Emit through existing analytics pathways and preserve safe no-op behavior when Firebase is unavailable.
+- [ ] Keep boolean-style flags encoded consistently (`0`/`1`) when used as numeric filters.
+- [ ] Avoid mixed semantics for a single parameter key.
+
+### Validation
+- [ ] Verify event payloads in Firebase DebugView.
+- [ ] Run relevant BigQuery cookbook queries (or temporary validation query) against staging export.
+- [ ] Confirm no regression in existing query compatibility matrix assumptions.
+
+### Documentation
+- [ ] Add/update event rows in Approved Event Registry.
+- [ ] Update Shared Parameter Dictionary for new parameters.
+- [ ] Add a dated entry to Analytics Schema Changelog.
+- [ ] Update Dashboard Ownership Map if ownership/report names changed.
+
+### Release Safety
+- [ ] If replacing events/params, follow Event Deprecation Policy and dual-write where required.
+- [ ] Confirm alert thresholds and incident runbook still apply after the change.
+- [ ] Communicate analytics-impact summary in PR description and release notes.
+
 ### Compatibility Checklist (Pre-Release)
 1. Confirm every modified event/parameter appears in the matrix with an explicit mitigation.
 2. Run all 5 cookbook queries in staging and compare row counts against previous release baseline.
