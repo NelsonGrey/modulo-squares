@@ -561,6 +561,43 @@ Use this checklist before opening a PR that adds or changes analytics behavior.
 - [ ] Confirm alert thresholds and incident runbook still apply after the change.
 - [ ] Communicate analytics-impact summary in PR description and release notes.
 
+## PR Template Snippet (Analytics Changes)
+
+Copy this into your pull request when adding or modifying analytics behavior:
+
+```md
+### Analytics Impact
+
+#### What changed
+- Events added/updated/deprecated:
+- Parameters added/updated/deprecated:
+
+#### Registry and Docs
+- [ ] Approved Event Registry updated
+- [ ] Shared Parameter Dictionary updated
+- [ ] Analytics Schema Changelog updated
+- [ ] Query Compatibility Matrix reviewed
+
+#### Validation Evidence
+- DebugView checks performed:
+  - [ ] Event names verified
+  - [ ] Parameter keys and types verified
+- BigQuery checks performed:
+  - [ ] Relevant cookbook queries run
+  - [ ] Result summary attached
+
+#### Compatibility and Migration
+- [ ] Existing dashboards remain compatible
+- [ ] Deprecation policy followed (if applicable)
+- Dual-write window:
+  - Start:
+  - Planned removal:
+
+#### Ownership and Alerts
+- Primary dashboard owner notified:
+- Alert/runbook updates needed:
+```
+
 ### Compatibility Checklist (Pre-Release)
 1. Confirm every modified event/parameter appears in the matrix with an explicit mitigation.
 2. Run all 5 cookbook queries in staging and compare row counts against previous release baseline.
