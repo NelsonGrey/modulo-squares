@@ -849,6 +849,116 @@ Custom parameters have Firebase enforced limits:
 - [ ] Network connectivity available
 - [ ] Firebase project permissions correct
 
+## Frequently Asked Questions
+
+### General Analytics
+
+**Q: Why don't I see my events in the dashboard immediately?**
+A: Firebase batches events and exports them asynchronously. Expect a 1-2 hour delay from event collection to BigQuery production tables. Use DebugView for real-time validation (< 1 minute) and to confirm the event schema is correct. Dashboards are never real-time; they always reflect BatchWrite exports from 1-4 hours ago.
+
+**Q: How do I test analytics locally?**
+A: Use Firebase DebugView in the Firebase console while running the debug build:
+1. Start the app in debug mode: `flutter run --debug`
+2. Open Firebase Console → Project → Analytics → DebugView
+3. Events appear in real-time; filter by device ID, user ID, or event name
+4. Verify parameter types, values, and structure before committing code
+
+**Q: What's the difference between DebugView and BigQuery production data?**
+A: See [Known Limitations: DebugView vs Production](javascript:void(0)). TL;DR: DebugView is real-time and lenient; production is batched, strict, and delayed 1-2 hours. An event that appears in DebugView but not in BigQuery 2+ hours later suggests a schema mismatch (parameter type, missing required param, invalid enum value).
+
+**Q: Can I change event names or parameter names after releasing?**
+A: No—it creates a schema break. Old events with the old name stop being captured. Use the [Event Deprecation Policy](#event-deprecation-policy): create a new event/parameter, maintain both in parallel for 1 release + 30 days, then deprecate the old one. This ensures dashboards don't break and data continuity is maintained.
+
+**Q: What happens if the same event fires twice in quick succession?**
+A: Both events are logged independently. There's no deduplication. If you need to prevent duplicate events, add application-level debouncing (e.g., track the last event timestamp and ignore events within 100ms).
+
+**Q: How do I ensure an event is always sent, even if the network is offline?**
+A: Firebase Analytics handles local queueing automatically. If the device goes offline, events are buffered locally and sent when connectivity is restored (up to a queue limit, then oldest events are dropped). You don't need to handle this explicitly.
+
+**Q: Can I send very large payloads as event parameters?**
+A: No—Firebase limits events to ~500 bytes total. Custom parameters have a 2048 character limit per string and 25 parameters max per event. If you need to send more data, either:
+1. Split across multiple events
+2. Store the data in Firestore and reference it by ID in the event
+3. Use user properties for static context instead of repeating it in every event
+
+### Leaderboard-Specific Questions
+
+**Q: Why are there four leaderboard events instead of one?**
+A: The four events (`leaderboard_tab_changed`, `leaderboard_tab_restored`, `weekly_leaderboard_control_changed`, `weekly_leaderboard_control_restored`) distinguish between user-initiated changes and automatic restoration by the system. This allows product analysts to:
+- Separate intentional user preferences from accidental state resets
+- Measure whether particular UI states are "sticky" or are being reset
+- Track feature adoption (if restorations are > changes, users may not understand persistence)
+
+**Q: What's the difference between `tab_changed` and `tab_restored`?**
+A: `tab_changed` fires when the user taps a leaderboard tab (intentional action). `tab_restored` fires when the app restores the user's previous session state on app relaunch (automatic, unintentional). This matters for analytics: if 90% of "changes" are actually app restarts, engagement metrics are misleading.
+
+**Q: Should I cache the last tab/control selection to avoid too many events?**
+A: No—log every user action. Let downstream analytics deduplicate if needed. Filtering at source loses valuable signal (e.g., toggling between tabs rapidly is a different user behavior than settling on one tab). BigQuery queries can group events by user/session if needed.
+
+**Q: What if a user changes the tab while the control selection is still loading?**
+A: Both events will fire independently. Don't try to suppress the `tab_changed` event because the control is still loading—that's normal user behavior. The `is_daily_context` parameter ensures the event is correctly attributed to either daily or weekly context.
+
+**Q: Why is `is_daily_context` a parameter instead of splitting into separate events?**
+A: Using `daily_leaderboard_tab_changed` and `weekly_leaderboard_tab_changed` instead would create maintenance burden (twice the events to update, twice the queries to write). By parameterizing the context, we have one canonical event, and BigQuery queries filter by context when needed. This also makes it easier to introduce completely new contexts later without schema explosion.
+
+**Q: What does `challenge_id` do? It's optional, but when should I include it?**
+A: `challenge_id` is included when leaderboard interaction happens _within_ a challenge-specific scope (e.g., leaderboard filtered by "this week's tournament"). If the user is viewing the global, unfiltered leaderboard, omit `challenge_id` (send it as null or don't include the parameter). This distinguishes "browsing global leaderboard" from "checking progress in a specific challenge."
+
+**Q: If a user switches contexts (daily ↔ weekly), do I log two events or one?**
+A: Only one event: `tab_changed` with the new tab and matching `is_daily_context` value. Don't log an "exited daily context" event—the old context is implicitly dropped when a new tab is selected.
+
+### Schema and Migration
+
+**Q: How do I know if a schema change will break existing queries?**
+A: Use the [Query Compatibility Matrix](#query-compatibility-matrix) in the approval checklist. Before changing an event or parameter:
+1. Pick one of the 5 cookbook queries from the matrix
+2. Simulate your change in a BigQuery sandbox table
+3. Run the query against the modified schema; if it fails or drops > 5% of rows, the change breaks compatibility
+4. Consult [@analytics-owner](#ownership-contacts) before merging
+
+**Q: What's the difference between adding a new event and adding a parameter to an existing event?**
+A: - **New event**: No existing queries are affected; old dashboards don't break. Safe to add anytime.
+- **New parameter on existing event**: Existing queries still work (parameter is optional in UNNEST), but queries looking for that parameter won't see older events. Only add parameters before a release, not mid-release.
+
+**Q: Can I rename a parameter without breaking dashboards?**
+A: Not directly. Follow the deprecation policy: create the new parameter name, log both old and new names in parallel for 1 release + 30 days, then stop logging the old name. Queries that hardcode the old name will show a drop in recent data; those queries need to be updated during the deprecation window.
+
+### Queries and Dashboards
+
+**Q: Why do my queries return nulls for the new leaderboard parameters?**
+A: Null parameters occur when:
+1. **Event pre-dates the parameter**: The app version that logs the parameter wasn't deployed yet → events from old app versions lack the parameter
+2. **Parameter type mismatch**: DebugView shows the param, but BigQuery rejected it because the value type didn't match the schema (string vs number)
+3. **Parameter name typo**: Check exact capitalization and spelling; `tab` ≠ `Tab` ≠ `tabs`
+4. **Sampling**: If sampling is enabled, a subset of users' events are dropped entirely
+
+Use DebugView to verify the parameter exists and has the correct type, then check the app version deployed and event_timestamp to understand which events are affected.
+
+**Q: How do I write a query that counts "sessions with leaderboard interaction"?**
+A: Use the [BigQuery Query Cookbook: Browsing Breadth](#bigquery-query-cookbook) sample, which groups leaderboard events by user_pseudo_id and session_id. Count distinct sessions with at least one leaderboard_* event. Be aware of the [latency caveat](#export-latency): today's results will be incomplete; use 2+ days ago for stable counts.
+
+**Q: Can I export analytics data to something other than BigQuery?**
+A: Not yet. Firebase Analytics exports to BigQuery only (standard in all projects). Exporting to data warehouse, data lake, or third-party tool requires a custom ETL pipeline from BigQuery. Contact [@analytics-owner](#ownership-contacts) for guidance on integration patterns.
+
+### Performance and Troubleshooting
+
+**Q: Will logging too many events slow down the app?**
+A: No—Firebase Analytics is asynchronous and non-blocking. Events are queued and sent in batches without blocking UI threads. You can log thousands of events per session without performance impact. The limiting factor is quota (25 parameters per event, ~500 bytes per event max).
+
+**Q: What size should my event buffer be?**
+A: Firebase handles buffering automatically. Local queue limit is ~200 events; older events are discarded if the queue fills. In practice, this rarely happens because Firebase flushes the queue periodically and on network connectivity changes. You don't need to manage this manually.
+
+**Q: How do I know if events are being dropped due to quota limits?**
+A: Check:
+1. **DebugView**: Event appears in real-time → event was collected successfully
+2. **BigQuery 2+ hours later**: Event missing → dropped during export (likely quota/type violation)
+3. **Check event size**: Each parameter and event name counts toward the ~500 byte limit. Long parameter values or many params increase drop risk.
+
+If events disappear between DebugView and BigQuery, it's almost always a parameter type mismatch (schema defines string, you sent number).
+
+**Q: Is there a cost to logging events?**
+A: Firebase Analytics is free for all events. BigQuery export consumes BigQuery quota (storage and query costs); large datasets may incur charges. See [COST_EFFECTIVE_CICD.md](../docs/COST_EFFECTIVE_CICD.md) for Firebase and BigQuery pricing considerations. Sampling parameters in the Firebase console can reduce BigQuery costs by discarding a percentage of events.
+
 ## Future Enhancements
 
 - **Custom Dashboards**: Real-time analytics views
