@@ -445,6 +445,32 @@ Use this section to track event/parameter changes that can impact dashboards, al
 - Established core analytics coverage for lifecycle, navigation, gameplay, and ad events.
 - Introduced safe no-op behavior for analytics calls when Firebase is unavailable.
 
+## Event Deprecation Policy
+
+Use this policy when renaming, removing, or replacing analytics events/parameters.
+
+### Compatibility Window
+1. Keep deprecated event names live for at least one full production release cycle.
+2. Keep deprecated parameters live for at least 30 days after dashboard/query migration.
+3. Do not remove old and new schemas in the same release.
+
+### Required Migration Steps
+1. Add the replacement event/parameter first and document it in the schema changelog.
+2. Update dashboards and BigQuery queries to support both old and new schemas.
+3. Add a temporary validation query that compares old vs new event volume.
+4. Announce target removal date in release notes and analytics channel.
+5. Remove deprecated schema only after compatibility window and validation pass.
+
+### Rollback Safety
+1. If replacement event volume drops below 90% of deprecated baseline for 24 hours, pause deprecation.
+2. If alert thresholds regress after deprecation, restore old event emission in a hotfix.
+3. Record rollback actions in this document under Analytics Schema Changelog.
+
+### Naming Guidance
+1. Prefer additive changes (`*_v2` or new parameter) over destructive renames.
+2. Keep parameter types stable (`int_value` stays numeric, `string_value` stays string).
+3. Avoid overloading one parameter with mixed semantic meanings.
+
 ## Troubleshooting
 
 ### Common Issues
