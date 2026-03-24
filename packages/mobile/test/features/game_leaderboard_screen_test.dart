@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:modulo_squares/core/services/leaderboard_service.dart';
 import 'package:modulo_squares/features/game/leaderboard_screen.dart';
 import 'package:modulo_squares/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -86,5 +87,44 @@ void main() {
       find.widgetWithText(ChoiceChip, 'Top 50'),
     );
     expect(top50Chip.selected, isTrue);
+  });
+
+  testWidgets('Weekly leaderboard restores saved selected week', (
+    WidgetTester tester,
+  ) async {
+    final savedWeekId = LeaderboardService.currentWeekId();
+    SharedPreferences.setMockInitialValues({
+      'weeklyLeaderboardSelectedWeek': savedWeekId,
+    });
+
+    final view = tester.view;
+    view.physicalSize = const Size(1200, 2200);
+    view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      view.resetPhysicalSize();
+      view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: [Locale('en')],
+        home: LeaderboardScreen(playerName: 'Tester'),
+      ),
+    );
+
+    await tester.pump();
+    await tester.tap(find.text('Weekly'));
+    await tester.pumpAndSettle();
+
+    final weekDropdown = tester.widget<DropdownButton<int>>(
+      find.byType(DropdownButton<int>),
+    );
+    expect(weekDropdown.value, savedWeekId);
   });
 }
