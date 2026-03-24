@@ -255,6 +255,122 @@ await analytics.logEvent(
 );
 ```
 
+## BigQuery Query Cookbook
+
+The snippets below assume Firebase Analytics export tables in BigQuery using the standard pattern:
+- `project_id.analytics_<property_id>.events_*`
+
+Adjust project and dataset names for your environment.
+
+### 1) Leaderboard Tab Preference (Last 30 Days)
+```sql
+SELECT
+  ep_tab.value.string_value AS tab,
+  COUNT(*) AS event_count
+FROM `project_id.analytics_property.events_*`,
+UNNEST(event_params) AS ep_tab
+WHERE event_name = 'leaderboard_tab_changed'
+  AND ep_tab.key = 'tab'
+  AND _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d', DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY))
+                      AND FORMAT_DATE('%Y%m%d', CURRENT_DATE())
+GROUP BY tab
+ORDER BY event_count DESC;
+```
+
+### 2) Daily vs Non-Daily Leaderboard Context Mix
+```sql
+SELECT
+  CAST(ep_ctx.value.int_value AS INT64) AS is_daily_context,
+  COUNT(*) AS event_count
+FROM `project_id.analytics_property.events_*`,
+UNNEST(event_params) AS ep_ctx
+WHERE event_name IN ('leaderboard_tab_changed', 'leaderboard_tab_restored')
+  AND ep_ctx.key = 'is_daily_context'
+  AND _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d', DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY))
+                      AND FORMAT_DATE('%Y%m%d', CURRENT_DATE())
+GROUP BY is_daily_context
+ORDER BY event_count DESC;
+```
+
+### 3) Weekly Top-Limit Selection Distribution
+```sql
+WITH controls AS (
+  SELECT
+    MAX(IF(ep.key = 'control', ep.value.string_value, NULL)) AS control,
+    MAX(IF(ep.key = 'value', ep.value.int_value, NULL)) AS value
+  FROM `project_id.analytics_property.events_*`,
+  UNNEST(event_params) AS ep
+  WHERE event_name = 'weekly_leaderboard_control_changed'
+    AND _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d', DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY))
+                        AND FORMAT_DATE('%Y%m%d', CURRENT_DATE())
+  GROUP BY event_timestamp, user_pseudo_id
+)
+SELECT
+  value AS top_limit,
+  COUNT(*) AS selection_count
+FROM controls
+WHERE control = 'top_limit'
+GROUP BY top_limit
+ORDER BY selection_count DESC;
+```
+
+### 4) Weekly Browsing Breadth (Distinct Weeks per User)
+```sql
+WITH week_changes AS (
+  SELECT
+    user_pseudo_id,
+    MAX(IF(ep.key = 'control', ep.value.string_value, NULL)) AS control,
+    MAX(IF(ep.key = 'value', ep.value.int_value, NULL)) AS week_id
+  FROM `project_id.analytics_property.events_*`,
+  UNNEST(event_params) AS ep
+  WHERE event_name = 'weekly_leaderboard_control_changed'
+    AND _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d', DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY))
+                        AND FORMAT_DATE('%Y%m%d', CURRENT_DATE())
+  GROUP BY event_timestamp, user_pseudo_id
+)
+SELECT
+  APPROX_QUANTILES(distinct_weeks, 5) AS week_breadth_quintiles,
+  AVG(distinct_weeks) AS avg_distinct_weeks
+FROM (
+  SELECT
+    user_pseudo_id,
+    COUNT(DISTINCT week_id) AS distinct_weeks
+  FROM week_changes
+  WHERE control = 'week'
+  GROUP BY user_pseudo_id
+);
+```
+
+### 5) Challenge-Specific Leaderboard Engagement
+```sql
+WITH leaderboard_events AS (
+  SELECT
+    event_name,
+    user_pseudo_id,
+    MAX(IF(ep.key = 'challenge_id', ep.value.int_value, NULL)) AS challenge_id,
+    MAX(IF(ep.key = 'is_daily_context', ep.value.int_value, NULL)) AS is_daily_context
+  FROM `project_id.analytics_property.events_*`,
+  UNNEST(event_params) AS ep
+  WHERE event_name IN (
+    'leaderboard_tab_changed',
+    'leaderboard_tab_restored',
+    'weekly_leaderboard_control_changed',
+    'weekly_leaderboard_control_restored'
+  )
+    AND _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d', DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY))
+                        AND FORMAT_DATE('%Y%m%d', CURRENT_DATE())
+  GROUP BY event_name, event_timestamp, user_pseudo_id
+)
+SELECT
+  challenge_id,
+  is_daily_context,
+  COUNT(*) AS events,
+  COUNT(DISTINCT user_pseudo_id) AS unique_users
+FROM leaderboard_events
+GROUP BY challenge_id, is_daily_context
+ORDER BY events DESC;
+```
+
 ## Troubleshooting
 
 ### Common Issues
