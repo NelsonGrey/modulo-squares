@@ -278,6 +278,25 @@ Use a rolling 7-day baseline with day-over-day checks to avoid noisy alerts.
 - Add release markers to dashboards so expected post-release shifts do not create false positives.
 - Route alerts to engineering channel first; escalate to product only when issue persists beyond one day.
 
+### Alert Owners and First Response Runbook
+
+| Alert | Primary Owner | Secondary Owner | First Query to Run | Immediate Checks |
+|-------|---------------|-----------------|--------------------|------------------|
+| Leaderboard Interaction Drop | Mobile Engineer On-Call | Product Analyst | Query 1 + Query 2 from cookbook | Latest release marker, leaderboard entry points, Firebase export freshness |
+| Restore-to-Change Ratio Spike | Mobile Engineer On-Call | QA Engineer | Query 1 with both `leaderboard_tab_changed` and `leaderboard_tab_restored` | Tab listener duplicate suppression, persisted index restore logic |
+| Weekly Depth Selection Skew | Product Analyst | Mobile Engineer On-Call | Query 3 from cookbook | UI default changes, chip interaction behavior, recent leaderboard UX commits |
+| Daily Context Coverage Regression | Game Feature Owner | Mobile Engineer On-Call | Query 2 + Query 5 from cookbook | Daily Challenge routing, `startOnDaily` propagation into leaderboard screen |
+| Missing Challenge Context Drift | Mobile Engineer On-Call | Analytics Owner | Query 5 from cookbook filtered for `is_daily_context=1` and null `challenge_id` | Challenge ID wiring from game screen, analytics payload construction |
+
+#### Escalation Template
+
+When opening an incident, include:
+1. Alert name and first trigger timestamp.
+2. Current value, baseline value, and percent delta.
+3. Release marker proximity (last 24 hours).
+4. Result of first query and whether issue reproduces in DebugView.
+5. Suspected owner and next update time.
+
 ### A/B Testing Setup
 Future A/B tests can use custom parameters:
 ```dart
