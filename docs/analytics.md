@@ -243,6 +243,41 @@ The service gracefully handles Firebase unavailability:
 5. **Leaderboard Funnel**: tab preference, weekly depth usage, week-browsing behavior
 6. **Game Balance**: Level difficulty, mercy spawn frequency
 
+### Operational Thresholds (Suggested)
+
+Use a rolling 7-day baseline with day-over-day checks to avoid noisy alerts.
+
+1. **Leaderboard Interaction Drop**
+  - Signal: total `leaderboard_tab_changed` + `weekly_leaderboard_control_changed`
+  - Alert when: daily count drops more than 30% versus 7-day average
+  - Suggested action: verify release health, navigation entry points, and analytics ingestion
+
+2. **Restore-to-Change Ratio Spike**
+  - Signal: `leaderboard_tab_restored` / `leaderboard_tab_changed`
+  - Alert when: ratio exceeds 2.0 for 2 consecutive days
+  - Suggested action: validate tab-change listener behavior and duplicate event suppression logic
+
+3. **Weekly Depth Selection Skew**
+  - Signal: share of `weekly_leaderboard_control_changed` where `control=top_limit` and `value=10`
+  - Alert when: share changes by more than +/-20 percentage points week-over-week
+  - Suggested action: review UI defaults, chip interaction behavior, and any recent ranking UX changes
+
+4. **Daily Context Coverage Regression**
+  - Signal: events with `is_daily_context=1` among leaderboard events
+  - Alert when: daily-context share falls below 50% of its 14-day median
+  - Suggested action: verify Daily Challenge entry routing and `startOnDaily` propagation
+
+5. **Missing Challenge Context Drift**
+  - Signal: leaderboard events in daily context without `challenge_id`
+  - Alert when: missing rate exceeds 5%
+  - Suggested action: check challenge id wiring from game screen into leaderboard screen params
+
+### Alerting Notes
+
+- Prefer warning/critical tiers (for example 20% and 30% drop thresholds).
+- Add release markers to dashboards so expected post-release shifts do not create false positives.
+- Route alerts to engineering channel first; escalate to product only when issue persists beyond one day.
+
 ### A/B Testing Setup
 Future A/B tests can use custom parameters:
 ```dart
