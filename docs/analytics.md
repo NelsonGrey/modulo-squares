@@ -114,6 +114,41 @@ Future<void> setUserIdFromAuth(User? user) async {
 - **`ad_impression`**: Parameters: `{format, trigger?, level_num?}`
 - **`ad_dismissed`**: Parameters: `{format, trigger?, level_num?}`
 
+### Approved Event Registry
+
+Use this registry as the source of truth for event naming. New analytics work should reuse existing names when semantics match.
+
+| Event Name | Category | Required Parameters | Optional Parameters | Owner | Status |
+|------------|----------|---------------------|---------------------|-------|--------|
+| `app_open` | Lifecycle | None | None | Platform/Core | Active |
+| `view_instructions` | Navigation | None | None | Game UX | Active |
+| `view_leaderboard` | Navigation | None | None | Game UX | Active |
+| `view_special_tiles` | Navigation | None | None | Game UX | Active |
+| `leaderboard_tab_changed` | Leaderboard | `tab`, `is_daily_context` | `challenge_id` | Game UX | Active |
+| `leaderboard_tab_restored` | Leaderboard | `tab`, `is_daily_context` | `challenge_id` | Game UX | Active |
+| `weekly_leaderboard_control_changed` | Leaderboard | `control`, `value`, `is_daily_context` | `challenge_id` | Game UX | Active |
+| `weekly_leaderboard_control_restored` | Leaderboard | `control`, `value`, `is_daily_context` | `challenge_id` | Game UX | Active |
+| `level_start` | Gameplay | `level_num`, `rows`, `cols` | None | Gameplay | Active |
+| `level_complete` | Gameplay | `level_num`, `score` | None | Gameplay | Active |
+| `out_of_moves` | Gameplay | `level_num`, `score` | None | Gameplay | Active |
+| `game_over_no_moves` | Gameplay | `score` | None | Gameplay | Active |
+| `move` | Gameplay | `type` | None | Gameplay | Active |
+| `restart` | Gameplay | `level` | None | Gameplay | Active |
+| `mercy_spawn` | Gameplay | `penalty` | None | Gameplay | Active |
+| `daily_start` | Daily Challenge | `challenge_id` | None | Gameplay | Active |
+| `daily_submit` | Daily Challenge | `challenge_id`, `score`, `submitted` | None | Gameplay | Active |
+| `daily_rank_available` | Daily Challenge | `challenge_id`, `rank_available` | `rank` | Gameplay | Active |
+| `weekly_submit` | Weekly Ladder | `week_id`, `score`, `submitted` | None | Gameplay | Active |
+| `weekly_rank_available` | Weekly Ladder | `week_id`, `rank_available` | `rank` | Gameplay | Active |
+| `weekly_badge_earned` | Weekly Ladder | `week_id`, `badge`, `rank` | None | Gameplay | Active |
+| `ad_impression` | Ads | `format` | `trigger`, `level_num` | Monetization | Active |
+| `ad_dismissed` | Ads | `format` | `trigger`, `level_num` | Monetization | Active |
+
+#### Registry Rules
+1. Do not introduce a new event name without adding a row here.
+2. Keep parameter names and types stable once dashboards depend on them.
+3. If an event is superseded, mark Status as `Deprecated` and follow the Event Deprecation Policy.
+
 ## Implementation Details
 
 ### Event Logging
