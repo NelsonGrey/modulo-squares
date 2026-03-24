@@ -1,9 +1,9 @@
-# TestFlight Upload Guide (Keychainless)
+# TestFlight Upload Guide (Non-Interactive Signing)
 
 This project now uploads to TestFlight using:
 - Automatic signing
 - App Store Connect API key authentication
-- No direct keychain setup scripts
+- No direct credential-prompt setup scripts
 
 ## Required Variables
 

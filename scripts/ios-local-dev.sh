@@ -3,7 +3,7 @@ set -euo pipefail
 
 ################################################################################
 # Local iOS development script
-# Sets up environment and runs Fastlane commands in keychainless mode
+# Sets up environment and runs Fastlane commands in non-interactive signing mode
 ################################################################################
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

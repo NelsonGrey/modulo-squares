@@ -152,7 +152,7 @@ npm run deploy:all
 For iOS development with proper certificate management:
 
 ```bash
-# Local iOS development (avoids keychain dialogs)
+# Local iOS development (avoids interactive signing dialogs)
 ./scripts/ios-local-dev.sh help    # Show available commands
 ./scripts/ios-local-dev.sh sync    # Sync certificates (first time)
 ./scripts/ios-local-dev.sh build   # Build debug version

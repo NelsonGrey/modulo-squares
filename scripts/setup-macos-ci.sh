@@ -1,10 +1,10 @@
 #!/bin/bash
-# 🚀 Modulo Squares - macOS CI Setup (keychainless)
-# Configures non-interactive CI behavior without direct keychain orchestration
+# 🚀 Modulo Squares - macOS CI Setup (non-interactive signing)
+# Configures non-interactive CI behavior without direct signing prompts
 
 set -e
 
-echo "🍎 Setting up macOS environment for zero-touch iOS builds (keychainless)..."
+echo "🍎 Setting up macOS environment for zero-touch iOS builds (non-interactive signing)..."
 echo "👤 Current user: $(whoami)"
 echo "🏠 Home directory: $HOME"
 
@@ -26,5 +26,5 @@ export FASTLANE_CI=true
 export MODULO_SIGNING_MODE="automatic"
 export MODULO_KEYCHAINLESS_SIGNING="true"
 
-echo "✅ macOS environment configured for keychainless zero-touch operations"
+echo "✅ macOS environment configured for non-interactive zero-touch operations"
 echo "ℹ️  Signing mode: automatic (App Store Connect API key)"

@@ -1,6 +1,6 @@
 # iOS Release Signing Configuration
 
-> **Updated**: This project now uses automatic signing with App Store Connect API authentication (keychainless workflow).
+> **Updated**: This project now uses automatic signing with App Store Connect API authentication (non-interactive workflow).
 
 ## Overview
 
@@ -22,7 +22,7 @@ This project uses automatic signing and App Store Connect API key authentication
 
 ## Local Development Setup
 
-For local development and testing, use the provided scripts in keychainless mode:
+For local development and testing, use the provided scripts in non-interactive signing mode:
 
 ### Quick Local Setup
 
@@ -56,7 +56,7 @@ For local development and testing, use the provided scripts in keychainless mode
 
 - Validates required environment variables
 - Configures Fastlane for automatic signing
-- Runs build/upload lanes without direct keychain orchestration
+- Runs build/upload lanes without interactive credential prompts
 
 ### Available Commands
 
