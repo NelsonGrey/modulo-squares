@@ -39,6 +39,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   }
 
   Future<void> _restoreActiveTabIndex() async {
+    // Respect explicit navigation intent from game flow.
+    if (widget.startOnDaily) return;
+
     final prefs = await SharedPreferences.getInstance();
     final savedIndex = prefs.getInt(_leaderboardTabIndexPrefKey);
     if (!mounted || savedIndex == null) return;

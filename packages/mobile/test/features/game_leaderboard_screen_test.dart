@@ -160,4 +160,41 @@ void main() {
 
     expect(find.text('Weekly Ladder'), findsOneWidget);
   });
+
+  testWidgets('startOnDaily takes precedence over saved active tab', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({'leaderboardTabIndex': 2});
+
+    final view = tester.view;
+    view.physicalSize = const Size(1200, 2200);
+    view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      view.resetPhysicalSize();
+      view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: [Locale('en')],
+        home: LeaderboardScreen(playerName: 'Tester', startOnDaily: true),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+        'Daily leaderboard becomes available after entering Daily Challenge mode.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Weekly Ladder'), findsNothing);
+  });
 }
