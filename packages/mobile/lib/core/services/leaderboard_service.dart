@@ -397,7 +397,9 @@ class LeaderboardService {
 
   /// Per-week progression including trend direction compared to the prior week.
   /// Trend values: improving, stable, declining, none.
-  static Future<List<({int weekId, int? rank, String? badge, String trend})>>
+  static Future<
+    List<({int weekId, int? rank, String? badge, String trend, int? delta})>
+  >
   getWeeklySeasonProgressWithTrend({
     required String playerName,
     required List<int> weekIds,
@@ -412,12 +414,15 @@ class LeaderboardService {
     );
 
     int? previousRank;
-    final result = <({int weekId, int? rank, String? badge, String trend})>[];
+    final result =
+        <({int weekId, int? rank, String? badge, String trend, int? delta})>[];
     for (final item in base) {
       final currentRank = item.rank;
       String trend = 'none';
+      int? delta;
 
       if (currentRank != null && previousRank != null) {
+        delta = previousRank - currentRank;
         if (currentRank < previousRank) {
           trend = 'improving';
         } else if (currentRank == previousRank) {
@@ -431,6 +436,7 @@ class LeaderboardService {
         weekId: item.weekId,
         rank: item.rank,
         badge: item.badge,
+        delta: delta,
         trend: trend,
       ));
 

@@ -176,7 +176,15 @@ class _WeeklyLeaderboardTabState extends State<_WeeklyLeaderboardTab> {
                   const _TrendLegendRow(),
                   const SizedBox(height: 8),
                   FutureBuilder<
-                    List<({int weekId, int? rank, String? badge, String trend})>
+                    List<
+                      ({
+                        int weekId,
+                        int? rank,
+                        String? badge,
+                        String trend,
+                        int? delta,
+                      })
+                    >
                   >(
                     future: LeaderboardService.getWeeklySeasonProgressWithTrend(
                       playerName: widget.playerName,
@@ -223,12 +231,23 @@ class _WeeklyLeaderboardTabState extends State<_WeeklyLeaderboardTab> {
                                 ],
                               );
                             }
+
+                            String deltaText = '';
+                            final d = item.delta;
+                            if (d != null && d != 0) {
+                              if (d > 0) {
+                                deltaText = ' (+$d better)';
+                              } else {
+                                deltaText = ' (${d.abs()} worse)';
+                              }
+                            }
+
                             return Row(
                               children: [
                                 Icon(trendIcon, size: 16, color: trendColor),
                                 const SizedBox(width: 6),
                                 Text(
-                                  'Week ${item.weekId}: #${item.rank} (${item.badge})',
+                                  'Week ${item.weekId}: #${item.rank} (${item.badge})$deltaText',
                                 ),
                               ],
                             );
