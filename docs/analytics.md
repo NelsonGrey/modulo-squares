@@ -1665,6 +1665,179 @@ Next Update: 30 minutes
 3. Add or update template query that would have shortened detection time.
 4. Record concrete prevention action in Monthly Maintenance Cadence.
 
+## Performance Tuning Guide
+
+Use this guide to keep analytics queries fast, cost-efficient, and stable as data volume grows.
+
+### Performance Targets
+
+| Workload | Target Runtime | Target Scan Size | Refresh Cadence |
+|---|---|---|---|
+| Daily dashboard tiles | < 10 seconds | < 2 GB/query | Hourly or daily |
+| Incident triage queries | < 30 seconds | < 10 GB/query | On-demand |
+| Weekly product deep dives | < 2 minutes | < 50 GB/query | Weekly |
+| Quarterly audit workloads | < 5 minutes | < 150 GB/query | Quarterly |
+
+If a query exceeds two thresholds in a row, optimize before adding new features to it.
+
+### Core Optimization Principles
+
+1. Prune data early with `_TABLE_SUFFIX` before heavy joins or UNNEST.
+2. Filter by event family before extracting parameters.
+3. Select only required columns; avoid `SELECT *` in production dashboards.
+4. Prefer pre-aggregated tables for repeated dashboard access.
+5. Use UTC defaults and convert timezone only in final presentation layers.
+
+### Query Shape Patterns
+
+#### Pattern A: Fast Path (Preferred)
+
+```sql
+SELECT
+  event_name,
+  COUNT(*) AS c
+FROM `project_id.analytics_property_id.events_*`
+WHERE _TABLE_SUFFIX BETWEEN '20260320' AND '20260324'
+  AND event_name LIKE 'leaderboard_%'
+GROUP BY event_name;
+```
+
+Why it performs well:
+1. Date pruning limits scanned partitions.
+2. Event filter reduces row set before aggregation.
+3. No repeated parameter extraction.
+
+#### Pattern B: Slow Path (Avoid)
+
+```sql
+SELECT *
+FROM `project_id.analytics_property_id.events_*`
+WHERE event_name LIKE '%leaderboard%';
+```
+
+Why it is expensive:
+1. No table suffix pruning means scanning broad date ranges.
+2. Wide projection (`*`) reads unnecessary fields.
+3. Wildcard with leading `%` can prevent efficient pruning behavior.
+
+### Parameter Extraction Optimization
+
+Use one UNNEST pass with conditional aggregation for multi-parameter use cases.
+
+Preferred:
+
+```sql
+WITH flat AS (
+  SELECT
+    event_timestamp,
+    user_pseudo_id,
+    event_name,
+    ep.key,
+    ep.value
+  FROM `project_id.analytics_property_id.events_*`,
+  UNNEST(event_params) ep
+  WHERE _TABLE_SUFFIX BETWEEN '20260320' AND '20260324'
+    AND event_name = 'leaderboard_tab_changed'
+)
+SELECT
+  user_pseudo_id,
+  MAX(IF(key = 'tab', value.string_value, NULL)) AS tab,
+  MAX(IF(key = 'challenge_id', value.string_value, NULL)) AS challenge_id,
+  MAX(IF(key = 'is_daily_context', CAST(value.int_value AS STRING), NULL)) AS is_daily_context
+FROM flat
+GROUP BY user_pseudo_id;
+```
+
+Avoid repeated scalar subqueries if extracting many keys from the same event.
+
+### Cost Control Checklist
+
+- [ ] `_TABLE_SUFFIX` is always present for wildcard tables.
+- [ ] Query scans only required date range (default last 7 days for triage).
+- [ ] Event filter included before UNNEST when possible.
+- [ ] Projection excludes high-volume nested columns not in use.
+- [ ] Dashboard SQL avoids duplicate heavy CTEs.
+- [ ] Query result cache is enabled where safe.
+
+### Dashboard Latency Reduction
+
+1. Precompute daily aggregates for top tiles:
+   - `analytics_daily_event_volume`
+   - `analytics_daily_null_rate`
+   - `analytics_daily_challenge_reach`
+2. Refresh aggregate tables with scheduled queries once per hour for near-real-time dashboards.
+3. Keep dashboard queries as thin reads over aggregate tables (no raw wildcard scans at render time).
+
+Example scheduled aggregate:
+
+```sql
+CREATE OR REPLACE TABLE `project_id.analytics_marts.daily_leaderboard_metrics` AS
+SELECT
+  PARSE_DATE('%Y%m%d', event_date) AS day,
+  event_name,
+  COUNT(*) AS events,
+  COUNT(DISTINCT user_pseudo_id) AS users
+FROM `project_id.analytics_property_id.events_*`
+WHERE _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d', DATE_SUB(CURRENT_DATE('UTC'), INTERVAL 30 DAY))
+  AND FORMAT_DATE('%Y%m%d', DATE_SUB(CURRENT_DATE('UTC'), INTERVAL 1 DAY))
+  AND event_name LIKE 'leaderboard_%'
+GROUP BY day, event_name;
+```
+
+### Partitioning And Clustering Guidance
+
+For derived marts/tables:
+1. Partition by day/date for predictable pruning.
+2. Cluster by high-frequency filter columns:
+   - `event_name`
+   - `user_pseudo_id`
+   - `challenge_id` (if used often)
+3. Revisit clustering keys quarterly as query patterns evolve.
+
+### Query Review Rubric (Before Merge)
+
+| Check | Pass Criteria |
+|---|---|
+| Date pruning | Uses `_TABLE_SUFFIX` or partition date filter |
+| Event filtering | Limits to specific event names/families |
+| Projection hygiene | No `SELECT *` in production query paths |
+| Parameter extraction | Single-pass UNNEST for multi-parameter use |
+| Runtime | Meets workload target for intended use |
+| Scan cost | Within target scan size for workload class |
+
+### Common Performance Anti-Patterns
+
+1. Wide wildcard scans across months for dashboard tiles.
+2. Repeating the same expensive CTE in multiple chart queries.
+3. Converting timezones inside all intermediate CTEs.
+4. Joining raw event tables directly to multiple dimensional tables in BI layer.
+5. Using non-sargable filters (`LIKE '%value%'`) on high-cardinality fields.
+
+### Incident Tuning Playbook
+
+When query runtime regresses suddenly:
+1. Compare execution details for last-known-good query vs current query.
+2. Reduce date window to isolate whether regression is volume-driven or shape-driven.
+3. Replace repeated scalar subqueries with flattened UNNEST.
+4. Materialize heavy intermediate result for incident window.
+5. Backport optimized query to dashboard and document change in audit report.
+
+### Monthly Performance Maintenance
+
+- [ ] Review top 10 most expensive analytics queries by scan bytes.
+- [ ] Identify dashboards still reading raw wildcard tables and migrate them to marts.
+- [ ] Drop unused derived tables and stale scheduled queries.
+- [ ] Validate scheduled aggregate freshness SLAs.
+- [ ] Update this guide with newly observed anti-patterns.
+
+### SLA Escalation Thresholds
+
+Escalate to `@analytics-owner` and `@product-analyst` if any condition persists for 24 hours:
+1. Dashboard median runtime > 20 seconds.
+2. Incident triage query runtime > 90 seconds.
+3. Query cost increases > 50% week-over-week without volume growth.
+4. Scheduled aggregate freshness lag > 2 refresh cycles.
+
 ## Future Enhancements
 
 - **Custom Dashboards**: Real-time analytics views
