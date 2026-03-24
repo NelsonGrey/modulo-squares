@@ -165,6 +165,8 @@ class _GameScreenContentState extends State<_GameScreenContent>
           content: Text(
             '${AppLocalizations.of(context)!.winMessage(score)}\n\n'
             'Stars: ${_formatStars(stars)}\n'
+            'Par target hit: ${gameProvider.lastCompletionHitPar ? 'Yes' : 'No'}\n'
+            'Elite target hit: ${gameProvider.lastCompletionHitElite ? 'Yes' : 'No'}\n'
             '$bestLabel\n'
             'Best Score: $bestScore'
             '${gameProvider.lastCompletionImprovedBest ? '\nNew personal best!' : ''}',
@@ -208,6 +210,33 @@ class _GameScreenContentState extends State<_GameScreenContent>
                         'Daily score submitted. Current rank: #$rank';
                   } else {
                     submissionFeedback = 'Daily score submitted.';
+                  }
+                } else {
+                  final playerName = _currentPlayerName();
+                  await LeaderboardService.submitScore(
+                    context,
+                    playerName,
+                    score,
+                  );
+
+                  final weekId = LeaderboardService.currentWeekId();
+                  final weeklySubmitted =
+                      await LeaderboardService.submitWeeklyScore(
+                        context,
+                        weekId,
+                        playerName,
+                        score,
+                      );
+                  if (weeklySubmitted) {
+                    final rank = await LeaderboardService.getWeeklyRank(
+                      weekId,
+                      playerName,
+                    );
+                    if (rank != null) {
+                      final badge = LeaderboardService.weeklyBadgeForRank(rank);
+                      submissionFeedback =
+                          'Weekly ladder rank: #$rank ($badge badge)';
+                    }
                   }
                 }
                 Navigator.of(dialogContext).pop();
@@ -275,6 +304,12 @@ class _GameScreenContentState extends State<_GameScreenContent>
     return GameLevelInfo(
       level: gameProvider.level,
       remainingMoves: gameProvider.remainingMoves,
+      parMoves: gameProvider.currentParMoves,
+      eliteMoves: gameProvider.currentEliteMoves,
+      dailyModifierLabel:
+          gameProvider.isDailyChallengeMode
+              ? gameProvider.dailyModifierLabel
+              : null,
     );
   }
 

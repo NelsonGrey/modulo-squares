@@ -21,15 +21,17 @@ class LeaderboardScreen extends StatefulWidget {
 class _LeaderboardScreenState extends State<LeaderboardScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
+  late final int _activeWeekId;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(
-      length: 2,
+      length: 3,
       vsync: this,
       initialIndex: widget.startOnDaily ? 1 : 0,
     );
+    _activeWeekId = LeaderboardService.currentWeekId();
   }
 
   @override
@@ -46,7 +48,11 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
         title: const Text('Leaderboards'),
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [Tab(text: 'Global'), Tab(text: 'Daily')],
+          tabs: const [
+            Tab(text: 'Global'),
+            Tab(text: 'Daily'),
+            Tab(text: 'Weekly'),
+          ],
         ),
       ),
       body: TabBarView(
@@ -61,8 +67,78 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
             challengeId: widget.challengeId,
             playerName: widget.playerName,
           ),
+          _WeeklyLeaderboardTab(
+            weekId: _activeWeekId,
+            playerName: widget.playerName,
+          ),
         ],
       ),
+    );
+  }
+}
+
+class _WeeklyLeaderboardTab extends StatelessWidget {
+  const _WeeklyLeaderboardTab({required this.weekId, required this.playerName});
+
+  final int weekId;
+  final String playerName;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Weekly Ladder: $weekId',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 6),
+                  FutureBuilder<int?>(
+                    future: LeaderboardService.getWeeklyRank(
+                      weekId,
+                      playerName,
+                    ),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Text('Checking your weekly rank...');
+                      }
+                      if (snapshot.hasError) {
+                        return const Text(
+                          'Could not fetch your weekly rank yet.',
+                        );
+                      }
+                      final rank = snapshot.data;
+                      if (rank == null) {
+                        return const Text(
+                          'No weekly rank yet. Complete a level to enter this week\'s ladder.',
+                        );
+                      }
+                      final badge = LeaderboardService.weeklyBadgeForRank(rank);
+                      return Text('Your weekly rank: #$rank  Badge: $badge');
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        Expanded(
+          child: _LeaderboardList(
+            title: 'Weekly Top Scores',
+            stream: LeaderboardService.getTopWeeklyScores(weekId, 25),
+            emptyText: l10n.noScoresYet,
+            includeBadge: true,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -146,11 +222,13 @@ class _LeaderboardList extends StatelessWidget {
     required this.title,
     required this.stream,
     required this.emptyText,
+    this.includeBadge = false,
   });
 
   final String title;
   final Stream<List<Map<String, dynamic>>> stream;
   final String emptyText;
+  final bool includeBadge;
 
   @override
   Widget build(BuildContext context) {
@@ -183,6 +261,12 @@ class _LeaderboardList extends StatelessWidget {
               return ListTile(
                 leading: CircleAvatar(child: Text('#${index + 1}')),
                 title: Text(row['name']?.toString() ?? 'Unknown'),
+                subtitle:
+                    includeBadge
+                        ? Text(
+                          'Badge: ${LeaderboardService.weeklyBadgeForRank(index + 1)}',
+                        )
+                        : null,
                 trailing: Text(row['score']?.toString() ?? '0'),
               );
             },

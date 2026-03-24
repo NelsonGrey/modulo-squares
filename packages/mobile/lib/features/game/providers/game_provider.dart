@@ -8,6 +8,8 @@ import 'package:modulo_squares/shared/models/cell_position.dart';
 import 'package:modulo_squares/core/services/analytics_service.dart';
 import 'package:modulo_squares/core/services/ad_service.dart';
 
+enum DailyModifier { noMercy, obstacleSurge, bonusRush, lowMoves }
+
 /// Provider for managing game state using ChangeNotifier
 class GameProvider extends ChangeNotifier {
   static const String _highScoreKey = 'highScore';
@@ -26,9 +28,14 @@ class GameProvider extends ChangeNotifier {
   Map<int, int> _dailyBestScoreByChallenge = {};
   int? _lastCompletedStars;
   bool _lastCompletionImprovedBest = false;
+  bool _lastCompletionHitPar = false;
+  bool _lastCompletionHitElite = false;
   int _mercySpawnsThisLevel = 0;
   bool _isDailyChallengeMode = false;
   int? _activeDailyChallengeId;
+  DailyModifier? _dailyModifier;
+  int _consecutiveFailures = 0;
+  int _levelsCompletedSinceAd = 0;
 
   GameProvider({
     required GameState initialState,
@@ -51,6 +58,9 @@ class GameProvider extends ChangeNotifier {
   int? get activeDailyChallengeId => _activeDailyChallengeId;
   int? get lastCompletedStars => _lastCompletedStars;
   bool get lastCompletionImprovedBest => _lastCompletionImprovedBest;
+  bool get lastCompletionHitPar => _lastCompletionHitPar;
+  bool get lastCompletionHitElite => _lastCompletionHitElite;
+  DailyModifier? get dailyModifier => _dailyModifier;
 
   int? bestStarsForLevel(int level) => _bestStarsByLevel[level];
   int? bestScoreForLevel(int level) => _bestScoreByLevel[level];
@@ -65,7 +75,77 @@ class GameProvider extends ChangeNotifier {
     return (now.year * 10000) + (now.month * 100) + now.day;
   }
 
-  int _startingMovesForLevel(int level) => 20 + (level - 1) * 2;
+  int _baseMovesForLevel(int level) {
+    final base = 22 - ((level - 1) ~/ 2);
+    return base.clamp(11, 22);
+  }
+
+  int _assistMovesForLevel(int level) {
+    if (level <= 1) return 0;
+    if (_consecutiveFailures >= 5) return 4;
+    if (_consecutiveFailures >= 3) return 2;
+    return 0;
+  }
+
+  int _startingMovesForLevel(int level) =>
+      _baseMovesForLevel(level) + _assistMovesForLevel(level);
+
+  int _parMovesForLevel(int level) {
+    final target = _startingMovesForLevel(level) - (5 + ((level - 1) ~/ 3));
+    return target.clamp(5, _startingMovesForLevel(level));
+  }
+
+  int _eliteMovesForLevel(int level) {
+    final elite = _parMovesForLevel(level) - 2;
+    return elite.clamp(3, _parMovesForLevel(level));
+  }
+
+  ({int emptyChance, int obstacleChance, int bonusChance, int solveDepth})
+  _boardTuningForLevel(int level) {
+    final int failAssist = (_consecutiveFailures >= 3) ? 1 : 0;
+    final emptyChance = (24 - (level * 2) + (failAssist * 3)).clamp(10, 36);
+    final obstacleChance = (level >= 4 ? 3 + (level ~/ 6) - failAssist : 0)
+        .clamp(0, 10);
+    final bonusChance = (2 + (level ~/ 8) + failAssist).clamp(1, 8);
+    final solveDepth = (8 + (level ~/ 4) + failAssist).clamp(8, 14);
+    return (
+      emptyChance: emptyChance,
+      obstacleChance: obstacleChance,
+      bonusChance: bonusChance,
+      solveDepth: solveDepth,
+    );
+  }
+
+  DailyModifier _dailyModifierForChallenge(int challengeId) {
+    switch (challengeId % 4) {
+      case 0:
+        return DailyModifier.noMercy;
+      case 1:
+        return DailyModifier.obstacleSurge;
+      case 2:
+        return DailyModifier.bonusRush;
+      default:
+        return DailyModifier.lowMoves;
+    }
+  }
+
+  String get dailyModifierLabel {
+    switch (_dailyModifier) {
+      case DailyModifier.noMercy:
+        return 'No Mercy';
+      case DailyModifier.obstacleSurge:
+        return 'Obstacle Surge';
+      case DailyModifier.bonusRush:
+        return 'Bonus Rush';
+      case DailyModifier.lowMoves:
+        return 'Low Moves';
+      case null:
+        return '';
+    }
+  }
+
+  int get currentParMoves => _parMovesForLevel(_gameState.level);
+  int get currentEliteMoves => _eliteMovesForLevel(_gameState.level);
 
   int _calculateStarsForCompletion() {
     final int startingMoves = _startingMovesForLevel(_gameState.level);
@@ -162,9 +242,15 @@ class GameProvider extends ChangeNotifier {
     final int levelNum = _gameState.level;
     final int score = _gameState.gameBoard.score;
     final int stars = _calculateStarsForCompletion();
+    final int usedMoves = (_startingMovesForLevel(_gameState.level) -
+            _gameState.remainingMoves)
+        .clamp(0, _startingMovesForLevel(_gameState.level));
 
     _lastCompletedStars = stars;
     _lastCompletionImprovedBest = false;
+    _lastCompletionHitPar = usedMoves <= _parMovesForLevel(_gameState.level);
+    _lastCompletionHitElite =
+        usedMoves <= _eliteMovesForLevel(_gameState.level);
 
     _analyticsService.logLevelStarResult(
       level: _gameState.level,
@@ -208,16 +294,26 @@ class GameProvider extends ChangeNotifier {
 
   /// Initialize a new game board for the current level
   void initializeGameBoard() {
+    final tuning = _boardTuningForLevel(_gameState.level);
     _gameState = _gameState.copyWith(
-      gameBoard: GameBoard(level: _gameState.level),
+      gameBoard: GameBoard(
+        level: _gameState.level,
+        emptyChanceOverride: tuning.emptyChance,
+        obstacleChanceOverride: tuning.obstacleChance,
+        bonusChanceOverride: tuning.bonusChance,
+        solveDepth: tuning.solveDepth,
+      ),
       selectedCell: null,
-      remainingMoves: 20 + (_gameState.level - 1) * 2,
+      remainingMoves: _startingMovesForLevel(_gameState.level),
       isGameOver: false,
       isLevelComplete: false,
     );
     _isDailyChallengeMode = false;
     _activeDailyChallengeId = null;
+    _dailyModifier = null;
     _mercySpawnsThisLevel = 0;
+    _lastCompletionHitPar = false;
+    _lastCompletionHitElite = false;
     notifyListeners();
     _analyticsService.logLevelStart(
       level: _gameState.level,
@@ -230,19 +326,59 @@ class GameProvider extends ChangeNotifier {
     final d = date ?? DateTime.now();
     final int challengeId = (d.year * 10000) + (d.month * 100) + d.day;
     final int seed = challengeId;
+    final modifier = _dailyModifierForChallenge(challengeId);
+
+    int emptyChance = 16;
+    int obstacleChance = 6;
+    int bonusChance = 3;
+    int solveDepth = 12;
+    int dailyMoves = 17;
+
+    switch (modifier) {
+      case DailyModifier.noMercy:
+        dailyMoves = 17;
+        obstacleChance = 7;
+        break;
+      case DailyModifier.obstacleSurge:
+        dailyMoves = 18;
+        obstacleChance = 10;
+        emptyChance = 18;
+        break;
+      case DailyModifier.bonusRush:
+        dailyMoves = 17;
+        bonusChance = 8;
+        obstacleChance = 5;
+        break;
+      case DailyModifier.lowMoves:
+        dailyMoves = 14;
+        obstacleChance = 6;
+        bonusChance = 4;
+        solveDepth = 13;
+        break;
+    }
 
     _gameState = _gameState.copyWith(
-      gameBoard: GameBoard.dailyChallenge(seed: seed, difficulty: 7),
+      gameBoard: GameBoard.dailyChallenge(
+        seed: seed,
+        difficulty: 7,
+        emptyChanceOverride: emptyChance,
+        obstacleChanceOverride: obstacleChance,
+        bonusChanceOverride: bonusChance,
+        solveDepth: solveDepth,
+      ),
       selectedCell: null,
-      remainingMoves: 18,
+      remainingMoves: dailyMoves,
       isGameOver: false,
       isLevelComplete: false,
     );
     _isDailyChallengeMode = true;
     _activeDailyChallengeId = challengeId;
+    _dailyModifier = modifier;
     _mercySpawnsThisLevel = 0;
     _lastCompletedStars = null;
     _lastCompletionImprovedBest = false;
+    _lastCompletionHitPar = false;
+    _lastCompletionHitElite = false;
     notifyListeners();
 
     _analyticsService.logLevelStart(
@@ -256,8 +392,11 @@ class GameProvider extends ChangeNotifier {
   void exitDailyChallengeMode() {
     _isDailyChallengeMode = false;
     _activeDailyChallengeId = null;
+    _dailyModifier = null;
     _lastCompletedStars = null;
     _lastCompletionImprovedBest = false;
+    _lastCompletionHitPar = false;
+    _lastCompletionHitElite = false;
     initializeGameBoard();
   }
 
@@ -298,7 +437,8 @@ class GameProvider extends ChangeNotifier {
 
       // Check for mercy spawn
       if (_gameState.gameBoard.nonEmptyTileCount() == 1 &&
-          _gameState.remainingMoves > 0) {
+          _gameState.remainingMoves > 0 &&
+          _dailyModifier != DailyModifier.noMercy) {
         final mercyBoard = _gameState.gameBoard.mercySpawnHelperTile(
           scorePenalty: 5,
         );
@@ -338,7 +478,8 @@ class GameProvider extends ChangeNotifier {
 
       // Check for mercy spawn
       if (_gameState.gameBoard.nonEmptyTileCount() == 1 &&
-          _gameState.remainingMoves > 0) {
+          _gameState.remainingMoves > 0 &&
+          _dailyModifier != DailyModifier.noMercy) {
         final mercyBoard = _gameState.gameBoard.mercySpawnHelperTile(
           scorePenalty: 5,
         );
@@ -368,6 +509,7 @@ class GameProvider extends ChangeNotifier {
     if (_gameState.gameBoard.isBoardClear()) {
       _recordLevelCompletionResult();
       _gameState = _gameState.copyWith(isLevelComplete: true);
+      _consecutiveFailures = 0;
       _analyticsService.logLevelComplete(
         level: _gameState.level,
         score: _gameState.gameBoard.score,
@@ -377,6 +519,7 @@ class GameProvider extends ChangeNotifier {
 
     if (_gameState.remainingMoves <= 0) {
       _gameState = _gameState.copyWith(isGameOver: true);
+      _consecutiveFailures += 1;
       _analyticsService.logOutOfMoves(
         level: _gameState.level,
         score: _gameState.gameBoard.score,
@@ -392,6 +535,7 @@ class GameProvider extends ChangeNotifier {
 
     if (!_gameState.gameBoard.hasMoves()) {
       _gameState = _gameState.copyWith(isGameOver: true);
+      _consecutiveFailures += 1;
       _analyticsService.logGameOverNoMoves(score: _gameState.gameBoard.score);
       _analyticsService.logLevelFailReason(
         level: _gameState.level,
@@ -420,6 +564,8 @@ class GameProvider extends ChangeNotifier {
     );
     _lastCompletedStars = null;
     _lastCompletionImprovedBest = false;
+    _lastCompletionHitPar = false;
+    _lastCompletionHitElite = false;
     initializeGameBoard();
   }
 
@@ -432,8 +578,27 @@ class GameProvider extends ChangeNotifier {
     initializeGameBoard();
   }
 
+  bool _shouldShowInterstitial({required String trigger}) {
+    if (trigger == 'level_complete') {
+      return _levelsCompletedSinceAd >= 2;
+    }
+    if (trigger == 'restart') {
+      return _consecutiveFailures >= 2;
+    }
+    return true;
+  }
+
   /// Show interstitial ad and handle level completion
   void completeLevel(VoidCallback onAdClosed) {
+    _levelsCompletedSinceAd += 1;
+
+    if (!_shouldShowInterstitial(trigger: 'level_complete')) {
+      nextLevel();
+      onAdClosed();
+      return;
+    }
+
+    _levelsCompletedSinceAd = 0;
     _adService.showInterstitial(
       trigger: 'level_complete',
       levelNum: _gameState.level,
@@ -446,6 +611,12 @@ class GameProvider extends ChangeNotifier {
 
   /// Show restart ad
   void restartWithAd(VoidCallback onAdClosed) {
+    if (!_shouldShowInterstitial(trigger: 'restart')) {
+      onAdClosed();
+      return;
+    }
+
+    _consecutiveFailures = 0;
     _adService.showInterstitial(
       trigger: 'restart',
       levelNum: _gameState.level,

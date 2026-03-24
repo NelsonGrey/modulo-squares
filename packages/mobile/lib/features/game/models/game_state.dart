@@ -21,12 +21,14 @@ class GameState {
     this.isLevelComplete = false,
   });
 
+  static const Object _unset = Object();
+
   GameState copyWith({
     GameBoard? gameBoard,
     int? level,
     int? highScore,
     int? remainingMoves,
-    CellPosition? selectedCell,
+    Object? selectedCell = _unset,
     bool? isGameOver,
     bool? isLevelComplete,
   }) {
@@ -35,7 +37,10 @@ class GameState {
       level: level ?? this.level,
       highScore: highScore ?? this.highScore,
       remainingMoves: remainingMoves ?? this.remainingMoves,
-      selectedCell: selectedCell ?? this.selectedCell,
+      selectedCell:
+          identical(selectedCell, _unset)
+              ? this.selectedCell
+              : selectedCell as CellPosition?,
       isGameOver: isGameOver ?? this.isGameOver,
       isLevelComplete: isLevelComplete ?? this.isLevelComplete,
     );
