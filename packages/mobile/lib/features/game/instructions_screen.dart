@@ -21,7 +21,7 @@ class InstructionsScreen extends StatelessWidget {
             const _Section(
               title: 'Controls',
               body:
-                  'Tap a tile then tap an adjacent tile to move. You can also swipe to slide until blocked.',
+                  'Tap a tile then tap an adjacent target to move. You can also swipe to slide until blocked by a tile, obstacle, or boundary.',
             ),
             const SizedBox(height: 8),
             _ControlsVisual(),
@@ -29,7 +29,7 @@ class InstructionsScreen extends StatelessWidget {
             const _Section(
               title: 'Modulo Rule',
               body:
-                  'When a tile collides into another tile with an equal or higher value, the target becomes target % source. If remainder is 0, the target clears.',
+                  'A move can collide only when the moving tile value is less than or equal to the target value. The result is target % source. If remainder is 0, the target clears.',
             ),
             const SizedBox(height: 8),
             Text('Examples', style: Theme.of(context).textTheme.titleMedium),
@@ -56,7 +56,7 @@ class InstructionsScreen extends StatelessWidget {
             const _Section(
               title: 'Levels',
               body:
-                  'Standard mode progresses through increasing challenge. Daily mode gives one shared puzzle per day.',
+                  'Standard mode increases grid size by level: Level 1 is 2x2, Level 2 is 3x3, Level 3 is 4x4, and so on. Boards start filled. Daily mode gives one shared 4x4 puzzle per day.',
             ),
             const SizedBox(height: 16),
             const _Section(
@@ -221,7 +221,7 @@ class _BoardPreview extends StatelessWidget {
   const _BoardPreview();
   @override
   Widget build(BuildContext context) {
-    // A small 4x4 preview with mixed tiles
+    // A small 4x4 filled preview with mixed tiles
     final tiles = <_PreviewTile>[
       _PreviewTile.normal('12'),
       _PreviewTile.normal('3'),
@@ -267,15 +267,15 @@ class _ModuloExamples extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _ExampleRow(
-          left: const _TileBox(color: Colors.teal, value: '12'),
-          right: const _TileBox(color: Colors.teal, value: '3'),
-          caption: '12 % 3 = 0, so the target clears.',
+          left: const _TileBox(color: Colors.teal, value: '3'),
+          right: const _TileBox(color: Colors.teal, value: '12'),
+          caption: 'Move 3 into 12: 12 % 3 = 0, so the target clears.',
         ),
         const SizedBox(height: 8),
         _ExampleRow(
-          left: const _TileBox(color: Colors.teal, value: '12'),
-          right: const _TileBox(color: Colors.teal, value: '5'),
-          caption: '12 % 5 = 2, so the target becomes 2.',
+          left: const _TileBox(color: Colors.teal, value: '5'),
+          right: const _TileBox(color: Colors.teal, value: '12'),
+          caption: 'Move 5 into 12: 12 % 5 = 2, so the target becomes 2.',
         ),
       ],
     );
@@ -301,7 +301,7 @@ class _ExampleRow extends StatelessWidget {
           children: [
             left,
             const SizedBox(width: 8),
-            const Icon(Icons.add, size: 18),
+            const Icon(Icons.arrow_forward, size: 18),
             const SizedBox(width: 8),
             right,
           ],
