@@ -183,20 +183,30 @@ void main() {
       expect(mockAnalytics.loggedEvents, contains('level_start'));
     });
 
-    test('ad service shows ads when level completes', () async {
+    test('ad service shows ads every second level completion', () async {
       expect(mockAdService.adShown, false);
 
-      // Simulate level completion with ad
-      bool callbackCalled = false;
+      // First completion: no interstitial
+      bool firstCallbackCalled = false;
       gameProvider.completeLevel(() {
-        callbackCalled = true;
+        firstCallbackCalled = true;
       });
 
       // Wait for async operation
       await Future.delayed(Duration.zero);
 
+      expect(mockAdService.adShown, false);
+      expect(firstCallbackCalled, true);
+
+      // Second completion: should show interstitial
+      bool secondCallbackCalled = false;
+      gameProvider.completeLevel(() {
+        secondCallbackCalled = true;
+      });
+      await Future.delayed(Duration.zero);
+
       expect(mockAdService.adShown, true);
-      expect(callbackCalled, true);
+      expect(secondCallbackCalled, true);
     });
 
     test('game provider integrates analytics and ad services', () {
@@ -231,7 +241,7 @@ void main() {
       expect(newProvider.highScore, 200);
     });
 
-    test('level progression triggers analytics and ad integration', () {
+    test('level progression triggers analytics and completion callbacks', () {
       // Start a level to trigger analytics
       gameProvider.initializeGameBoard();
       expect(mockAnalytics.loggedEvents, contains('level_start'));
@@ -242,17 +252,17 @@ void main() {
         adCallbackCalled = true;
       });
 
-      expect(mockAdService.adShown, true);
+      expect(mockAdService.adShown, false);
       expect(adCallbackCalled, true);
     });
 
-    test('restart functionality integrates with ad service', () {
+    test('restart callback runs even when ad is throttled', () {
       bool restartCallbackCalled = false;
       gameProvider.restartWithAd(() {
         restartCallbackCalled = true;
       });
 
-      expect(mockAdService.adShown, true);
+      expect(mockAdService.adShown, false);
       expect(restartCallbackCalled, true);
     });
 
@@ -350,7 +360,8 @@ void main() {
 
       expect(provider.isDailyChallengeMode, true);
       expect(provider.activeDailyChallengeId, 20260307);
-      expect(provider.remainingMoves, 18);
+      expect(provider.remainingMoves, 14);
+      expect(provider.dailyModifierLabel, 'Low Moves');
     });
 
     test('daily challenge replay keeps same challenge id', () {
