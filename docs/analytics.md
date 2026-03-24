@@ -790,6 +790,35 @@ Use role aliases instead of personal names so the document remains stable across
 2. For dashboard breakages, include the affected query number from the Query Compatibility Matrix.
 3. For schema changes, notify `@analytics-owner` before removing deprecated events/parameters.
 
+## Monthly Analytics Maintenance Cadence
+
+Run this checklist once per month to keep analytics instrumentation and reporting healthy.
+
+### Schema Hygiene
+- [ ] Review Analytics Schema Changelog entries from the past month.
+- [ ] Confirm deprecated events/parameters still in dual-write window or eligible for retirement.
+- [ ] Verify Approved Event Registry status flags (`Active` / `Deprecated`) are current.
+
+### Data Quality
+- [ ] Review null-rate trends for segmentation-critical parameters (`is_daily_context`, `challenge_id`).
+- [ ] Check type consistency in BigQuery for shared parameters (`tab`, `control`, `value`, `week_id`).
+- [ ] Validate that event volumes do not show unexplained discontinuities after releases.
+
+### Query and Dashboard Health
+- [ ] Re-run all cookbook queries and compare against prior-month baseline.
+- [ ] Remove or fix stale dashboard tiles that rely on deprecated schema.
+- [ ] Confirm Dashboard Ownership Map still reflects active report names and owners.
+
+### Alerting and Operations
+- [ ] Review false-positive and false-negative rates for operational thresholds.
+- [ ] Tune warning/critical thresholds where needed and document rationale.
+- [ ] Confirm runbook links and escalation channels are still valid.
+
+### Governance and Communication
+- [ ] Share a monthly analytics health summary in the analytics channel.
+- [ ] Capture follow-up actions with owners and target dates.
+- [ ] Update this cadence checklist if recurring maintenance gaps are observed.
+
 ---
 
 **Last Updated**: March 2026
