@@ -173,6 +173,8 @@ class _WeeklyLeaderboardTabState extends State<_WeeklyLeaderboardTab> {
                     },
                   ),
                   const SizedBox(height: 8),
+                  const _TrendLegendRow(),
+                  const SizedBox(height: 8),
                   FutureBuilder<
                     List<({int weekId, int? rank, String? badge, String trend})>
                   >(
@@ -274,6 +276,57 @@ class _WeeklyLeaderboardTabState extends State<_WeeklyLeaderboardTab> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _TrendLegendRow extends StatelessWidget {
+  const _TrendLegendRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 6,
+      children: const [
+        _TrendLegendChip(
+          icon: Icons.trending_up,
+          color: Colors.green,
+          label: 'Improving',
+        ),
+        _TrendLegendChip(
+          icon: Icons.trending_flat,
+          color: Colors.amber,
+          label: 'Stable',
+        ),
+        _TrendLegendChip(
+          icon: Icons.trending_down,
+          color: Colors.red,
+          label: 'Declining',
+        ),
+      ],
+    );
+  }
+}
+
+class _TrendLegendChip extends StatelessWidget {
+  const _TrendLegendChip({
+    required this.icon,
+    required this.color,
+    required this.label,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Chip(
+      labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+      visualDensity: VisualDensity.compact,
+      avatar: Icon(icon, size: 14, color: color),
+      label: Text(label, style: const TextStyle(fontSize: 12)),
     );
   }
 }

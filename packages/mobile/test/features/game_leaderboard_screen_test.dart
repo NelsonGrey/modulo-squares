@@ -33,6 +33,9 @@ void main() {
     expect(find.text('Weekly Ladder'), findsOneWidget);
     expect(find.textContaining('Season Summary'), findsOneWidget);
     expect(find.text('Recent Weeks Trend'), findsOneWidget);
+    expect(find.text('Improving'), findsOneWidget);
+    expect(find.text('Stable'), findsOneWidget);
+    expect(find.text('Declining'), findsOneWidget);
     expect(find.byType(DropdownButton<int>), findsOneWidget);
   });
 }
