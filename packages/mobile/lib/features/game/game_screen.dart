@@ -227,13 +227,29 @@ class _GameScreenContentState extends State<_GameScreenContent>
                         playerName,
                         score,
                       );
+                  _analyticsService.logWeeklySubmit(
+                    weekId: weekId,
+                    score: score,
+                    submitted: weeklySubmitted,
+                  );
+
                   if (weeklySubmitted) {
                     final rank = await LeaderboardService.getWeeklyRank(
                       weekId,
                       playerName,
                     );
+                    _analyticsService.logWeeklyRankAvailable(
+                      weekId: weekId,
+                      rankAvailable: rank != null,
+                      rank: rank,
+                    );
                     if (rank != null) {
                       final badge = LeaderboardService.weeklyBadgeForRank(rank);
+                      _analyticsService.logWeeklyBadgeEarned(
+                        weekId: weekId,
+                        badge: badge,
+                        rank: rank,
+                      );
                       submissionFeedback =
                           'Weekly ladder rank: #$rank ($badge badge)';
                     }

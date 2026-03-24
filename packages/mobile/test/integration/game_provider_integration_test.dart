@@ -95,6 +95,27 @@ class MockAnalyticsService implements AnalyticsService {
   }) async => loggedEvents.add('daily_rank_available');
 
   @override
+  Future<void> logWeeklySubmit({
+    required int weekId,
+    required int score,
+    required bool submitted,
+  }) async => loggedEvents.add('weekly_submit');
+
+  @override
+  Future<void> logWeeklyRankAvailable({
+    required int weekId,
+    required bool rankAvailable,
+    int? rank,
+  }) async => loggedEvents.add('weekly_rank_available');
+
+  @override
+  Future<void> logWeeklyBadgeEarned({
+    required int weekId,
+    required String badge,
+    required int rank,
+  }) async => loggedEvents.add('weekly_badge_earned');
+
+  @override
   Future<void> logLevelRetry({
     required int level,
     required bool isDaily,
