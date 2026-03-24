@@ -394,4 +394,51 @@ class LeaderboardService {
     }
     return progress;
   }
+
+  /// Per-week progression including trend direction compared to the prior week.
+  /// Trend values: improving, stable, declining, none.
+  static Future<List<({int weekId, int? rank, String? badge, String trend})>>
+  getWeeklySeasonProgressWithTrend({
+    required String playerName,
+    required List<int> weekIds,
+  }) async {
+    if (playerName.isEmpty || weekIds.isEmpty) return const [];
+
+    // Use oldest->newest for intuitive trend progression.
+    final orderedWeeks = List<int>.from(weekIds.reversed);
+    final base = await getWeeklySeasonProgress(
+      playerName: playerName,
+      weekIds: orderedWeeks,
+    );
+
+    int? previousRank;
+    final result = <({int weekId, int? rank, String? badge, String trend})>[];
+    for (final item in base) {
+      final currentRank = item.rank;
+      String trend = 'none';
+
+      if (currentRank != null && previousRank != null) {
+        if (currentRank < previousRank) {
+          trend = 'improving';
+        } else if (currentRank == previousRank) {
+          trend = 'stable';
+        } else {
+          trend = 'declining';
+        }
+      }
+
+      result.add((
+        weekId: item.weekId,
+        rank: item.rank,
+        badge: item.badge,
+        trend: trend,
+      ));
+
+      if (currentRank != null) {
+        previousRank = currentRank;
+      }
+    }
+
+    return result;
+  }
 }

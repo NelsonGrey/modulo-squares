@@ -173,8 +173,10 @@ class _WeeklyLeaderboardTabState extends State<_WeeklyLeaderboardTab> {
                     },
                   ),
                   const SizedBox(height: 8),
-                  FutureBuilder<List<({int weekId, int? rank, String? badge})>>(
-                    future: LeaderboardService.getWeeklySeasonProgress(
+                  FutureBuilder<
+                    List<({int weekId, int? rank, String? badge, String trend})>
+                  >(
+                    future: LeaderboardService.getWeeklySeasonProgressWithTrend(
                       playerName: widget.playerName,
                       weekIds: _recentWeeks,
                     ),
@@ -192,16 +194,41 @@ class _WeeklyLeaderboardTabState extends State<_WeeklyLeaderboardTab> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Recent Weeks',
+                            'Recent Weeks Trend',
                             style: TextStyle(fontWeight: FontWeight.w700),
                           ),
                           const SizedBox(height: 6),
                           ...progress.map((item) {
+                            final trendIcon = switch (item.trend) {
+                              'improving' => Icons.trending_up,
+                              'stable' => Icons.trending_flat,
+                              'declining' => Icons.trending_down,
+                              _ => Icons.remove,
+                            };
+                            final trendColor = switch (item.trend) {
+                              'improving' => Colors.green,
+                              'stable' => Colors.amber,
+                              'declining' => Colors.red,
+                              _ => Colors.grey,
+                            };
+
                             if (item.rank == null) {
-                              return Text('Week ${item.weekId}: No rank');
+                              return Row(
+                                children: [
+                                  Icon(trendIcon, size: 16, color: trendColor),
+                                  const SizedBox(width: 6),
+                                  Text('Week ${item.weekId}: No rank'),
+                                ],
+                              );
                             }
-                            return Text(
-                              'Week ${item.weekId}: #${item.rank} (${item.badge})',
+                            return Row(
+                              children: [
+                                Icon(trendIcon, size: 16, color: trendColor),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Week ${item.weekId}: #${item.rank} (${item.badge})',
+                                ),
+                              ],
                             );
                           }),
                         ],
