@@ -504,6 +504,24 @@ GROUP BY challenge_id, is_daily_context
 ORDER BY events DESC;
 ```
 
+## Query Compatibility Matrix
+
+Use this matrix before analytics schema changes to identify which cookbook queries and dashboards may break.
+
+| Query | Depends On Events | Required Parameters | Failure Mode If Missing | Mitigation |
+|-------|-------------------|---------------------|-------------------------|------------|
+| Query 1: Leaderboard Tab Preference | `leaderboard_tab_changed` | `tab` | Empty/under-counted tab distribution | Keep `tab` stable; backfill with dual-write during migrations |
+| Query 2: Daily vs Non-Daily Context Mix | `leaderboard_tab_changed`, `leaderboard_tab_restored` | `is_daily_context` | Context segmentation collapses into null bucket | Preserve int encoding (`0/1`) and add default in emit path |
+| Query 3: Weekly Top-Limit Selection Distribution | `weekly_leaderboard_control_changed` | `control`, `value` | Top-limit distribution unavailable or mixed with week ids | Keep `control` semantics (`top_limit`), keep `value` numeric |
+| Query 4: Weekly Browsing Breadth | `weekly_leaderboard_control_changed` | `control`, `value` | Distinct-week breadth inflated/empty | Ensure `control=week` rows keep ISO week id in `value` |
+| Query 5: Challenge-Specific Engagement | All 4 leaderboard interaction events | `is_daily_context`, `challenge_id` | Cannot attribute usage to challenge contexts | Keep optional `challenge_id` contract, validate null-rate alerts |
+
+### Compatibility Checklist (Pre-Release)
+1. Confirm every modified event/parameter appears in the matrix with an explicit mitigation.
+2. Run all 5 cookbook queries in staging and compare row counts against previous release baseline.
+3. If any query returns null-heavy output (>5% unexpected nulls), block schema removal and keep dual-write.
+4. Update Analytics Schema Changelog with compatibility impact and expected dashboard owner actions.
+
 ## Analytics Schema Changelog
 
 Use this section to track event/parameter changes that can impact dashboards, alerts, and downstream queries.
