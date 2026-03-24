@@ -425,6 +425,26 @@ GROUP BY challenge_id, is_daily_context
 ORDER BY events DESC;
 ```
 
+## Analytics Schema Changelog
+
+Use this section to track event/parameter changes that can impact dashboards, alerts, and downstream queries.
+
+### 2026-03-24
+- Added leaderboard tab interaction events:
+  - `leaderboard_tab_changed`
+  - `leaderboard_tab_restored`
+- Added weekly leaderboard control events:
+  - `weekly_leaderboard_control_changed`
+  - `weekly_leaderboard_control_restored`
+- Added leaderboard context parameters:
+  - `is_daily_context`
+  - `challenge_id` (optional)
+- Added documented query cookbook and operational alert thresholds.
+
+### 2025-10 (Baseline)
+- Established core analytics coverage for lifecycle, navigation, gameplay, and ad events.
+- Introduced safe no-op behavior for analytics calls when Firebase is unavailable.
+
 ## Troubleshooting
 
 ### Common Issues
@@ -460,5 +480,5 @@ ORDER BY events DESC;
 ---
 
 **Last Updated**: March 2026
-**Analytics Version**: 1.0
+**Analytics Version**: 1.1
 **Firebase Analytics SDK**: 10.4.0
