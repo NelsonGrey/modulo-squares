@@ -90,6 +90,8 @@ class _WeeklyLeaderboardTab extends StatefulWidget {
 
 class _WeeklyLeaderboardTabState extends State<_WeeklyLeaderboardTab> {
   static const String _weeklyTopLimitPrefKey = 'weeklyLeaderboardTopLimit';
+  static const String _weeklySelectedWeekPrefKey =
+      'weeklyLeaderboardSelectedWeek';
   late final List<int> _recentWeeks;
   late int _selectedWeekId;
   int _selectedTopLimit = 25;
@@ -102,7 +104,24 @@ class _WeeklyLeaderboardTabState extends State<_WeeklyLeaderboardTab> {
         _recentWeeks.contains(widget.weekId)
             ? widget.weekId
             : _recentWeeks.first;
+    _restoreSelectedWeekId();
     _restoreWeeklyTopLimit();
+  }
+
+  Future<void> _restoreSelectedWeekId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getInt(_weeklySelectedWeekPrefKey);
+    if (!mounted || saved == null) return;
+    if (!_recentWeeks.contains(saved)) return;
+
+    setState(() {
+      _selectedWeekId = saved;
+    });
+  }
+
+  Future<void> _persistSelectedWeekId(int weekId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_weeklySelectedWeekPrefKey, weekId);
   }
 
   Future<void> _restoreWeeklyTopLimit() async {
@@ -156,6 +175,7 @@ class _WeeklyLeaderboardTabState extends State<_WeeklyLeaderboardTab> {
                       setState(() {
                         _selectedWeekId = value;
                       });
+                      _persistSelectedWeekId(value);
                     },
                   ),
                   const SizedBox(height: 8),
