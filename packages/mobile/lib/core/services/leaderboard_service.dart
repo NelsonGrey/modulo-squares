@@ -6,6 +6,14 @@ import 'package:modulo_squares/core/services/error_handler.dart';
 import 'package:modulo_squares/core/services/cache_service.dart';
 
 class LeaderboardService {
+  static const List<({int maxRank, String badge})> _weeklyBadgeTiers = [
+    (maxRank: 1, badge: 'Legend'),
+    (maxRank: 3, badge: 'Diamond'),
+    (maxRank: 10, badge: 'Gold'),
+    (maxRank: 25, badge: 'Silver'),
+    (maxRank: 50, badge: 'Bronze'),
+  ];
+
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static final CollectionReference _scoresCollection = _firestore.collection(
     'modulo_leaderboard',
@@ -39,12 +47,25 @@ class LeaderboardService {
     return (d.year * 100) + week;
   }
 
+  static List<int> recentWeekIds({int count = 8, DateTime? now}) {
+    final result = <int>[];
+    final anchor = now ?? DateTime.now();
+    for (int i = 0; i < count; i++) {
+      final date = anchor.subtract(Duration(days: i * 7));
+      final weekId = currentWeekId(now: date);
+      if (!result.contains(weekId)) {
+        result.add(weekId);
+      }
+    }
+    return result;
+  }
+
   static String weeklyBadgeForRank(int rank) {
-    if (rank <= 1) return 'Legend';
-    if (rank <= 3) return 'Diamond';
-    if (rank <= 10) return 'Gold';
-    if (rank <= 25) return 'Silver';
-    if (rank <= 50) return 'Bronze';
+    for (final tier in _weeklyBadgeTiers) {
+      if (rank <= tier.maxRank) {
+        return tier.badge;
+      }
+    }
     return 'Contender';
   }
 

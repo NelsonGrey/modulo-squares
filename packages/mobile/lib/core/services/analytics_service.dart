@@ -181,6 +181,53 @@ class AnalyticsService {
     await a.logEvent(name: 'daily_rank_available', parameters: params);
   }
 
+  Future<void> logWeeklySubmit({
+    required int weekId,
+    required int score,
+    required bool submitted,
+  }) async {
+    final a = _analyticsSafe;
+    if (a == null) return;
+    await a.logEvent(
+      name: 'weekly_submit',
+      parameters: {
+        'week_id': weekId,
+        'score': score,
+        'submitted': submitted ? 1 : 0,
+      },
+    );
+  }
+
+  Future<void> logWeeklyRankAvailable({
+    required int weekId,
+    required bool rankAvailable,
+    int? rank,
+  }) async {
+    final a = _analyticsSafe;
+    if (a == null) return;
+    final params = <String, Object>{
+      'week_id': weekId,
+      'rank_available': rankAvailable ? 1 : 0,
+    };
+    if (rank != null) {
+      params['rank'] = rank;
+    }
+    await a.logEvent(name: 'weekly_rank_available', parameters: params);
+  }
+
+  Future<void> logWeeklyBadgeEarned({
+    required int weekId,
+    required String badge,
+    required int rank,
+  }) async {
+    final a = _analyticsSafe;
+    if (a == null) return;
+    await a.logEvent(
+      name: 'weekly_badge_earned',
+      parameters: {'week_id': weekId, 'badge': badge, 'rank': rank},
+    );
+  }
+
   Future<void> logLevelRetry({
     required int level,
     required bool isDaily,

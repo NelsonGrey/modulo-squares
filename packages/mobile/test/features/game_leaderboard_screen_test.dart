@@ -26,5 +26,11 @@ void main() {
     expect(find.text('Global'), findsOneWidget);
     expect(find.text('Daily'), findsOneWidget);
     expect(find.text('Weekly'), findsOneWidget);
+
+    await tester.tap(find.text('Weekly'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Weekly Ladder'), findsOneWidget);
+    expect(find.byType(DropdownButton<int>), findsOneWidget);
   });
 }
