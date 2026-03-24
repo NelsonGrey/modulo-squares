@@ -819,6 +819,61 @@ Run this checklist once per month to keep analytics instrumentation and reportin
 - [ ] Capture follow-up actions with owners and target dates.
 - [ ] Update this cadence checklist if recurring maintenance gaps are observed.
 
+## Quarterly Analytics Audit Report Template
+
+Use this template to produce a quarterly audit artifact for analytics reliability and decision quality.
+
+### Report Metadata
+- Quarter:
+- Prepared by:
+- Review date:
+- Stakeholders:
+
+### 1) Executive Summary
+- Overall analytics health (Green / Yellow / Red):
+- Top 3 risks identified:
+- Top 3 improvements delivered:
+
+### 2) Schema and Instrumentation Review
+- Events added this quarter:
+- Events deprecated this quarter:
+- Events pending retirement:
+- Parameter contract violations observed (if any):
+
+### 3) Data Quality Findings
+- Null-rate trends for critical params (`is_daily_context`, `challenge_id`):
+- Type consistency issues discovered:
+- Missing/duplicate event anomalies:
+
+### 4) Query and Dashboard Reliability
+- Cookbook query pass/fail summary:
+- Dashboard breakages or stale tiles resolved:
+- Compatibility matrix gaps identified:
+
+### 5) Incident and Alert Analysis
+- Alert volume by category:
+- False positive / false negative notes:
+- Mean time to detect (MTTD):
+- Mean time to resolve (MTTR):
+
+### 6) Governance and Process Compliance
+- PR template compliance rate:
+- Reviewer checklist adherence:
+- Deprecation policy compliance status:
+
+### 7) Action Plan (Next Quarter)
+| Priority | Action | Owner Alias | Target Date | Success Metric |
+|----------|--------|-------------|-------------|----------------|
+| P0 | | | | |
+| P1 | | | | |
+| P2 | | | | |
+
+### 8) Sign-Off
+- `@analytics-owner`:
+- `@mobile-oncall`:
+- `@product-analyst`:
+- `@release-manager`:
+
 ---
 
 **Last Updated**: March 2026
