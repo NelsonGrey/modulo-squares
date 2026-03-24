@@ -1455,6 +1455,216 @@ Use during incidents to prioritize which events have the largest deviations from
 2. If a parameter is deprecated, annotate affected templates in the same PR.
 3. Validate every template at least once per month as part of the monthly maintenance cadence.
 
+## Advanced Troubleshooting Runbooks
+
+Use this section for Sev-1/Sev-2 analytics incidents and hard-to-diagnose data quality regressions.
+
+### Incident Severity Triage
+
+| Severity | Trigger | Expected Response | Incident Commander |
+|---|---|---|---|
+| Sev-1 | Event family at 0 for 60+ minutes in production, or critical KPI dashboard blank during release | 15-minute response, open war room, hourly updates | `@mobile-oncall` |
+| Sev-2 | Event volume down >40% vs 7-day baseline for 2+ hours, null-rate >20% on required params | 30-minute response, owner triage + mitigation plan | `@analytics-owner` |
+| Sev-3 | Query latency/perf degradation, dashboard staleness, isolated challenge-level anomalies | Same business day triage and backlog fix | `@product-analyst` |
+
+### 15-Minute First Response Protocol
+
+1. Confirm export window first: BigQuery is delayed 1-2 hours, occasionally up to 4 hours.
+2. Run Template 8 (Fast Incident Triage Snapshot) from Query Templates Gallery.
+3. Compare DebugView vs BigQuery for one impacted event.
+4. Check release timeline: did a new app build ship in the affected window?
+5. Open incident thread and include: event names, deviation %, impacted dashboards, likely blast radius.
+
+### Decision Tree: Where Is The Break?
+
+1. DebugView missing + BigQuery missing:
+   Client instrumentation failure, feature flag off, or app path not executed.
+2. DebugView present + BigQuery missing after 2+ hours:
+   Schema/type mismatch, invalid parameter names, or quota rejection.
+3. BigQuery present + dashboard missing:
+   Query bug, stale cache/materialized table lag, or dashboard filter mismatch.
+4. BigQuery delayed across many event families:
+   Export backlog or upstream Firebase/BigQuery latency.
+
+### Runbook A: Event Volume Drops To Zero
+
+Symptoms:
+- One or more critical events show 0 in daily/hourly dashboards.
+- Alert fires for deviation below threshold.
+
+Checks:
+1. Verify if issue is event-specific or global:
+
+```sql
+SELECT
+  event_name,
+  COUNT(*) AS c
+FROM `project_id.analytics_property_id.events_*`
+WHERE _TABLE_SUFFIX = FORMAT_DATE('%Y%m%d', DATE_SUB(CURRENT_DATE('UTC'), INTERVAL 1 DAY))
+  AND event_name LIKE 'leaderboard_%'
+GROUP BY event_name
+ORDER BY c DESC;
+```
+
+2. Compare against prior 7 days:
+
+```sql
+SELECT
+  _TABLE_SUFFIX AS day,
+  COUNT(*) AS c
+FROM `project_id.analytics_property_id.events_*`
+WHERE _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d', DATE_SUB(CURRENT_DATE('UTC'), INTERVAL 8 DAY))
+  AND FORMAT_DATE('%Y%m%d', DATE_SUB(CURRENT_DATE('UTC'), INTERVAL 1 DAY))
+  AND event_name = 'leaderboard_tab_changed'
+GROUP BY day
+ORDER BY day;
+```
+
+Mitigation:
+1. If DebugView also shows 0: rollback recent instrumentation change or disable feature path.
+2. If only BigQuery shows 0: wait for export window, then escalate to `@analytics-owner` with query evidence.
+3. If tied to release: gate rollout until event volume recovers to baseline band.
+
+### Runbook B: Required Parameter Null-Rate Spike
+
+Symptoms:
+- `tab` or `is_daily_context` suddenly null in >20% of rows.
+
+Checks:
+
+```sql
+WITH e AS (
+  SELECT
+    (SELECT ep.value.string_value FROM UNNEST(event_params) ep WHERE ep.key = 'tab') AS tab,
+    (SELECT ep.value.int_value FROM UNNEST(event_params) ep WHERE ep.key = 'is_daily_context') AS is_daily_context_int,
+    (SELECT ep.value.string_value FROM UNNEST(event_params) ep WHERE ep.key = 'is_daily_context') AS is_daily_context_str
+  FROM `project_id.analytics_property_id.events_*`
+  WHERE _TABLE_SUFFIX BETWEEN '20260320' AND '20260324'
+    AND event_name = 'leaderboard_tab_changed'
+)
+SELECT
+  COUNT(*) AS total,
+  SAFE_DIVIDE(COUNTIF(tab IS NULL), COUNT(*)) AS tab_null_rate,
+  SAFE_DIVIDE(COUNTIF(is_daily_context_int IS NULL AND is_daily_context_str IS NULL), COUNT(*)) AS context_missing_rate,
+  COUNTIF(is_daily_context_int IS NULL AND is_daily_context_str IS NOT NULL) AS context_type_drift_rows
+FROM e;
+```
+
+Mitigation:
+1. Type drift detected: hotfix app to restore canonical type and dual-write if needed.
+2. Missing key only on specific app versions: segment by app version and coordinate release fix.
+3. Update compatibility matrix and annotate affected templates.
+
+### Runbook C: Duplicate Event Explosion
+
+Symptoms:
+- Event count spikes 2x-10x with stable DAU.
+- Session-level event frequency appears implausible.
+
+Checks:
+
+```sql
+WITH per_session AS (
+  SELECT
+    user_pseudo_id,
+    (SELECT ep.value.int_value FROM UNNEST(event_params) ep WHERE ep.key = 'ga_session_id') AS sid,
+    COUNT(*) AS c
+  FROM `project_id.analytics_property_id.events_*`
+  WHERE _TABLE_SUFFIX BETWEEN '20260320' AND '20260324'
+    AND event_name = 'leaderboard_tab_changed'
+  GROUP BY user_pseudo_id, sid
+)
+SELECT
+  APPROX_QUANTILES(c, 100)[OFFSET(50)] AS p50,
+  APPROX_QUANTILES(c, 100)[OFFSET(95)] AS p95,
+  MAX(c) AS max_c
+FROM per_session;
+```
+
+Mitigation:
+1. Investigate client call site for logging inside render/build paths.
+2. Add short debounce guard where user intent is singular.
+3. Backfill dashboard metric using distinct session/action if raw counts are inflated.
+
+### Runbook D: Dashboard Broken, Raw Data Healthy
+
+Symptoms:
+- BigQuery query returns expected rows, but dashboard tiles are blank or stale.
+
+Checks:
+1. Run dashboard query manually in BigQuery and verify output schema.
+2. Confirm dashboard filter defaults (date range, environment, event_name).
+3. Confirm scheduled query/materialized table refresh timestamps.
+
+Mitigation:
+1. If schema changed: patch dashboard query to support both old and new params during migration window.
+2. If cached extract stale: force refresh and verify next scheduled run status.
+3. If Looker/BI model broke: pin to last-known-good view and file follow-up fix.
+
+### Runbook E: Challenge-Level Data Missing
+
+Symptoms:
+- Global leaderboard events present, challenge-scoped reporting empty.
+
+Checks:
+
+```sql
+SELECT
+  COUNT(*) AS total,
+  COUNTIF((SELECT ep.value.string_value FROM UNNEST(event_params) ep WHERE ep.key = 'challenge_id') IS NOT NULL) AS with_challenge_id,
+  SAFE_DIVIDE(
+    COUNTIF((SELECT ep.value.string_value FROM UNNEST(event_params) ep WHERE ep.key = 'challenge_id') IS NOT NULL),
+    COUNT(*)
+  ) AS challenge_coverage
+FROM `project_id.analytics_property_id.events_*`
+WHERE _TABLE_SUFFIX BETWEEN '20260320' AND '20260324'
+  AND event_name IN ('leaderboard_tab_changed', 'weekly_leaderboard_control_changed');
+```
+
+Mitigation:
+1. Verify challenge context propagation from UI state to analytics call.
+2. Ensure optional param is sent only when scoped; avoid sending empty strings.
+3. Add regression test for challenge-scoped leaderboard navigation.
+
+### Runbook F: BigQuery Cost Or Latency Spike
+
+Symptoms:
+- Queries exceed expected runtime/cost after schema updates.
+
+Checks:
+1. Confirm `_TABLE_SUFFIX` pruning is used in all templates.
+2. Detect unnecessary repeated UNNEST and wide SELECT patterns.
+3. Compare scan bytes before/after query edits.
+
+Mitigation:
+1. Add partition/date filters first, then event filters.
+2. Materialize daily aggregates for high-frequency dashboards.
+3. Replace repeated scalar subqueries with one UNNEST + conditional aggregation when feasible.
+
+### Escalation And Handoff Template
+
+Use this message in `#analytics-alerts` or incident channels:
+
+```text
+[Analytics Incident] Severity: Sev-2
+Detected: 2026-03-24 18:10 UTC
+Events Impacted: leaderboard_tab_changed, weekly_leaderboard_control_changed
+Deviation: -53% vs 7-day baseline
+Null-Rate: tab=2%, is_daily_context=41%
+DebugView Status: present
+BigQuery Status: present with type drift
+Suspected Cause: recent app build logs is_daily_context as string
+Owner: @analytics-owner
+Next Update: 30 minutes
+```
+
+### Post-Incident Checklist
+
+1. Add incident summary to Quarterly Audit Report template section 6.
+2. Update threshold/alert if sensitivity was too high or too low.
+3. Add or update template query that would have shortened detection time.
+4. Record concrete prevention action in Monthly Maintenance Cadence.
+
 ## Future Enhancements
 
 - **Custom Dashboards**: Real-time analytics views
