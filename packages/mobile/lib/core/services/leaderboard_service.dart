@@ -373,4 +373,25 @@ class LeaderboardService {
 
     return best;
   }
+
+  /// Per-week progression snapshot for a list of weekly ladders.
+  /// Includes weeks with no rank so UI can show complete trend context.
+  static Future<List<({int weekId, int? rank, String? badge})>>
+  getWeeklySeasonProgress({
+    required String playerName,
+    required List<int> weekIds,
+  }) async {
+    if (playerName.isEmpty || weekIds.isEmpty) return const [];
+
+    final progress = <({int weekId, int? rank, String? badge})>[];
+    for (final weekId in weekIds) {
+      final rank = await getWeeklyRank(weekId, playerName);
+      progress.add((
+        weekId: weekId,
+        rank: rank,
+        badge: rank == null ? null : weeklyBadgeForRank(rank),
+      ));
+    }
+    return progress;
+  }
 }

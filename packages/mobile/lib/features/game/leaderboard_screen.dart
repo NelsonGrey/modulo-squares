@@ -172,6 +172,42 @@ class _WeeklyLeaderboardTabState extends State<_WeeklyLeaderboardTab> {
                       );
                     },
                   ),
+                  const SizedBox(height: 8),
+                  FutureBuilder<List<({int weekId, int? rank, String? badge})>>(
+                    future: LeaderboardService.getWeeklySeasonProgress(
+                      playerName: widget.playerName,
+                      weekIds: _recentWeeks,
+                    ),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Text('Recent Weeks: Loading...');
+                      }
+
+                      final progress = snapshot.data ?? const [];
+                      if (progress.isEmpty) {
+                        return const Text('Recent Weeks: No data yet.');
+                      }
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Recent Weeks',
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                          const SizedBox(height: 6),
+                          ...progress.map((item) {
+                            if (item.rank == null) {
+                              return Text('Week ${item.weekId}: No rank');
+                            }
+                            return Text(
+                              'Week ${item.weekId}: #${item.rank} (${item.badge})',
+                            );
+                          }),
+                        ],
+                      );
+                    },
+                  ),
                   const SizedBox(height: 6),
                   FutureBuilder<int?>(
                     future: LeaderboardService.getWeeklyRank(
