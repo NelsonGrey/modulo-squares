@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:modulo_squares/features/game/models/falling_modulo_game_engine.dart';
@@ -16,6 +17,7 @@ class FallingModuloGameScreen extends StatefulWidget {
 
 class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
   static const Duration _tick = Duration(milliseconds: 16);
+  static const Duration _spawnDelay = Duration(milliseconds: 500);
   static const String _visualCuesPrefKey = 'fallingMode.visualCuesEnabled';
   static const String _highScorePrefKey = 'fallingMode.highScore';
 
@@ -25,7 +27,10 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
 
   DateTime? _lastInputAt;
   Duration _elapsed = Duration.zero;
+  Duration _spawnDelayRemaining = _spawnDelay;
   int _highScore = 0;
+  String? _resultBurstText;
+  bool _resultBurstPositive = true;
 
   @override
   void initState() {
@@ -59,17 +64,31 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
       if (!mounted) return;
 
       setState(() {
-        _elapsed += _tick;
+        if (_spawnDelayRemaining > Duration.zero) {
+          _spawnDelayRemaining -= _tick;
+          if (_spawnDelayRemaining < Duration.zero) {
+            _spawnDelayRemaining = Duration.zero;
+          }
+        } else {
+          _elapsed += _tick;
+        }
       });
 
-      if (_elapsed >= Duration(milliseconds: _state.dropIntervalMs)) {
+      if (_spawnDelayRemaining == Duration.zero &&
+          _elapsed >= Duration(milliseconds: _effectiveDropIntervalMs)) {
         _resolveCurrentTile();
       }
     });
   }
 
+  int get _effectiveDropIntervalMs => _state.dropIntervalMs * 2;
+
+  bool get _isSpawnDelayActive => _spawnDelayRemaining > Duration.zero;
+
   double get _dropProgress {
-    final totalMs = _state.dropIntervalMs;
+    if (_isSpawnDelayActive) return 0.0;
+
+    final totalMs = _effectiveDropIntervalMs;
     if (totalMs <= 0) return 1.0;
     final p = _elapsed.inMilliseconds / totalMs;
     return p.clamp(0.0, 1.0);
@@ -81,26 +100,27 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
 
   void _resolveCurrentTile() {
     final result = _engine.resolveCurrentTile(_state);
-    final message =
-        result.resolution.success
-            ? 'Success: +${result.resolution.scoreDelta}'
-            : 'Miss: ${result.resolution.scoreDelta}';
+    final scoreDelta = result.resolution.scoreDelta;
+    final success = result.resolution.success;
+    final burstText = success ? '+$scoreDelta' : '$scoreDelta';
 
     setState(() {
       _state = result.state;
       _highScore = _state.score > _highScore ? _state.score : _highScore;
+      _resultBurstText = burstText;
+      _resultBurstPositive = success;
+      _spawnDelayRemaining = _spawnDelay;
       _resetDropClock();
     });
 
     _persistHighScore();
 
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(milliseconds: 500),
-      ),
-    );
+    Timer(const Duration(milliseconds: 700), () {
+      if (!mounted || _resultBurstText != burstText) return;
+      setState(() {
+        _resultBurstText = null;
+      });
+    });
   }
 
   Duration _moveCooldown() {
@@ -162,7 +182,9 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
         visualCuesEnabled: _state.visualCuesEnabled,
       );
       _elapsed = Duration.zero;
+      _spawnDelayRemaining = _spawnDelay;
       _lastInputAt = null;
+      _resultBurstText = null;
     });
   }
 
@@ -314,6 +336,17 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
                           top: fallTop,
                           child: _buildFallingTile(tileSize),
                         ),
+                        if (_resultBurstText != null)
+                          Positioned(
+                            top: 18,
+                            left: 0,
+                            right: 0,
+                            child: Center(
+                              child: _buildAnimatedScoreBurst(
+                                _resultBurstText!,
+                              ),
+                            ),
+                          ),
                         Positioned(
                           left: 0,
                           right: 0,
@@ -353,7 +386,7 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
                   ),
                   const SizedBox(width: 12),
                   ElevatedButton.icon(
-                    onPressed: _resolveCurrentTile,
+                    onPressed: _isSpawnDelayActive ? null : _resolveCurrentTile,
                     icon: const Icon(Icons.vertical_align_bottom),
                     label: const Text('Drop'),
                   ),
@@ -385,8 +418,131 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
           'Move Speed',
           '${_state.horizontalMoveSpeedMultiplier.toStringAsFixed(2)}x',
         ),
+        _pill(
+          'Fall',
+          _isSpawnDelayActive
+              ? 'Ready...'
+              : '${(_effectiveDropIntervalMs / 1000).toStringAsFixed(2)}s',
+        ),
         _pill('Range', '${_state.numberRangeMin}-${_state.numberRangeMax}'),
       ],
+    );
+  }
+
+  Widget _buildScoreBurst(String text) {
+    final positive = _resultBurstPositive;
+    final bg = positive ? const Color(0xFFFFD66B) : const Color(0xFFFF8A80);
+    final fg = positive ? const Color(0xFF7A4A00) : const Color(0xFF7A0019);
+    final border = positive ? const Color(0xFFFFA000) : const Color(0xFFD32F2F);
+    final label = positive ? '✦ $text ✦' : text;
+
+    final burst = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(positive ? 999 : 16),
+        border: Border.all(color: border, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: border.withValues(alpha: 0.22),
+            blurRadius: 14,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: Text(
+        label,
+        style: TextStyle(color: fg, fontWeight: FontWeight.w900, fontSize: 18),
+      ),
+    );
+
+    if (positive) {
+      return Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned(
+            top: -10,
+            left: -8,
+            child: Icon(Icons.auto_awesome, color: border, size: 16),
+          ),
+          Positioned(
+            top: -12,
+            right: -4,
+            child: Icon(Icons.auto_awesome, color: fg, size: 14),
+          ),
+          Positioned(
+            bottom: -10,
+            right: -10,
+            child: Icon(Icons.star, color: border, size: 15),
+          ),
+          burst,
+        ],
+      );
+    }
+
+    return Transform.rotate(
+      angle: 0.78539816339,
+      child: Container(
+        padding: const EdgeInsets.all(2),
+        decoration: BoxDecoration(
+          color: border.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Positioned(
+              top: -10,
+              right: -8,
+              child: Transform.rotate(
+                angle: -0.78539816339,
+                child: Icon(
+                  Icons.warning_amber_rounded,
+                  color: border,
+                  size: 16,
+                ),
+              ),
+            ),
+            Transform.rotate(angle: -0.78539816339, child: burst),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAnimatedScoreBurst(String text) {
+    final positive = _resultBurstPositive;
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 420),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        final opacity = (1 - (value * 0.15)).clamp(0.0, 1.0);
+
+        if (positive) {
+          final translateY = 18 - (26 * value);
+          final scale = 0.78 + (0.34 * value);
+          return Opacity(
+            opacity: opacity,
+            child: Transform.translate(
+              offset: Offset(0, translateY),
+              child: Transform.scale(scale: scale, child: child),
+            ),
+          );
+        }
+
+        final shakeX = math.sin(value * math.pi * 5) * (1 - value) * 14;
+        final scale = 0.96 + ((1 - value) * 0.12);
+        return Opacity(
+          opacity: opacity,
+          child: Transform.translate(
+            offset: Offset(shakeX, value * 6),
+            child: Transform.scale(scale: scale, child: child),
+          ),
+        );
+      },
+      child: _buildScoreBurst(text),
     );
   }
 
