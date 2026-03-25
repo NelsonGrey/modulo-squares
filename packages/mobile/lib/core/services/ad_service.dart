@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:modulo_squares/core/services/analytics_service.dart';
 import 'package:modulo_squares/core/services/consent_service.dart';
@@ -74,7 +76,11 @@ class AdService {
     );
   }
 
-  Future<void> showInterstitial({String? trigger, int? levelNum, void Function()? onClosed}) async {
+  Future<void> showInterstitial({
+    String? trigger,
+    int? levelNum,
+    void Function()? onClosed,
+  }) async {
     // Don't show ads if user has purchased ad removal
     if (_purchaseService.adsRemoved) {
       onClosed?.call();
@@ -87,26 +93,82 @@ class AdService {
       onClosed?.call();
       return;
     }
+
+    var closedNotified = false;
+    final closeCompleter = Completer<void>();
+
+    void completeOnce() {
+      if (!closeCompleter.isCompleted) {
+        closeCompleter.complete();
+      }
+      if (closedNotified) return;
+      closedNotified = true;
+      onClosed?.call();
+    }
+
     ad.fullScreenContentCallback = FullScreenContentCallback(
       onAdImpression: (ad) {
-        _analyticsService.logAdImpression(format: 'interstitial', trigger: trigger, levelNum: levelNum);
+        _analyticsService.logAdImpression(
+          format: 'interstitial',
+          trigger: trigger,
+          levelNum: levelNum,
+        );
       },
       onAdDismissedFullScreenContent: (ad) {
         ad.dispose();
         _interstitial = null;
         loadInterstitial();
-        _analyticsService.logAdDismissed(format: 'interstitial', trigger: trigger, levelNum: levelNum);
-        onClosed?.call();
+        _analyticsService.logAdDismissed(
+          format: 'interstitial',
+          trigger: trigger,
+          levelNum: levelNum,
+        );
+        completeOnce();
       },
       onAdFailedToShowFullScreenContent: (ad, error) {
         ad.dispose();
         _interstitial = null;
         loadInterstitial();
-        _analyticsService.logAdDismissed(format: 'interstitial', trigger: trigger, levelNum: levelNum);
+        _analyticsService.logAdDismissed(
+          format: 'interstitial',
+          trigger: trigger,
+          levelNum: levelNum,
+        );
         ErrorHandler().logError('Ad show failed', error);
-        onClosed?.call();
+        completeOnce();
       },
     );
-    await ad.show();
+
+    try {
+      await ad.show();
+
+      // Guard against plugin callback misses so gameplay can always resume.
+      await closeCompleter.future.timeout(
+        const Duration(seconds: 45),
+        onTimeout: () {
+          ErrorHandler().logError(
+            'Ad close timeout',
+            TimeoutException(
+              'Interstitial did not report close/failure callback in time.',
+            ),
+          );
+
+          if (_interstitial == ad) {
+            ad.dispose();
+            _interstitial = null;
+            loadInterstitial();
+          }
+          completeOnce();
+        },
+      );
+    } catch (error) {
+      ErrorHandler().logError('Ad show exception', error);
+      if (_interstitial == ad) {
+        ad.dispose();
+        _interstitial = null;
+        loadInterstitial();
+      }
+      completeOnce();
+    }
   }
 }

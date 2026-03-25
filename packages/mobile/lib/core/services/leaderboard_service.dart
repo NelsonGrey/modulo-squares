@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:modulo_squares/core/services/error_handler.dart';
 import 'package:modulo_squares/core/services/cache_service.dart';
@@ -77,13 +78,18 @@ class LeaderboardService {
     }
   }
 
+  /// Returns true only when Firebase is ready AND the user is signed in.
+  static bool get _isUserAuthenticated {
+    return _isFirebaseReady && FirebaseAuth.instance.currentUser != null;
+  }
+
   /// Submit a score for a player. Overwrites if player already exists.
   static Future<void> submitScore(
     BuildContext context,
     String playerName,
     int score,
   ) async {
-    if (!_isFirebaseReady) return;
+    if (!_isUserAuthenticated) return;
     try {
       // Client-side validation
       if (playerName.isEmpty || playerName.length > 50) {
@@ -175,7 +181,7 @@ class LeaderboardService {
     String playerName,
     int score,
   ) async {
-    if (!_isFirebaseReady) return false;
+    if (!_isUserAuthenticated) return false;
     try {
       if (challengeId <= 0) {
         throw ArgumentError('Invalid challenge id');
@@ -215,7 +221,7 @@ class LeaderboardService {
     String playerName,
     int score,
   ) async {
-    if (!_isFirebaseReady) return false;
+    if (!_isUserAuthenticated) return false;
     try {
       if (weekId <= 0) {
         throw ArgumentError('Invalid week id');
