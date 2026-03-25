@@ -434,7 +434,7 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
     final bg = positive ? const Color(0xFFFFD66B) : const Color(0xFFFF8A80);
     final fg = positive ? const Color(0xFF7A4A00) : const Color(0xFF7A0019);
     final border = positive ? const Color(0xFFFFA000) : const Color(0xFFD32F2F);
-    final label = positive ? '✦ $text ✦' : text;
+    final label = text;
 
     final burst = Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
@@ -457,27 +457,7 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
     );
 
     if (positive) {
-      return Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Positioned(
-            top: -10,
-            left: -8,
-            child: Icon(Icons.auto_awesome, color: border, size: 16),
-          ),
-          Positioned(
-            top: -12,
-            right: -4,
-            child: Icon(Icons.auto_awesome, color: fg, size: 14),
-          ),
-          Positioned(
-            bottom: -10,
-            right: -10,
-            child: Icon(Icons.star, color: border, size: 15),
-          ),
-          burst,
-        ],
-      );
+      return burst;
     }
 
     return Transform.rotate(
