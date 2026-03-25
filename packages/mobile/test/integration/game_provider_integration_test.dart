@@ -163,6 +163,21 @@ class MockAdService implements AdService {
   }
 }
 
+// Lightweight provider used to isolate ad cadence behavior in tests
+// without depending on randomized board generation in nextLevel().
+class _AdCadenceTestGameProvider extends GameProvider {
+  _AdCadenceTestGameProvider({
+    required super.initialState,
+    required super.analyticsService,
+    required super.adService,
+  });
+
+  @override
+  void nextLevel() {
+    // Intentionally no-op for cadence-focused testing.
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -205,11 +220,23 @@ void main() {
     });
 
     test('ad service shows ads every second level completion', () async {
+      final adCadenceProvider = _AdCadenceTestGameProvider(
+        initialState: GameState(
+          gameBoard: GameBoard(level: 1),
+          level: 1,
+          highScore: 100,
+          remainingMoves: 20,
+        ),
+        analyticsService: mockAnalytics,
+        adService: mockAdService,
+      );
+      await adCadenceProvider.initialize();
+
       expect(mockAdService.adShown, false);
 
       // First completion: no interstitial
       bool firstCallbackCalled = false;
-      gameProvider.completeLevel(() {
+      adCadenceProvider.completeLevel(() {
         firstCallbackCalled = true;
       });
 
@@ -221,7 +248,7 @@ void main() {
 
       // Second completion: should show interstitial
       bool secondCallbackCalled = false;
-      gameProvider.completeLevel(() {
+      adCadenceProvider.completeLevel(() {
         secondCallbackCalled = true;
       });
       await Future.delayed(Duration.zero);
