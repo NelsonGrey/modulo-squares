@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:modulo_squares/features/game/providers/game_provider.dart';
 import 'package:modulo_squares/features/game/models/game_state.dart';
 import 'package:modulo_squares/shared/models/game_board.dart' as game_board;
+import 'package:modulo_squares/features/game/falling_modulo_game_screen.dart';
 import 'package:modulo_squares/l10n/app_localizations.dart';
 import 'package:modulo_squares/features/game/instructions_screen.dart';
 import 'package:modulo_squares/features/game/leaderboard_screen.dart';
@@ -18,8 +20,134 @@ import 'package:modulo_squares/core/services/ad_service.dart';
 import 'package:modulo_squares/core/services/leaderboard_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-class GameScreen extends StatelessWidget {
+enum _GameMode { falling, classic }
+
+class GameScreen extends StatefulWidget {
   const GameScreen({super.key});
+
+  @override
+  State<GameScreen> createState() => _GameScreenState();
+}
+
+class _GameScreenState extends State<GameScreen> {
+  static const String _modePrefKey = 'game.mode';
+
+  _GameMode? _selectedMode;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadModePreference();
+  }
+
+  Future<void> _loadModePreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_modePrefKey);
+
+    _GameMode? mode;
+    if (raw == 'classic') {
+      mode = _GameMode.classic;
+    } else if (raw == 'falling') {
+      mode = _GameMode.falling;
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _selectedMode = mode;
+    });
+  }
+
+  Future<void> _selectMode(_GameMode mode) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _modePrefKey,
+      mode == _GameMode.classic ? 'classic' : 'falling',
+    );
+
+    if (!mounted) return;
+    setState(() {
+      _selectedMode = mode;
+    });
+  }
+
+  Future<void> _clearModeSelection() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_modePrefKey);
+
+    if (!mounted) return;
+    setState(() {
+      _selectedMode = null;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_selectedMode == null) {
+      return _ModePickerScreen(
+        onSelectFalling: () => _selectMode(_GameMode.falling),
+        onSelectClassic: () => _selectMode(_GameMode.classic),
+      );
+    }
+
+    if (_selectedMode == _GameMode.falling) {
+      return FallingModuloGameScreen(onOpenModePicker: _clearModeSelection);
+    }
+
+    return _ClassicGameRoot(onOpenModePicker: _clearModeSelection);
+  }
+}
+
+class _ModePickerScreen extends StatelessWidget {
+  const _ModePickerScreen({
+    required this.onSelectFalling,
+    required this.onSelectClassic,
+  });
+
+  final VoidCallback onSelectFalling;
+  final VoidCallback onSelectClassic;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Choose Game Mode')),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Pick a mode. Your choice will be remembered and can be changed later from the mode switch button.',
+            ),
+            const SizedBox(height: 16),
+            Card(
+              child: ListTile(
+                title: const Text('Falling Modulo Mode'),
+                subtitle: const Text(
+                  'Arcade falling tiles, combo speed, visual cues.',
+                ),
+                trailing: const Icon(Icons.arrow_forward),
+                onTap: onSelectFalling,
+              ),
+            ),
+            Card(
+              child: ListTile(
+                title: const Text('Classic Mode'),
+                subtitle: const Text('Original board-clearing gameplay.'),
+                trailing: const Icon(Icons.arrow_forward),
+                onTap: onSelectClassic,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ClassicGameRoot extends StatelessWidget {
+  const _ClassicGameRoot({required this.onOpenModePicker});
+
+  final VoidCallback onOpenModePicker;
 
   @override
   Widget build(BuildContext context) {
@@ -46,13 +174,15 @@ class GameScreen extends StatelessWidget {
 
         return provider;
       },
-      child: const _GameScreenContent(),
+      child: _GameScreenContent(onOpenModePicker: onOpenModePicker),
     );
   }
 }
 
 class _GameScreenContent extends StatefulWidget {
-  const _GameScreenContent();
+  const _GameScreenContent({required this.onOpenModePicker});
+
+  final VoidCallback onOpenModePicker;
 
   @override
   State<_GameScreenContent> createState() => _GameScreenContentState();
@@ -80,6 +210,11 @@ class _GameScreenContentState extends State<_GameScreenContent>
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.appTitle),
         actions: [
+          IconButton(
+            tooltip: 'Switch game mode',
+            onPressed: widget.onOpenModePicker,
+            icon: const Icon(Icons.swap_horiz),
+          ),
           GameAppBarActions(
             onShowLeaderboard: () => _showLeaderboardDialog(context),
             onShowInstructions: () => _showInstructions(context),
@@ -92,6 +227,9 @@ class _GameScreenContentState extends State<_GameScreenContent>
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          const SizedBox(height: 8),
+          const _ModeBadge(label: 'Classic Mode'),
+          const SizedBox(height: 12),
           _buildLevelInfo(gameProvider),
           const SizedBox(height: 20),
           _buildScoreDisplay(gameProvider),
@@ -454,6 +592,31 @@ class _GameScreenContentState extends State<_GameScreenContent>
     }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(effect), duration: const Duration(seconds: 2)),
+    );
+  }
+}
+
+class _ModeBadge extends StatelessWidget {
+  const _ModeBadge({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.amber.shade100,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.amber.shade300),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: Colors.brown.shade700,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }

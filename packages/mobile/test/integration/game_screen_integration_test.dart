@@ -225,7 +225,10 @@ void main() {
   setUp(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
 
-    SharedPreferences.setMockInitialValues({'highScore': 100});
+    SharedPreferences.setMockInitialValues({
+      'highScore': 100,
+      'game.mode': 'classic',
+    });
 
     mockAnalytics = MockAnalyticsService();
     mockAdService = MockAdService();

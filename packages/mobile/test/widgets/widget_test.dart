@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:modulo_squares/l10n/app_localizations.dart';
 import 'package:modulo_squares/features/game/game_screen.dart';
 import 'package:modulo_squares/core/di/service_locator.dart';
@@ -11,6 +12,10 @@ void main() {
   setUpAll(() {
     // Setup service locator for tests
     setupServiceLocator();
+  });
+
+  setUp(() {
+    SharedPreferences.setMockInitialValues({'game.mode': 'classic'});
   });
 
   testWidgets('GameScreen displays score and restart button', (
