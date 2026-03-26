@@ -175,5 +175,130 @@ void main() {
         expect(result.state.bucketValues, isNot(equals(initial.bucketValues)));
       },
     );
+
+    group('dropIntervalForLevel', () {
+      test('level 1 returns 1400ms baseline', () {
+        expect(FallingModuloGameEngine.dropIntervalForLevel(1), 1400);
+      });
+
+      test('level 2 returns 1288ms (1400 * 0.92)', () {
+        expect(FallingModuloGameEngine.dropIntervalForLevel(2), 1288);
+      });
+
+      test('level 10 returns 661ms', () {
+        expect(FallingModuloGameEngine.dropIntervalForLevel(10), 661);
+      });
+
+      test('interval strictly decreases from level 1 to level 14', () {
+        for (var level = 2; level <= 14; level++) {
+          expect(
+            FallingModuloGameEngine.dropIntervalForLevel(level),
+            lessThan(FallingModuloGameEngine.dropIntervalForLevel(level - 1)),
+            reason: 'Level $level should be faster than level ${level - 1}',
+          );
+        }
+      });
+
+      test('interval floors at 450ms at level 15+', () {
+        expect(FallingModuloGameEngine.dropIntervalForLevel(15), 450);
+        expect(FallingModuloGameEngine.dropIntervalForLevel(20), 450);
+        expect(FallingModuloGameEngine.dropIntervalForLevel(50), 450);
+      });
+
+      test('clamped level < 1 treated as level 1', () {
+        expect(
+          FallingModuloGameEngine.dropIntervalForLevel(0),
+          equals(FallingModuloGameEngine.dropIntervalForLevel(1)),
+        );
+        expect(
+          FallingModuloGameEngine.dropIntervalForLevel(-5),
+          equals(FallingModuloGameEngine.dropIntervalForLevel(1)),
+        );
+      });
+    });
+
+    group('score burst text format', () {
+      test('success score delta is prefixed with +', () {
+        // Verify the engine produces a positive scoreDelta on success so the
+        // screen's '+$scoreDelta' format always shows a + prefix.
+        final engine = FallingModuloGameEngine(random: Random(10));
+        final state = FallingModuloGameState(
+          level: 1,
+          score: 0,
+          combo: 0,
+          bucketValues: const [3, 2, 4, 5, 6, 7, 8, 9, 1],
+          currentFallingValue: 12,
+          currentLane: 0, // bucket value 3, 12 % 3 == 0
+          tilesResolvedInLevel: 0,
+          targetTilesPerLevel: FallingModuloGameEngine.targetTilesForLevel(1),
+          numberRangeMin: 6,
+          numberRangeMax: 18,
+          dropIntervalMs: FallingModuloGameEngine.dropIntervalForLevel(1),
+          visualCuesEnabled: true,
+        );
+        final result = engine.resolveCurrentTile(state);
+        expect(result.resolution.success, isTrue);
+        expect(result.resolution.scoreDelta, greaterThan(0));
+        final burstText = '+${result.resolution.scoreDelta}';
+        expect(burstText, startsWith('+'));
+      });
+
+      test('failure score delta is negative, displayed without prefix', () {
+        final engine = FallingModuloGameEngine(random: Random(11));
+        final state = FallingModuloGameState(
+          level: 1,
+          score: 500,
+          combo: 0,
+          bucketValues: const [7, 2, 3, 4, 5, 6, 8, 9, 1],
+          currentFallingValue: 11, // 11 % 7 = 4, failure
+          currentLane: 0,
+          tilesResolvedInLevel: 0,
+          targetTilesPerLevel: FallingModuloGameEngine.targetTilesForLevel(1),
+          numberRangeMin: 6,
+          numberRangeMax: 18,
+          dropIntervalMs: FallingModuloGameEngine.dropIntervalForLevel(1),
+          visualCuesEnabled: true,
+        );
+        final result = engine.resolveCurrentTile(state);
+        expect(result.resolution.success, isFalse);
+        expect(result.resolution.scoreDelta, lessThan(0));
+        final burstText = '${result.resolution.scoreDelta}';
+        expect(burstText, startsWith('-'));
+      });
+
+      test('bucket value 1 success yields zero scoreDelta', () {
+        final engine = FallingModuloGameEngine(random: Random(12));
+        final state = FallingModuloGameState(
+          level: 1,
+          score: 100,
+          combo: 0,
+          bucketValues: const [1, 2, 3, 4, 5, 6, 7, 8, 9],
+          currentFallingValue: 15,
+          currentLane: 0, // bucket 1, always success with delta 0
+          tilesResolvedInLevel: 0,
+          targetTilesPerLevel: FallingModuloGameEngine.targetTilesForLevel(1),
+          numberRangeMin: 6,
+          numberRangeMax: 18,
+          dropIntervalMs: FallingModuloGameEngine.dropIntervalForLevel(1),
+          visualCuesEnabled: true,
+        );
+        final result = engine.resolveCurrentTile(state);
+        expect(result.resolution.success, isTrue);
+        expect(result.resolution.scoreDelta, 0);
+        expect('+${result.resolution.scoreDelta}', '+0');
+      });
+    });
+
+    group('targetTilesForLevel', () {
+      test('level 1 requires 12 tiles', () {
+        expect(FallingModuloGameEngine.targetTilesForLevel(1), 12);
+      });
+
+      test('increases by 2 each level', () {
+        expect(FallingModuloGameEngine.targetTilesForLevel(2), 14);
+        expect(FallingModuloGameEngine.targetTilesForLevel(3), 16);
+        expect(FallingModuloGameEngine.targetTilesForLevel(5), 20);
+      });
+    });
   });
 }
