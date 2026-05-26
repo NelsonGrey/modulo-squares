@@ -1,9 +1,7 @@
 name: 📊 Workflow Monitoring & Alerting
 
 on:
-  workflow_run:
-    workflows: ["🚀 CI/CD Pipeline - Build, Test & Deploy All Deliverables", "📱 Android App Distribution", "📱 iOS App Distribution", "🔒 Security Scan"]
-    types: [completed]
+  workflow_dispatch:
 
 jobs:
   # 📊 Monitor Workflow Status

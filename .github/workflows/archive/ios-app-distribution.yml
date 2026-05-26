@@ -22,20 +22,6 @@ on:
         required: false
         default: "Internal Testers"
         type: string
-  push:
-    branches:
-      - develop
-  pull_request:
-    branches:
-      - develop
-      - staging
-      - main
-    paths:
-      - "packages/mobile/**"
-      - ".github/workflows/ios-app-distribution.yml"
-      - ".github/actions/**"
-      - "pubspec.yaml"
-      - "firebase*.json"
 
 jobs:
   distribute-ios:

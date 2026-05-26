@@ -1,20 +1,6 @@
 name: 🚀 CI/CD Pipeline - Build, Test & Deploy All Deliverables
 
 on:
-  push:
-    branches:
-      - develop
-#      - main
-#      - staging
-    paths:
-      - 'packages/mobile/**'
-      - 'packages/web/**'
-      - '.github/workflows/ci-cd-pipeline.yml'
-      - '.github/actions/**'
-      - 'pubspec.yaml'
-      - 'package.json'
-      - 'firebase*.json'
-      - 'docs/**'
   workflow_dispatch:
     inputs:
       environment:
@@ -30,15 +16,6 @@ on:
         required: false
         default: true
         type: boolean
-  pull_request:
-    branches: [main, develop, staging]
-    paths:
-      - 'packages/**'
-      - '.github/workflows/**'
-      - 'firebase*.json'
-      - 'docs/**'
-      - 'pubspec.yaml'
-      - 'package.json'
 
 # Environment variables for the entire workflow
 env:

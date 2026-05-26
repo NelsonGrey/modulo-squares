@@ -1,9 +1,7 @@
 name: Test Minimal Reusable on Push
 
 on:
-  push:
-    branches:
-      - test-branch
+  workflow_dispatch:
 
 jobs:
   call-minimal:

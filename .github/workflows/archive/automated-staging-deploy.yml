@@ -1,9 +1,6 @@
 name: 🔄 Automated Staging Deployment
 
 on:
-  schedule:
-    # Deploy to staging every weekday at 6 AM UTC (2 AM EST)
-    - cron: '0 6 * * 1-5'
   workflow_dispatch:
     inputs:
       force_deploy:
