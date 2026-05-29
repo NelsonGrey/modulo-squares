@@ -1,0 +1,93 @@
+name: Install iOS App On HADES
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment config to use
+        required: true
+        default: dev
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+
+jobs:
+  install-ios-simulator:
+    name: Build and Install iOS (Simulator)
+    runs-on: [self-hosted, macOS, ios]
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show runner context
+        run: |
+          echo "Runner: $RUNNER_NAME"
+          sw_vers
+          xcodebuild -version
+          flutter --version
+
+      - name: Switch mobile configs
+        run: ./scripts/switch-mobile-configs.sh ${{ inputs.environment }}
+
+      - name: Install Flutter dependencies
+        working-directory: packages/mobile
+        run: flutter pub get
+
+      - name: Pick and boot iOS simulator
+        id: sim
+        run: |
+          set -euo pipefail
+
+          DEVICE_NAME="iPhone 16"
+          RUNTIME_LINE=$(xcrun simctl list runtimes available | grep -E "iOS .*\(.*\)" | head -n 1)
+          if [ -z "$RUNTIME_LINE" ]; then
+            echo "No iOS runtime available"
+            exit 1
+          fi
+
+          RUNTIME_ID=$(echo "$RUNTIME_LINE" | sed -E 's/.*\((com.apple.CoreSimulator.SimRuntime.[^)]+)\).*/\1/')
+          UDID=$(xcrun simctl create "CI-$DEVICE_NAME" "com.apple.CoreSimulator.SimDeviceType.$(echo "$DEVICE_NAME" | tr ' ' '-')" "$RUNTIME_ID" 2>/dev/null || true)
+
+          if [ -z "$UDID" ]; then
+            UDID=$(xcrun simctl list devices available | grep -m1 "$DEVICE_NAME" | sed -E 's/.*\(([A-F0-9-]+)\) \(.*/\1/')
+          fi
+
+          if [ -z "$UDID" ]; then
+            echo "Unable to resolve simulator UDID"
+            exit 1
+          fi
+
+          xcrun simctl boot "$UDID" || true
+          open -a Simulator || true
+          xcrun simctl bootstatus "$UDID" -b
+
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+
+      - name: Build iOS app for simulator
+        working-directory: packages/mobile
+        run: flutter build ios --simulator --debug
+
+      - name: Install and launch app on simulator
+        env:
+          UDID: ${{ steps.sim.outputs.udid }}
+        run: |
+          set -euo pipefail
+
+          APP_PATH="packages/mobile/build/ios/iphonesimulator/Runner.app"
+          BUNDLE_ID="com.nelsongrey.modulosquares.app.ios"
+
+          test -d "$APP_PATH"
+          xcrun simctl install "$UDID" "$APP_PATH"
+          xcrun simctl launch "$UDID" "$BUNDLE_ID"
+          xcrun simctl get_app_container "$UDID" "$BUNDLE_ID" app
+
+      - name: Upload install proof
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-install-proof
+          path: |
+            packages/mobile/build/ios/iphonesimulator/Runner.app
