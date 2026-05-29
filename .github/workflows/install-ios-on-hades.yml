@@ -55,6 +55,10 @@ jobs:
 
           echo "udid=$UDID" >> "$GITHUB_OUTPUT"
 
+      - name: Clear stale Xcode build database
+        run: |
+          rm -rf ~/Library/Developer/Xcode/DerivedData/Build/Intermediates.noindex/XCBuildData || true
+
       - name: Build iOS app for simulator
         working-directory: packages/mobile
         run: flutter build ios --simulator --debug
