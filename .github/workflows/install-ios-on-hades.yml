@@ -85,19 +85,36 @@ jobs:
         run: |
           set -euo pipefail
 
-          APP_PATH="packages/mobile/build/ios/iphonesimulator/Runner.app"
+          APP_PATH=$(find packages/mobile/build/ios/iphonesimulator -maxdepth 2 -type d -name "Runner.app" | head -n 1)
+          if [ -z "$APP_PATH" ]; then
+            APP_PATH="packages/mobile/build/ios/Debug-iphonesimulator/Runner.app"
+          fi
+
           BUNDLE_ID="com.nelsongrey.modulosquares.app.ios"
 
+          echo "Resolved app path: $APP_PATH"
           test -d "$APP_PATH"
 
           echo "Using simulator UDID: $UDID"
           xcrun simctl list devices | grep "$UDID" || true
 
+          ensure_booted() {
+            local attempt
+            for attempt in 1 2; do
+              xcrun simctl boot "$UDID" || true
+              xcrun simctl bootstatus "$UDID" -b || true
+              if xcrun simctl list devices | grep "$UDID" | grep -q "Booted"; then
+                return 0
+              fi
+              xcrun simctl shutdown "$UDID" || true
+            done
+            xcrun simctl list devices | grep "$UDID" || true
+            return 1
+          }
+
           # Normalize simulator state before install.
           xcrun simctl shutdown "$UDID" || true
-          xcrun simctl boot "$UDID" || true
-          xcrun simctl bootstatus "$UDID" -b
-          xcrun simctl list devices | grep "$UDID" || true
+          ensure_booted
 
           # Remove previous app install if present to avoid stale app state errors.
           xcrun simctl uninstall "$UDID" "$BUNDLE_ID" || true
@@ -114,16 +131,14 @@ jobs:
           if ! install_once; then
             echo "Install failed once; rebooting simulator and retrying install..."
             xcrun simctl shutdown "$UDID" || true
-            xcrun simctl boot "$UDID"
-            xcrun simctl bootstatus "$UDID" -b
+            ensure_booted
             install_once
           fi
 
           if ! launch_once; then
             echo "Launch failed once; rebooting simulator and retrying launch..."
             xcrun simctl shutdown "$UDID" || true
-            xcrun simctl boot "$UDID"
-            xcrun simctl bootstatus "$UDID" -b
+            ensure_booted
             launch_once
           fi
 
