@@ -61,8 +61,14 @@ jobs:
 
       - name: Build iOS app for simulator
         working-directory: packages/mobile
+        env:
+          SYMROOT: ${{ runner.temp }}/hades-symroot
+          OBJROOT: ${{ runner.temp }}/hades-objroot
+          COMPILER_INDEX_STORE_ENABLE: NO
         run: |
           set -euo pipefail
+
+          mkdir -p "$SYMROOT" "$OBJROOT"
 
           build_once() {
             flutter build ios --simulator --debug
