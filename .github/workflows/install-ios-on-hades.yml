@@ -69,8 +69,21 @@ jobs:
           BUNDLE_ID="com.nelsongrey.modulosquares.app.ios"
 
           test -d "$APP_PATH"
+
+          # Xcode build can leave the simulator shutdown; force it back to Booted.
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+
           xcrun simctl install "$UDID" "$APP_PATH"
-          xcrun simctl launch "$UDID" "$BUNDLE_ID"
+
+          # Retry launch once after a fresh boot if the first launch fails.
+          xcrun simctl launch "$UDID" "$BUNDLE_ID" || {
+            xcrun simctl shutdown "$UDID" || true
+            xcrun simctl boot "$UDID"
+            xcrun simctl bootstatus "$UDID" -b
+            xcrun simctl launch "$UDID" "$BUNDLE_ID"
+          }
+
           xcrun simctl get_app_container "$UDID" "$BUNDLE_ID" app
 
       - name: Upload install proof
