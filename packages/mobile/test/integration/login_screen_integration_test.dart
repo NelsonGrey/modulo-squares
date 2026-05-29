@@ -14,28 +14,25 @@ void main() {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: const [Locale('en')],
-      home: LoginScreen(
-        initializeGoogleSignIn: false,
-        anonymousSignIn: _noOpAnonymousSignIn,
-      ),
+      home: LoginScreen(initializeGoogleSignIn: false),
     );
   }
 
   group('LoginScreen Integration Tests', () {
-    testWidgets('LoginScreen displays all authentication options', (
-      WidgetTester tester,
-    ) async {
-      await tester.pumpWidget(_buildLoginTestApp());
+    testWidgets(
+      'LoginScreen displays account-required authentication options',
+      (WidgetTester tester) async {
+        await tester.pumpWidget(_buildLoginTestApp());
 
-      await tester.pumpAndSettle();
+        await tester.pumpAndSettle();
 
-      // Verify UI elements are present
-      expect(find.text('Some static text'), findsOneWidget);
-      expect(find.text('Sign in with Google'), findsOneWidget);
-      expect(find.text('Sign in with Apple'), findsOneWidget);
-      expect(find.text('or'), findsOneWidget);
-      expect(find.text('Play as Guest'), findsOneWidget);
-    });
+        // Verify UI elements are present
+        expect(find.textContaining('account is required'), findsOneWidget);
+        expect(find.text('Sign in with Google'), findsOneWidget);
+        expect(find.text('Sign in with Apple'), findsOneWidget);
+        expect(find.text('Play as Guest'), findsNothing);
+      },
+    );
 
     testWidgets('LoginScreen Google sign-in button is displayed and tappable', (
       WidgetTester tester,
@@ -71,23 +68,6 @@ void main() {
       // This test ensures the UI interaction works correctly
     });
 
-    testWidgets('LoginScreen guest sign-in button is displayed and tappable', (
-      WidgetTester tester,
-    ) async {
-      await tester.pumpWidget(_buildLoginTestApp());
-
-      await tester.pumpAndSettle();
-
-      // Find and tap guest sign-in button
-      final guestButton = find.text('Play as Guest');
-      expect(guestButton, findsOneWidget);
-      await tester.tap(guestButton);
-      await tester.pumpAndSettle();
-
-      // Verify the button is tappable (Firebase anonymous auth would handle the actual authentication)
-      // This test ensures the UI interaction works correctly
-    });
-
     testWidgets('LoginScreen handles localization correctly', (
       WidgetTester tester,
     ) async {
@@ -113,8 +93,8 @@ void main() {
         find.byType(ElevatedButton),
         findsNWidgets(2),
       ); // Google and Apple buttons
-      expect(find.byType(OutlinedButton), findsOneWidget); // Guest button
-      expect(find.byType(SizedBox), findsNWidgets(4)); // Spacing widgets
+      expect(find.byType(OutlinedButton), findsNothing);
+      expect(find.byType(SizedBox), findsNWidgets(3)); // Spacing widgets
     });
 
     testWidgets('LoginScreen buttons are properly styled', (
@@ -127,7 +107,6 @@ void main() {
       // Verify button styling (basic checks)
       final googleButton = find.text('Sign in with Google');
       final appleButton = find.text('Sign in with Apple');
-      final guestButton = find.text('Play as Guest');
 
       expect(
         tester.widget<ElevatedButton>(
@@ -141,12 +120,6 @@ void main() {
       expect(
         tester.widget<ElevatedButton>(
           find.ancestor(of: appleButton, matching: find.byType(ElevatedButton)),
-        ),
-        isNotNull,
-      );
-      expect(
-        tester.widget<OutlinedButton>(
-          find.ancestor(of: guestButton, matching: find.byType(OutlinedButton)),
         ),
         isNotNull,
       );
@@ -166,7 +139,7 @@ void main() {
       // Verify all elements are still visible on smaller screen
       expect(find.text('Sign in with Google'), findsOneWidget);
       expect(find.text('Sign in with Apple'), findsOneWidget);
-      expect(find.text('Play as Guest'), findsOneWidget);
+      expect(find.text('Play as Guest'), findsNothing);
 
       // Reset screen size
       tester.view.resetPhysicalSize();
@@ -174,5 +147,3 @@ void main() {
     });
   });
 }
-
-Future<void> _noOpAnonymousSignIn() async {}
