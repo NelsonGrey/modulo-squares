@@ -90,21 +90,42 @@ jobs:
 
           test -d "$APP_PATH"
 
-          # Xcode build can leave the simulator shutdown; force it back to Booted.
+          echo "Using simulator UDID: $UDID"
+          xcrun simctl list devices | grep "$UDID" || true
+
+          # Normalize simulator state before install.
+          xcrun simctl shutdown "$UDID" || true
           xcrun simctl boot "$UDID" || true
           xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl list devices | grep "$UDID" || true
 
-          xcrun simctl install "$UDID" "$APP_PATH"
+          # Remove previous app install if present to avoid stale app state errors.
+          xcrun simctl uninstall "$UDID" "$BUNDLE_ID" || true
 
-          # Retry launch once after a fresh boot if the first launch fails.
-          xcrun simctl launch "$UDID" "$BUNDLE_ID" || {
+          install_once() {
+            xcrun simctl install "$UDID" "$APP_PATH"
+          }
+
+          launch_once() {
+            xcrun simctl launch "$UDID" "$BUNDLE_ID"
+            xcrun simctl get_app_container "$UDID" "$BUNDLE_ID" app
+          }
+
+          if ! install_once; then
+            echo "Install failed once; rebooting simulator and retrying install..."
             xcrun simctl shutdown "$UDID" || true
             xcrun simctl boot "$UDID"
             xcrun simctl bootstatus "$UDID" -b
-            xcrun simctl launch "$UDID" "$BUNDLE_ID"
-          }
+            install_once
+          fi
 
-          xcrun simctl get_app_container "$UDID" "$BUNDLE_ID" app
+          if ! launch_once; then
+            echo "Launch failed once; rebooting simulator and retrying launch..."
+            xcrun simctl shutdown "$UDID" || true
+            xcrun simctl boot "$UDID"
+            xcrun simctl bootstatus "$UDID" -b
+            launch_once
+          fi
 
       - name: Upload install proof
         uses: actions/upload-artifact@v4
