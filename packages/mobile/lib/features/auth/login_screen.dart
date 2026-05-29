@@ -4,16 +4,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:modulo_squares/core/services/error_handler.dart';
-import 'package:modulo_squares/core/auth/auth_fallback_policy.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({
-    super.key,
-    this.anonymousSignIn,
-    this.initializeGoogleSignIn = true,
-  });
+  const LoginScreen({super.key, this.initializeGoogleSignIn = true});
 
-  final Future<void> Function()? anonymousSignIn;
   final bool initializeGoogleSignIn;
 
   @override
@@ -125,40 +119,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<void> _signInAnonymously(BuildContext context) async {
-    try {
-      if (widget.anonymousSignIn != null) {
-        await widget.anonymousSignIn!.call();
-      } else {
-        await FirebaseAuth.instance.signInAnonymously();
-      }
-    } on FirebaseAuthException catch (e) {
-      final decision = evaluateAnonymousSignInError(e);
-      if (kDebugMode) {
-        debugPrint('Anonymous sign-in failed: ${e.code} - ${e.message}');
-      }
-      if (context.mounted) {
-        ErrorHandler().showErrorSnackBar(
-          context,
-          decision.message,
-          onRetry:
-              decision.allowRetry ? () => _signInAnonymously(context) : null,
-        );
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('Anonymous sign-in failed: $e');
-      }
-      if (context.mounted) {
-        ErrorHandler().showErrorSnackBar(
-          context,
-          'An unexpected error occurred during guest sign-in.',
-          onRetry: () => _signInAnonymously(context),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -166,7 +126,14 @@ class _LoginScreenState extends State<LoginScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const SizedBox(height: 20),
-          const Text('Some static text'),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24),
+            child: Text(
+              'Sign in to continue. An account is required to play and sync progress.',
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 20),
           ElevatedButton(
             onPressed: () => _signInWithGoogle(context),
             child: const Text('Sign in with Google'),
@@ -175,13 +142,6 @@ class _LoginScreenState extends State<LoginScreen> {
           ElevatedButton(
             onPressed: () => _signInWithApple(context),
             child: const Text('Sign in with Apple'),
-          ),
-          const SizedBox(height: 24),
-          const Text('or'),
-          const SizedBox(height: 12),
-          OutlinedButton(
-            onPressed: () => _signInAnonymously(context),
-            child: const Text('Play as Guest'),
           ),
         ],
       ),

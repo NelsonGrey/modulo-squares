@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:modulo_squares/features/auth/login_screen.dart';
@@ -6,55 +5,29 @@ import 'package:modulo_squares/features/auth/login_screen.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  Future<void> pumpLogin(
-    WidgetTester tester, {
-    required Future<void> Function() anonymousSignIn,
-  }) async {
+  Future<void> pumpLogin(WidgetTester tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        home: LoginScreen(
-          anonymousSignIn: anonymousSignIn,
-          initializeGoogleSignIn: false,
-        ),
-      ),
+      MaterialApp(home: LoginScreen(initializeGoogleSignIn: false)),
     );
   }
 
-  testWidgets('hides Retry for non-retryable guest sign-in errors', (
+  testWidgets('does not show guest sign-in option', (
     WidgetTester tester,
   ) async {
-    await pumpLogin(
-      tester,
-      anonymousSignIn:
-          () async => throw FirebaseAuthException(code: 'too-many-requests'),
-    );
-
-    await tester.tap(find.text('Play as Guest'));
+    await pumpLogin(tester);
     await tester.pumpAndSettle();
 
-    expect(find.byType(SnackBar), findsOneWidget);
-    expect(find.textContaining('temporarily throttled'), findsOneWidget);
-    expect(find.text('Retry'), findsNothing);
+    expect(find.text('Play as Guest'), findsNothing);
   });
 
-  testWidgets('shows Retry for retryable guest sign-in errors', (
+  testWidgets('shows account-required sign-in options', (
     WidgetTester tester,
   ) async {
-    await pumpLogin(
-      tester,
-      anonymousSignIn:
-          () async =>
-              throw FirebaseAuthException(code: 'network-request-failed'),
-    );
-
-    await tester.tap(find.text('Play as Guest'));
+    await pumpLogin(tester);
     await tester.pumpAndSettle();
 
-    expect(find.byType(SnackBar), findsOneWidget);
-    expect(
-      find.textContaining('Unable to sign in automatically'),
-      findsOneWidget,
-    );
-    expect(find.text('Retry'), findsOneWidget);
+    expect(find.textContaining('account is required'), findsOneWidget);
+    expect(find.text('Sign in with Google'), findsOneWidget);
+    expect(find.text('Sign in with Apple'), findsOneWidget);
   });
 }
