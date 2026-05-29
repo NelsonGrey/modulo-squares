@@ -61,7 +61,23 @@ jobs:
 
       - name: Build iOS app for simulator
         working-directory: packages/mobile
-        run: flutter build ios --simulator --debug
+        run: |
+          set -euo pipefail
+
+          build_once() {
+            flutter build ios --simulator --debug
+          }
+
+          if build_once; then
+            exit 0
+          fi
+
+          echo "First iOS simulator build failed; clearing stale state and retrying once..."
+          flutter clean
+          flutter pub get
+          rm -rf ~/Library/Developer/Xcode/DerivedData/Build/Intermediates.noindex/XCBuildData || true
+
+          build_once
 
       - name: Install and launch app on simulator
         env:
