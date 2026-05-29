@@ -41,29 +41,18 @@ jobs:
         id: sim
         run: |
           set -euo pipefail
-
-          DEVICE_NAME="iPhone 16"
-          RUNTIME_LINE=$(xcrun simctl list runtimes available | grep -E "iOS .*\(.*\)" | head -n 1)
-          if [ -z "$RUNTIME_LINE" ]; then
-            echo "No iOS runtime available"
-            exit 1
-          fi
-
-          RUNTIME_ID=$(echo "$RUNTIME_LINE" | sed -E 's/.*\((com.apple.CoreSimulator.SimRuntime.[^)]+)\).*/\1/')
-          UDID=$(xcrun simctl create "CI-$DEVICE_NAME" "com.apple.CoreSimulator.SimDeviceType.$(echo "$DEVICE_NAME" | tr ' ' '-')" "$RUNTIME_ID" 2>/dev/null || true)
+          UDID=$(xcrun simctl list devices available | grep -m1 -E "iPhone .*\([A-F0-9-]+\)" | sed -E 's/.*\(([A-F0-9-]+)\) \(.*/\1/')
 
           if [ -z "$UDID" ]; then
-            UDID=$(xcrun simctl list devices available | grep -m1 "$DEVICE_NAME" | sed -E 's/.*\(([A-F0-9-]+)\) \(.*/\1/')
-          fi
-
-          if [ -z "$UDID" ]; then
-            echo "Unable to resolve simulator UDID"
+            echo "Unable to find an available iPhone simulator"
+            xcrun simctl list devices available
             exit 1
           fi
 
           xcrun simctl boot "$UDID" || true
           open -a Simulator || true
-          xcrun simctl bootstatus "$UDID" -b
+          # Avoid long hangs on bootstatus; verify device is in Booted state instead.
+          xcrun simctl list devices | grep "$UDID" | grep -q "Booted"
 
           echo "udid=$UDID" >> "$GITHUB_OUTPUT"
 
