@@ -28,7 +28,6 @@ jobs:
           echo "Runner: $RUNNER_NAME"
           sw_vers
           xcodebuild -version
-          flutter --version
 
       - name: Switch mobile configs
         run: ./scripts/switch-mobile-configs.sh ${{ inputs.environment }}
