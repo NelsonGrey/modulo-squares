@@ -150,7 +150,27 @@ jobs:
 
       - name: Pod install
         working-directory: packages/mobile/ios
-        run: bundle exec pod install --repo-update
+        run: |
+          set -euo pipefail
+
+          # Hosted runners can occasionally fail to resolve transient plugin specs.
+          # Clean local CocoaPods state and retry deterministically.
+          rm -rf Pods .symlinks
+
+          for attempt in 1 2 3; do
+            echo "Pod install attempt ${attempt}/3"
+            if bundle exec pod install --repo-update; then
+              exit 0
+            fi
+
+            echo "Pod install failed on attempt ${attempt}; cleaning CocoaPods cache and retrying"
+            bundle exec pod cache clean --all || true
+            rm -rf Pods .symlinks
+            flutter pub get
+          done
+
+          echo "Pod install failed after 3 attempts"
+          exit 1
 
       - name: Build only (no App Store upload)
         if: env.RELEASE_TYPE == 'build_only'
