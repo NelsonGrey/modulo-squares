@@ -177,16 +177,16 @@ void main() {
     );
 
     group('dropIntervalForLevel', () {
-      test('level 1 returns 2200ms baseline', () {
-        expect(FallingModuloGameEngine.dropIntervalForLevel(1), 2200);
+      test('level 1 returns 1400ms baseline', () {
+        expect(FallingModuloGameEngine.dropIntervalForLevel(1), 1400);
       });
 
-      test('level 2 returns 2068ms (2200 * 0.94)', () {
-        expect(FallingModuloGameEngine.dropIntervalForLevel(2), 2068);
+      test('level 2 returns 1288ms (1400 * 0.92)', () {
+        expect(FallingModuloGameEngine.dropIntervalForLevel(2), 1288);
       });
 
-      test('level 10 returns 1260ms', () {
-        expect(FallingModuloGameEngine.dropIntervalForLevel(10), 1260);
+      test('level 10 returns 661ms', () {
+        expect(FallingModuloGameEngine.dropIntervalForLevel(10), 661);
       });
 
       test('interval strictly decreases from level 1 to level 14', () {
@@ -199,10 +199,10 @@ void main() {
         }
       });
 
-      test('interval floors at 700ms once scaling reaches the minimum', () {
-        expect(FallingModuloGameEngine.dropIntervalForLevel(19), 722);
-        expect(FallingModuloGameEngine.dropIntervalForLevel(20), 700);
-        expect(FallingModuloGameEngine.dropIntervalForLevel(50), 700);
+      test('interval floors at 450ms once scaling reaches the minimum', () {
+        expect(FallingModuloGameEngine.dropIntervalForLevel(14), 473);
+        expect(FallingModuloGameEngine.dropIntervalForLevel(15), 450);
+        expect(FallingModuloGameEngine.dropIntervalForLevel(50), 450);
       });
 
       test('clamped level < 1 treated as level 1', () {
