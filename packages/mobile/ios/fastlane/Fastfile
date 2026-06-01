@@ -12,8 +12,8 @@ repo_root = File.expand_path("../../../..", __dir__)
 Dotenv.load(File.join(repo_root, ".env.development")) if File.exist?(File.join(repo_root, ".env.development"))
 Dotenv.load(".env") if File.exist?(".env")
 
-private_key_begin_marker = ["-----BEGIN", "PRIVATE", "KEY-----"].join(" ")
-ec_private_key_begin_marker = ["-----BEGIN", "EC", "PRIVATE", "KEY-----"].join(" ")
+PRIVATE_KEY_BEGIN_MARKER = ["-----BEGIN", "PRIVATE", "KEY-----"].join(" ")
+EC_PRIVATE_KEY_BEGIN_MARKER = ["-----BEGIN", "EC", "PRIVATE", "KEY-----"].join(" ")
 
 default_platform(:ios)
 
@@ -54,7 +54,7 @@ platform :ios do
       key_content = key_content.gsub(/\\n/, "\n").gsub(/\r\n?/, "\n")
       key_content = key_content.lines.map(&:strip).reject(&:empty?).join("\n") + "\n"
 
-      unless key_content.include?(private_key_begin_marker) || key_content.include?(ec_private_key_begin_marker)
+      unless key_content.include?(PRIVATE_KEY_BEGIN_MARKER) || key_content.include?(EC_PRIVATE_KEY_BEGIN_MARKER)
         decoded = Base64.decode64(key_content)
         key_content = decoded if decoded.include?("-----BEGIN")
       end
@@ -90,7 +90,7 @@ platform :ios do
     key_content = key_content.gsub(/\\n/, "\n").gsub(/\r\n?/, "\n")
     key_content = key_content.lines.map(&:strip).reject(&:empty?).join("\n") + "\n"
 
-    unless key_content.include?(private_key_begin_marker) || key_content.include?(ec_private_key_begin_marker)
+    unless key_content.include?(PRIVATE_KEY_BEGIN_MARKER) || key_content.include?(EC_PRIVATE_KEY_BEGIN_MARKER)
       raise "APP_STORE_CONNECT_KEY could not be converted to a valid .p8 key file"
     end
 
