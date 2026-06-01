@@ -145,12 +145,14 @@ jobs:
       - name: Switch mobile configs
         run: ./scripts/switch-mobile-configs.sh "$MOBILE_ENVIRONMENT"
 
-      - name: Normalize Flutter XCFramework reference
+      - name: Normalize iOS project for CI
         run: |
           set -euo pipefail
           PBXPROJ="packages/mobile/ios/Runner.xcodeproj/project.pbxproj"
           # Replace local machine Flutter SDK path with runner-resolved FLUTTER_ROOT path.
           sed -i.bak 's|path = /Users/marknelson/Applications/flutter/bin/cache/artifacts/engine/ios/Flutter.xcframework; sourceTree = "<group>";|path = "$(FLUTTER_ROOT)/bin/cache/artifacts/engine/ios/Flutter.xcframework"; sourceTree = "<absolute>";|g' "$PBXPROJ"
+          # Remove hardcoded distribution identity so automatic signing can choose the correct identity.
+          sed -i.bak 's|[[:space:]]*"CODE_SIGN_IDENTITY\[sdk=iphoneos\*\]" = "iPhone Distribution";||g' "$PBXPROJ"
           rm -f "${PBXPROJ}.bak"
 
       - name: Flutter dependencies
