@@ -1,0 +1,183 @@
+name: iOS Build and Distribution (Self-Contained)
+
+on:
+  workflow_call:
+    inputs:
+      project_name:
+        description: Project name used for summary metadata
+        required: false
+        type: string
+        default: modulo-squares
+      release_type:
+        description: Build mode (build_only or testflight)
+        required: false
+        type: string
+        default: build_only
+      environment:
+        description: Mobile Firebase environment (dev, staging, prod)
+        required: false
+        type: string
+        default: dev
+      release_notes:
+        description: Release notes for TestFlight uploads
+        required: false
+        type: string
+        default: ""
+      ruby_version:
+        description: Ruby version for Fastlane
+        required: false
+        type: string
+        default: "3.2"
+      bundler_version:
+        description: Bundler version
+        required: false
+        type: string
+        default: "2.4.22"
+      fastlane_version:
+        description: Fastlane version hint (kept for compatibility)
+        required: false
+        type: string
+        default: "2.230.0"
+      beta_group_name:
+        description: Beta group label for summary context
+        required: false
+        type: string
+        default: Internal Testers
+    secrets:
+      APP_STORE_CONNECT_KEY_ID:
+        required: false
+      APP_STORE_CONNECT_ISSUER_ID:
+        required: false
+      APP_STORE_CONNECT_KEY:
+        required: false
+      FASTLANE_TEAM_ID:
+        required: false
+
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: Build mode (build_only or testflight)
+        required: true
+        type: choice
+        options:
+          - build_only
+          - testflight
+        default: build_only
+      environment:
+        description: Mobile Firebase environment
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+        default: dev
+      release_notes:
+        description: Release notes for TestFlight upload
+        required: false
+        type: string
+        default: ""
+
+jobs:
+  ios-build:
+    name: Build iOS App
+    runs-on: macos-latest
+    timeout-minutes: 75
+    env:
+      RELEASE_TYPE: ${{ inputs.release_type || 'build_only' }}
+      MOBILE_ENVIRONMENT: ${{ inputs.environment || 'dev' }}
+      RELEASE_NOTES: ${{ inputs.release_notes || format('Automated iOS build from {0}', github.sha) }}
+      APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+      APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+      APP_STORE_CONNECT_KEY: ${{ secrets.APP_STORE_CONNECT_KEY }}
+      FASTLANE_TEAM_ID: ${{ secrets.FASTLANE_TEAM_ID }}
+      GITHUB_RUN_NUMBER: ${{ github.run_number }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate inputs
+        run: |
+          set -euo pipefail
+          case "$RELEASE_TYPE" in
+            build_only|testflight) ;;
+            *)
+              echo "Unsupported release_type: $RELEASE_TYPE"
+              exit 1
+              ;;
+          esac
+
+          case "$MOBILE_ENVIRONMENT" in
+            dev|staging|prod) ;;
+            *)
+              echo "Unsupported environment: $MOBILE_ENVIRONMENT"
+              exit 1
+              ;;
+          esac
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ inputs.ruby_version || '3.2' }}
+          bundler-cache: true
+          working-directory: packages/mobile/ios
+
+      - name: Install Bundler version
+        working-directory: packages/mobile/ios
+        run: |
+          gem install bundler -v "${{ inputs.bundler_version || '2.4.22' }}"
+
+      - name: Show tool versions
+        run: |
+          set -euo pipefail
+          sw_vers
+          xcodebuild -version
+          flutter --version
+          ruby --version
+
+      - name: Switch mobile configs
+        run: ./scripts/switch-mobile-configs.sh "$MOBILE_ENVIRONMENT"
+
+      - name: Flutter dependencies
+        working-directory: packages/mobile
+        run: flutter pub get
+
+      - name: Pod install
+        working-directory: packages/mobile/ios
+        run: bundle exec pod install --repo-update
+
+      - name: Build only (no App Store upload)
+        if: env.RELEASE_TYPE == 'build_only'
+        working-directory: packages/mobile/ios
+        run: bundle exec fastlane ios test_and_build
+
+      - name: Upload to TestFlight
+        if: env.RELEASE_TYPE == 'testflight'
+        working-directory: packages/mobile/ios
+        run: bundle exec fastlane ios beta release_notes:"$RELEASE_NOTES"
+
+      - name: Upload iOS build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build-artifacts-${{ github.run_number }}
+          path: |
+            packages/mobile/ios/fastlane/builds/**
+            packages/mobile/build/ios/iphoneos/**
+            packages/mobile/build/ios/ipa/**
+          if-no-files-found: ignore
+
+      - name: iOS Summary
+        if: always()
+        run: |
+          echo "## iOS Self-Contained Build" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Project: ${{ inputs.project_name || 'modulo-squares' }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Release Type: $RELEASE_TYPE" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Environment: $MOBILE_ENVIRONMENT" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Beta Group: ${{ inputs.beta_group_name || 'Internal Testers' }}" >> "$GITHUB_STEP_SUMMARY"

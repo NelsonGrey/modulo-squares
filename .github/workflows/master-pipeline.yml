@@ -163,10 +163,11 @@ jobs:
       (needs.load-config.outputs.trigger_context == 'build_all' ||
        needs.load-config.outputs.trigger_context == 'validate_ios_release' ||
        needs.load-config.outputs.trigger_context == 'build_and_deploy')
-    uses: mnelson3/nelson-grey/.github/workflows/ios-build.yml@main
+    uses: ./.github/workflows/ios-build-self-contained.yml
     with:
       project_name: ${{ needs.load-config.outputs.project_name }}
       release_type: ${{ needs.load-config.outputs.trigger_context == 'build_and_deploy' && 'testflight' || 'build_only' }}
+      environment: ${{ needs.load-config.outputs.target_environment == 'development' && 'dev' || needs.load-config.outputs.target_environment == 'production' && 'prod' || 'staging' }}
       release_notes: ${{ needs.load-config.outputs.trigger_context == 'build_and_deploy' && format('Automated build from {0} ({1})', github.sha, github.ref_name) || '' }}
       beta_group_name: "Internal Testers"
       ruby_version: "3.2"

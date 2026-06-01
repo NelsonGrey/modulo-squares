@@ -37,6 +37,25 @@ firebase login:ci
 
 **Where to add them**: GitHub Repository → Settings → Secrets and variables → Actions → New repository secret
 
+### iOS Self-Contained Distribution Secrets
+These secrets are required for in-repo iOS TestFlight uploads via Fastlane (no external nelson-grey credential sharing).
+
+#### APP_STORE_CONNECT_KEY_ID
+**Purpose**: App Store Connect API key ID
+
+#### APP_STORE_CONNECT_ISSUER_ID
+**Purpose**: App Store Connect issuer ID
+
+#### APP_STORE_CONNECT_KEY
+**Purpose**: App Store Connect private key content (`.p8`) or base64 encoded key
+
+#### FASTLANE_TEAM_ID
+**Purpose**: Apple Developer Team ID used for automatic signing
+
+**Used by workflows**:
+- `.github/workflows/ios-build-self-contained.yml`
+- `.github/workflows/install-ios-on-hades.yml` (manual trigger wrapper)
+
 ### Optional Secrets (for signed Android releases)
 
 #### ANDROID_KEYSTORE

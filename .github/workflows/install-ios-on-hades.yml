@@ -1,4 +1,4 @@
-name: Install iOS App On HADES
+name: iOS Distribution (Self-Contained)
 
 on:
   workflow_dispatch:
@@ -12,145 +12,28 @@ on:
           - dev
           - staging
           - prod
+      release_type:
+        description: Distribution target
+        required: true
+        default: testflight
+        type: choice
+        options:
+          - build_only
+          - testflight
+      release_notes:
+        description: Optional release notes for TestFlight
+        required: false
+        default: "Manual self-contained iOS distribution"
+        type: string
 
 jobs:
-  install-ios-simulator:
-    name: Build and Install iOS (Simulator)
-    runs-on: [self-hosted, macOS, ios]
-    timeout-minutes: 45
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Show runner context
-        run: |
-          echo "Runner: $RUNNER_NAME"
-          sw_vers
-          xcodebuild -version
-
-      - name: Switch mobile configs
-        run: ./scripts/switch-mobile-configs.sh ${{ inputs.environment }}
-
-      - name: Install Flutter dependencies
-        working-directory: packages/mobile
-        run: flutter pub get
-
-      - name: Pick and boot iOS simulator
-        id: sim
-        run: |
-          set -euo pipefail
-          UDID=$(xcrun simctl list devices available | grep -m1 -E "iPhone .*\([A-F0-9-]+\)" | sed -E 's/.*\(([A-F0-9-]+)\) \(.*/\1/')
-
-          if [ -z "$UDID" ]; then
-            echo "Unable to find an available iPhone simulator"
-            xcrun simctl list devices available
-            exit 1
-          fi
-
-          xcrun simctl boot "$UDID" || true
-          open -a Simulator || true
-          # Avoid long hangs on bootstatus; verify device is in Booted state instead.
-          xcrun simctl list devices | grep "$UDID" | grep -q "Booted"
-
-          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
-
-      - name: Clear stale Xcode build database
-        run: |
-          rm -rf ~/Library/Developer/Xcode/DerivedData/Build/Intermediates.noindex/XCBuildData || true
-
-      - name: Build iOS app for simulator
-        working-directory: packages/mobile
-        env:
-          SYMROOT: ${{ runner.temp }}/hades-symroot
-          OBJROOT: ${{ runner.temp }}/hades-objroot
-          COMPILER_INDEX_STORE_ENABLE: NO
-        run: |
-          set -euo pipefail
-
-          mkdir -p "$SYMROOT" "$OBJROOT"
-
-          build_once() {
-            flutter build ios --simulator --debug
-          }
-
-          if build_once; then
-            exit 0
-          fi
-
-          echo "First iOS simulator build failed; clearing stale state and retrying once..."
-          flutter clean
-          flutter pub get
-          rm -rf ~/Library/Developer/Xcode/DerivedData/Build/Intermediates.noindex/XCBuildData || true
-
-          build_once
-
-      - name: Install and launch app on simulator
-        env:
-          UDID: ${{ steps.sim.outputs.udid }}
-        run: |
-          set -euo pipefail
-
-          APP_PATH=$(find packages/mobile/build/ios/iphonesimulator -maxdepth 2 -type d -name "Runner.app" | head -n 1)
-          if [ -z "$APP_PATH" ]; then
-            APP_PATH="packages/mobile/build/ios/Debug-iphonesimulator/Runner.app"
-          fi
-
-          BUNDLE_ID="com.nelsongrey.modulosquares.app.ios"
-
-          echo "Resolved app path: $APP_PATH"
-          test -d "$APP_PATH"
-
-          echo "Using simulator UDID: $UDID"
-          xcrun simctl list devices | grep "$UDID" || true
-
-          ensure_booted() {
-            local attempt
-            for attempt in 1 2; do
-              xcrun simctl boot "$UDID" || true
-              xcrun simctl bootstatus "$UDID" -b || true
-              if xcrun simctl list devices | grep "$UDID" | grep -q "Booted"; then
-                return 0
-              fi
-              xcrun simctl shutdown "$UDID" || true
-            done
-            xcrun simctl list devices | grep "$UDID" || true
-            return 1
-          }
-
-          # Normalize simulator state before install.
-          xcrun simctl shutdown "$UDID" || true
-          ensure_booted
-
-          # Remove previous app install if present to avoid stale app state errors.
-          xcrun simctl uninstall "$UDID" "$BUNDLE_ID" || true
-
-          install_once() {
-            xcrun simctl install "$UDID" "$APP_PATH"
-          }
-
-          launch_once() {
-            xcrun simctl launch "$UDID" "$BUNDLE_ID"
-            xcrun simctl get_app_container "$UDID" "$BUNDLE_ID" app
-          }
-
-          if ! install_once; then
-            echo "Install failed once; rebooting simulator and retrying install..."
-            xcrun simctl shutdown "$UDID" || true
-            ensure_booted
-            install_once
-          fi
-
-          if ! launch_once; then
-            echo "Launch failed once; rebooting simulator and retrying launch..."
-            xcrun simctl shutdown "$UDID" || true
-            ensure_booted
-            launch_once
-          fi
-
-      - name: Upload install proof
-        uses: actions/upload-artifact@v4
-        with:
-          name: ios-install-proof
-          path: |
-            packages/mobile/build/ios/iphonesimulator/Runner.app
+  distribute-ios:
+    name: Build and Distribute iOS
+    uses: ./.github/workflows/ios-build-self-contained.yml
+    with:
+      project_name: modulo-squares
+      environment: ${{ inputs.environment }}
+      release_type: ${{ inputs.release_type }}
+      release_notes: ${{ inputs.release_notes }}
+      beta_group_name: Internal Testers
+    secrets: inherit

@@ -20,17 +20,34 @@ import 'package:modulo_squares/core/services/cache_service.dart';
 import 'package:modulo_squares/core/services/asset_service.dart';
 import 'package:modulo_squares/core/di/service_locator.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+Future<bool> initializeFirebaseApp() async {
+  if (Firebase.apps.isNotEmpty) {
+    return true;
+  }
 
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+    return true;
+  } on FirebaseException catch (error, stackTrace) {
+    // Treat duplicate-app as healthy if a default app already exists.
+    if (error.code == 'duplicate-app' && Firebase.apps.isNotEmpty) {
+      return true;
+    }
+
+    ErrorHandler().handleFirebaseInitError(error, stackTrace);
+    return Firebase.apps.isNotEmpty;
   } catch (error, stackTrace) {
     ErrorHandler().handleFirebaseInitError(error, stackTrace);
-    // Continue with limited functionality - some features may not work
+    return Firebase.apps.isNotEmpty;
   }
+}
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final firebaseReady = await initializeFirebaseApp();
 
   // Setup dependency injection
   setupServiceLocator();
@@ -82,21 +99,55 @@ void main() async {
     });
   }
 
-  runApp(const ModuloApp());
+  runApp(ModuloApp(firebaseReady: firebaseReady));
 }
 
-class ModuloApp extends StatelessWidget {
-  const ModuloApp({super.key});
+class ModuloApp extends StatefulWidget {
+  const ModuloApp({super.key, required this.firebaseReady});
+
+  final bool firebaseReady;
+
+  @override
+  State<ModuloApp> createState() => _ModuloAppState();
+}
+
+class _ModuloAppState extends State<ModuloApp> {
+  late bool _firebaseReady = widget.firebaseReady;
+  bool _retryingFirebase = false;
+
+  Future<void> _retryFirebaseInitialization() async {
+    if (_retryingFirebase) {
+      return;
+    }
+
+    setState(() {
+      _retryingFirebase = true;
+    });
+
+    final firebaseReady = await initializeFirebaseApp();
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _firebaseReady = firebaseReady;
+      _retryingFirebase = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final FirebaseAnalyticsObserver observer = FirebaseAnalyticsObserver(
-      analytics: FirebaseAnalytics.instance,
-    );
+    final navigatorObservers = <NavigatorObserver>[];
+    if (_firebaseReady && Firebase.apps.isNotEmpty) {
+      navigatorObservers.add(
+        FirebaseAnalyticsObserver(analytics: FirebaseAnalytics.instance),
+      );
+    }
+
     return MaterialApp(
       title: 'Modulo Squares',
       debugShowCheckedModeBanner: false,
-      navigatorObservers: [observer],
+      navigatorObservers: navigatorObservers,
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
@@ -107,7 +158,57 @@ class ModuloApp extends StatelessWidget {
         Locale('en'),
         // Add other supported locales here
       ],
-      home: const AuthGate(),
+      home:
+          _firebaseReady
+              ? const AuthGate()
+              : FirebaseRecoveryScreen(
+                isRetrying: _retryingFirebase,
+                onRetry: _retryFirebaseInitialization,
+              ),
+    );
+  }
+}
+
+class FirebaseRecoveryScreen extends StatelessWidget {
+  const FirebaseRecoveryScreen({
+    super.key,
+    required this.isRetrying,
+    required this.onRetry,
+  });
+
+  final bool isRetrying;
+  final Future<void> Function() onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.cloud_off, size: 56),
+              const SizedBox(height: 16),
+              const Text(
+                'Unable to start app services',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'The app could not reconnect to required services during launch. Retry initialization to continue.',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: isRetrying ? null : () => onRetry(),
+                child: Text(isRetrying ? 'Retrying...' : 'Retry'),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
