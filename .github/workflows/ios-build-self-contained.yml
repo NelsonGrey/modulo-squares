@@ -28,6 +28,11 @@ on:
         required: false
         type: string
         default: "3.2"
+      xcode_version:
+        description: Xcode version required for App Store Connect validation
+        required: false
+        type: string
+        default: "26.0"
       bundler_version:
         description: Bundler version
         required: false
@@ -77,6 +82,11 @@ on:
         required: false
         type: string
         default: ""
+      xcode_version:
+        description: Xcode version required for App Store Connect validation
+        required: false
+        type: string
+        default: "26.0"
 
 jobs:
   ios-build:
@@ -115,6 +125,11 @@ jobs:
               exit 1
               ;;
           esac
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ inputs.xcode_version || '26.0' }}
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
