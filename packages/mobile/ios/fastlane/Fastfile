@@ -96,7 +96,11 @@ platform :ios do
 
     key_file = Tempfile.new(["app_store_connect_xcode_auth", ".p8"])
     key_file.write(key_content)
+    key_file.flush
     key_file.close
+
+    # Keep a strong reference so Ruby GC does not unlink the tempfile before xcodebuild uses it.
+    @xcode_auth_key_tempfile = key_file
     key_file.path
   end
 
@@ -183,24 +187,31 @@ platform :ios do
       sh("pod install --repo-update")
     end
 
-    build_app(
-      scheme: "Runner",
-      workspace: "Runner.xcworkspace",
-      clean: true,
-      export_method: "app-store",
-      output_directory: "./builds",
-      output_name: "ModuloSquares.ipa",
-      export_options: {
-        signingStyle: "automatic",
-        teamID: team_id
-      },
-      xcargs: [
-        "-allowProvisioningUpdates",
-        "-authenticationKeyPath #{Shellwords.escape(authentication_key_path)}",
-        "-authenticationKeyID #{Shellwords.escape(authentication_key_id)}",
-        "-authenticationKeyIssuerID #{Shellwords.escape(authentication_issuer_id)}"
-      ].join(" ")
-    )
+    begin
+      build_app(
+        scheme: "Runner",
+        workspace: "Runner.xcworkspace",
+        clean: true,
+        export_method: "app-store",
+        output_directory: "./builds",
+        output_name: "ModuloSquares.ipa",
+        export_options: {
+          signingStyle: "automatic",
+          teamID: team_id
+        },
+        xcargs: [
+          "-allowProvisioningUpdates",
+          "-authenticationKeyPath #{Shellwords.escape(authentication_key_path)}",
+          "-authenticationKeyID #{Shellwords.escape(authentication_key_id)}",
+          "-authenticationKeyIssuerID #{Shellwords.escape(authentication_issuer_id)}"
+        ].join(" ")
+      )
+    ensure
+      if @xcode_auth_key_tempfile
+        @xcode_auth_key_tempfile.unlink
+        @xcode_auth_key_tempfile = nil
+      end
+    end
 
     ipa_path = lane_context[SharedValues::IPA_OUTPUT_PATH]
     UI.user_error!("IPA not found at #{ipa_path}") unless ipa_path && File.exist?(ipa_path)
