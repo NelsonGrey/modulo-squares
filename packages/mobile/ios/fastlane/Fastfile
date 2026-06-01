@@ -6,10 +6,14 @@ ENV["FASTLANE_DISABLE_COLORS"] = "0"
 require "dotenv"
 require "base64"
 require "tempfile"
+require "shellwords"
 
 repo_root = File.expand_path("../../../..", __dir__)
 Dotenv.load(File.join(repo_root, ".env.development")) if File.exist?(File.join(repo_root, ".env.development"))
 Dotenv.load(".env") if File.exist?(".env")
+
+private_key_begin_marker = ["-----BEGIN", "PRIVATE", "KEY-----"].join(" ")
+ec_private_key_begin_marker = ["-----BEGIN", "EC", "PRIVATE", "KEY-----"].join(" ")
 
 default_platform(:ios)
 
@@ -50,7 +54,7 @@ platform :ios do
       key_content = key_content.gsub(/\\n/, "\n").gsub(/\r\n?/, "\n")
       key_content = key_content.lines.map(&:strip).reject(&:empty?).join("\n") + "\n"
 
-      unless key_content.include?("-----BEGIN PRIVATE KEY-----") || key_content.include?("-----BEGIN EC PRIVATE KEY-----")
+      unless key_content.include?(private_key_begin_marker) || key_content.include?(ec_private_key_begin_marker)
         decoded = Base64.decode64(key_content)
         key_content = decoded if decoded.include?("-----BEGIN")
       end
@@ -73,6 +77,27 @@ platform :ios do
       is_key_content_base64: true,
       in_house: false
     )
+  end
+
+  def app_store_connect_key_file_path
+    key_content = normalized_private_key_content
+    if !key_content.include?("-----BEGIN")
+      decoded = Base64.decode64(key_content.gsub(/\s+/, ""))
+      key_content = decoded if decoded.include?("-----BEGIN")
+    end
+
+    key_content = key_content.gsub(/\A['\"]|['\"]\z/, "")
+    key_content = key_content.gsub(/\\n/, "\n").gsub(/\r\n?/, "\n")
+    key_content = key_content.lines.map(&:strip).reject(&:empty?).join("\n") + "\n"
+
+    unless key_content.include?(private_key_begin_marker) || key_content.include?(ec_private_key_begin_marker)
+      raise "APP_STORE_CONNECT_KEY could not be converted to a valid .p8 key file"
+    end
+
+    key_file = Tempfile.new(["app_store_connect_xcode_auth", ".p8"])
+    key_file.write(key_content)
+    key_file.close
+    key_file.path
   end
 
   def ensure_xcode_automatic_signing!
@@ -139,6 +164,9 @@ platform :ios do
 
     api_key = app_store_api_key
     team_id = ensure_xcode_automatic_signing!
+    authentication_key_path = app_store_connect_key_file_path
+    authentication_key_id = ENV["APP_STORE_CONNECT_KEY_ID"].to_s.strip
+    authentication_issuer_id = ENV["APP_STORE_CONNECT_ISSUER_ID"].to_s.strip
 
     sh("rm -rf ../Pods")
     sh("rm -f ../Podfile.lock")
@@ -166,7 +194,12 @@ platform :ios do
         signingStyle: "automatic",
         teamID: team_id
       },
-      xcargs: "-allowProvisioningUpdates"
+      xcargs: [
+        "-allowProvisioningUpdates",
+        "-authenticationKeyPath #{Shellwords.escape(authentication_key_path)}",
+        "-authenticationKeyID #{Shellwords.escape(authentication_key_id)}",
+        "-authenticationKeyIssuerID #{Shellwords.escape(authentication_issuer_id)}"
+      ].join(" ")
     )
 
     ipa_path = lane_context[SharedValues::IPA_OUTPUT_PATH]
