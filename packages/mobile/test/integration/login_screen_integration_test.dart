@@ -29,10 +29,29 @@ void main() {
         // Verify UI elements are present
         expect(find.textContaining('account is required'), findsOneWidget);
         expect(find.text('Sign in with Google'), findsOneWidget);
+        expect(find.text('Sign in with Email'), findsOneWidget);
         expect(find.text('Sign in with Apple'), findsOneWidget);
         expect(find.text('Play as Guest'), findsNothing);
       },
     );
+
+    testWidgets('LoginScreen Email sign-in button opens email auth dialog', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(_buildLoginTestApp());
+
+      await tester.pumpAndSettle();
+
+      final emailButton = find.text('Sign in with Email');
+      expect(emailButton, findsOneWidget);
+
+      await tester.tap(emailButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Sign in with email'), findsOneWidget);
+      expect(find.text('Email'), findsOneWidget);
+      expect(find.text('Password'), findsOneWidget);
+    });
 
     testWidgets('LoginScreen Google sign-in button is displayed and tappable', (
       WidgetTester tester,
@@ -91,10 +110,10 @@ void main() {
       // Verify layout structure
       expect(
         find.byType(ElevatedButton),
-        findsNWidgets(2),
-      ); // Google and Apple buttons
+        findsNWidgets(3),
+      ); // Google, Email, and Apple buttons
       expect(find.byType(OutlinedButton), findsNothing);
-      expect(find.byType(SizedBox), findsNWidgets(3)); // Spacing widgets
+      expect(find.byType(SizedBox), findsNWidgets(4)); // Spacing widgets
     });
 
     testWidgets('LoginScreen buttons are properly styled', (
@@ -106,6 +125,7 @@ void main() {
 
       // Verify button styling (basic checks)
       final googleButton = find.text('Sign in with Google');
+      final emailButton = find.text('Sign in with Email');
       final appleButton = find.text('Sign in with Apple');
 
       expect(
@@ -114,6 +134,12 @@ void main() {
             of: googleButton,
             matching: find.byType(ElevatedButton),
           ),
+        ),
+        isNotNull,
+      );
+      expect(
+        tester.widget<ElevatedButton>(
+          find.ancestor(of: emailButton, matching: find.byType(ElevatedButton)),
         ),
         isNotNull,
       );
@@ -138,6 +164,7 @@ void main() {
 
       // Verify all elements are still visible on smaller screen
       expect(find.text('Sign in with Google'), findsOneWidget);
+      expect(find.text('Sign in with Email'), findsOneWidget);
       expect(find.text('Sign in with Apple'), findsOneWidget);
       expect(find.text('Play as Guest'), findsNothing);
 

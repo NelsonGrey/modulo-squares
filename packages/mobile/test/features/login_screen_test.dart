@@ -28,6 +28,7 @@ void main() {
 
     expect(find.textContaining('account is required'), findsOneWidget);
     expect(find.text('Sign in with Google'), findsOneWidget);
+    expect(find.text('Sign in with Email'), findsOneWidget);
     expect(find.text('Sign in with Apple'), findsOneWidget);
   });
 }

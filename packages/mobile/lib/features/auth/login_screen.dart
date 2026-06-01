@@ -16,6 +16,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
+  bool _authInProgress = false;
 
   @override
   void initState() {
@@ -36,6 +37,14 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _signInWithGoogle(BuildContext context) async {
+    if (_authInProgress) {
+      return;
+    }
+
+    setState(() {
+      _authInProgress = true;
+    });
+
     try {
       // First authenticate the user
       final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
@@ -82,10 +91,24 @@ class _LoginScreenState extends State<LoginScreen> {
           ErrorHandler().getAuthErrorMessage(e, context),
         );
       }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _authInProgress = false;
+        });
+      }
     }
   }
 
   Future<void> _signInWithApple(BuildContext context) async {
+    if (_authInProgress) {
+      return;
+    }
+
+    setState(() {
+      _authInProgress = true;
+    });
+
     try {
       final appleCredential = await SignInWithApple.getAppleIDCredential(
         scopes: [
@@ -116,7 +139,144 @@ class _LoginScreenState extends State<LoginScreen> {
           ErrorHandler().getAuthErrorMessage(e, context),
         );
       }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _authInProgress = false;
+        });
+      }
     }
+  }
+
+  Future<void> _authenticateWithEmailPassword(
+    BuildContext context, {
+    required String email,
+    required String password,
+    required bool createAccount,
+  }) async {
+    if (_authInProgress) {
+      return;
+    }
+
+    final normalizedEmail = email.trim();
+    if (normalizedEmail.isEmpty || password.isEmpty) {
+      ErrorHandler().showErrorSnackBar(
+        context,
+        'Email and password are required.',
+      );
+      return;
+    }
+
+    setState(() {
+      _authInProgress = true;
+    });
+
+    try {
+      if (createAccount) {
+        await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: normalizedEmail,
+          password: password,
+        );
+      } else {
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: normalizedEmail,
+          password: password,
+        );
+      }
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ErrorHandler().showErrorSnackBar(
+          context,
+          ErrorHandler().getAuthErrorMessage(e, context),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _authInProgress = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _openEmailSignInDialog(BuildContext context) async {
+    final emailController = TextEditingController();
+    final passwordController = TextEditingController();
+    var createAccount = false;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (localContext, setLocalState) {
+            return AlertDialog(
+              title: Text(
+                createAccount
+                    ? 'Create account with email'
+                    : 'Sign in with email',
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    decoration: const InputDecoration(labelText: 'Email'),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: passwordController,
+                    obscureText: true,
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    decoration: const InputDecoration(labelText: 'Password'),
+                  ),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () {
+                      setLocalState(() {
+                        createAccount = !createAccount;
+                      });
+                    },
+                    child: Text(
+                      createAccount
+                          ? 'Already have an account? Sign in'
+                          : 'Need an account? Create one',
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed:
+                      _authInProgress
+                          ? null
+                          : () => _authenticateWithEmailPassword(
+                            dialogContext,
+                            email: emailController.text,
+                            password: passwordController.text,
+                            createAccount: createAccount,
+                          ),
+                  child: Text(createAccount ? 'Create account' : 'Sign in'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    emailController.dispose();
+    passwordController.dispose();
   }
 
   @override
@@ -135,12 +295,19 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           const SizedBox(height: 20),
           ElevatedButton(
-            onPressed: () => _signInWithGoogle(context),
+            onPressed:
+                _authInProgress ? null : () => _signInWithGoogle(context),
             child: const Text('Sign in with Google'),
           ),
           const SizedBox(height: 12),
           ElevatedButton(
-            onPressed: () => _signInWithApple(context),
+            onPressed:
+                _authInProgress ? null : () => _openEmailSignInDialog(context),
+            child: const Text('Sign in with Email'),
+          ),
+          const SizedBox(height: 12),
+          ElevatedButton(
+            onPressed: _authInProgress ? null : () => _signInWithApple(context),
             child: const Text('Sign in with Apple'),
           ),
         ],
