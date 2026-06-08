@@ -1,7 +1,7 @@
 # Modulo Squares - Business Requirements Document
 
 **Version**: 1.0  
-**Last Updated**: February 12, 2026  
+**Last Updated**: June 2, 2026  
 **Status**: Approved  
 **Owner**: Mark Nelson
 
@@ -260,6 +260,24 @@ Create intellectually engaging puzzle experiences that prove mathematics can be 
 - **LTV:CAC Ratio**: 4-6:1 (healthy for ad-driven models)
 - **Payback Period**: Immediate (organic) to 3 months (paid acquisition)
 - **Break-even**: Month 6 at 5K DAU
+
+### 4.4 Access Tier and Ad Policy
+**Access model (current implementation)**:
+- **Guest (not authenticated)**: No gameplay entry in the active app flow.
+- **Logged-in (free)**: Full gameplay access with leaderboard participation.
+- **Paid logged-in (ad removal/premium)**: Full gameplay access with ads disabled.
+
+**Ad policy (current implementation)**:
+- Show interstitial ads between levels for logged-in free players.
+- Do not show ads during active level play.
+- Do not show ads to players with ad removal entitlement.
+
+**Product guardrails**:
+- Account-required play is the current default and should be reflected in auth copy.
+- Any future guest mode must define local progress rules, leaderboard restrictions, and conversion prompts.
+- Premium scope beyond ad removal must be explicitly documented and enforced in UI, services, and tests.
+
+Reference: see [Player Access Tiers](PLAYER_ACCESS_TIERS.md) for implementation-aligned detail.
 
 ---
 

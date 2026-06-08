@@ -45,6 +45,8 @@ class FallingModuloGameState {
   final int numberRangeMax;
   final int dropIntervalMs;
   final bool visualCuesEnabled;
+  final int fillBalance;
+  final int progressGridCellCount;
 
   const FallingModuloGameState({
     required this.level,
@@ -59,7 +61,17 @@ class FallingModuloGameState {
     required this.numberRangeMax,
     required this.dropIntervalMs,
     required this.visualCuesEnabled,
+    this.fillBalance = 0,
+    this.progressGridCellCount = 100,
   });
+
+  int get filledSquares {
+    if (fillBalance <= 0) return 0;
+    if (fillBalance >= progressGridCellCount) return progressGridCellCount;
+    return fillBalance;
+  }
+
+  int get deficitSquares => fillBalance < 0 ? -fillBalance : 0;
 
   double get horizontalMoveSpeedMultiplier {
     if (combo >= 8) return 1.30;
@@ -82,6 +94,8 @@ class FallingModuloGameState {
     int? numberRangeMin,
     int? numberRangeMax,
     int? dropIntervalMs,
+    int? fillBalance,
+    int? progressGridCellCount,
     Object? visualCuesEnabled = _unset,
   }) {
     return FallingModuloGameState(
@@ -96,6 +110,9 @@ class FallingModuloGameState {
       numberRangeMin: numberRangeMin ?? this.numberRangeMin,
       numberRangeMax: numberRangeMax ?? this.numberRangeMax,
       dropIntervalMs: dropIntervalMs ?? this.dropIntervalMs,
+      fillBalance: fillBalance ?? this.fillBalance,
+      progressGridCellCount:
+          progressGridCellCount ?? this.progressGridCellCount,
       visualCuesEnabled:
           identical(visualCuesEnabled, _unset)
               ? this.visualCuesEnabled
@@ -131,6 +148,8 @@ class FallingModuloGameEngine {
       numberRangeMax: range.max,
       dropIntervalMs: dropIntervalForLevel(level),
       visualCuesEnabled: visualCuesEnabled,
+      fillBalance: 0,
+      progressGridCellCount: 100,
     );
   }
 
@@ -175,6 +194,8 @@ class FallingModuloGameEngine {
 
     final scoreAfter = max(0, state.score + scoreDelta);
     final comboAfter = success ? state.combo + 1 : 0;
+    var nextFillBalance =
+        success ? state.fillBalance + 1 : state.fillBalance - remainder;
 
     var nextLevel = state.level;
     var nextResolvedCount = state.tilesResolvedInLevel + 1;
@@ -185,9 +206,10 @@ class FallingModuloGameEngine {
     var nextBuckets = state.bucketValues;
     var leveledUp = false;
 
-    if (nextResolvedCount >= state.targetTilesPerLevel) {
+    if (nextFillBalance >= state.progressGridCellCount) {
       nextLevel += 1;
       nextResolvedCount = 0;
+      nextFillBalance = 0;
       nextTargetTiles = targetTilesForLevel(nextLevel);
       nextDropInterval = dropIntervalForLevel(nextLevel);
       final range = numberRangeForLevel(nextLevel);
@@ -208,6 +230,7 @@ class FallingModuloGameEngine {
       numberRangeMin: nextRangeMin,
       numberRangeMax: nextRangeMax,
       dropIntervalMs: nextDropInterval,
+      fillBalance: nextFillBalance,
     );
 
     final resolution = FallingModuloResolution(
@@ -236,8 +259,8 @@ class FallingModuloGameEngine {
 
   static int dropIntervalForLevel(int level) {
     final safeLevel = level < 1 ? 1 : level;
-    final scaled = 1400 * pow(0.92, safeLevel - 1);
-    return max(450, scaled.floor());
+    final scaled = 6000 * pow(0.96, safeLevel - 1);
+    return max(1200, scaled.floor());
   }
 
   List<int> _randomizedBuckets() {

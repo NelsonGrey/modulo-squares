@@ -88,6 +88,9 @@ on:
         type: string
         default: "26.0"
 
+permissions:
+  contents: read
+
 jobs:
   ios-build:
     name: Build iOS App

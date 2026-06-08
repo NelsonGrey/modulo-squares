@@ -1,5 +1,5 @@
 {
-  "name": "modulo-monorepo",
+  "name": "modulo-squares",
   "version": "1.0.0",
   "description": "Modulo Squares - A Firebase-powered puzzle game monorepo",
   "private": true,
@@ -7,8 +7,6 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build:web",
-    "start": "node scripts/apphosting-server.js",
     "build:app": "cd packages/mobile && flutter build apk --release",
     "build:functions": "cd packages/functions && npm run build",
     "build:web": "cd packages/web && npm run build",
@@ -30,11 +28,17 @@
     "config:staging": "./scripts/switch-mobile-configs.sh staging",
     "config:prod": "./scripts/switch-mobile-configs.sh prod"
   },
+  "dependencies": {
+    "express": "^4.22.2"
+  },
   "devDependencies": {
-    "firebase": "^12.3.0",
-    "firebase-tools": "^13.0.0"
+    "firebase": "^12.14.0",
+    "firebase-tools": "^15.19.1"
+  },
+  "overrides": {
+    "uuid": "^11.1.1"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   }
 }

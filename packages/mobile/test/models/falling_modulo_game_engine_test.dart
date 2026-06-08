@@ -19,6 +19,7 @@ void main() {
           state.bucketValues,
           unorderedEquals([1, 2, 3, 4, 5, 6, 7, 8, 9]),
         );
+        expect(state.progressGridCellCount, 100);
       },
     );
 
@@ -44,6 +45,8 @@ void main() {
       expect(result.resolution.scoreDelta, 24);
       expect(result.state.score, 34);
       expect(result.state.combo, 1);
+      expect(result.state.fillBalance, 1);
+      expect(result.state.filledSquares, 1);
     });
 
     test('bucket value 1 adds zero score on success', () {
@@ -96,6 +99,8 @@ void main() {
         expect(result.resolution.scoreDelta, -160);
         expect(result.state.score, 0);
         expect(result.state.combo, 0);
+        expect(result.state.fillBalance, -2);
+        expect(result.state.deficitSquares, 2);
       },
     );
 
@@ -152,7 +157,7 @@ void main() {
         final initial = engine.createInitialState();
 
         final forcedPreLevelUp = initial.copyWith(
-          tilesResolvedInLevel: initial.targetTilesPerLevel - 1,
+          fillBalance: initial.progressGridCellCount - 1,
           currentFallingValue: 12,
           currentLane: 0,
         );
@@ -161,7 +166,8 @@ void main() {
 
         expect(result.resolution.leveledUp, true);
         expect(result.state.level, 2);
-        expect(result.state.tilesResolvedInLevel, 0);
+        expect(result.state.fillBalance, 0);
+        expect(result.state.filledSquares, 0);
         expect(result.state.numberRangeMin, 7);
         expect(result.state.numberRangeMax, 21);
         expect(
@@ -176,21 +182,47 @@ void main() {
       },
     );
 
+    test('failure removes remainder worth of filled squares into deficit', () {
+      final engine = FallingModuloGameEngine(random: Random(13));
+      final state = FallingModuloGameState(
+        level: 1,
+        score: 100,
+        combo: 2,
+        bucketValues: const [6, 2, 3, 4, 5, 7, 8, 9, 1],
+        currentFallingValue: 10, // remainder 4 against bucket 6
+        currentLane: 0,
+        tilesResolvedInLevel: 0,
+        targetTilesPerLevel: FallingModuloGameEngine.targetTilesForLevel(1),
+        numberRangeMin: 6,
+        numberRangeMax: 18,
+        dropIntervalMs: FallingModuloGameEngine.dropIntervalForLevel(1),
+        visualCuesEnabled: true,
+        fillBalance: 2,
+      );
+
+      final result = engine.resolveCurrentTile(state);
+      expect(result.resolution.success, isFalse);
+      expect(result.resolution.remainder, 4);
+      expect(result.state.fillBalance, -2);
+      expect(result.state.filledSquares, 0);
+      expect(result.state.deficitSquares, 2);
+    });
+
     group('dropIntervalForLevel', () {
-      test('level 1 returns 1400ms baseline', () {
-        expect(FallingModuloGameEngine.dropIntervalForLevel(1), 1400);
+      test('level 1 returns 6000ms baseline', () {
+        expect(FallingModuloGameEngine.dropIntervalForLevel(1), 6000);
       });
 
-      test('level 2 returns 1288ms (1400 * 0.92)', () {
-        expect(FallingModuloGameEngine.dropIntervalForLevel(2), 1288);
+      test('level 2 returns 5760ms (6000 * 0.96)', () {
+        expect(FallingModuloGameEngine.dropIntervalForLevel(2), 5760);
       });
 
-      test('level 10 returns 661ms', () {
-        expect(FallingModuloGameEngine.dropIntervalForLevel(10), 661);
+      test('level 10 returns 4155ms', () {
+        expect(FallingModuloGameEngine.dropIntervalForLevel(10), 4155);
       });
 
-      test('interval strictly decreases from level 1 to level 14', () {
-        for (var level = 2; level <= 14; level++) {
+      test('interval strictly decreases from level 1 to level 20', () {
+        for (var level = 2; level <= 20; level++) {
           expect(
             FallingModuloGameEngine.dropIntervalForLevel(level),
             lessThan(FallingModuloGameEngine.dropIntervalForLevel(level - 1)),
@@ -199,10 +231,10 @@ void main() {
         }
       });
 
-      test('interval floors at 450ms once scaling reaches the minimum', () {
-        expect(FallingModuloGameEngine.dropIntervalForLevel(14), 473);
-        expect(FallingModuloGameEngine.dropIntervalForLevel(15), 450);
-        expect(FallingModuloGameEngine.dropIntervalForLevel(50), 450);
+      test('interval floors at 1200ms once scaling reaches the minimum', () {
+        expect(FallingModuloGameEngine.dropIntervalForLevel(40), 1221);
+        expect(FallingModuloGameEngine.dropIntervalForLevel(41), 1200);
+        expect(FallingModuloGameEngine.dropIntervalForLevel(80), 1200);
       });
 
       test('clamped level < 1 treated as level 1', () {

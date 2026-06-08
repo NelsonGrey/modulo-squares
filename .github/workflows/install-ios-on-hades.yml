@@ -26,6 +26,9 @@ on:
         default: "Manual self-contained iOS distribution"
         type: string
 
+permissions:
+  contents: read
+
 jobs:
   distribute-ios:
     name: Build and Distribute iOS
