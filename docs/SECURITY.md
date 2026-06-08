@@ -69,6 +69,13 @@ The following files **MUST NEVER** be committed to version control:
 - Temporary files cleaned up after builds
 - Use environment-specific service accounts
 
+### Public Repository Controls
+- Keep repository license proprietary unless an open-source release is explicitly intended
+- Keep branch protection enabled on long-lived branches
+- Restrict GitHub Actions to trusted/verified allowlists
+- Disable forking if your GitHub plan/settings allow it
+- Move business-critical logic (anti-abuse, scoring, monetization) to private backend services
+
 ### Code Review
 - Check for accidentally committed secrets in PRs
 - Review `.gitignore` changes
@@ -86,6 +93,7 @@ The following files **MUST NEVER** be committed to version control:
 - [ ] Firebase tokens are valid and not expired
 - [ ] App Store Connect API key has correct permissions
 - [ ] Android keystore is properly configured (if used)
+- [ ] Public-repo hardening checklist reviewed (`docs/PUBLIC_REPO_HARDENING.md`)
 
 ### After Security Incident:
 - [ ] Compromised credentials revoked
@@ -102,5 +110,5 @@ If you suspect a security breach:
 
 ---
 
-**Last Updated**: December 4, 2025
-**Version**: 1.0.0
+**Last Updated**: June 8, 2026
+**Version**: 1.1.0

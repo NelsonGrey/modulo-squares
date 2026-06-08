@@ -36,6 +36,7 @@ This comprehensive documentation covers all aspects of the Modulo Squares projec
 - **[Deployment Guide](DEPLOYMENT_GUIDE.md)** - Deployment procedures
 - **[CI/CD Setup](CI_CD_SETUP.md)** - GitHub Actions automation
 - **[Security](SECURITY.md)** - Security guidelines and practices
+- **[Public Repo Hardening](PUBLIC_REPO_HARDENING.md)** - IP and abuse-risk controls for a public repository
 
 ### For Infrastructure
 - **[Docker Auth Setup](DOCKER_AUTH_SETUP.md)** - Container authentication
@@ -78,6 +79,7 @@ This comprehensive documentation covers all aspects of the Modulo Squares projec
 | [Performance & Scalability](PERFORMANCE_SCALABILITY.md) | Optimization, monitoring, load testing | Senior devs, DevOps |
 | [Testing](TESTING.md) | Unit, integration, widget testing | QA, all developers |
 | [Security](SECURITY.md) | Authentication, authorization, data protection | Security team, DevOps |
+| [Public Repo Hardening](PUBLIC_REPO_HARDENING.md) | IP protection and public-repo operational controls | Owner, security team, DevOps |
 
 ### 4. Operations & Deployment 🚀
 

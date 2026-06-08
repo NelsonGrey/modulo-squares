@@ -381,17 +381,13 @@ The app includes comprehensive Firebase Analytics tracking:
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+External code contributions are currently closed. This repository is public for transparency and operational needs, but development is maintained by the project owner.
 
-1. Fork the project
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+If you want to collaborate, open an issue describing your proposal first.
 
 ## 📄 License
 
-Distributed under the MIT License. See `LICENSE` file for more information.
+All rights reserved. See the `LICENSE` file for permitted use.
 
 ---
 
@@ -463,19 +459,11 @@ flutter test --coverage
 
 ## Contributing
 
-Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
-
-If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
-
-1.  Fork the Project
-2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4.  Push to the Branch (`git push origin feature/AmazingFeature`)
-5.  Open a Pull Request
+External code contributions are currently closed. For partnership or licensed use inquiries, open an issue and include your intended use.
 
 ## License
 
-Distributed under the MIT License. See `LICENSE` file for more information (you'll need to create this file if you want one).
+All rights reserved. See the `LICENSE` file for terms.
 
 ---
 
