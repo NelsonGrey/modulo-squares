@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:modulo_squares/core/services/error_handler.dart';
@@ -16,6 +17,7 @@ class LeaderboardService {
   ];
 
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  static final FirebaseFunctions _functions = FirebaseFunctions.instance;
   static final CollectionReference _scoresCollection = _firestore.collection(
     'modulo_leaderboard',
   );
@@ -99,10 +101,12 @@ class LeaderboardService {
         throw ArgumentError('Invalid score: must be between 0-999999');
       }
 
-      await _scoresCollection.doc(playerName).set({
+      await _functions.httpsCallable('submitScore').call({
+        'playerName': playerName,
         'score': score,
-        'timestamp': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+        'level': 1,
+        'clientTime': DateTime.now().millisecondsSinceEpoch,
+      });
 
       // Clear cache since data has changed
       await CacheService().clearLeaderboardCache();
@@ -124,16 +128,21 @@ class LeaderboardService {
       return Stream<List<Map<String, dynamic>>>.value(<Map<String, dynamic>>[]);
     }
 
-    return FirebaseFirestore.instance
-        .collection('modulo_leaderboard')
+    return _scoresCollection
         .orderBy('score', descending: true)
         .limit(limit)
         .snapshots()
         .map((snapshot) {
           final data =
               snapshot.docs.map((doc) {
-                final row = doc.data();
-                return {'name': doc.id, 'score': row['score'] ?? 0};
+                final row =
+                    (doc.data() as Map<String, dynamic>?) ??
+                    <String, dynamic>{};
+                final name = (row['playerName'] as String?)?.trim();
+                return {
+                  'name': (name == null || name.isEmpty) ? doc.id : name,
+                  'score': row['score'] ?? 0,
+                };
               }).toList();
 
           CacheService().cacheLeaderboardData(data);
@@ -193,11 +202,13 @@ class LeaderboardService {
         throw ArgumentError('Invalid score: must be between 0-999999');
       }
 
-      await _dailyScoresCollection(challengeId).doc(playerName).set({
-        'score': score,
+      await _functions.httpsCallable('submitDailyScore').call({
         'challengeId': challengeId,
-        'timestamp': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+        'playerName': playerName,
+        'score': score,
+        'level': 1,
+        'clientTime': DateTime.now().millisecondsSinceEpoch,
+      });
       return true;
     } catch (e) {
       ErrorHandler().logError('Submit daily score', e);
@@ -233,16 +244,13 @@ class LeaderboardService {
         throw ArgumentError('Invalid score: must be between 0-999999');
       }
 
-      final ref = _weeklyScoresCollection(weekId).doc(playerName);
-      final existing = await ref.get();
-      final existingScore = (existing.data()?['score'] as num?)?.toInt() ?? 0;
-      final bestScore = score > existingScore ? score : existingScore;
-
-      await ref.set({
-        'score': bestScore,
+      await _functions.httpsCallable('submitWeeklyScore').call({
         'weekId': weekId,
-        'timestamp': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+        'playerName': playerName,
+        'score': score,
+        'level': 1,
+        'clientTime': DateTime.now().millisecondsSinceEpoch,
+      });
       return true;
     } catch (e) {
       ErrorHandler().logError('Submit weekly score', e);
@@ -273,7 +281,11 @@ class LeaderboardService {
         .map((snapshot) {
           return snapshot.docs.map((doc) {
             final row = doc.data();
-            return {'name': doc.id, 'score': row['score'] ?? 0};
+            final name = (row['playerName'] as String?)?.trim();
+            return {
+              'name': (name == null || name.isEmpty) ? doc.id : name,
+              'score': row['score'] ?? 0,
+            };
           }).toList();
         })
         .handleError((error) {
@@ -298,7 +310,11 @@ class LeaderboardService {
         .map((snapshot) {
           return snapshot.docs.map((doc) {
             final row = doc.data();
-            return {'name': doc.id, 'score': row['score'] ?? 0};
+            final name = (row['playerName'] as String?)?.trim();
+            return {
+              'name': (name == null || name.isEmpty) ? doc.id : name,
+              'score': row['score'] ?? 0,
+            };
           }).toList();
         })
         .handleError((error) {
@@ -321,7 +337,8 @@ class LeaderboardService {
 
       final docs = snapshot.docs;
       for (int i = 0; i < docs.length; i++) {
-        if (docs[i].id == playerName) {
+        final row = docs[i].data();
+        if (docs[i].id == playerName || row['playerName'] == playerName) {
           return i + 1;
         }
       }
@@ -346,7 +363,8 @@ class LeaderboardService {
 
       final docs = snapshot.docs;
       for (int i = 0; i < docs.length; i++) {
-        if (docs[i].id == playerName) {
+        final row = docs[i].data();
+        if (docs[i].id == playerName || row['playerName'] == playerName) {
           return i + 1;
         }
       }

@@ -21,51 +21,80 @@ app.get('/health', (req, res) => {
   });
 });
 
+const SCORE_SUBMIT_MIN_INTERVAL_MS = 15000;
+
+function validateLeaderboardPayload({ score, level, playerName }) {
+  if (typeof score !== 'number' || score < 0 || score > 999999 || !Number.isInteger(score)) {
+    throw new functions.https.HttpsError('invalid-argument', 'Invalid score: must be integer between 0-999999');
+  }
+
+  if (typeof level !== 'number' || level < 1 || level > 200 || !Number.isInteger(level)) {
+    throw new functions.https.HttpsError('invalid-argument', 'Invalid level: must be integer between 1-200');
+  }
+
+  if (typeof playerName !== 'string' || playerName.trim().length < 1 || playerName.trim().length > 50) {
+    throw new functions.https.HttpsError('invalid-argument', 'Invalid player name: must be 1-50 characters');
+  }
+
+  return playerName.trim();
+}
+
+async function enforceScoreRateLimit(uid, bucketKey) {
+  const userRef = admin.firestore().collection('users').doc(uid);
+  const userSnap = await userRef.get();
+  const now = Date.now();
+  const rateLimits = userSnap.data()?.scoreSubmitRateLimits || {};
+  const lastSubmit = Number(rateLimits[bucketKey] || 0);
+
+  if (now - lastSubmit < SCORE_SUBMIT_MIN_INTERVAL_MS) {
+    throw new functions.https.HttpsError(
+      'resource-exhausted',
+      'Too many submissions. Please wait before submitting again.'
+    );
+  }
+
+  await userRef.set(
+    {
+      scoreSubmitRateLimits: {
+        [bucketKey]: now,
+      },
+      lastScoreSubmit: now,
+    },
+    { merge: true }
+  );
+
+  return now;
+}
+
 // Cloud Function to validate and process leaderboard submissions
 export const submitScore = functions.https.onCall(async (data, context) => {
   // Verify user is authenticated
   const user = FunctionsAuthHelpers.verifyAuthenticated(context);
   const { uid, email } = user;
 
-  const { score, level, clientTime } = data;
-
-  // Comprehensive input validation
-  if (typeof score !== 'number' || score < 0 || score > 999999 || !Number.isInteger(score)) {
-    throw new functions.https.HttpsError('invalid-argument', 'Invalid score: must be integer between 0-999999');
-  }
-
-  if (typeof level !== 'number' || level < 1 || level > 100 || !Number.isInteger(level)) {
-    throw new functions.https.HttpsError('invalid-argument', 'Invalid level: must be integer between 1-100');
-  }
+  const { score, level, clientTime, playerName } = data;
+  const safePlayerName = validateLeaderboardPayload({ score, level, playerName });
 
   try {
-    // Rate limiting: Check user's last submission
-    const userRef = admin.firestore().collection('users').doc(uid);
-    const userData = await userRef.get();
-    const lastSubmit = userData.data()?.lastScoreSubmit || 0;
-    const now = Date.now();
+    const now = await enforceScoreRateLimit(uid, 'global');
 
-    if (now - lastSubmit < 30000) { // 30 second minimum between submissions
-      throw new functions.https.HttpsError('resource-exhausted', 'Too many submissions. Please wait 30 seconds.');
-    }
+    const leaderboardRef = admin.firestore().collection('modulo_leaderboard').doc(uid);
+    const existing = await leaderboardRef.get();
+    const existingScore = Number(existing.data()?.score || 0);
+    const bestScore = Math.max(existingScore, score);
 
-    // Store score in Firestore with metadata for fraud detection
-    await admin.firestore().collection('modulo_leaderboard').add({
+    // Store best score per authenticated player with metadata for abuse analysis.
+    await leaderboardRef.set({
       userId: uid,
+      playerName: safePlayerName,
       userEmail: email || 'anonymous',
-      score,
+      score: bestScore,
       level,
       timestamp: admin.firestore.FieldValue.serverTimestamp(),
       clientTime: clientTime || now,
       serverTime: now,
       ipAddress: context.rawRequest.ip,
-    });
-
-    // Update user's last submission timestamp
-    await userRef.set(
-      { lastScoreSubmit: now, email: email || '' },
-      { merge: true }
-    );
+    }, { merge: true });
 
     return { success: true, message: 'Score submitted successfully' };
   } catch (error) {
@@ -74,6 +103,98 @@ export const submitScore = functions.https.onCall(async (data, context) => {
       throw error;
     }
     throw new functions.https.HttpsError('internal', 'Failed to submit score');
+  }
+});
+
+export const submitDailyScore = functions.https.onCall(async (data, context) => {
+  const user = FunctionsAuthHelpers.verifyAuthenticated(context);
+  const { uid } = user;
+  const { challengeId, score, level, playerName, clientTime } = data;
+
+  if (typeof challengeId !== 'number' || challengeId <= 0 || !Number.isInteger(challengeId)) {
+    throw new functions.https.HttpsError('invalid-argument', 'Invalid challenge id');
+  }
+
+  const safePlayerName = validateLeaderboardPayload({ score, level, playerName });
+
+  try {
+    const now = await enforceScoreRateLimit(uid, `daily_${challengeId}`);
+    const docRef = admin
+      .firestore()
+      .collection('modulo_daily_leaderboard')
+      .doc(String(challengeId))
+      .collection('scores')
+      .doc(uid);
+
+    const existing = await docRef.get();
+    const existingScore = Number(existing.data()?.score || 0);
+    const bestScore = Math.max(existingScore, score);
+
+    await docRef.set({
+      userId: uid,
+      playerName: safePlayerName,
+      challengeId,
+      score: bestScore,
+      level,
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      clientTime: clientTime || now,
+      serverTime: now,
+      ipAddress: context.rawRequest.ip,
+    }, { merge: true });
+
+    return { success: true, message: 'Daily score submitted successfully' };
+  } catch (error) {
+    console.error('Error submitting daily score:', error);
+    if (error instanceof functions.https.HttpsError) {
+      throw error;
+    }
+    throw new functions.https.HttpsError('internal', 'Failed to submit daily score');
+  }
+});
+
+export const submitWeeklyScore = functions.https.onCall(async (data, context) => {
+  const user = FunctionsAuthHelpers.verifyAuthenticated(context);
+  const { uid } = user;
+  const { weekId, score, level, playerName, clientTime } = data;
+
+  if (typeof weekId !== 'number' || weekId <= 0 || !Number.isInteger(weekId)) {
+    throw new functions.https.HttpsError('invalid-argument', 'Invalid week id');
+  }
+
+  const safePlayerName = validateLeaderboardPayload({ score, level, playerName });
+
+  try {
+    const now = await enforceScoreRateLimit(uid, `weekly_${weekId}`);
+    const docRef = admin
+      .firestore()
+      .collection('modulo_weekly_leaderboard')
+      .doc(String(weekId))
+      .collection('scores')
+      .doc(uid);
+
+    const existing = await docRef.get();
+    const existingScore = Number(existing.data()?.score || 0);
+    const bestScore = Math.max(existingScore, score);
+
+    await docRef.set({
+      userId: uid,
+      playerName: safePlayerName,
+      weekId,
+      score: bestScore,
+      level,
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      clientTime: clientTime || now,
+      serverTime: now,
+      ipAddress: context.rawRequest.ip,
+    }, { merge: true });
+
+    return { success: true, message: 'Weekly score submitted successfully' };
+  } catch (error) {
+    console.error('Error submitting weekly score:', error);
+    if (error instanceof functions.https.HttpsError) {
+      throw error;
+    }
+    throw new functions.https.HttpsError('internal', 'Failed to submit weekly score');
   }
 });
 
