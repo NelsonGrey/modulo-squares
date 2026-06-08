@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:modulo_squares/core/services/error_handler.dart';
@@ -16,15 +17,24 @@ class _TestInAppPurchase implements InAppPurchase {
   Stream<List<PurchaseDetails>> get purchaseStream => Stream.empty();
 
   @override
-  Future<ProductDetailsResponse> queryProductDetails(Set<String> identifiers) async {
-    return ProductDetailsResponse(productDetails: [], notFoundIDs: identifiers.toList());
+  Future<ProductDetailsResponse> queryProductDetails(
+    Set<String> identifiers,
+  ) async {
+    return ProductDetailsResponse(
+      productDetails: [],
+      notFoundIDs: identifiers.toList(),
+    );
   }
 
   @override
-  Future<bool> buyConsumable({required PurchaseParam purchaseParam, bool autoConsume = true}) async => true;
+  Future<bool> buyConsumable({
+    required PurchaseParam purchaseParam,
+    bool autoConsume = true,
+  }) async => true;
 
   @override
-  Future<bool> buyNonConsumable({required PurchaseParam purchaseParam}) async => true;
+  Future<bool> buyNonConsumable({required PurchaseParam purchaseParam}) async =>
+      true;
 
   @override
   Future<void> completePurchase(PurchaseDetails purchase) async {}
@@ -39,8 +49,11 @@ class _TestInAppPurchase implements InAppPurchase {
 /// Service for handling in-app purchases, specifically ad removal
 class PurchaseService {
   PurchaseService._([InAppPurchase? inAppPurchase, bool testMode = false])
-      : _inAppPurchase = testMode ? _TestInAppPurchase() : (inAppPurchase ?? InAppPurchase.instance),
-        _testMode = testMode;
+    : _inAppPurchase =
+          testMode
+              ? _TestInAppPurchase()
+              : (inAppPurchase ?? InAppPurchase.instance),
+      _testMode = testMode;
 
   static PurchaseService? _instance;
 
@@ -70,6 +83,7 @@ class PurchaseService {
 
   final InAppPurchase _inAppPurchase;
   final bool _testMode;
+  final FirebaseFunctions _functions = FirebaseFunctions.instance;
 
   // Method for testing to reset the singleton instance
   static void resetInstance() {
@@ -78,7 +92,8 @@ class PurchaseService {
 
   StreamSubscription<List<PurchaseDetails>>? _subscription;
 
-  final StreamController<PurchaseResult> _purchaseController = StreamController<PurchaseResult>.broadcast();
+  final StreamController<PurchaseResult> _purchaseController =
+      StreamController<PurchaseResult>.broadcast();
   Stream<PurchaseResult> get purchaseStream => _purchaseController.stream;
 
   List<ProductDetails> _products = [];
@@ -111,6 +126,7 @@ class PurchaseService {
 
     // Load saved purchase states
     await _loadPurchaseStates();
+    await _refreshEntitlementsFromServer();
 
     // Listen to purchase updates
     _subscription = _inAppPurchase.purchaseStream.listen(
@@ -128,7 +144,8 @@ class PurchaseService {
   /// Query available products from the store
   Future<void> _queryProductDetails() async {
     final Set<String> productIds = {_adRemovalProductId, _premiumProductId};
-    final ProductDetailsResponse response = await _inAppPurchase.queryProductDetails(productIds);
+    final ProductDetailsResponse response = await _inAppPurchase
+        .queryProductDetails(productIds);
 
     if (response.error != null) {
       ErrorHandler().logError('Query product details', response.error);
@@ -148,7 +165,7 @@ class PurchaseService {
           break;
         case PurchaseStatus.purchased:
         case PurchaseStatus.restored:
-          _completePurchase(purchaseDetails);
+          unawaited(_completePurchase(purchaseDetails));
           break;
         case PurchaseStatus.error:
           ErrorHandler().logError('Purchase error', purchaseDetails.error);
@@ -167,23 +184,56 @@ class PurchaseService {
   }
 
   /// Complete a successful purchase
-  void _completePurchase(PurchaseDetails purchaseDetails) {
+  Future<void> _completePurchase(PurchaseDetails purchaseDetails) async {
     final String productId = purchaseDetails.productID;
 
-    switch (productId) {
-      case _adRemovalProductId:
-        _adsRemoved = true;
-        _savePurchaseState(_adRemovalPrefKey, true);
-        break;
-      case _premiumProductId:
-        _premiumUnlocked = true;
-        _adsRemoved = true; // Premium includes ad removal
-        _savePurchaseState(_premiumPrefKey, true);
-        _savePurchaseState(_adRemovalPrefKey, true);
-        break;
-    }
+    try {
+      if (_testMode) {
+        // Keep tests deterministic without network dependencies.
+        switch (productId) {
+          case _adRemovalProductId:
+            _adsRemoved = true;
+            await _savePurchaseState(_adRemovalPrefKey, true);
+            break;
+          case _premiumProductId:
+            _premiumUnlocked = true;
+            _adsRemoved = true;
+            await _savePurchaseState(_premiumPrefKey, true);
+            await _savePurchaseState(_adRemovalPrefKey, true);
+            break;
+        }
+        _purchaseController.add(PurchaseResult.completed);
+        return;
+      }
 
-    _purchaseController.add(PurchaseResult.completed);
+      final receipt = purchaseDetails.verificationData.serverVerificationData;
+      final transactionId = purchaseDetails.purchaseID ?? '';
+      final platform = _resolvePlatform();
+
+      final result = await _functions.httpsCallable('validatePurchase').call({
+        'productId': productId,
+        'purchaseToken': receipt,
+        'transactionId': transactionId,
+        'platform': platform,
+      });
+
+      final data = Map<String, dynamic>.from(
+        (result.data as Map?) ?? <String, dynamic>{},
+      );
+      final entitlements = Map<String, dynamic>.from(
+        (data['entitlements'] as Map?) ?? <String, dynamic>{},
+      );
+
+      _adsRemoved = entitlements['adsRemoved'] == true;
+      _premiumUnlocked = entitlements['premiumUnlocked'] == true;
+      await _savePurchaseState(_adRemovalPrefKey, _adsRemoved);
+      await _savePurchaseState(_premiumPrefKey, _premiumUnlocked);
+
+      _purchaseController.add(PurchaseResult.completed);
+    } catch (error) {
+      ErrorHandler().logError('Complete purchase validation', error);
+      _purchaseController.add(PurchaseResult.error);
+    }
   }
 
   /// Initiate purchase for ad removal
@@ -198,10 +248,9 @@ class PurchaseService {
 
   /// Purchase a specific product
   Future<void> _purchaseProduct(String productId) async {
-    final ProductDetails? product = _products.cast<ProductDetails?>().firstWhere(
-          (element) => element?.id == productId,
-          orElse: () => null,
-        );
+    final ProductDetails? product = _products
+        .cast<ProductDetails?>()
+        .firstWhere((element) => element?.id == productId, orElse: () => null);
 
     if (product == null) {
       final error = 'Product not found: $productId';
@@ -217,6 +266,7 @@ class PurchaseService {
   /// Restore previous purchases
   Future<void> restorePurchases() async {
     await _inAppPurchase.restorePurchases();
+    await _refreshEntitlementsFromServer();
   }
 
   /// Load saved purchase states from SharedPreferences
@@ -224,6 +274,34 @@ class PurchaseService {
     final prefs = await SharedPreferences.getInstance();
     _adsRemoved = prefs.getBool(_adRemovalPrefKey) ?? false;
     _premiumUnlocked = prefs.getBool(_premiumPrefKey) ?? false;
+  }
+
+  Future<void> _refreshEntitlementsFromServer() async {
+    if (_testMode) return;
+    try {
+      final result = await _functions.httpsCallable('getEntitlements').call();
+      final data = Map<String, dynamic>.from(
+        (result.data as Map?) ?? <String, dynamic>{},
+      );
+
+      _adsRemoved = data['adsRemoved'] == true;
+      _premiumUnlocked = data['premiumUnlocked'] == true;
+
+      await _savePurchaseState(_adRemovalPrefKey, _adsRemoved);
+      await _savePurchaseState(_premiumPrefKey, _premiumUnlocked);
+    } catch (error) {
+      ErrorHandler().logError('Refresh entitlements', error);
+    }
+  }
+
+  String _resolvePlatform() {
+    final source = _inAppPurchase.toString().toLowerCase();
+    if (source.contains('storekit') ||
+        source.contains('ios') ||
+        source.contains('apple')) {
+      return 'ios';
+    }
+    return 'android';
   }
 
   /// Save purchase state to SharedPreferences
@@ -236,14 +314,15 @@ class PurchaseService {
   String getProductPrice(String productId) {
     final product = _products.firstWhere(
       (element) => element.id == productId,
-      orElse: () => ProductDetails(
-        id: productId,
-        title: 'Unknown Product',
-        description: '',
-        price: '\$0.00',
-        rawPrice: 0.0,
-        currencyCode: 'USD',
-      ),
+      orElse:
+          () => ProductDetails(
+            id: productId,
+            title: 'Unknown Product',
+            description: '',
+            price: '\$0.00',
+            rawPrice: 0.0,
+            currencyCode: 'USD',
+          ),
     );
     return product.price;
   }
@@ -268,11 +347,4 @@ class PurchaseService {
 }
 
 /// Purchase result enum for our service
-enum PurchaseResult {
-  unavailable,
-  ready,
-  pending,
-  completed,
-  error,
-  cancelled,
-}
+enum PurchaseResult { unavailable, ready, pending, completed, error, cancelled }
