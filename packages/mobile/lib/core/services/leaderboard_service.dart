@@ -18,6 +18,7 @@ class LeaderboardService {
 
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static final FirebaseFunctions _functions = FirebaseFunctions.instance;
+  static final Map<String, ({String id, int expiresAt})> _scoreSessions = {};
   static final CollectionReference _scoresCollection = _firestore.collection(
     'modulo_leaderboard',
   );
@@ -85,6 +86,39 @@ class LeaderboardService {
     return _isFirebaseReady && FirebaseAuth.instance.currentUser != null;
   }
 
+  static Future<String> _getScoreSessionId({
+    required String mode,
+    int? challengeId,
+    int? weekId,
+  }) async {
+    final key = '$mode:${challengeId ?? 0}:${weekId ?? 0}';
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final cached = _scoreSessions[key];
+    if (cached != null && cached.expiresAt > now + 5000) {
+      return cached.id;
+    }
+
+    final payload = <String, dynamic>{'mode': mode};
+    if (challengeId != null) payload['challengeId'] = challengeId;
+    if (weekId != null) payload['weekId'] = weekId;
+
+    final response = await _functions
+        .httpsCallable('startScoreSession')
+        .call(payload);
+    final data = Map<String, dynamic>.from(
+      (response.data as Map?) ?? <String, dynamic>{},
+    );
+    final sessionId = (data['sessionId'] as String?)?.trim();
+    final expiresAt = (data['expiresAt'] as num?)?.toInt() ?? 0;
+
+    if (sessionId == null || sessionId.isEmpty) {
+      throw StateError('Failed to obtain score session');
+    }
+
+    _scoreSessions[key] = (id: sessionId, expiresAt: expiresAt);
+    return sessionId;
+  }
+
   /// Submit a score for a player. Overwrites if player already exists.
   static Future<void> submitScore(
     BuildContext context,
@@ -101,10 +135,13 @@ class LeaderboardService {
         throw ArgumentError('Invalid score: must be between 0-999999');
       }
 
+      final scoreSessionId = await _getScoreSessionId(mode: 'global');
+
       await _functions.httpsCallable('submitScore').call({
         'playerName': playerName,
         'score': score,
         'level': 1,
+        'scoreSessionId': scoreSessionId,
         'clientTime': DateTime.now().millisecondsSinceEpoch,
       });
 
@@ -202,11 +239,17 @@ class LeaderboardService {
         throw ArgumentError('Invalid score: must be between 0-999999');
       }
 
+      final scoreSessionId = await _getScoreSessionId(
+        mode: 'daily',
+        challengeId: challengeId,
+      );
+
       await _functions.httpsCallable('submitDailyScore').call({
         'challengeId': challengeId,
         'playerName': playerName,
         'score': score,
         'level': 1,
+        'scoreSessionId': scoreSessionId,
         'clientTime': DateTime.now().millisecondsSinceEpoch,
       });
       return true;
@@ -244,11 +287,17 @@ class LeaderboardService {
         throw ArgumentError('Invalid score: must be between 0-999999');
       }
 
+      final scoreSessionId = await _getScoreSessionId(
+        mode: 'weekly',
+        weekId: weekId,
+      );
+
       await _functions.httpsCallable('submitWeeklyScore').call({
         'weekId': weekId,
         'playerName': playerName,
         'score': score,
         'level': 1,
+        'scoreSessionId': scoreSessionId,
         'clientTime': DateTime.now().millisecondsSinceEpoch,
       });
       return true;

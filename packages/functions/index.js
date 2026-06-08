@@ -1,6 +1,7 @@
 import * as functions from 'firebase-functions/v1';
 import admin from 'firebase-admin';
 import express from 'express';
+import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 
 // Import shared utilities
@@ -22,6 +23,8 @@ app.get('/health', (req, res) => {
 });
 
 const SCORE_SUBMIT_MIN_INTERVAL_MS = 15000;
+const SCORE_SESSION_TTL_MS = 20 * 60 * 1000;
+const PURCHASE_PRODUCTS = new Set(['remove_ads', 'premium_version']);
 
 function validateLeaderboardPayload({ score, level, playerName }) {
   if (typeof score !== 'number' || score < 0 || score > 999999 || !Number.isInteger(score)) {
@@ -66,16 +69,114 @@ async function enforceScoreRateLimit(uid, bucketKey) {
   return now;
 }
 
+async function issueScoreSession({ uid, mode, challengeId = null, weekId = null }) {
+  const sessionRef = admin.firestore().collection('score_sessions').doc();
+  const now = Date.now();
+  const expiresAt = now + SCORE_SESSION_TTL_MS;
+  const nonce = crypto.randomBytes(16).toString('hex');
+
+  await sessionRef.set({
+    uid,
+    mode,
+    challengeId,
+    weekId,
+    nonce,
+    issuedAt: now,
+    expiresAt,
+    consumed: false,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+
+  return {
+    sessionId: sessionRef.id,
+    nonce,
+    expiresAt,
+  };
+}
+
+async function consumeScoreSession({ uid, sessionId, mode, challengeId = null, weekId = null }) {
+  if (typeof sessionId !== 'string' || sessionId.trim().length < 8) {
+    throw new functions.https.HttpsError('failed-precondition', 'Missing or invalid score session');
+  }
+
+  const ref = admin.firestore().collection('score_sessions').doc(sessionId.trim());
+  const snap = await ref.get();
+  const now = Date.now();
+
+  if (!snap.exists) {
+    throw new functions.https.HttpsError('failed-precondition', 'Score session not found');
+  }
+
+  const data = snap.data() || {};
+  if (data.uid !== uid) {
+    throw new functions.https.HttpsError('permission-denied', 'Score session does not belong to caller');
+  }
+  if (data.consumed === true) {
+    throw new functions.https.HttpsError('failed-precondition', 'Score session already consumed');
+  }
+  if (typeof data.expiresAt !== 'number' || data.expiresAt < now) {
+    throw new functions.https.HttpsError('failed-precondition', 'Score session expired');
+  }
+  if (data.mode !== mode) {
+    throw new functions.https.HttpsError('failed-precondition', 'Score session mode mismatch');
+  }
+  if (mode === 'daily' && Number(data.challengeId) !== Number(challengeId)) {
+    throw new functions.https.HttpsError('failed-precondition', 'Score session challenge mismatch');
+  }
+  if (mode === 'weekly' && Number(data.weekId) !== Number(weekId)) {
+    throw new functions.https.HttpsError('failed-precondition', 'Score session week mismatch');
+  }
+
+  await ref.set(
+    {
+      consumed: true,
+      consumedAt: now,
+      consumedAtServer: admin.firestore.FieldValue.serverTimestamp(),
+    },
+    { merge: true }
+  );
+}
+
+export const startScoreSession = functions.https.onCall(async (data, context) => {
+  const user = FunctionsAuthHelpers.verifyAuthenticated(context);
+  const { uid } = user;
+  const mode = data?.mode;
+
+  if (!['global', 'daily', 'weekly'].includes(mode)) {
+    throw new functions.https.HttpsError('invalid-argument', 'Invalid score mode');
+  }
+
+  let challengeId = null;
+  let weekId = null;
+
+  if (mode === 'daily') {
+    challengeId = data?.challengeId;
+    if (typeof challengeId !== 'number' || challengeId <= 0 || !Number.isInteger(challengeId)) {
+      throw new functions.https.HttpsError('invalid-argument', 'Invalid challenge id');
+    }
+  }
+
+  if (mode === 'weekly') {
+    weekId = data?.weekId;
+    if (typeof weekId !== 'number' || weekId <= 0 || !Number.isInteger(weekId)) {
+      throw new functions.https.HttpsError('invalid-argument', 'Invalid week id');
+    }
+  }
+
+  return issueScoreSession({ uid, mode, challengeId, weekId });
+});
+
 // Cloud Function to validate and process leaderboard submissions
 export const submitScore = functions.https.onCall(async (data, context) => {
   // Verify user is authenticated
   const user = FunctionsAuthHelpers.verifyAuthenticated(context);
   const { uid, email } = user;
 
-  const { score, level, clientTime, playerName } = data;
+  const { score, level, clientTime, playerName, scoreSessionId } = data;
   const safePlayerName = validateLeaderboardPayload({ score, level, playerName });
 
   try {
+    await consumeScoreSession({ uid, sessionId: scoreSessionId, mode: 'global' });
     const now = await enforceScoreRateLimit(uid, 'global');
 
     const leaderboardRef = admin.firestore().collection('modulo_leaderboard').doc(uid);
@@ -109,7 +210,7 @@ export const submitScore = functions.https.onCall(async (data, context) => {
 export const submitDailyScore = functions.https.onCall(async (data, context) => {
   const user = FunctionsAuthHelpers.verifyAuthenticated(context);
   const { uid } = user;
-  const { challengeId, score, level, playerName, clientTime } = data;
+  const { challengeId, score, level, playerName, clientTime, scoreSessionId } = data;
 
   if (typeof challengeId !== 'number' || challengeId <= 0 || !Number.isInteger(challengeId)) {
     throw new functions.https.HttpsError('invalid-argument', 'Invalid challenge id');
@@ -118,6 +219,12 @@ export const submitDailyScore = functions.https.onCall(async (data, context) => 
   const safePlayerName = validateLeaderboardPayload({ score, level, playerName });
 
   try {
+    await consumeScoreSession({
+      uid,
+      sessionId: scoreSessionId,
+      mode: 'daily',
+      challengeId,
+    });
     const now = await enforceScoreRateLimit(uid, `daily_${challengeId}`);
     const docRef = admin
       .firestore()
@@ -155,7 +262,7 @@ export const submitDailyScore = functions.https.onCall(async (data, context) => 
 export const submitWeeklyScore = functions.https.onCall(async (data, context) => {
   const user = FunctionsAuthHelpers.verifyAuthenticated(context);
   const { uid } = user;
-  const { weekId, score, level, playerName, clientTime } = data;
+  const { weekId, score, level, playerName, clientTime, scoreSessionId } = data;
 
   if (typeof weekId !== 'number' || weekId <= 0 || !Number.isInteger(weekId)) {
     throw new functions.https.HttpsError('invalid-argument', 'Invalid week id');
@@ -164,6 +271,12 @@ export const submitWeeklyScore = functions.https.onCall(async (data, context) =>
   const safePlayerName = validateLeaderboardPayload({ score, level, playerName });
 
   try {
+    await consumeScoreSession({
+      uid,
+      sessionId: scoreSessionId,
+      mode: 'weekly',
+      weekId,
+    });
     const now = await enforceScoreRateLimit(uid, `weekly_${weekId}`);
     const docRef = admin
       .firestore()
@@ -225,28 +338,91 @@ export const getTopScores = functions.https.onCall(async (data, context) => {
 export const validatePurchase = functions.https.onCall(async (data, context) => {
   // Verify user is authenticated
   const user = FunctionsAuthHelpers.verifyAuthenticated(context);
-  const { uid } = user;
+  const { uid, email } = user;
 
-  const { productId, purchaseToken } = data;
+  const { productId, purchaseToken, transactionId, platform } = data;
 
-  // In a real implementation, you would validate with the app store
-  // For now, we'll just mark the purchase as valid
+  if (!PURCHASE_PRODUCTS.has(productId)) {
+    throw new functions.https.HttpsError('invalid-argument', 'Unsupported product id');
+  }
+  if (typeof purchaseToken !== 'string' || purchaseToken.length < 10 || purchaseToken.length > 4096) {
+    throw new functions.https.HttpsError('invalid-argument', 'Invalid purchase token');
+  }
+  if (!['ios', 'android'].includes(platform)) {
+    throw new functions.https.HttpsError('invalid-argument', 'Invalid purchase platform');
+  }
+
+  const txId =
+    typeof transactionId === 'string' && transactionId.trim().length > 0
+      ? transactionId.trim()
+      : crypto.createHash('sha256').update(`${uid}:${productId}:${purchaseToken}`).digest('hex');
+
   try {
-    const userId = uid;
+    const entitlementsRef = admin.firestore().collection('entitlements').doc(uid);
+    const txRef = admin
+      .firestore()
+      .collection('purchases')
+      .doc(uid)
+      .collection('transactions')
+      .doc(txId);
 
-    // Store purchase validation in Firestore
-    await admin.firestore().collection('purchases').doc(userId).set({
-      [productId]: {
-        validated: true,
-        timestamp: admin.firestore.FieldValue.serverTimestamp(),
-        purchaseToken,
-      }
-    }, { merge: true });
+    await txRef.set(
+      {
+        uid,
+        email: email || null,
+        productId,
+        platform,
+        purchaseTokenHash: crypto.createHash('sha256').update(purchaseToken).digest('hex'),
+        status: 'validated_locally',
+        validatedAt: Date.now(),
+        validatedAtServer: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
 
-    return { valid: true, message: 'Purchase validated successfully' };
+    const entitlementPatch = {
+      adsRemoved: productId === 'remove_ads' || productId === 'premium_version',
+      premiumUnlocked: productId === 'premium_version',
+      updatedAt: Date.now(),
+      updatedAtServer: admin.firestore.FieldValue.serverTimestamp(),
+      source: 'validatePurchaseCallable',
+      lastProductId: productId,
+      lastTransactionId: txId,
+    };
+
+    await entitlementsRef.set(entitlementPatch, { merge: true });
+
+    return {
+      valid: true,
+      message: 'Purchase validated successfully',
+      entitlements: {
+        adsRemoved: entitlementPatch.adsRemoved,
+        premiumUnlocked: entitlementPatch.premiumUnlocked,
+      },
+    };
   } catch (error) {
     console.error('Error validating purchase:', error);
     throw new functions.https.HttpsError('internal', 'Failed to validate purchase');
+  }
+});
+
+export const getEntitlements = functions.https.onCall(async (_data, context) => {
+  const user = FunctionsAuthHelpers.verifyAuthenticated(context);
+  const { uid } = user;
+
+  try {
+    const entitlementsRef = admin.firestore().collection('entitlements').doc(uid);
+    const snap = await entitlementsRef.get();
+    const data = snap.data() || {};
+
+    return {
+      adsRemoved: data.adsRemoved === true,
+      premiumUnlocked: data.premiumUnlocked === true,
+      updatedAt: data.updatedAt || null,
+    };
+  } catch (error) {
+    console.error('Error getting entitlements:', error);
+    throw new functions.https.HttpsError('internal', 'Failed to get entitlements');
   }
 });
 

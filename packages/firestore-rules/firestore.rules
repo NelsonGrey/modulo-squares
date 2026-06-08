@@ -19,9 +19,21 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Purchases collection - only the user can read/write their own purchases
+    // Purchases are server-authoritative. Clients can read their own records but cannot write.
     match /purchases/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false;
+    }
+
+    match /purchases/{userId}/transactions/{transactionId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false;
+    }
+
+    // Entitlements are server-authoritative. Clients can only read their own document.
+    match /entitlements/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false;
     }
 
     // User profiles - users can read/write their own profile
