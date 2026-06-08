@@ -37,6 +37,7 @@ This comprehensive documentation covers all aspects of the Modulo Squares projec
 - **[CI/CD Setup](CI_CD_SETUP.md)** - GitHub Actions automation
 - **[Security](SECURITY.md)** - Security guidelines and practices
 - **[Public Repo Hardening](PUBLIC_REPO_HARDENING.md)** - IP and abuse-risk controls for a public repository
+- **[Solution Hardening Matrix](SOLUTION_HARDENING_MATRIX.md)** - branch, web, Android, and iOS hardening status
 
 ### For Infrastructure
 - **[Docker Auth Setup](DOCKER_AUTH_SETUP.md)** - Container authentication
@@ -80,6 +81,7 @@ This comprehensive documentation covers all aspects of the Modulo Squares projec
 | [Testing](TESTING.md) | Unit, integration, widget testing | QA, all developers |
 | [Security](SECURITY.md) | Authentication, authorization, data protection | Security team, DevOps |
 | [Public Repo Hardening](PUBLIC_REPO_HARDENING.md) | IP protection and public-repo operational controls | Owner, security team, DevOps |
+| [Solution Hardening Matrix](SOLUTION_HARDENING_MATRIX.md) | End-to-end hardening status across branches and platforms | Owner, security team, DevOps |
 
 ### 4. Operations & Deployment 🚀
 
