@@ -34,7 +34,7 @@ flutter build ios --simulator     # smoke-build, must exit 0
 ```
 
 - [ ] `flutter analyze` — **No issues found**
-- [ ] `flutter test` — **All tests pass** (currently 287 + new falling mode tests)
+- [ ] `flutter test` — **All tests pass** (run full suite or approved release subset)
 - [ ] Simulator build succeeds
 
 ---
@@ -76,13 +76,12 @@ The `remove_ads` product drives IAP. In simulator, StoreKit returns
 
 ## 6. Firebase / Auth
 
-Anonymous sign-in shows `admin-restricted-operation` in simulator because
-the Firebase project has it disabled for security. This is **expected** in dev.
+Authentication is account-required in the active production flow.
 
 - [ ] Confirm `google-services.json` / `GoogleService-Info.plist` are for the
   **production** Firebase project (not dev/staging)
-- [ ] Anonymous sign-in is enabled in the Firebase Console → Authentication →
-  Sign-in methods (if leaderboard/profile features require it)
+- [ ] Required providers for production auth flow are enabled in Firebase
+  (Google / Apple / Email as applicable)
 - [ ] Firestore security rules deployed (`packages/firestore-rules`)
 - [ ] `GOOGLE_REVERSED_CLIENT_ID` URL scheme present in `Info.plist`
 
@@ -143,9 +142,13 @@ Verify:
 - [ ] App launches without crash
 - [ ] Falling Mode: tile falls, score burst appears, spawn delay active at start
 - [ ] Falling Mode: positive burst = gold pill, negative burst = red diamond
-- [ ] Classic Mode: game board renders, scoring works
+- [ ] Start/Pause controls work and game does not auto-start on screen open
+- [ ] Progress grid is 10x10 and aligns with bottom lane area
+- [ ] Successful modulo fills progress; failure removes remainder squares
+- [ ] Level completion requires full progress grid fill
 - [ ] IAP flow: tapping "Remove Ads" prompts StoreKit (sandbox)
-- [ ] Interstitial ad: appears after threshold games, closes correctly
+- [ ] Interstitial ad: appears between levels for free logged-in users, and does
+  not appear for ad-removed users
 - [ ] Settings / visual cues toggle saves across restarts (SharedPreferences)
 
 ---
@@ -186,4 +189,4 @@ xcrun altool --upload-app -f build/ios/ipa/*.ipa \
 
 ---
 
-*Last updated: 2026-03-26*
+*Last updated: 2026-06-02*

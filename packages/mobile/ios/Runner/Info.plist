@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -20,9 +22,48 @@
 	<string>$(FLUTTER_BUILD_NAME)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.784677197785-acn8nnrs4rhoeipg9ek4u6b1p512nqkm</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-5198775482699756~9962129501</string>
 	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_dartobservatory._tcp</string>
+		<string>_flutter._tcp</string>
+	</array>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>This app requires local network access for Firebase services and multiplayer features.</string>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>This identifier is used to deliver better ads and help keep the game free for everyone.</string>
+	<key>SKAdNetworkItems</key>
+	<array>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>cstr6suwn9.skadnetwork</string>
+		</dict>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>4fzdc2evr5.skadnetwork</string>
+		</dict>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>v9wttpbfk9.skadnetwork</string>
+		</dict>
+	</array>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
@@ -41,56 +82,5 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>CFBundleURLTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>com.googleusercontent.apps.239807122511-e8nqn5c0qle9o2ke9pf87g3gp6sf31j7</string>
-			</array>
-		</dict>
-	</array>
-	<key>CADisableMinimumFrameDurationOnPhone</key>
-	<true/>
-	<key>UIApplicationSupportsIndirectInputEvents</key>
-	<true/>
-
-	<!-- App Tracking Transparency prompt text -->
-	<key>NSUserTrackingUsageDescription</key>
-	<string>This identifier is used to deliver better ads and help keep the game free for everyone.</string>
-
-	<!-- Local Network Usage Description for Firebase and network access -->
-	<key>NSLocalNetworkUsageDescription</key>
-	<string>This app requires local network access for Firebase services and multiplayer features.</string>
-
-	<!-- AdMob App ID (REPLACE with your production App ID from AdMobConfig.iosAppId) -->
-	<key>GADApplicationIdentifier</key>
-	<string>ca-app-pub-5198775482699756~9962129501</string>
-
-        <!-- SKAdNetwork IDs (sample AdMob; update from Google’s latest list) -->
-        <key>SKAdNetworkItems</key>
-        <array>
-                <dict>
-                        <key>SKAdNetworkIdentifier</key>
-                        <string>cstr6suwn9.skadnetwork</string>
-                </dict>
-                <dict>
-                        <key>SKAdNetworkIdentifier</key>
-                        <string>4fzdc2evr5.skadnetwork</string>
-                </dict>
-                <dict>
-                        <key>SKAdNetworkIdentifier</key>
-                        <string>v9wttpbfk9.skadnetwork</string>
-                </dict>
-        </array>
-
-        <!-- Bonjour Services for Flutter debugging and Firebase -->
-        <key>NSBonjourServices</key>
-        <array>
-                <string>_dartobservatory._tcp</string>
-                <string>_flutter._tcp</string>
-        </array>
 </dict>
 </plist>

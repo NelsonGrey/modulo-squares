@@ -15,10 +15,10 @@ void main() {
   });
 
   setUp(() {
-    SharedPreferences.setMockInitialValues({'game.mode': 'classic'});
+    SharedPreferences.setMockInitialValues({});
   });
 
-  testWidgets('GameScreen displays score and restart button', (
+  testWidgets('GameScreen displays falling HUD and controls', (
     WidgetTester tester,
   ) async {
     // Increase the test surface to avoid overflow with the square grid + controls
@@ -49,11 +49,12 @@ void main() {
     final l10n = AppLocalizations.of(ctx);
     expect(l10n, isNotNull);
 
-    // Verify score label using localization key prefix
-    expect(find.textContaining(l10n!.score.split(':').first), findsWidgets);
-
-    // Verify Restart button by localized label
-    expect(find.text(l10n.restart), findsOneWidget);
+    expect(find.text('Modulo Squares: Falling Mode'), findsOneWidget);
+    expect(find.text('Falling Modulo Mode'), findsOneWidget);
+    expect(find.textContaining('Score:'), findsWidgets);
+    expect(find.text('Left'), findsOneWidget);
+    expect(find.text('Drop'), findsOneWidget);
+    expect(find.text('Right'), findsOneWidget);
   });
 
   group('GridCellWidget', () {

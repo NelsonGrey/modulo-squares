@@ -46,6 +46,8 @@ This comprehensive documentation covers all aspects of the Modulo Squares projec
 - **[iOS Certificate Setup](IOS_CERTIFICATE_SETUP.md)** - iOS signing
 - **[Android Signing](ANDROID_SIGNING.md)** - Android signing
 - **[iOS CI/CD Integration](IOS_CICD_INTEGRATION_GUIDE.md)** - iOS deployment
+- **[iOS Production Fast Track](IOS_PRODUCTION_FAST_TRACK.md)** - quickest path to TestFlight and App Review
+- **[App Store Connect Submission Pack](APP_STORE_CONNECT_SUBMISSION_PACK.md)** - copy/paste metadata and artifact checklist for iOS submission
 
 ---
 
@@ -126,6 +128,7 @@ This comprehensive documentation covers all aspects of the Modulo Squares projec
 - **Services**: [Backend Services > AdMob](BACKEND_SERVICES_GUIDE.md#1-google-admob), [IAP](BACKEND_SERVICES_GUIDE.md#2-in-app-purchases)
 - **Implementation**: [Flutter Architecture > Ad Integration](FLUTTER_ARCHITECTURE.md)
 - **Analytics**: [Backend Services > Firebase Analytics](BACKEND_SERVICES_GUIDE.md#4-firebase-analytics)
+- **Policy**: [Player Access Tiers](PLAYER_ACCESS_TIERS.md)
 
 ### Analytics & Monitoring
 - **Setup**: [Backend Services > Firebase Analytics](BACKEND_SERVICES_GUIDE.md#4-firebase-analytics)

@@ -9,11 +9,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  Widget _buildApp({VoidCallback? onOpenModePicker}) {
-    return MaterialApp(
-      home: FallingModuloGameScreen(onOpenModePicker: onOpenModePicker),
-    );
-  }
+  Widget _buildApp() => const MaterialApp(home: FallingModuloGameScreen());
 
   testWidgets('renders without crashing', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1080, 1920);
@@ -66,7 +62,7 @@ void main() {
     },
   );
 
-  testWidgets('shows Ready text in HUD during spawn delay', (
+  testWidgets('shows paused HUD state before game start', (
     WidgetTester tester,
   ) async {
     tester.view.physicalSize = const Size(1080, 1920);
@@ -79,11 +75,11 @@ void main() {
     await tester.pumpWidget(_buildApp());
     await tester.pump();
 
-    // During spawn delay the HUD shows 'Fall: Ready...' instead of the drop interval.
-    expect(find.text('Fall: Ready...'), findsOneWidget);
+    expect(find.text('Fall: Paused'), findsOneWidget);
+    expect(find.text('Start'), findsOneWidget);
   });
 
-  testWidgets('onOpenModePicker callback fires when back button tapped', (
+  testWidgets('start button switches to pause after starting run', (
     WidgetTester tester,
   ) async {
     tester.view.physicalSize = const Size(1080, 1920);
@@ -93,16 +89,31 @@ void main() {
       tester.view.resetDevicePixelRatio();
     });
 
-    var called = false;
-    await tester.pumpWidget(_buildApp(onOpenModePicker: () => called = true));
+    await tester.pumpWidget(_buildApp());
     await tester.pump();
 
-    // Find any back/arrow button and tap it.
-    final backButton = find.byIcon(Icons.arrow_back);
-    if (backButton.evaluate().isNotEmpty) {
-      await tester.tap(backButton);
-      await tester.pump();
-      expect(called, isTrue);
-    }
+    await tester.tap(find.text('Start'));
+    await tester.pump();
+
+    expect(find.text('Pause'), findsOneWidget);
+  });
+
+  testWidgets('settings dialog does not show mode switching action', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1080, 1920);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(_buildApp());
+    await tester.pump();
+
+    await tester.tap(find.byTooltip('Settings'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Switch Mode'), findsNothing);
   });
 }

@@ -1,37 +1,37 @@
 {
   "project_info": {
-    "project_number": "838061114925",
-    "project_id": "modulo-squares-staging",
-    "storage_bucket": "modulo-squares-staging.firebasestorage.app"
+    "project_number": "784677197785",
+    "project_id": "modulo-squares-dev",
+    "storage_bucket": "modulo-squares-dev.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:838061114925:android:9a9206d7065e2e3e229aa4",
+        "mobilesdk_app_id": "1:784677197785:android:d17a73b27367990061abc8",
         "android_client_info": {
           "package_name": "com.nelsongrey.modulosquares.app.android"
         }
       },
       "oauth_client": [
         {
-          "client_id": "838061114925-9aj7ij9f8apmk22grkgqc3o4l4s2o5mq.apps.googleusercontent.com",
+          "client_id": "784677197785-phb5rd418ckoo43kt2koh1mfrens2uap.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyAqYm0u62vZdasCiKcKtW_LOFD9qu-z4Ys"
+          "current_key": "AIzaSyDq66LnI1c7jSSRgs7hbdz-9lMkA92MfqA"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "838061114925-9aj7ij9f8apmk22grkgqc3o4l4s2o5mq.apps.googleusercontent.com",
+              "client_id": "784677197785-phb5rd418ckoo43kt2koh1mfrens2uap.apps.googleusercontent.com",
               "client_type": 3
             },
             {
-              "client_id": "838061114925-ms9cle62f1qlq182movucpdl7ttqk7e4.apps.googleusercontent.com",
+              "client_id": "784677197785-acn8nnrs4rhoeipg9ek4u6b1p512nqkm.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
                 "bundle_id": "com.nelsongrey.modulosquares.app.ios",

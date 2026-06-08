@@ -24,7 +24,8 @@
   },
   "dependencies": {
     "firebase": "^12.3.0",
-    "firebase-admin": "^13.5.0"
+    "firebase-admin": "^13.5.0",
+    "protobufjs": "^7.6.2"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
@@ -33,7 +34,7 @@
     "eslint": "^8.0.0",
     "prettier": "^3.0.0",
     "typescript": "^5.6.3",
-    "vitest": "^3.1.4"
+    "vitest": "^4.1.8"
   },
   "peerDependencies": {
     "firebase": "^12.3.0"

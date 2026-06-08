@@ -2,13 +2,14 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:modulo_squares/core/di/service_locator.dart';
+import 'package:modulo_squares/core/services/ad_service.dart';
+import 'package:modulo_squares/core/services/purchase_service.dart';
 import 'package:modulo_squares/features/game/models/falling_modulo_game_engine.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class FallingModuloGameScreen extends StatefulWidget {
-  const FallingModuloGameScreen({super.key, this.onOpenModePicker});
-
-  final VoidCallback? onOpenModePicker;
+  const FallingModuloGameScreen({super.key});
 
   @override
   State<FallingModuloGameScreen> createState() =>
@@ -31,6 +32,13 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
   int _highScore = 0;
   String? _resultBurstText;
   bool _resultBurstPositive = true;
+  bool _isRunning = false;
+
+  AdService? get _adServiceOrNull =>
+      getIt.isRegistered<AdService>() ? getIt<AdService>() : null;
+
+  PurchaseService? get _purchaseServiceOrNull =>
+      getIt.isRegistered<PurchaseService>() ? getIt<PurchaseService>() : null;
 
   @override
   void initState() {
@@ -61,7 +69,7 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
   void _startTicker() {
     _timer?.cancel();
     _timer = Timer.periodic(_tick, (_) {
-      if (!mounted) return;
+      if (!mounted || !_isRunning) return;
 
       setState(() {
         if (_spawnDelayRemaining > Duration.zero) {
@@ -81,7 +89,7 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
     });
   }
 
-  int get _effectiveDropIntervalMs => _state.dropIntervalMs * 2;
+  int get _effectiveDropIntervalMs => _state.dropIntervalMs;
 
   bool get _isSpawnDelayActive => _spawnDelayRemaining > Duration.zero;
 
@@ -100,6 +108,7 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
 
   void _resolveCurrentTile() {
     final result = _engine.resolveCurrentTile(_state);
+    final previousLevel = _state.level;
     final scoreDelta = result.resolution.scoreDelta;
     final success = result.resolution.success;
     final burstText = success ? '+$scoreDelta' : '$scoreDelta';
@@ -114,6 +123,20 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
     });
 
     _persistHighScore();
+
+    if (result.state.level > previousLevel) {
+      setState(() {
+        _isRunning = false;
+      });
+
+      unawaited(
+        _showInterstitialTransition(trigger: 'level_complete', onClosed: () {}),
+      );
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Level $previousLevel complete!')));
+    }
 
     Timer(const Duration(milliseconds: 700), () {
       if (!mounted || _resultBurstText != burstText) return;
@@ -181,6 +204,7 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
       _state = _engine.createInitialState(
         visualCuesEnabled: _state.visualCuesEnabled,
       );
+      _isRunning = false;
       _elapsed = Duration.zero;
       _spawnDelayRemaining = _spawnDelay;
       _lastInputAt = null;
@@ -188,8 +212,33 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
     });
   }
 
+  void _toggleRunning() {
+    setState(() {
+      _isRunning = !_isRunning;
+    });
+  }
+
+  Future<void> _showInterstitialTransition({
+    required String trigger,
+    required VoidCallback onClosed,
+  }) async {
+    final adService = _adServiceOrNull;
+    if (adService == null) {
+      onClosed();
+      return;
+    }
+
+    await adService.showInterstitial(
+      trigger: trigger,
+      levelNum: _state.level,
+      onClosed: onClosed,
+    );
+  }
+
   Future<void> _openSettingsDialog() async {
     var localVisualCues = _state.visualCuesEnabled;
+    final purchaseService = _purchaseServiceOrNull;
+    var adsRemoved = purchaseService?.adsRemoved ?? false;
 
     await showDialog<void>(
       context: context,
@@ -216,17 +265,62 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
                     title: const Text('High Score'),
                     trailing: Text('$_highScore'),
                   ),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Ads'),
+                    subtitle: Text(
+                      adsRemoved
+                          ? 'Removed for this account'
+                          : 'Interstitial ads shown between every level',
+                    ),
+                    trailing: Icon(
+                      adsRemoved ? Icons.check_circle : Icons.ads_click,
+                      color: adsRemoved ? Colors.green : Colors.orange,
+                    ),
+                  ),
+                  if (purchaseService != null && !adsRemoved)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: OutlinedButton(
+                        onPressed: () async {
+                          await purchaseService.purchaseAdRemoval();
+                          setLocalState(() {
+                            adsRemoved = purchaseService.adsRemoved;
+                          });
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Purchase completed! Ads removed.'),
+                            ),
+                          );
+                        },
+                        child: Text(
+                          'Remove Ads (${purchaseService.getProductPrice('remove_ads')})',
+                        ),
+                      ),
+                    ),
+                  if (purchaseService != null)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton(
+                        onPressed: () async {
+                          await purchaseService.restorePurchases();
+                          setLocalState(() {
+                            adsRemoved = purchaseService.adsRemoved;
+                          });
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Purchase restoration attempted.'),
+                            ),
+                          );
+                        },
+                        child: const Text('Restore Purchases'),
+                      ),
+                    ),
                 ],
               ),
               actions: [
-                if (widget.onOpenModePicker != null)
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(dialogContext).pop();
-                      widget.onOpenModePicker?.call();
-                    },
-                    child: const Text('Switch Mode'),
-                  ),
                 TextButton(
                   onPressed: () {
                     Navigator.of(dialogContext).pop();
@@ -235,8 +329,8 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
                 ),
                 TextButton(
                   onPressed: () {
-                    _startNewRun();
                     Navigator.of(dialogContext).pop();
+                    _startNewRun();
                   },
                   child: const Text('New Run'),
                 ),
@@ -268,12 +362,6 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
       appBar: AppBar(
         title: const Text('Modulo Squares: Falling Mode'),
         actions: [
-          if (widget.onOpenModePicker != null)
-            IconButton(
-              tooltip: 'Switch game mode',
-              onPressed: widget.onOpenModePicker,
-              icon: const Icon(Icons.swap_horiz),
-            ),
           IconButton(
             tooltip: 'Settings',
             onPressed: _openSettingsDialog,
@@ -299,6 +387,15 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
           child: Column(
             children: [
               _buildModeBadge(),
+              const SizedBox(height: 10),
+              Align(
+                alignment: Alignment.centerRight,
+                child: FilledButton.icon(
+                  onPressed: _toggleRunning,
+                  icon: Icon(_isRunning ? Icons.pause : Icons.play_arrow),
+                  label: Text(_isRunning ? 'Pause' : 'Start'),
+                ),
+              ),
               const SizedBox(height: 10),
               _buildHud(),
               const SizedBox(height: 12),
@@ -327,6 +424,14 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
                               ),
                               borderRadius: BorderRadius.circular(12),
                             ),
+                          ),
+                        ),
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 96,
+                          child: _buildProgressGridOverlay(
+                            totalWidth: constraints.maxWidth,
                           ),
                         ),
                         Positioned(
@@ -377,24 +482,62 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
               LinearProgressIndicator(value: _dropProgress),
               const SizedBox(height: 12),
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  ElevatedButton.icon(
-                    onPressed: _moveLeft,
-                    icon: const Icon(Icons.arrow_left),
-                    label: const Text('Left'),
+                  Expanded(
+                    flex: 5,
+                    child: SizedBox(
+                      height: 72,
+                      child: ElevatedButton.icon(
+                        onPressed: _isRunning ? _moveLeft : null,
+                        icon: const Icon(Icons.arrow_left, size: 32),
+                        label: const Text(
+                          'Left',
+                          style: TextStyle(fontSize: 18),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 12),
-                  ElevatedButton.icon(
-                    onPressed: _isSpawnDelayActive ? null : _resolveCurrentTile,
-                    icon: const Icon(Icons.vertical_align_bottom),
-                    label: const Text('Drop'),
+                  Expanded(
+                    flex: 4,
+                    child: SizedBox(
+                      height: 72,
+                      child: FilledButton.icon(
+                        onPressed:
+                            (_isRunning && !_isSpawnDelayActive)
+                                ? _resolveCurrentTile
+                                : null,
+                        icon: const Icon(Icons.vertical_align_bottom, size: 28),
+                        label: const Text(
+                          'Drop',
+                          style: TextStyle(fontSize: 18),
+                        ),
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 12),
-                  ElevatedButton.icon(
-                    onPressed: _moveRight,
-                    icon: const Icon(Icons.arrow_right),
-                    label: const Text('Right'),
+                  Expanded(
+                    flex: 5,
+                    child: SizedBox(
+                      height: 72,
+                      child: ElevatedButton.icon(
+                        onPressed: _isRunning ? _moveRight : null,
+                        icon: const Icon(Icons.arrow_right, size: 32),
+                        label: const Text(
+                          'Right',
+                          style: TextStyle(fontSize: 18),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -420,12 +563,88 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
         ),
         _pill(
           'Fall',
-          _isSpawnDelayActive
+          !_isRunning
+              ? 'Paused'
+              : _isSpawnDelayActive
               ? 'Ready...'
               : '${(_effectiveDropIntervalMs / 1000).toStringAsFixed(2)}s',
         ),
         _pill('Range', '${_state.numberRangeMin}-${_state.numberRangeMax}'),
+        _pill(
+          'Fill',
+          '${_state.filledSquares}/${_state.progressGridCellCount}',
+        ),
+        if (_state.deficitSquares > 0)
+          _pill('Deficit', '-${_state.deficitSquares}'),
       ],
+    );
+  }
+
+  Widget _buildProgressGridOverlay({required double totalWidth}) {
+    const int columns = 10;
+    const int rows = 10;
+    final filled = _state.filledSquares;
+    final deficit = _state.deficitSquares;
+    const double spacing = 2;
+
+    final cellSize = ((totalWidth - (spacing * (columns - 1))) / columns).clamp(
+      10.0,
+      36.0,
+    );
+    final gridWidth = (cellSize * columns) + (spacing * (columns - 1));
+
+    bool isFilledCell(int row, int col) {
+      final orderFromBottomLeft = ((rows - 1 - row) * columns) + col;
+      return orderFromBottomLeft < filled;
+    }
+
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: SizedBox(
+        key: const Key('progress-grid'),
+        width: gridWidth,
+        child: GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: rows * columns,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns,
+            mainAxisSpacing: spacing,
+            crossAxisSpacing: spacing,
+            childAspectRatio: 1,
+          ),
+          itemBuilder: (context, index) {
+            final row = index ~/ columns;
+            final col = index % columns;
+            final isDeficitCell = row == rows - 1 && col == 0 && deficit > 0;
+            final filledCell = isFilledCell(row, col);
+
+            return Container(
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color:
+                    filledCell
+                        ? Colors.lightGreen.shade300.withValues(alpha: 0.9)
+                        : Colors.lightBlue.shade50.withValues(alpha: 0.55),
+                borderRadius: BorderRadius.circular(2),
+                border: Border.all(
+                  color: Colors.blueGrey.withValues(alpha: 0.28),
+                ),
+              ),
+              child:
+                  isDeficitCell
+                      ? Text(
+                        '-$deficit',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: cellSize < 14 ? 7 : 9,
+                        ),
+                      )
+                      : null,
+            );
+          },
+        ),
+      ),
     );
   }
 
