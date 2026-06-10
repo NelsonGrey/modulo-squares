@@ -105,6 +105,7 @@ jobs:
       APP_STORE_CONNECT_KEY: ${{ secrets.APP_STORE_CONNECT_KEY }}
       FASTLANE_TEAM_ID: ${{ secrets.FASTLANE_TEAM_ID }}
       GITHUB_RUN_NUMBER: ${{ github.run_number }}
+      PATH: ${{ github.workspace }}/../flutter/bin:$HOME/flutter/bin:/usr/local/bin:/usr/bin:/bin
 
     steps:
       - name: Checkout
@@ -138,6 +139,10 @@ jobs:
         run: |
           git clone https://github.com/flutter/flutter.git -b stable --depth 1 $HOME/flutter
           echo "$HOME/flutter/bin" >> $GITHUB_PATH
+
+      - name: Verify Flutter installation
+        run: |
+          export PATH="$HOME/flutter/bin:$PATH"
           flutter --version
 
       - name: Setup Ruby
