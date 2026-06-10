@@ -210,9 +210,8 @@ jobs:
 
       - name: Build only (no App Store upload)
         if: env.RELEASE_TYPE == 'build_only'
-        working-directory: packages/mobile/ios
+        working-directory: packages/mobile
         run: |
-          cd ../..
           flutter pub get
           flutter build ios --debug --no-codesign
 
