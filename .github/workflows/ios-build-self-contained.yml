@@ -130,15 +130,15 @@ jobs:
           esac
 
       - name: Setup Xcode
-        uses: maxim-lobanov/setup-xcode@v1
+        uses: actions/setup-xcode@v1
         with:
           xcode-version: ${{ inputs.xcode_version || '26.0' }}
 
       - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          flutter-version: 3.38.4
+        run: |
+          git clone https://github.com/flutter/flutter.git -b stable --depth 1 /opt/flutter
+          echo "/opt/flutter/bin" >> $GITHUB_PATH
+          flutter --version
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
