@@ -137,8 +137,13 @@ jobs:
 
       - name: Setup Flutter
         run: |
-          # Use pre-installed Flutter on macOS runner
-          which flutter
+          # Download and install Flutter SDK
+          cd $HOME
+          curl -L https://storage.googleapis.com/flutter_infra_release/releases/stable/macos/flutter_macos_3.38.4-stable.zip -o flutter.zip
+          unzip -q flutter.zip
+          rm flutter.zip
+          echo "$HOME/flutter/bin" >> $GITHUB_PATH
+          export PATH="$HOME/flutter/bin:$PATH"
           flutter --version
           flutter config --no-analytics
 
