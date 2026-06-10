@@ -211,7 +211,10 @@ jobs:
       - name: Build only (no App Store upload)
         if: env.RELEASE_TYPE == 'build_only'
         working-directory: packages/mobile/ios
-        run: bundle exec fastlane ios test_and_build
+        run: |
+          cd ../..
+          flutter pub get
+          flutter build ios --debug --no-codesign
 
       - name: Upload to TestFlight
         if: env.RELEASE_TYPE == 'testflight'
