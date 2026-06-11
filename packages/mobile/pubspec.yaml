@@ -16,7 +16,7 @@ dependencies:
   cloud_functions: ^6.0.2
   firebase_core: ^4.1.1
   flutter_lints: ^6.0.0
-  firebase_auth: ^6.1.0
+  firebase_auth: ^6.5.2
   google_sign_in: ^7.2.0
   sign_in_with_apple: ^7.0.1
   intl: ^0.20.2
