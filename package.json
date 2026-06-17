@@ -29,7 +29,7 @@
     "config:prod": "./scripts/switch-mobile-configs.sh prod"
   },
   "dependencies": {
-    "express": "^4.22.2"
+    "express": "^5.2.1"
   },
   "devDependencies": {
     "firebase": "^12.14.0",
