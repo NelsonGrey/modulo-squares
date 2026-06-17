@@ -62,7 +62,7 @@ void main() {
     },
   );
 
-  testWidgets('shows paused HUD state before game start', (
+  testWidgets('shows pre-game overlay and paused HUD state before game start', (
     WidgetTester tester,
   ) async {
     tester.view.physicalSize = const Size(1080, 1920);
@@ -76,10 +76,10 @@ void main() {
     await tester.pump();
 
     expect(find.text('Fall: Paused'), findsOneWidget);
-    expect(find.text('Start'), findsOneWidget);
+    expect(find.text('Start Game'), findsOneWidget);
   });
 
-  testWidgets('start button switches to pause after starting run', (
+  testWidgets('start game button switches to AppBar pause icon after starting run', (
     WidgetTester tester,
   ) async {
     tester.view.physicalSize = const Size(1080, 1920);
@@ -92,10 +92,10 @@ void main() {
     await tester.pumpWidget(_buildApp());
     await tester.pump();
 
-    await tester.tap(find.text('Start'));
+    await tester.tap(find.text('Start Game'));
     await tester.pump();
 
-    expect(find.text('Pause'), findsOneWidget);
+    expect(find.byTooltip('Pause'), findsOneWidget);
   });
 
   testWidgets('settings dialog does not show mode switching action', (
