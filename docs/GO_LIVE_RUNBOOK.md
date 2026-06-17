@@ -25,11 +25,13 @@
 | **Privacy Policy / ToS URLs live** | ❌ Missing | Yes |
 | **IAP "remove_ads" in ASC** | ⚠️ Unconfirmed | Yes |
 | **TestFlight beta (100 testers)** | ⚠️ Incomplete | No (soft) |
+| **Firebase Crashlytics** | ✅ Wired (PR #73) | — |
 | **Firebase GitHub Secrets** | ⚠️ Partial | Yes |
 | **Firebase App Check enforcement** | ❌ Not enabled | No (post-launch) |
 | **Google API key restrictions** | ❌ Not applied | No (post-launch) |
 | **Android build** | ❌ Disabled in CI | Phase 2 |
 | **Google Play Console app record** | ❌ Not created | Phase 2 |
+| **Privacy Policy / Terms pages** | ✅ Live at /privacy and /terms (PR #73) | — |
 | **Marketing website domain live** | ⚠️ Unconfirmed | No (soft) |
 
 **iOS Launch is the primary gate.** Android can follow in Phase 2.
@@ -967,7 +969,7 @@ These secrets must be set in **GitHub → Repository → Settings → Secrets �
 
 | Issue | Impact | Decision Needed |
 |-------|--------|----------------|
-| `firebase_crashlytics` not in `pubspec.yaml` | No crash reporting at launch | Add package and wire before Phase 5 |
+| `firebase_crashlytics` ~~not in `pubspec.yaml`~~ | ✅ Added ^5.2.4 + wired in main.dart (PR #73) | — |
 | Android disabled in CI manifest | Android launch delayed | Set `android.enabled: true` when ready for Phase 2 |
 | Marketing domain (modulo-squares.com) status | Lower discoverability | Confirm DNS and Firebase Hosting custom domain |
 | Slack webhook `${SLACK_WEBHOOK_URL}` not set | No CI notifications | Optional: add Slack secret for pipeline alerts |
@@ -981,6 +983,7 @@ These secrets must be set in **GitHub → Repository → Settings → Secrets �
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-06-17 | Mark Nelson | Initial comprehensive Go Live document synthesized from full codebase and docs audit |
+| 1.1 | 2026-06-17 | Mark Nelson | Mark completed: Crashlytics wired, Privacy/Terms pages live, keywords deduped, all security alerts resolved (PRs #70–73) |
 
 ---
 
