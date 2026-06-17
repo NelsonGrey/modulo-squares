@@ -23,7 +23,7 @@
     "clean": "rm -rf node_modules dist"
   },
   "dependencies": {
-    "firebase": "^12.3.0",
+    "firebase": "^12.15.0",
     "firebase-admin": "^13.5.0",
     "protobufjs": "^8.6.3"
   },
@@ -37,6 +37,6 @@
     "vitest": "^4.1.8"
   },
   "peerDependencies": {
-    "firebase": "^12.3.0"
+    "firebase": "^12.15.0"
   }
 }
