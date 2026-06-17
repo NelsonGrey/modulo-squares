@@ -30,7 +30,7 @@ void main() {
 
     expect(find.byType(FallingModuloGameScreen), findsOneWidget);
     expect(find.text('Modulo Squares: Falling Mode'), findsOneWidget);
-    expect(find.text('Falling Modulo Mode'), findsOneWidget);
+    expect(find.text('Falling Modulo Mode'), findsWidgets);
   });
 
   testWidgets('GameScreen surfaces falling controls and HUD', (
@@ -49,7 +49,7 @@ void main() {
     expect(find.text('Left'), findsOneWidget);
     expect(find.text('Drop'), findsOneWidget);
     expect(find.text('Right'), findsOneWidget);
-    expect(find.text('Start'), findsOneWidget);
+    expect(find.text('Start Game'), findsOneWidget);
     expect(find.textContaining('Level:'), findsWidgets);
     expect(find.textContaining('Score:'), findsWidgets);
     expect(find.textContaining('Best:'), findsWidgets);

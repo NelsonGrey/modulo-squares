@@ -33,6 +33,7 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
   String? _resultBurstText;
   bool _resultBurstPositive = true;
   bool _isRunning = false;
+  bool _hasStarted = false;
 
   AdService? get _adServiceOrNull =>
       getIt.isRegistered<AdService>() ? getIt<AdService>() : null;
@@ -205,6 +206,7 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
         visualCuesEnabled: _state.visualCuesEnabled,
       );
       _isRunning = false;
+      _hasStarted = false;
       _elapsed = Duration.zero;
       _spawnDelayRemaining = _spawnDelay;
       _lastInputAt = null;
@@ -215,6 +217,7 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
   void _toggleRunning() {
     setState(() {
       _isRunning = !_isRunning;
+      if (_isRunning) _hasStarted = true;
     });
   }
 
@@ -362,6 +365,12 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
       appBar: AppBar(
         title: const Text('Modulo Squares: Falling Mode'),
         actions: [
+          if (_isRunning)
+            IconButton(
+              tooltip: 'Pause',
+              onPressed: _toggleRunning,
+              icon: const Icon(Icons.pause),
+            ),
           IconButton(
             tooltip: 'Settings',
             onPressed: _openSettingsDialog,
@@ -388,19 +397,13 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
             children: [
               _buildModeBadge(),
               const SizedBox(height: 10),
-              Align(
-                alignment: Alignment.centerRight,
-                child: FilledButton.icon(
-                  onPressed: _toggleRunning,
-                  icon: Icon(_isRunning ? Icons.pause : Icons.play_arrow),
-                  label: Text(_isRunning ? 'Pause' : 'Start'),
-                ),
-              ),
-              const SizedBox(height: 10),
               _buildHud(),
               const SizedBox(height: 12),
               Expanded(
-                child: LayoutBuilder(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    LayoutBuilder(
                   builder: (context, constraints) {
                     final laneWidth =
                         constraints.maxWidth /
@@ -476,6 +479,10 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
                       ],
                     );
                   },
+                    ),
+                    if (!_isRunning && !_hasStarted) _buildPreGameOverlay(),
+                    if (!_isRunning && _hasStarted) _buildPauseOverlay(),
+                  ],
                 ),
               ),
               const SizedBox(height: 12),
@@ -791,6 +798,343 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
           fontWeight: FontWeight.bold,
         ),
       ),
+    );
+  }
+
+  Widget _buildPreGameOverlay() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.80),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: SingleChildScrollView(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.lightBlue.shade400.withValues(alpha: 0.25),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: Colors.lightBlue.shade200.withValues(alpha: 0.5),
+                  ),
+                ),
+                child: Text(
+                  'Falling Modulo Mode',
+                  style: TextStyle(
+                    color: Colors.lightBlue.shade100,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Modulo Squares',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 26,
+                ),
+              ),
+              const SizedBox(height: 24),
+              _buildOverlayRule(
+                Icons.arrow_downward,
+                'A number falls — guide it left or right into a bucket',
+              ),
+              const SizedBox(height: 8),
+              _buildOverlayRule(
+                Icons.calculate_outlined,
+                'Land it where the number is divisible by the bucket value',
+              ),
+              const SizedBox(height: 8),
+              _buildOverlayRule(
+                Icons.grid_on_outlined,
+                'Fill 100 squares to level up — wrong buckets cost points',
+              ),
+              const SizedBox(height: 32),
+              FilledButton.icon(
+                onPressed: _toggleRunning,
+                icon: const Icon(Icons.play_arrow, size: 22),
+                label: const Text(
+                  'Start Game',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                ),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(200, 52),
+                  backgroundColor: Colors.lightBlue.shade400,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextButton.icon(
+                onPressed: _showHowToPlaySheet,
+                icon: Icon(
+                  Icons.info_outline,
+                  size: 16,
+                  color: Colors.lightBlue.shade200,
+                ),
+                label: Text(
+                  'How to Play',
+                  style: TextStyle(color: Colors.lightBlue.shade200),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+  }
+
+  Widget _buildOverlayRule(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(icon, color: Colors.lightBlue.shade200, size: 18),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(color: Colors.white70, fontSize: 14),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPauseOverlay() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.pause_circle_filled_outlined,
+              size: 72,
+              color: Colors.white.withValues(alpha: 0.9),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Paused',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                fontSize: 28,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Level ${_state.level}  ·  Score ${_state.score}',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.6),
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 32),
+            FilledButton.icon(
+              onPressed: _toggleRunning,
+              icon: const Icon(Icons.play_arrow, size: 22),
+              label: const Text(
+                'Resume',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+              ),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(180, 52),
+                backgroundColor: Colors.lightBlue.shade400,
+                foregroundColor: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: _startNewRun,
+              icon: const Icon(Icons.restart_alt, size: 20),
+              label: const Text('New Game'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.white,
+                side: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.4),
+                ),
+                minimumSize: const Size(180, 48),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showHowToPlaySheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.65,
+        maxChildSize: 0.92,
+        minChildSize: 0.4,
+        expand: false,
+        builder: (_, controller) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  controller: controller,
+                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'How to Play',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const Text(
+                        'Falling Modulo Mode',
+                        style: TextStyle(
+                          color: Colors.blueGrey,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      _buildHowToSection(
+                        icon: Icons.arrow_downward,
+                        title: 'The Falling Number',
+                        body:
+                            'Each round a number falls from the top. '
+                            'Move it left or right before the timer drops it — '
+                            'or tap Drop to send it down instantly.',
+                      ),
+                      const SizedBox(height: 20),
+                      _buildHowToSection(
+                        icon: Icons.inbox_outlined,
+                        title: 'The Buckets',
+                        body:
+                            'Nine buckets sit at the bottom, each labelled 1–9. '
+                            'Their positions are shuffled each level. '
+                            'Land the tile where the number is exactly divisible '
+                            'by the bucket value (remainder = 0).',
+                      ),
+                      const SizedBox(height: 20),
+                      _buildHowToSection(
+                        icon: Icons.calculate_outlined,
+                        title: 'Scoring',
+                        body:
+                            'Success → earn falling number × bucket value points.\n\n'
+                            'Miss → lose falling number × bucket value × remainder points.\n\n'
+                            'Tip: bucket 1 always divides any number — but scores 0. '
+                            'Use it to avoid a big penalty when no other bucket fits.',
+                      ),
+                      const SizedBox(height: 20),
+                      _buildHowToSection(
+                        icon: Icons.grid_on_outlined,
+                        title: 'Level Progress',
+                        body:
+                            'Each successful match fills squares in the 10×10 grid. '
+                            'Fill all 100 to complete the level. '
+                            'Missed buckets create a deficit you must clear first.',
+                      ),
+                      const SizedBox(height: 20),
+                      _buildHowToSection(
+                        icon: Icons.bolt,
+                        title: 'Combos & Speed',
+                        body:
+                            'Chain consecutive successful drops to build a combo. '
+                            'At combo 3, 5, and 8 your move speed increases — '
+                            'making it easier to line up the tile quickly.',
+                      ),
+                      const SizedBox(height: 20),
+                      _buildHowToSection(
+                        icon: Icons.visibility,
+                        title: 'Visual Cues',
+                        body:
+                            'Green-highlighted buckets show valid landing spots for '
+                            'the current tile. Toggle the hint via the eye icon in '
+                            'the top bar.',
+                      ),
+                      const SizedBox(height: 20),
+                      _buildHowToSection(
+                        icon: Icons.trending_up,
+                        title: 'Later Levels',
+                        body:
+                            'Each level raises the number range and speeds up the '
+                            'fall timer. Higher numbers mean bigger rewards — and '
+                            'bigger penalties for a miss.',
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHowToSection({
+    required IconData icon,
+    required String title,
+    required String body,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.lightBlue.shade50,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: Colors.blueGrey.shade700, size: 20),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                body,
+                style: TextStyle(
+                  color: Colors.grey.shade700,
+                  fontSize: 14,
+                  height: 1.45,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
