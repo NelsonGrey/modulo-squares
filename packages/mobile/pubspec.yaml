@@ -21,6 +21,7 @@ dependencies:
   sign_in_with_apple: ^8.1.0
   intl: ^0.20.2
   firebase_analytics: ^12.4.2
+  firebase_crashlytics: ^5.2.4
   google_mobile_ads: ^9.0.0
   get_it: ^9.0.5
   provider: ^6.1.2

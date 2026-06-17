@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:modulo_squares/features/auth/login_screen.dart';
 import 'package:modulo_squares/features/game/game_screen.dart';
 import 'package:modulo_squares/features/website/website_screen.dart';
@@ -48,6 +49,15 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final firebaseReady = await initializeFirebaseApp();
+
+  // Wire Crashlytics fatal error handlers as early as possible.
+  if (!kIsWeb && firebaseReady) {
+    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+    PlatformDispatcher.instance.onError = (error, stack) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      return true;
+    };
+  }
 
   // Setup dependency injection
   setupServiceLocator();

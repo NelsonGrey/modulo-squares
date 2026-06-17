@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 const Footer: React.FC = () => {
   return (
     <footer id="about" className="bg-gray-900 text-white">
@@ -44,20 +46,20 @@ const Footer: React.FC = () => {
                 </button>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  to="/privacy"
                   className="text-gray-300 hover:text-white transition-colors"
                 >
                   Privacy Policy
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  to="/terms"
                   className="text-gray-300 hover:text-white transition-colors"
                 >
                   Terms of Service
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -79,7 +81,7 @@ const Footer: React.FC = () => {
 
         <div className="border-t border-gray-800 mt-12 pt-8 text-center">
           <p className="text-gray-400">
-            © 2025 Modulo Squares. All rights reserved.
+            © 2026 Modulo Squares. All rights reserved.
           </p>
         </div>
       </div>
