@@ -4,6 +4,9 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [tailwindcss(), react()],
+  resolve: {
+    dedupe: ['react', 'react-dom', 'react-router-dom', 'react-router'],
+  },
   build: {
     outDir: 'dist',
     sourcemap: false, // Disable sourcemaps for production
