@@ -67,7 +67,7 @@ cd modulo-squares
 cd ~/Circus/Repositories/modulo-squares-actions-runner/  # Outside project directory
 ./config.sh \
   --url https://github.com/mnelson3/modulo-squares \
-  --token AIQEPB7NN7HGN5V4KR7OZLTJBZYMW \
+  --token  \
   --labels "self-hosted,macos-latest,macos-arm64,modulo-squares" \
   --name "modulo-squares-macos-runner-$(hostname)"
 ```
