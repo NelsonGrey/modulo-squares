@@ -4,7 +4,6 @@ import Hero from './components/Hero';
 import Features from './components/Features';
 import Download from './components/Download';
 import ComingSoon from './components/ComingSoon';
-import ConsentBanner from './components/ConsentBanner';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import Leaderboard from './pages/Leaderboard';
@@ -17,17 +16,14 @@ function App() {
   }
 
   return (
-    <>
-      <Routes>
-        <Route path="/" element={<Layout><Hero /></Layout>} />
-        <Route path="/how-it-works" element={<Layout><Features /></Layout>} />
-        <Route path="/download" element={<Layout><Download /></Layout>} />
-        <Route path="/leaderboard" element={<Layout><Leaderboard /></Layout>} />
-        <Route path="/privacy" element={<Layout><PrivacyPolicy /></Layout>} />
-        <Route path="/terms" element={<Layout><TermsOfService /></Layout>} />
-      </Routes>
-      <ConsentBanner />
-    </>
+    <Routes>
+      <Route path="/" element={<Layout><Hero /></Layout>} />
+      <Route path="/how-it-works" element={<Layout><Features /></Layout>} />
+      <Route path="/download" element={<Layout><Download /></Layout>} />
+      <Route path="/leaderboard" element={<Layout><Leaderboard /></Layout>} />
+      <Route path="/privacy" element={<Layout><PrivacyPolicy /></Layout>} />
+      <Route path="/terms" element={<Layout><TermsOfService /></Layout>} />
+    </Routes>
   );
 }
 
