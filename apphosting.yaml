@@ -3,7 +3,7 @@ runConfig:
 
 env:
   - variable: VITE_FIREBASE_API_KEY
-    value: AIzaSyAPBPlwtutn6Eu3WC2nMKQoQ95yxjYPeSY
+    secret: VITE_FIREBASE_API_KEY
     availability:
       - BUILD
   - variable: VITE_FIREBASE_AUTH_DOMAIN
