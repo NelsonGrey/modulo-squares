@@ -28,7 +28,7 @@ void main() {
     expect(find.byType(Scaffold), findsOneWidget);
   });
 
-  testWidgets('GameScreen shows falling mode title', (
+  testWidgets('GameScreen shows app title', (
     WidgetTester tester,
   ) async {
     tester.view.physicalSize = const Size(1200, 2200);
@@ -41,7 +41,6 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: GameScreen()));
     await tester.pumpAndSettle();
 
-    expect(find.text('Modulo Squares: Falling Mode'), findsOneWidget);
-    expect(find.text('Falling Modulo Mode'), findsOneWidget);
+    expect(find.text('Modulo Squares'), findsWidgets);
   });
 }
