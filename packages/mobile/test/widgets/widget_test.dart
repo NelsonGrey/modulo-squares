@@ -18,7 +18,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  testWidgets('GameScreen displays falling HUD and controls', (
+  testWidgets('GameScreen displays HUD and controls', (
     WidgetTester tester,
   ) async {
     // Increase the test surface to avoid overflow with the square grid + controls
@@ -49,8 +49,7 @@ void main() {
     final l10n = AppLocalizations.of(ctx);
     expect(l10n, isNotNull);
 
-    expect(find.text('Modulo Squares: Falling Mode'), findsOneWidget);
-    expect(find.text('Falling Modulo Mode'), findsOneWidget);
+    expect(find.text('Modulo Squares'), findsWidgets);
     expect(find.textContaining('Score:'), findsWidgets);
     expect(find.text('Left'), findsOneWidget);
     expect(find.text('Drop'), findsOneWidget);

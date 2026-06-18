@@ -249,7 +249,7 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
         return StatefulBuilder(
           builder: (context, setLocalState) {
             return AlertDialog(
-              title: const Text('Falling Mode Settings'),
+              title: const Text('Settings'),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -363,7 +363,7 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Modulo Squares: Falling Mode'),
+        title: const Text('Modulo Squares'),
         actions: [
           if (_isRunning)
             IconButton(
@@ -395,8 +395,6 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              _buildModeBadge(),
-              const SizedBox(height: 10),
               _buildHud(),
               const SizedBox(height: 12),
               Expanded(
@@ -752,24 +750,6 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
     );
   }
 
-  Widget _buildModeBadge() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.lightBlue.shade100,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.lightBlue.shade300),
-      ),
-      child: Text(
-        'Falling Modulo Mode',
-        style: TextStyle(
-          color: Colors.blueGrey.shade800,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-
   Widget _pill(String label, String value) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -814,25 +794,6 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.lightBlue.shade400.withValues(alpha: 0.25),
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(
-                    color: Colors.lightBlue.shade200.withValues(alpha: 0.5),
-                  ),
-                ),
-                child: Text(
-                  'Falling Modulo Mode',
-                  style: TextStyle(
-                    color: Colors.lightBlue.shade100,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
               const Text(
                 'Modulo Squares',
                 style: TextStyle(
@@ -1009,13 +970,6 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const Text(
-                        'Falling Modulo Mode',
-                        style: TextStyle(
-                          color: Colors.blueGrey,
-                          fontSize: 14,
                         ),
                       ),
                       const SizedBox(height: 24),

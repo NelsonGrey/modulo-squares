@@ -29,8 +29,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(FallingModuloGameScreen), findsOneWidget);
-    expect(find.text('Modulo Squares: Falling Mode'), findsOneWidget);
-    expect(find.text('Falling Modulo Mode'), findsWidgets);
+    expect(find.text('Modulo Squares'), findsWidgets);
   });
 
   testWidgets('GameScreen surfaces falling controls and HUD', (
