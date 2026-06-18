@@ -8,6 +8,29 @@
 # The following line activates a set of recommended lints for Flutter apps,
 # packages, and plugins designed to encourage good coding practices.
 analyzer:
+  exclude:
+    - build/**
+    - .dart_tool/**
+    - android/**
+    - ios/**
+    - web/**
+    - macos/**
+    - linux/**
+    - windows/**
+    - test/**
+    - coverage/**
+    - .git/**
+    - actions-runner/**
+    - packages/**/build/**
+    - packages/**/.dart_tool/**
+    - packages/**/android/**
+    - packages/**/ios/**
+    - packages/**/web/**
+    - packages/**/macos/**
+    - packages/**/linux/**
+    - packages/**/windows/**
+    - packages/**/test/**
+    - packages/**/coverage/**
   errors:
     avoid_print: ignore
     library_private_types_in_public_api: ignore

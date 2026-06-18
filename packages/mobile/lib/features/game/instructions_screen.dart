@@ -1,54 +1,87 @@
 import 'package:flutter/material.dart';
-import 'package:modulo/l10n/app_localizations.dart';
 
 class InstructionsScreen extends StatelessWidget {
   const InstructionsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.instructionsTitle),
-      ),
+      appBar: AppBar(title: const Text('How to Play')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _Section(title: l10n.objectiveTitle, body: l10n.objectiveBody),
+            const _Section(
+              title: 'Objective',
+              body:
+                  'Clear the board by combining tiles using modulo collisions before you run out of moves.',
+            ),
             const SizedBox(height: 16),
-            _Section(title: l10n.controlsTitle, body: l10n.controlsBody),
+            const _Section(
+              title: 'Controls',
+              body:
+                  'Tap a tile then tap an adjacent target to move. You can also swipe to slide until blocked by a tile, obstacle, or boundary.',
+            ),
             const SizedBox(height: 8),
             _ControlsVisual(),
             const SizedBox(height: 16),
-            _Section(title: l10n.moduloRuleTitle, body: l10n.moduloRuleBody),
+            const _Section(
+              title: 'Modulo Rule',
+              body:
+                  'A move can collide only when the moving tile value is less than or equal to the target value. The result is target % source. If remainder is 0, the target clears.',
+            ),
             const SizedBox(height: 8),
-            Text(l10n.moduloExamplesTitle, style: Theme.of(context).textTheme.titleMedium),
+            Text('Examples', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             _ModuloExamples(),
             const SizedBox(height: 16),
-            Text(l10n.legendTitle, style: Theme.of(context).textTheme.titleMedium),
+            Text('Legend', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             const _Legend(),
             const SizedBox(height: 16),
-            Text(l10n.gridPreviewTitle, style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Grid Preview',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 8),
             const _BoardPreview(),
             const SizedBox(height: 16),
-            _Section(title: l10n.specialTilesTitle, body: l10n.specialTilesBody),
+            const _Section(
+              title: 'Special Tiles',
+              body:
+                  'Obstacle tiles block movement. Bonus tiles grant extra score when used in a collision.',
+            ),
             const SizedBox(height: 16),
-            _Section(title: l10n.levelsTitle, body: l10n.levelsBody),
+            const _Section(
+              title: 'Levels',
+              body:
+                  'Standard mode increases grid size by level: Level 1 is 2x2, Level 2 is 3x3, Level 3 is 4x4, and so on. Boards start filled. Daily mode gives one shared 4x4 puzzle per day.',
+            ),
             const SizedBox(height: 16),
-            _Section(title: l10n.mercyTitle, body: l10n.mercyBody),
+            const _Section(
+              title: 'Mercy Spawn',
+              body:
+                  'If one tile remains and moves are left, a helper tile can spawn with a score penalty.',
+            ),
             const SizedBox(height: 16),
-            _Section(title: l10n.scoringTitle, body: l10n.scoringBody),
+            const _Section(
+              title: 'Scoring',
+              body:
+                  'You gain points from valid moves and collisions. Bonus tiles award extra points.',
+            ),
             const SizedBox(height: 16),
-            _Section(title: l10n.leaderboardTitle, body: l10n.leaderboardBody),
+            const _Section(
+              title: 'Leaderboard',
+              body:
+                  'Submit high scores in standard mode and daily mode to compete with other players.',
+            ),
             const SizedBox(height: 24),
-            Text(l10n.tipsTitle, style: Theme.of(context).textTheme.titleMedium),
+            Text('Tips', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
-            Text(l10n.tipsBody),
+            const Text(
+              'Plan 2-3 moves ahead, preserve flexible low-value tiles, and avoid dead-end corners.',
+            ),
           ],
         ),
       ),
@@ -75,9 +108,10 @@ class _Section extends StatelessWidget {
 }
 
 class _ControlsVisual extends StatelessWidget {
+  const _ControlsVisual();
+
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
     final textStyle = Theme.of(context).textTheme.bodyMedium;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -86,7 +120,7 @@ class _ControlsVisual extends StatelessWidget {
           children: [
             const Icon(Icons.touch_app, size: 32),
             const SizedBox(height: 4),
-            Text(l10n.tapLabel, style: textStyle),
+            Text('Tap', style: textStyle),
           ],
         ),
         Column(
@@ -103,7 +137,7 @@ class _ControlsVisual extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 4),
-            Text(l10n.swipeLabel, style: textStyle),
+            Text('Swipe', style: textStyle),
           ],
         ),
       ],
@@ -115,7 +149,6 @@ class _Legend extends StatelessWidget {
   const _Legend();
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
     return Wrap(
       spacing: 12,
       runSpacing: 12,
@@ -123,21 +156,21 @@ class _Legend extends StatelessWidget {
         _LegendItem(
           color: Theme.of(context).colorScheme.secondaryContainer,
           icon: null,
-          label: l10n.normalTitle,
-          subtitle: l10n.normalSubtitle,
+          label: 'Normal Tile',
+          subtitle: 'Standard numbered tile.',
           value: '8',
         ),
         _LegendItem(
           color: Colors.black87,
           icon: Icons.block,
-          label: l10n.obstacleTitle,
-          subtitle: l10n.obstacleSubtitle,
+          label: 'Obstacle Tile',
+          subtitle: 'Blocks movement and cannot be entered.',
         ),
         _LegendItem(
           color: Colors.greenAccent.shade700,
           icon: Icons.star,
-          label: l10n.bonusTitle,
-          subtitle: l10n.bonusSubtitle,
+          label: 'Bonus Tile',
+          subtitle: 'Collision grants bonus points.',
           value: '5',
         ),
       ],
@@ -170,11 +203,13 @@ class _LegendItem extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)),
-            SizedBox(
-              width: 180,
-              child: Text(subtitle),
+            Text(
+              label,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
+            SizedBox(width: 180, child: Text(subtitle)),
           ],
         ),
       ],
@@ -186,7 +221,7 @@ class _BoardPreview extends StatelessWidget {
   const _BoardPreview();
   @override
   Widget build(BuildContext context) {
-    // A small 4x4 preview with mixed tiles
+    // A small 4x4 filled preview with mixed tiles
     final tiles = <_PreviewTile>[
       _PreviewTile.normal('12'),
       _PreviewTile.normal('3'),
@@ -224,22 +259,23 @@ class _BoardPreview extends StatelessWidget {
 }
 
 class _ModuloExamples extends StatelessWidget {
+  const _ModuloExamples();
+
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _ExampleRow(
-          left: const _TileBox(color: Colors.teal, value: '12'),
-          right: const _TileBox(color: Colors.teal, value: '3'),
-          caption: l10n.moduloExampleClearCaption,
+          left: const _TileBox(color: Colors.teal, value: '3'),
+          right: const _TileBox(color: Colors.teal, value: '12'),
+          caption: 'Move 3 into 12: 12 % 3 = 0, so the target clears.',
         ),
         const SizedBox(height: 8),
         _ExampleRow(
-          left: const _TileBox(color: Colors.teal, value: '12'),
-          right: const _TileBox(color: Colors.teal, value: '5'),
-          caption: l10n.moduloExampleTransformCaption,
+          left: const _TileBox(color: Colors.teal, value: '5'),
+          right: const _TileBox(color: Colors.teal, value: '12'),
+          caption: 'Move 5 into 12: 12 % 5 = 2, so the target becomes 2.',
         ),
       ],
     );
@@ -250,7 +286,11 @@ class _ExampleRow extends StatelessWidget {
   final Widget left;
   final Widget right;
   final String caption;
-  const _ExampleRow({required this.left, required this.right, required this.caption});
+  const _ExampleRow({
+    required this.left,
+    required this.right,
+    required this.caption,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -261,7 +301,7 @@ class _ExampleRow extends StatelessWidget {
           children: [
             left,
             const SizedBox(width: 8),
-            const Icon(Icons.add, size: 18),
+            const Icon(Icons.arrow_forward, size: 18),
             const SizedBox(width: 8),
             right,
           ],
@@ -294,7 +334,10 @@ class _TileBox extends StatelessWidget {
           if (value != null)
             Text(
               value!,
-              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
             ),
           if (icon != null)
             Positioned(
@@ -314,6 +357,8 @@ class _PreviewTile {
   final String? value;
   const _PreviewTile(this.color, {this.icon, this.value});
   factory _PreviewTile.normal(String v) => _PreviewTile(Colors.teal, value: v);
-  factory _PreviewTile.obstacle() => const _PreviewTile(Colors.black87, icon: Icons.block);
-  factory _PreviewTile.bonus(String v) => _PreviewTile(Colors.greenAccent.shade700, icon: Icons.star, value: v);
+  factory _PreviewTile.obstacle() =>
+      const _PreviewTile(Colors.black87, icon: Icons.block);
+  factory _PreviewTile.bonus(String v) =>
+      _PreviewTile(Colors.greenAccent.shade700, icon: Icons.star, value: v);
 }

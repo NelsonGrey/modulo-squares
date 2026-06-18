@@ -1,70 +1,114 @@
-const Hero: React.FC = () => {
-  const scrollToDownload = () => {
-    const element = document.getElementById('download');
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
+import { Link } from 'react-router-dom';
 
+const BUCKETS = [2, 3, 4, 5, 6];
+const FALLING_VALUE = 12;
+const ACTIVE_LANE = 2; // 0-based, lands in bucket ÷4
+
+const Hero: React.FC = () => {
   return (
-    <section className="pt-16 bg-gradient-to-br from-primary-50 to-secondary-50 min-h-screen flex items-center">
+    <section className="py-16 bg-linear-to-br from-primary-50 to-secondary-50">
       <div className="container-max">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Content */}
+
+          {/* Copy */}
           <div className="text-center lg:text-left">
             <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-              Master the Art of
-              <span className="text-primary-600 block">Modulo Mathematics</span>
+              Numbers Fall.
+              <span className="text-primary-600 block">You Choose Where.</span>
             </h1>
+            <p className="text-xl text-gray-600 mb-4 max-w-2xl">
+              Each round, a number drops from the top. Slide it left or right — or tap Drop to send it instantly — and land it in a bucket whose value divides it evenly.
+            </p>
             <p className="text-xl text-gray-600 mb-8 max-w-2xl">
-              Challenge your mind with Modulo Squares, the addictive puzzle game where every number counts.
-              Slide, match, and conquer in this mathematical adventure available on mobile.
+              Score with every clean division. Miss and you lose points. Level up as speed and range increase.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <button
-                onClick={scrollToDownload}
-                className="btn-primary text-lg px-8 py-4"
-              >
-                Download Now
-              </button>
-              <button
-                onClick={() => {
-                  const element = document.getElementById('features');
-                  element?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="btn-secondary text-lg px-8 py-4"
-              >
-                Learn More
-              </button>
+              <Link to="/download" className="btn-primary text-lg px-8 py-4 text-center">
+                Download Free
+              </Link>
+              <Link to="/how-it-works" className="btn-secondary text-lg px-8 py-4 text-center">
+                How It Works
+              </Link>
             </div>
           </div>
 
-          {/* Visual */}
-          <div className="relative">
-            <div className="bg-white rounded-2xl shadow-2xl p-8 transform rotate-3 hover:rotate-0 transition-transform duration-300">
-              <div className="grid grid-cols-4 gap-2">
-                {/* Mock game board */}
-                {Array.from({ length: 16 }, (_, i) => (
+          {/* Game mock */}
+          <div className="flex justify-center">
+            <div
+              className="rounded-2xl shadow-2xl p-6 w-72"
+              style={{ background: 'linear-gradient(to bottom, #eceff1, #cfd8dc)' }}
+            >
+              {/* Score bar */}
+              <div className="flex justify-between text-xs font-semibold text-gray-500 mb-3 px-1">
+                <span>Level: 3</span>
+                <span>Score: 840</span>
+                <span>Best: 1 247</span>
+              </div>
+
+              {/* Fall lanes */}
+              <div className="relative" style={{ height: '160px' }}>
+                <div className="absolute inset-0 flex">
+                  {BUCKETS.map((_, i) => (
+                    <div
+                      key={i}
+                      className="flex-1 border-r border-gray-300/40 last:border-r-0"
+                    />
+                  ))}
+                </div>
+
+                {/* Falling tile */}
+                <div
+                  className="absolute flex items-center justify-center rounded-lg font-bold text-white text-xl shadow-lg"
+                  style={{
+                    width: `${100 / BUCKETS.length}%`,
+                    height: '44px',
+                    left: `${(ACTIVE_LANE / BUCKETS.length) * 100}%`,
+                    top: '60px',
+                    backgroundColor: '#5c6bc0',
+                  }}
+                >
+                  {FALLING_VALUE}
+                </div>
+              </div>
+
+              {/* Buckets */}
+              <div className="flex gap-1 mt-1">
+                {BUCKETS.map((divisor, i) => {
+                  const isMatch = FALLING_VALUE % divisor === 0;
+                  const isActive = i === ACTIVE_LANE;
+                  return (
+                    <div
+                      key={i}
+                      className="flex-1 rounded-lg py-3 flex items-center justify-center font-bold text-sm shadow"
+                      style={{
+                        backgroundColor: isActive
+                          ? '#4caf50'
+                          : isMatch
+                          ? '#a5d6a7'
+                          : '#e0e0e0',
+                        color: isActive || isMatch ? '#1b5e20' : '#616161',
+                      }}
+                    >
+                      ÷{divisor}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Controls hint */}
+              <div className="flex gap-1 mt-3">
+                {['←', 'Drop', '→'].map((label) => (
                   <div
-                    key={i}
-                    className={`aspect-square rounded-lg flex items-center justify-center font-bold text-lg ${
-                      [2, 7, 10, 13].includes(i)
-                        ? 'bg-primary-500 text-white'
-                        : [3, 8, 11, 14].includes(i)
-                        ? 'bg-secondary-500 text-white'
-                        : 'bg-gray-100 text-gray-600'
-                    }`}
+                    key={label}
+                    className={`rounded-lg py-2 text-center text-xs font-semibold text-gray-700 bg-white shadow ${label === 'Drop' ? 'flex-2' : 'flex-1'}`}
                   >
-                    {[2, 7, 10, 13].includes(i) && '2'}
-                    {[3, 8, 11, 14].includes(i) && '3'}
+                    {label}
                   </div>
                 ))}
               </div>
-              <div className="mt-4 text-center">
-                <p className="text-sm text-gray-500">Score: 1,247</p>
-              </div>
             </div>
           </div>
+
         </div>
       </div>
     </section>

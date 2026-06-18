@@ -70,7 +70,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '784677197785',
     projectId: 'modulo-squares-dev',
     storageBucket: 'modulo-squares-dev.firebasestorage.app',
-    iosClientId: '784677197785-acn8nnrs4rhoeipg9ek4u6b1p512nqkm.apps.googleusercontent.com',
+    iosClientId:
+        '784677197785-acn8nnrs4rhoeipg9ek4u6b1p512nqkm.apps.googleusercontent.com',
     iosBundleId: 'com.nelsongrey.modulosquares.app.ios',
   );
 }

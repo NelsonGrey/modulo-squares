@@ -1,0 +1,22 @@
+{
+  "name": "Modulo Squares",
+  "short_name": "ModuloSquares",
+  "description": "Clear the board with smart remainders - A challenging puzzle game where numbers matter",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#4CAF50",
+  "background_color": "#1a1a1a",
+  "display": "standalone",
+  "start_url": "/",
+  "scope": "/"
+}

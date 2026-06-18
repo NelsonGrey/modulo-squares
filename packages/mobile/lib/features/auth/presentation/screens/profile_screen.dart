@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:modulo/l10n/app_localizations.dart';
+import 'package:modulo_squares/l10n/app_localizations.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -8,9 +8,10 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text(AppLocalizations.of(context).profile)),
+      appBar: AppBar(title: Text(l10n?.profile ?? 'Profile')),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -21,15 +22,15 @@ class ProfileScreen extends StatelessWidget {
                 radius: 40,
               ),
             const SizedBox(height: 10),
-            Text('${AppLocalizations.of(context).name}: ${user?.displayName ?? "N/A"}'),
-            Text('${AppLocalizations.of(context).email}: ${user?.email ?? "N/A"}'),
-            Text('${AppLocalizations.of(context).uid}: ${user?.uid ?? "N/A"}'),
+            Text('${l10n?.name ?? 'Name'}: ${user?.displayName ?? "N/A"}'),
+            Text('${l10n?.email ?? 'Email'}: ${user?.email ?? "N/A"}'),
+            Text('${l10n?.uid ?? 'UID'}: ${user?.uid ?? "N/A"}'),
             ElevatedButton(
-              child: Text(AppLocalizations.of(context).signOut),
+              child: Text(l10n?.signOut ?? 'Sign Out'),
               onPressed: () async {
                 await FirebaseAuth.instance.signOut();
               },
-            )
+            ),
           ],
         ),
       ),

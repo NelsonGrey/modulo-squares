@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:modulo/core/services/leaderboard_service.dart';
-import 'package:modulo/l10n/app_localizations.dart';
+import 'package:modulo_squares/core/services/leaderboard_service.dart';
+import 'package:modulo_squares/l10n/app_localizations.dart';
 
 mixin GameDialogs {
-  void showEndDialog(BuildContext context, String title, String message, bool showLeaderboardOption) {
+  void showEndDialog(
+    BuildContext context,
+    String title,
+    String message,
+    bool showLeaderboardOption,
+  ) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -12,9 +17,7 @@ mixin GameDialogs {
           title: Text(title),
           content: Column(
             mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(message),
-            ],
+            children: [Text(message)],
           ),
           actions: [
             TextButton(
@@ -32,7 +35,7 @@ mixin GameDialogs {
       context: context,
       builder: (_) {
         return AlertDialog(
-          title: Text(AppLocalizations.of(context).globalLeaderboard),
+          title: Text(AppLocalizations.of(context)!.globalLeaderboard),
           content: SizedBox(
             width: double.maxFinite,
             height: 300,
@@ -44,7 +47,7 @@ mixin GameDialogs {
                 }
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return Center(
-                    child: Text(AppLocalizations.of(context).noScoresYet),
+                    child: Text(AppLocalizations.of(context)!.noScoresYet),
                   );
                 }
                 final scores = snapshot.data!;
@@ -65,7 +68,53 @@ mixin GameDialogs {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text(AppLocalizations.of(context).close),
+              child: Text(AppLocalizations.of(context)!.close),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void showDailyLeaderboardDialog(BuildContext context, int challengeId) {
+    showDialog(
+      context: context,
+      builder: (_) {
+        return AlertDialog(
+          title: Text('Daily Leaderboard ($challengeId)'),
+          content: SizedBox(
+            width: double.maxFinite,
+            height: 300,
+            child: StreamBuilder<List<Map<String, dynamic>>>(
+              stream: LeaderboardService.getTopDailyScores(challengeId, 10),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return Center(
+                    child: Text(AppLocalizations.of(context)!.noScoresYet),
+                  );
+                }
+                final scores = snapshot.data!;
+                return ListView.builder(
+                  itemCount: scores.length,
+                  itemBuilder: (_, index) {
+                    final item = scores[index];
+                    return ListTile(
+                      leading: Text('#${index + 1}'),
+                      title: Text(item['name']),
+                      trailing: Text(item['score'].toString()),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(AppLocalizations.of(context)!.close),
             ),
           ],
         );
@@ -78,27 +127,27 @@ mixin GameDialogs {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text(AppLocalizations.of(context).specialTilesTitle),
+          title: const Text('Special Tiles'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               ListTile(
                 leading: const Icon(Icons.block, color: Colors.black87),
-                title: Text(AppLocalizations.of(context).obstacleTitle),
-                subtitle: Text(AppLocalizations.of(context).obstacleSubtitle),
+                title: const Text('Obstacle Tile'),
+                subtitle: const Text('Blocks movement and cannot be entered.'),
               ),
               ListTile(
                 leading: const Icon(Icons.star, color: Colors.green),
-                title: Text(AppLocalizations.of(context).bonusTitle),
-                subtitle: Text(AppLocalizations.of(context).bonusSubtitle),
+                title: const Text('Bonus Tile'),
+                subtitle: const Text('Collision grants bonus points.'),
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text(AppLocalizations.of(context).close),
+              child: Text(AppLocalizations.of(context)!.close),
             ),
           ],
         );
@@ -125,14 +174,18 @@ mixin GameDialogs {
                 ListTile(
                   leading: const Icon(Icons.block, color: Colors.orange),
                   title: const Text('Remove Ads'),
-                  subtitle: Text('Price: ${purchaseService.getProductPrice('remove_ads')}'),
+                  subtitle: Text(
+                    'Price: ${purchaseService.getProductPrice('remove_ads')}',
+                  ),
                   trailing: ElevatedButton(
                     onPressed: () async {
                       Navigator.of(context).pop();
                       try {
                         await purchaseService.purchaseAdRemoval();
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Purchase completed! Ads removed.')),
+                          const SnackBar(
+                            content: Text('Purchase completed! Ads removed.'),
+                          ),
                         );
                       } catch (e) {
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -148,7 +201,9 @@ mixin GameDialogs {
                 onPressed: () async {
                   await purchaseService.restorePurchases();
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Purchase restoration attempted.')),
+                    const SnackBar(
+                      content: Text('Purchase restoration attempted.'),
+                    ),
                   );
                 },
                 child: const Text('Restore Purchases'),

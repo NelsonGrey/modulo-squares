@@ -3,7 +3,7 @@ import { Auth } from 'firebase/auth';
 import { Firestore } from 'firebase/firestore';
 import { Functions } from 'firebase/functions';
 import { FirebaseStorage } from 'firebase/storage';
-import * as admin from 'firebase-admin';
+import admin from 'firebase-admin';
 export interface FirebaseConfig {
     apiKey: string;
     authDomain: string;
@@ -47,7 +47,7 @@ export declare class AuthHelpers {
  * Firestore CRUD helpers for Firebase Functions
  */
 export declare class FirestoreCrudHelpers {
-    private static db;
+    private static get db();
     /**
      * Create a document with standard metadata
      */
