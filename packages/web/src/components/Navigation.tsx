@@ -1,20 +1,11 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 const Navigation: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const location = useLocation();
-  const isHome = location.pathname === '/';
-
-  const scrollToSection = (sectionId: string) => {
-    if (isHome) {
-      document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
-    }
-    setIsMenuOpen(false);
-  };
 
   return (
-    <nav className="fixed top-0 w-full bg-white/95 backdrop-blur-sm z-50 border-b border-gray-200">
+    <nav className="bg-white border-b border-gray-200 shrink-0">
       <div className="container-max">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -27,22 +18,13 @@ const Navigation: React.FC = () => {
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center space-x-8">
-            <button
-              onClick={() => scrollToSection('features')}
-              className="text-gray-700 hover:text-primary-600 transition-colors"
-            >
+            <Link to="/how-it-works" className="text-gray-700 hover:text-primary-600 transition-colors">
               How It Works
-            </button>
-            <button
-              onClick={() => scrollToSection('download')}
-              className="text-gray-700 hover:text-primary-600 transition-colors"
-            >
+            </Link>
+            <Link to="/download" className="text-gray-700 hover:text-primary-600 transition-colors">
               Download
-            </button>
-            <Link
-              to="/leaderboard"
-              className="text-gray-700 hover:text-primary-600 transition-colors font-medium"
-            >
+            </Link>
+            <Link to="/leaderboard" className="text-gray-700 hover:text-primary-600 transition-colors font-medium">
               Leaderboard
             </Link>
           </div>
@@ -65,22 +47,24 @@ const Navigation: React.FC = () => {
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-gray-200">
             <div className="flex flex-col space-y-4">
-              <button
-                onClick={() => scrollToSection('features')}
-                className="text-left text-gray-700 hover:text-primary-600 transition-colors"
+              <Link
+                to="/how-it-works"
+                onClick={() => setIsMenuOpen(false)}
+                className="text-gray-700 hover:text-primary-600 transition-colors"
               >
                 How It Works
-              </button>
-              <button
-                onClick={() => scrollToSection('download')}
-                className="text-left text-gray-700 hover:text-primary-600 transition-colors"
+              </Link>
+              <Link
+                to="/download"
+                onClick={() => setIsMenuOpen(false)}
+                className="text-gray-700 hover:text-primary-600 transition-colors"
               >
                 Download
-              </button>
+              </Link>
               <Link
                 to="/leaderboard"
                 onClick={() => setIsMenuOpen(false)}
-                className="text-left text-gray-700 hover:text-primary-600 transition-colors font-medium"
+                className="text-gray-700 hover:text-primary-600 transition-colors font-medium"
               >
                 Leaderboard
               </Link>

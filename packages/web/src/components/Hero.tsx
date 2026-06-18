@@ -1,14 +1,12 @@
+import { Link } from 'react-router-dom';
+
 const BUCKETS = [2, 3, 4, 5, 6];
 const FALLING_VALUE = 12;
-const ACTIVE_LANE = 2; // 0-based, lands in bucket 4
+const ACTIVE_LANE = 2; // 0-based, lands in bucket ÷4
 
 const Hero: React.FC = () => {
-  const scrollToDownload = () => {
-    document.getElementById('download')?.scrollIntoView({ behavior: 'smooth' });
-  };
-
   return (
-    <section className="pt-16 bg-linear-to-br from-primary-50 to-secondary-50 min-h-screen flex items-center">
+    <section className="py-16 bg-linear-to-br from-primary-50 to-secondary-50">
       <div className="container-max">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
 
@@ -25,18 +23,12 @@ const Hero: React.FC = () => {
               Score with every clean division. Miss and you lose points. Level up as speed and range increase.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <button
-                onClick={scrollToDownload}
-                className="btn-primary text-lg px-8 py-4"
-              >
+              <Link to="/download" className="btn-primary text-lg px-8 py-4 text-center">
                 Download Free
-              </button>
-              <button
-                onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
-                className="btn-secondary text-lg px-8 py-4"
-              >
+              </Link>
+              <Link to="/how-it-works" className="btn-secondary text-lg px-8 py-4 text-center">
                 How It Works
-              </button>
+              </Link>
             </div>
           </div>
 
