@@ -1,8 +1,8 @@
 import 'package:get_it/get_it.dart';
-import 'package:modulo/core/services/analytics_service.dart';
-import 'package:modulo/core/services/ad_service.dart';
-import 'package:modulo/core/services/consent_service.dart';
-import 'package:modulo/core/services/purchase_service.dart';
+import 'package:modulo_squares/core/services/analytics_service.dart';
+import 'package:modulo_squares/core/services/ad_service.dart';
+import 'package:modulo_squares/core/services/consent_service.dart';
+import 'package:modulo_squares/core/services/purchase_service.dart';
 
 /// Service locator for dependency injection
 final getIt = GetIt.instance;

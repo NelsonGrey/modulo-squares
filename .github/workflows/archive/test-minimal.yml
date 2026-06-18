@@ -1,0 +1,14 @@
+name: Test Minimal Reusable
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  call-minimal:
+    uses: mnelson3/nelson-grey/.github/workflows/minimal-reusable.yml@main
+    with:
+      test_input: "hello"

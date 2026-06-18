@@ -1,6 +1,6 @@
 {
   "projects": {
-    "default": "modulo-squares-prod",
+    "default": "modulo-squares-dev",
     "dev": "modulo-squares-dev",
     "staging": "modulo-squares-staging",
     "prod": "modulo-squares-prod"

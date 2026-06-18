@@ -1,0 +1,17 @@
+name: "Test Simple Reusable"
+
+on:
+  workflow_dispatch:
+    inputs:
+      message:
+        description: "Message to pass"
+        required: true
+        type: string
+        default: "hello"
+
+jobs:
+  test-simple-reusable:
+    name: Call Simple Reusable
+    uses: mnelson3/nelson-grey/.github/workflows/reusable/simple-test.yml@main
+    with:
+      message: ${{ github.event.inputs.message }}

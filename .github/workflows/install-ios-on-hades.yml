@@ -1,0 +1,42 @@
+name: iOS Distribution (Self-Contained)
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment config to use
+        required: true
+        default: dev
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+      release_type:
+        description: Distribution target
+        required: true
+        default: testflight
+        type: choice
+        options:
+          - build_only
+          - testflight
+      release_notes:
+        description: Optional release notes for TestFlight
+        required: false
+        default: "Manual self-contained iOS distribution"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  distribute-ios:
+    name: Build and Distribute iOS
+    uses: ./.github/workflows/ios-build-self-contained.yml
+    with:
+      project_name: modulo-squares
+      environment: ${{ inputs.environment }}
+      release_type: ${{ inputs.release_type }}
+      release_notes: ${{ inputs.release_notes }}
+      beta_group_name: Internal Testers
+    secrets: inherit
