@@ -2,18 +2,7 @@ import { Link } from 'react-router-dom';
 
 const PrivacyPolicy: React.FC = () => {
   return (
-    <div className="min-h-screen bg-white">
-      <header className="bg-gray-900 text-white py-4 px-6">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-            <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">M</span>
-            </div>
-            <span className="font-bold text-xl">Modulo Squares</span>
-          </Link>
-        </div>
-      </header>
-
+    <div className="bg-white">
       <main className="max-w-4xl mx-auto px-6 py-12">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Privacy Policy</h1>
         <p className="text-gray-500 mb-8">Last updated: June 17, 2026</p>
@@ -93,7 +82,7 @@ const PrivacyPolicy: React.FC = () => {
                 Google's Privacy Policy
               </a>.
               You can opt out of personalized advertising at any time via your device settings
-              (iOS: Settings → Privacy & Security → Tracking; Android: Settings → Google → Ads).
+              (iOS: Settings → Privacy &amp; Security → Tracking; Android: Settings → Google → Ads).
             </p>
 
             <h3 className="text-lg font-medium text-gray-800 mt-4 mb-2">2.5 In-App Purchases</h3>
@@ -241,17 +230,13 @@ const PrivacyPolicy: React.FC = () => {
           </section>
 
         </div>
-      </main>
 
-      <footer className="bg-gray-100 border-t border-gray-200 py-6 px-6 mt-12">
-        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-gray-500 text-sm">© 2026 Modulo Squares. All rights reserved.</p>
-          <div className="flex space-x-6 text-sm">
-            <Link to="/privacy" className="text-gray-500 hover:text-gray-700 transition-colors">Privacy Policy</Link>
-            <Link to="/terms" className="text-gray-500 hover:text-gray-700 transition-colors">Terms of Service</Link>
-          </div>
+        <div className="mt-12 pt-6 border-t border-gray-200">
+          <Link to="/" className="text-primary-600 hover:text-primary-700 text-sm">
+            ← Back to home
+          </Link>
         </div>
-      </footer>
+      </main>
     </div>
   );
 };

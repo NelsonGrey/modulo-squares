@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 const features = [
   {
     icon: '⬇️',
@@ -39,7 +41,7 @@ const features = [
 
 const Features: React.FC = () => {
   return (
-    <section id="features" className="section-padding bg-white">
+    <section className="section-padding bg-white">
       <div className="container-max">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
@@ -71,12 +73,12 @@ const Features: React.FC = () => {
             <p className="text-lg mb-6 opacity-90">
               Download free on iOS and Android. No ads in the game — just pure puzzle focus.
             </p>
-            <button
-              onClick={() => document.getElementById('download')?.scrollIntoView({ behavior: 'smooth' })}
-              className="bg-white text-primary-600 font-semibold py-3 px-8 rounded-lg hover:bg-gray-50 transition-colors"
+            <Link
+              to="/download"
+              className="inline-block bg-white text-primary-600 font-semibold py-3 px-8 rounded-lg hover:bg-gray-50 transition-colors"
             >
               Get the App
-            </button>
+            </Link>
           </div>
         </div>
       </div>
