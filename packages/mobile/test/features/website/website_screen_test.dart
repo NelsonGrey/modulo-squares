@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:modulo/features/website/website_screen.dart';
+import 'package:modulo_squares/features/website/website_screen.dart';
 
 void main() {
   testWidgets('WebsiteScreen builds without errors', (WidgetTester tester) async {

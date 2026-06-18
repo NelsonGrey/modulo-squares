@@ -1,86 +1,82 @@
 import { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+
+const ROUTE_BG: Record<string, string> = {
+  '/':              'bg-primary-600',
+  '/how-it-works':  'bg-secondary-600',
+  '/download':      'bg-gray-900',
+  '/leaderboard':   'bg-linear-to-r from-primary-600 to-secondary-600',
+  '/privacy':       'bg-gray-600',
+  '/terms':         'bg-gray-600',
+};
 
 const Navigation: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  const scrollToSection = (sectionId: string) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
-    setIsMenuOpen(false);
-  };
+  const { pathname } = useLocation();
+  const bgClass = ROUTE_BG[pathname] ?? 'bg-primary-600';
 
   return (
-    <nav className="fixed top-0 w-full bg-white/95 backdrop-blur-sm z-50 border-b border-gray-200">
+    <nav className={`${bgClass} shrink-0`}>
       <div className="container-max">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">M</span>
-            </div>
-            <span className="font-bold text-xl text-gray-900">Modulo Squares</span>
-          </div>
+          <Link to="/" className="flex items-center space-x-2">
+            <img src="/icon-modulo-squares.png" alt="" className="w-8 h-8 rounded-lg" />
+            <span className="font-bold text-xl text-white">Modulo Squares</span>
+          </Link>
 
-          {/* Desktop Navigation */}
+          {/* Desktop nav */}
           <div className="hidden md:flex items-center space-x-8">
-            <button
-              onClick={() => scrollToSection('features')}
-              className="text-gray-700 hover:text-primary-600 transition-colors"
-            >
-              Features
-            </button>
-            <button
-              onClick={() => scrollToSection('download')}
-              className="text-gray-700 hover:text-primary-600 transition-colors"
-            >
+            <Link to="/how-it-works" className="text-white/80 hover:text-white transition-colors">
+              How It Works
+            </Link>
+            <Link to="/download" className="text-white/80 hover:text-white transition-colors">
               Download
-            </button>
-            <button
-              onClick={() => scrollToSection('about')}
-              className="text-gray-700 hover:text-primary-600 transition-colors"
-            >
-              About
-            </button>
+            </Link>
+            <Link to="/leaderboard" className="text-white/80 hover:text-white transition-colors font-medium">
+              Leaderboard
+            </Link>
           </div>
 
-          {/* Mobile menu button */}
+          {/* Mobile menu toggle */}
           <button
             className="md:hidden p-2"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label="Toggle menu"
           >
             <div className="w-6 h-6 flex flex-col justify-center items-center">
-              <span className={`block w-5 h-0.5 bg-gray-700 transition-transform ${isMenuOpen ? 'rotate-45 translate-y-1' : '-translate-y-1'}`}></span>
-              <span className={`block w-5 h-0.5 bg-gray-700 transition-opacity ${isMenuOpen ? 'opacity-0' : 'opacity-100'}`}></span>
-              <span className={`block w-5 h-0.5 bg-gray-700 transition-transform ${isMenuOpen ? '-rotate-45 -translate-y-1' : 'translate-y-1'}`}></span>
+              <span className={`block w-5 h-0.5 bg-white transition-transform ${isMenuOpen ? 'rotate-45 translate-y-1' : '-translate-y-1'}`} />
+              <span className={`block w-5 h-0.5 bg-white transition-opacity ${isMenuOpen ? 'opacity-0' : 'opacity-100'}`} />
+              <span className={`block w-5 h-0.5 bg-white transition-transform ${isMenuOpen ? '-rotate-45 -translate-y-1' : 'translate-y-1'}`} />
             </div>
           </button>
         </div>
 
-        {/* Mobile Navigation */}
+        {/* Mobile menu */}
         {isMenuOpen && (
-          <div className="md:hidden py-4 border-t border-gray-200">
+          <div className="md:hidden py-4 border-t border-white/20">
             <div className="flex flex-col space-y-4">
-              <button
-                onClick={() => scrollToSection('features')}
-                className="text-left text-gray-700 hover:text-primary-600 transition-colors"
+              <Link
+                to="/how-it-works"
+                onClick={() => setIsMenuOpen(false)}
+                className="text-white/80 hover:text-white transition-colors"
               >
-                Features
-              </button>
-              <button
-                onClick={() => scrollToSection('download')}
-                className="text-left text-gray-700 hover:text-primary-600 transition-colors"
+                How It Works
+              </Link>
+              <Link
+                to="/download"
+                onClick={() => setIsMenuOpen(false)}
+                className="text-white/80 hover:text-white transition-colors"
               >
                 Download
-              </button>
-              <button
-                onClick={() => scrollToSection('about')}
-                className="text-left text-gray-700 hover:text-primary-600 transition-colors"
+              </Link>
+              <Link
+                to="/leaderboard"
+                onClick={() => setIsMenuOpen(false)}
+                className="text-white/80 hover:text-white transition-colors font-medium"
               >
-                About
-              </button>
+                Leaderboard
+              </Link>
             </div>
           </div>
         )}

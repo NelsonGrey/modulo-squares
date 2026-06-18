@@ -6,20 +6,43 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 /// Comprehensive privacy compliance manager for ads.
 /// Handles ATT (App Tracking Transparency) on iOS and UMP (User Messaging Platform) consent.
 class ConsentService {
-  ConsentService._();
-  static final ConsentService instance = ConsentService._();
+  ConsentService._([bool testMode = false]) : _testMode = testMode;
+  static ConsentService? _instance;
 
-  // Public constructor for dependency injection
-  factory ConsentService() => instance;
+  static ConsentService get instance {
+    _instance ??= ConsentService._();
+    return _instance!;
+  }
+
+  // Public constructor for dependency injection and testing
+  factory ConsentService([bool testMode = false]) {
+    if (testMode) {
+      return ConsentService._(true);
+    }
+    return instance;
+  }
+
+  // Factory method for testing
+  factory ConsentService.createForTesting() {
+    return ConsentService._(true);
+  }
 
   bool _personalized = false;
   bool _attAuthorized = false;
+  final bool _testMode;
 
   bool get isPersonalized => _personalized && _attAuthorized;
   bool get attAuthorized => _attAuthorized;
 
   /// Configure global ad request options according to consent and tracking authorization.
   Future<void> configure() async {
+    if (_testMode) {
+      // In test mode, set default values without platform calls
+      _personalized = false;
+      _attAuthorized = false;
+      return;
+    }
+
     // Initialize with non-personalized ads by default
     await MobileAds.instance.updateRequestConfiguration(
       RequestConfiguration(

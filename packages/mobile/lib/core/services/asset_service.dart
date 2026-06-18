@@ -1,6 +1,6 @@
 import 'package:flutter/services.dart';
-import 'package:modulo/core/services/cache_service.dart';
-import 'package:modulo/core/services/error_handler.dart';
+import 'package:modulo_squares/core/services/cache_service.dart';
+import 'package:modulo_squares/core/services/error_handler.dart';
 
 /// Service for managing game assets with caching
 class AssetService {

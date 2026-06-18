@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:modulo/core/services/error_handler.dart';
+import 'package:modulo_squares/core/services/error_handler.dart';
 
 /// Cache entry with timestamp for expiration tracking
 class CacheEntry {

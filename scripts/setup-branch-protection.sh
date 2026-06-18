@@ -15,7 +15,7 @@ if ! command -v gh &> /dev/null; then
     echo "Install it from: https://cli.github.com/"
     echo ""
     echo "Manual setup instructions:"
-    echo "Go to: https://github.com/mnelson3/modulo-flutter-project/settings/branches"
+    echo "Go to: https://github.com/mnelson3/modulo-squares/settings/branches"
     echo "Follow the rules in BRANCH_PROTECTION.md"
     exit 1
 fi
@@ -32,7 +32,7 @@ echo ""
 
 # Main branch protection
 echo "🔒 Setting up main branch protection..."
-gh api repos/mnelson3/modulo-flutter-project/branches/main/protection \
+gh api repos/mnelson3/modulo-squares/branches/main/protection \
   --method PUT \
   --field required_status_checks='{"strict":true,"contexts":["test","build-and-deploy"]}' \
   --field required_pull_request_reviews='{"required_approving_review_count":1,"dismiss_stale_reviews":true}' \
@@ -47,7 +47,7 @@ echo ""
 
 # Staging branch protection
 echo "🔒 Setting up staging branch protection..."
-gh api repos/mnelson3/modulo-flutter-project/branches/staging/protection \
+gh api repos/mnelson3/modulo-squares/branches/staging/protection \
   --method PUT \
   --field required_status_checks='{"strict":false,"contexts":["test","build-and-deploy"]}' \
   --field required_pull_request_reviews='{"required_approving_review_count":1}' \
@@ -62,7 +62,7 @@ echo ""
 
 # Develop branch protection
 echo "🔒 Setting up develop branch protection..."
-gh api repos/mnelson3/modulo-flutter-project/branches/develop/protection \
+gh api repos/mnelson3/modulo-squares/branches/develop/protection \
   --method PUT \
   --field required_status_checks='{"strict":false,"contexts":["test"]}' \
   --field required_pull_request_reviews=null \
@@ -82,4 +82,4 @@ echo "- main: Requires PR reviews + status checks (test, build-and-deploy)"
 echo "- staging: Requires PR reviews + status checks (test, build-and-deploy)"
 echo "- develop: Requires status checks (test) only"
 echo ""
-echo "🔗 View rules: https://github.com/mnelson3/modulo-flutter-project/settings/branches"
+echo "🔗 View rules: https://github.com/mnelson3/modulo-squares/settings/branches"

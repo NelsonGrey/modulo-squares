@@ -1,0 +1,308 @@
+# Zero-touch DevOps: Disable interactive prompts
+ENV["FASTLANE_SKIP_UPDATE_CHECK"] = "1"
+ENV["FASTLANE_HIDE_CHANGELOG"] = "1"
+ENV["FASTLANE_DISABLE_COLORS"] = "0"
+
+require "dotenv"
+require "base64"
+require "tempfile"
+require "shellwords"
+
+repo_root = File.expand_path("../../../..", __dir__)
+Dotenv.load(File.join(repo_root, ".env.development")) if File.exist?(File.join(repo_root, ".env.development"))
+Dotenv.load(".env") if File.exist?(".env")
+
+PRIVATE_KEY_BEGIN_MARKER = ["-----BEGIN", "PRIVATE", "KEY-----"].join(" ")
+EC_PRIVATE_KEY_BEGIN_MARKER = ["-----BEGIN", "EC", "PRIVATE", "KEY-----"].join(" ")
+
+default_platform(:ios)
+
+platform :ios do
+  def ci_ios_build_number
+    explicit = ENV["IOS_BUILD_NUMBER"].to_s.strip
+    return explicit if explicit.match?(/\A\d+\z/) && explicit.to_i > 0
+
+    run_number = ENV["GITHUB_RUN_NUMBER"].to_s.strip
+    return run_number if run_number.match?(/\A\d+\z/) && run_number.to_i > 0
+
+    Time.now.utc.strftime("%Y%m%d%H%M%S")
+  end
+
+  def normalized_private_key_content
+    raw = ENV["APP_STORE_CONNECT_KEY"].to_s
+    raise "Missing APP_STORE_CONNECT_KEY" if raw.strip.empty?
+
+    cleaned = raw.gsub("\0", "").gsub(/\x00/, "").gsub("%", "").strip
+    return cleaned if cleaned.include?("-----BEGIN")
+
+    packed = cleaned.gsub(/\s+/, "")
+    looks_base64 = packed.match?(/\A[A-Za-z0-9+\/=]+\z/) && packed.length > 100
+    return packed if looks_base64
+
+    cleaned
+  end
+
+  def app_store_api_key
+    key_id = ENV["APP_STORE_CONNECT_KEY_ID"].to_s.strip
+    issuer_id = ENV["APP_STORE_CONNECT_ISSUER_ID"].to_s.strip
+    raise "Missing APP_STORE_CONNECT_KEY_ID" if key_id.empty?
+    raise "Missing APP_STORE_CONNECT_ISSUER_ID" if issuer_id.empty?
+
+    key_content = normalized_private_key_content
+    if key_content.include?("-----BEGIN")
+      key_content = key_content.gsub(/\A['\"]|['\"]\z/, "")
+      key_content = key_content.gsub(/\\n/, "\n").gsub(/\r\n?/, "\n")
+      key_content = key_content.lines.map(&:strip).reject(&:empty?).join("\n") + "\n"
+
+      unless key_content.include?(PRIVATE_KEY_BEGIN_MARKER) || key_content.include?(EC_PRIVATE_KEY_BEGIN_MARKER)
+        decoded = Base64.decode64(key_content)
+        key_content = decoded if decoded.include?("-----BEGIN")
+      end
+
+      key_file = Tempfile.new(["app_store_connect_key", ".p8"])
+      key_file.write(key_content)
+      key_file.close
+
+      return app_store_connect_api_key(
+        key_id: key_id,
+        issuer_id: issuer_id,
+        key_filepath: key_file.path
+      )
+    end
+
+    app_store_connect_api_key(
+      key_id: key_id,
+      issuer_id: issuer_id,
+      key_content: key_content.gsub(/\s+/, ""),
+      is_key_content_base64: true,
+      in_house: false
+    )
+  end
+
+  def app_store_connect_key_file_path
+    key_content = normalized_private_key_content
+    if !key_content.include?("-----BEGIN")
+      decoded = Base64.decode64(key_content.gsub(/\s+/, ""))
+      key_content = decoded if decoded.include?("-----BEGIN")
+    end
+
+    key_content = key_content.gsub(/\A['\"]|['\"]\z/, "")
+    key_content = key_content.gsub(/\\n/, "\n").gsub(/\r\n?/, "\n")
+    key_content = key_content.lines.map(&:strip).reject(&:empty?).join("\n") + "\n"
+
+    unless key_content.include?(PRIVATE_KEY_BEGIN_MARKER) || key_content.include?(EC_PRIVATE_KEY_BEGIN_MARKER)
+      raise "APP_STORE_CONNECT_KEY could not be converted to a valid .p8 key file"
+    end
+
+    key_file = Tempfile.new(["app_store_connect_xcode_auth", ".p8"])
+    key_file.write(key_content)
+    key_file.flush
+    key_file.close
+
+    # Keep a strong reference so Ruby GC does not unlink the tempfile before xcodebuild uses it.
+    @xcode_auth_key_tempfile = key_file
+    key_file.path
+  end
+
+  def ensure_xcode_automatic_signing!
+    team_id = ENV["FASTLANE_TEAM_ID"].to_s.strip
+    raise "Missing FASTLANE_TEAM_ID" if team_id.empty?
+
+    update_code_signing_settings(
+      use_automatic_signing: true,
+      path: "Runner.xcodeproj",
+      targets: ["Runner"],
+      team_id: team_id
+    )
+
+    team_id
+  end
+
+  desc "Validate App Store Connect configuration"
+  lane :sync_signing do
+    app_store_api_key
+    ensure_xcode_automatic_signing!
+    UI.success("✅ Signing configuration validated (automatic signing + App Store Connect API)")
+  end
+
+  desc "Validate development signing configuration"
+  lane :certificates_development do
+    sync_signing
+    UI.success("✅ Development signing uses automatic signing (no keychain orchestration)")
+  end
+
+  desc "Validate App Store signing configuration"
+  lane :certificates_appstore do
+    sync_signing
+    UI.success("✅ App Store signing uses automatic signing (no keychain orchestration)")
+  end
+
+  lane :certificates_all do
+    certificates_development
+    certificates_appstore
+  end
+
+  desc "ZERO-TOUCH CERTIFICATE LIFECYCLE"
+  lane :zero_touch_certificates do
+    certificates_all
+    UI.success("✅ Zero-touch signing configuration is ready")
+  end
+
+  desc "Build iOS app for development without code signing"
+  lane :build_development do
+    sh("cd ../.. && flutter build ios --debug --no-codesign")
+    app_path = "../../build/ios/iphoneos/Runner.app"
+    output_dir = "./fastlane/builds"
+    sh("mkdir -p #{output_dir}")
+    sh("cp -r #{app_path} #{output_dir}/")
+    UI.message("Development build completed: #{output_dir}/Runner.app")
+  end
+
+  desc "Upload to TestFlight using automatic signing"
+  lane :beta do |options|
+    release_notes = options[:release_notes] || ENV["RELEASE_NOTES"] || "Automated build for TestFlight"
+    build_number = ci_ios_build_number
+
+    increment_build_number(build_number: build_number)
+    UI.message("Using iOS build number: #{build_number}")
+
+    api_key = app_store_api_key
+    team_id = ensure_xcode_automatic_signing!
+    authentication_key_path = app_store_connect_key_file_path
+    authentication_key_id = ENV["APP_STORE_CONNECT_KEY_ID"].to_s.strip
+    authentication_issuer_id = ENV["APP_STORE_CONNECT_ISSUER_ID"].to_s.strip
+
+    sh("rm -rf ../Pods")
+    sh("rm -f ../Podfile.lock")
+    clear_derived_data
+
+    Dir.chdir("../../") do
+      sh("rm -rf build")
+      sh("flutter clean || true")
+      sh("flutter pub get")
+    end
+
+    Dir.chdir("..") do
+      sh("rm -f Podfile.lock")
+      sh("pod install --repo-update")
+    end
+
+    begin
+      build_app(
+        scheme: "Runner",
+        workspace: "Runner.xcworkspace",
+        clean: true,
+        export_method: "app-store",
+        output_directory: "./builds",
+        output_name: "ModuloSquares.ipa",
+        export_options: {
+          signingStyle: "automatic",
+          teamID: team_id
+        },
+        xcargs: [
+          "-allowProvisioningUpdates",
+          "-authenticationKeyPath #{Shellwords.escape(authentication_key_path)}",
+          "-authenticationKeyID #{Shellwords.escape(authentication_key_id)}",
+          "-authenticationKeyIssuerID #{Shellwords.escape(authentication_issuer_id)}"
+        ].join(" ")
+      )
+    ensure
+      if @xcode_auth_key_tempfile
+        @xcode_auth_key_tempfile.unlink
+        @xcode_auth_key_tempfile = nil
+      end
+    end
+
+    ipa_path = lane_context[SharedValues::IPA_OUTPUT_PATH]
+    UI.user_error!("IPA not found at #{ipa_path}") unless ipa_path && File.exist?(ipa_path)
+    UI.user_error!("IPA file is empty at #{ipa_path}") unless File.size(ipa_path) > 0
+
+    upload_to_testflight(
+      api_key: api_key,
+      ipa: ipa_path,
+      skip_waiting_for_build_processing: true,
+      changelog: release_notes
+    )
+
+    UI.success("✅ Uploaded to TestFlight")
+  end
+
+  desc "Run tests and build debug version"
+  lane :test_and_build do
+    Dir.chdir("../../") do
+      sh("flutter pub get")
+      sh("flutter test")
+      sh("flutter build ios --debug --no-codesign")
+    end
+  end
+
+  def get_version_number_from_plist(plist_path:)
+    require "plist"
+    plist = Plist.parse_xml(plist_path)
+    plist["CFBundleShortVersionString"]
+  end
+
+  def get_build_number_from_plist(plist_path:)
+    require "plist"
+    plist = Plist.parse_xml(plist_path)
+    plist["CFBundleVersion"]
+  end
+
+  desc "Submit app to App Store Review"
+  lane :submit_to_app_store do |options|
+    api_key = app_store_api_key
+
+    deliver(
+      api_key: api_key,
+      submit_for_review: true,
+      automatic_release: false,
+      force: true,
+      skip_binary_upload: true,
+      skip_metadata: false,
+      skip_screenshots: false,
+      submission_information: {
+        add_id_info_uses_idfa: false,
+        export_compliance_encryption_updated: false,
+        export_compliance_uses_encryption: false
+      },
+      release_notes: {
+        "en-US" => options[:release_notes] || "Bug fixes and performance improvements"
+      }
+    )
+
+    version = get_version_number_from_plist(plist_path: "../../ios/Runner/Info.plist")
+    build = get_build_number_from_plist(plist_path: "../../ios/Runner/Info.plist")
+    UI.success("✅ Submitted version #{version} (#{build}) to App Store review")
+  end
+
+  desc "Promote TestFlight build to App Store"
+  lane :promote_to_app_store do |options|
+    release_notes = options[:release_notes] || "Ready for App Store release"
+    submit_to_app_store(release_notes: release_notes)
+  end
+
+  desc "Manage TestFlight beta groups"
+  lane :manage_beta_groups do |options|
+    api_key = app_store_api_key
+    beta_group_name = options[:group_name] || "Internal Testers"
+    UI.message("Beta group management requested for '#{beta_group_name}'.")
+    UI.message("Use App Store Connect UI/API automation to maintain tester membership.")
+    UI.message("API key validated: #{api_key ? 'yes' : 'no'}")
+  end
+
+  desc "Complete automated release pipeline: TestFlight → App Store"
+  lane :full_release_pipeline do |options|
+    beta(release_notes: options[:release_notes])
+
+    if options[:manage_beta]
+      manage_beta_groups(group_name: options[:beta_group_name])
+    end
+
+    if options[:submit_to_app_store]
+      sleep(300)
+      submit_to_app_store(release_notes: options[:release_notes])
+    end
+
+    UI.success("✅ Complete automated release pipeline finished")
+  end
+end

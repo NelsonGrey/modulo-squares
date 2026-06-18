@@ -1,118 +1,492 @@
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'dart:async';
 
-class AppLocalizations {
-  static AppLocalizations of(BuildContext context) => Localizations.of<AppLocalizations>(context, AppLocalizations)!;
+import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/intl.dart' as intl;
 
-  static const LocalizationsDelegate<AppLocalizations> delegate = AppLocalizationsDelegate();
+import 'app_localizations_en.dart';
 
-  String get appTitle => Intl.message('Modulo Squares', name: 'appTitle');
-  String get profile => Intl.message('Profile', name: 'profile');
-  String get signOut => Intl.message('Sign Out', name: 'signOut');
-  String get name => Intl.message('Name', name: 'name');
-  String get email => Intl.message('Email', name: 'email');
-  String get uid => Intl.message('UID', name: 'uid');
-  String get difficultyLevel => Intl.message('Difficulty Level:', name: 'difficultyLevel');
-  String get score => Intl.message('Score:', name: 'score');
-  String get highScore => Intl.message('High Score:', name: 'highScore');
-  String get restart => Intl.message('Restart', name: 'restart');
-  String get youWin => Intl.message('You Win!', name: 'youWin');
-  String winMessage(int score) => Intl.message(
-        'Congratulations, you cleared the board! Score: $score',
-        name: 'winMessage',
-        args: [score],
-        examples: const {'score': 42},
-      );
-  String get gameOver => Intl.message('Game Over', name: 'gameOver');
-  String gameOverMessage(int score) => Intl.message(
-        'No more valid moves available. Score: $score',
-        name: 'gameOverMessage',
-        args: [score],
-        examples: const {'score': 42},
-      );
-  String get enterName => Intl.message('Enter your name to submit score:', name: 'enterName');
-  String get yourName => Intl.message('Your name', name: 'yourName');
-  String get submitScore => Intl.message('Submit Score', name: 'submitScore');
-  String get playAgain => Intl.message('Play Again', name: 'playAgain');
-  String get globalLeaderboard => Intl.message('Global Leaderboard', name: 'globalLeaderboard');
-  String get noScoresYet => Intl.message('No scores yet', name: 'noScoresYet');
-  String get close => Intl.message('Close', name: 'close');
-  String get showLeaderboard => Intl.message('Show Leaderboard', name: 'showLeaderboard');
-  String mercyHelperSpawned(int penalty) => Intl.message(
-        'Helper tile spawned (−$penalty points).',
-        name: 'mercyHelperSpawned',
-        args: [penalty],
-        examples: const {'penalty': 5},
-      );
-  // Special Tiles
-  String get specialTilesTitle => Intl.message('Special Tiles', name: 'specialTilesTitle');
-  String get obstacleTitle => Intl.message('Obstacle', name: 'obstacleTitle');
-  String get obstacleSubtitle => Intl.message('Blocks movement.', name: 'obstacleSubtitle');
-  String get bonusTitle => Intl.message('Bonus', name: 'bonusTitle');
-  String get bonusSubtitle => Intl.message('Gives bonus points when you collide into it.', name: 'bonusSubtitle');
-  String get obstacleTooltip => Intl.message('Obstacle: Blocks movement.', name: 'obstacleTooltip');
-  String get bonusTooltip => Intl.message('Bonus: Bonus points on collision!', name: 'bonusTooltip');
+// ignore_for_file: type=lint
 
-  // Instructions Page
-  String get howToPlay => Intl.message('How to Play', name: 'howToPlay');
-  String get instructionsTitle => Intl.message('How to Play Modulo', name: 'instructionsTitle');
-  String get objectiveTitle => Intl.message('Objective', name: 'objectiveTitle');
-  String get objectiveBody =>
-      Intl.message('Clear the board by strategically combining tiles using modulo rules to maximize your score before you run out of moves.',
-          name: 'objectiveBody');
-  String get controlsTitle => Intl.message('Controls', name: 'controlsTitle');
-  String get controlsBody =>
-      Intl.message('Tap a tile and then tap an adjacent tile to move into it. Or swipe a tile to slide it until it hits another tile or the edge.',
-          name: 'controlsBody');
-  String get moduloRuleTitle => Intl.message('Modulo Rule', name: 'moduloRuleTitle');
-  String get moduloRuleBody => Intl.message(
-      'When a source tile moves into a target tile: If target % source == 0, both tiles clear. Otherwise, the target becomes (target + source) × (target % source), and the source respawns as a new random tile.',
-      name: 'moduloRuleBody');
-  String get specialTilesTitle2 => Intl.message('Special Tiles', name: 'specialTilesTitle2');
-  String get specialTilesBody =>
-      Intl.message('Obstacle blocks movement; you can’t enter or move it. Bonus grants extra points when you collide into it.', name: 'specialTilesBody');
-  String get levelsTitle => Intl.message('Levels & Grid Size', name: 'levelsTitle');
-  String get levelsBody =>
-      Intl.message('Levels 1–10 increase the grid size from 4×4 up to 13×13 (4 + level − 1). Higher levels mean more space and challenge.', name: 'levelsBody');
-  String get mercyTitle => Intl.message('Last-Tile Mercy', name: 'mercyTitle');
-  String get mercyBody => Intl.message(
-      'If exactly one tile remains and you still have moves, a helper tile may spawn with a small score penalty and an extra move cost to keep the game going.',
-      name: 'mercyBody');
-  String get scoringTitle => Intl.message('Scoring & Moves', name: 'scoringTitle');
-  String get scoringBody => Intl.message(
-      'Each successful collision gives +1 point, plus +5 extra if you collide into a Bonus tile. Plan your moves to conserve your limited moves and maximize score.',
-      name: 'scoringBody');
-  String get leaderboardTitle => Intl.message('Leaderboard', name: 'leaderboardTitle');
-  String get leaderboardBody => Intl.message('Sign in and submit your high score to the global leaderboard to compete with others.', name: 'leaderboardBody');
-  String get tipsTitle => Intl.message('Tips', name: 'tipsTitle');
-  String get tipsBody => Intl.message(
-      'Look for zero-remainder opportunities to clear spaces. Use Bonus tiles to spike your score. Avoid getting trapped by obstacles—keep paths open.',
-      name: 'tipsBody');
+/// Callers can lookup localized strings with an instance of AppLocalizations
+/// returned by `AppLocalizations.of(context)`.
+///
+/// Applications need to include `AppLocalizations.delegate()` in their app's
+/// `localizationDelegates` list, and the locales they support in the app's
+/// `supportedLocales` list. For example:
+///
+/// ```dart
+/// import 'l10n/app_localizations.dart';
+///
+/// return MaterialApp(
+///   localizationsDelegates: AppLocalizations.localizationsDelegates,
+///   supportedLocales: AppLocalizations.supportedLocales,
+///   home: MyApplicationHome(),
+/// );
+/// ```
+///
+/// ## Update pubspec.yaml
+///
+/// Please make sure to update your pubspec.yaml to include the following
+/// packages:
+///
+/// ```yaml
+/// dependencies:
+///   # Internationalization support.
+///   flutter_localizations:
+///     sdk: flutter
+///   intl: any # Use the pinned version from flutter_localizations
+///
+///   # Rest of dependencies
+/// ```
+///
+/// ## iOS Applications
+///
+/// iOS applications define key application metadata, including supported
+/// locales, in an Info.plist file that is built into the application bundle.
+/// To configure the locales supported by your app, you’ll need to edit this
+/// file.
+///
+/// First, open your project’s ios/Runner.xcworkspace Xcode workspace file.
+/// Then, in the Project Navigator, open the Info.plist file under the Runner
+/// project’s Runner folder.
+///
+/// Next, select the Information Property List item, select Add Item from the
+/// Editor menu, then select Localizations from the pop-up menu.
+///
+/// Select and expand the newly-created Localizations item then, for each
+/// locale your application supports, add a new item and select the locale
+/// you wish to add from the pop-up menu in the Value field. This list should
+/// be consistent with the languages listed in the AppLocalizations.supportedLocales
+/// property.
+abstract class AppLocalizations {
+  AppLocalizations(String locale) : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
-  // Instruction visuals & captions
-  String get legendTitle => Intl.message('Legend', name: 'legendTitle');
-  String get gridPreviewTitle => Intl.message('Board Preview', name: 'gridPreviewTitle');
-  String get moduloExamplesTitle => Intl.message('Modulo Examples', name: 'moduloExamplesTitle');
-  String get tapLabel => Intl.message('Tap', name: 'tapLabel');
-  String get swipeLabel => Intl.message('Swipe', name: 'swipeLabel');
-  String get normalTitle => Intl.message('Normal', name: 'normalTitle');
-  String get normalSubtitle => Intl.message('Regular numbered tile.', name: 'normalSubtitle');
-  String get moduloExampleClearCaption => Intl.message('12 % 3 = 0 → both clear', name: 'moduloExampleClearCaption');
-  String get moduloExampleTransformCaption => Intl.message('12 % 5 = 2 → (12 + 5) × 2 = 34; source respawns', name: 'moduloExampleTransformCaption');
+  final String localeName;
+
+  static AppLocalizations? of(BuildContext context) {
+    return Localizations.of<AppLocalizations>(context, AppLocalizations);
+  }
+
+  static const LocalizationsDelegate<AppLocalizations> delegate = _AppLocalizationsDelegate();
+
+  /// A list of this localizations delegate along with the default localizations
+  /// delegates.
+  ///
+  /// Returns a list of localizations delegates containing this delegate along with
+  /// GlobalMaterialLocalizations.delegate, GlobalCupertinoLocalizations.delegate,
+  /// and GlobalWidgetsLocalizations.delegate.
+  ///
+  /// Additional delegates can be added by appending to this list in
+  /// MaterialApp. This list does not have to be used at all if a custom list
+  /// of delegates is preferred or required.
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates = <LocalizationsDelegate<dynamic>>[
+    delegate,
+    GlobalMaterialLocalizations.delegate,
+    GlobalCupertinoLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+  ];
+
+  /// A list of this localizations delegate's supported locales.
+  static const List<Locale> supportedLocales = <Locale>[
+    Locale('en')
+  ];
+
+  /// No description provided for @appTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Modulo Squares'**
+  String get appTitle;
+
+  /// No description provided for @profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get profile;
+
+  /// No description provided for @signOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign Out'**
+  String get signOut;
+
+  /// No description provided for @name.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get name;
+
+  /// No description provided for @email.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get email;
+
+  /// No description provided for @uid.
+  ///
+  /// In en, this message translates to:
+  /// **'UID'**
+  String get uid;
+
+  /// No description provided for @difficultyLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Difficulty Level:'**
+  String get difficultyLevel;
+
+  /// No description provided for @score.
+  ///
+  /// In en, this message translates to:
+  /// **'Score:'**
+  String get score;
+
+  /// No description provided for @highScore.
+  ///
+  /// In en, this message translates to:
+  /// **'High Score:'**
+  String get highScore;
+
+  /// No description provided for @restart.
+  ///
+  /// In en, this message translates to:
+  /// **'Restart'**
+  String get restart;
+
+  /// No description provided for @youWin.
+  ///
+  /// In en, this message translates to:
+  /// **'You Win!'**
+  String get youWin;
+
+  /// No description provided for @winMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Congratulations, you cleared the board! Score: {score}'**
+  String winMessage(Object score);
+
+  /// No description provided for @gameOver.
+  ///
+  /// In en, this message translates to:
+  /// **'Game Over'**
+  String get gameOver;
+
+  /// No description provided for @gameOverMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'No more valid moves available. Score: {score}'**
+  String gameOverMessage(Object score);
+
+  /// No description provided for @enterName.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your name to submit score:'**
+  String get enterName;
+
+  /// No description provided for @yourName.
+  ///
+  /// In en, this message translates to:
+  /// **'Your name'**
+  String get yourName;
+
+  /// No description provided for @submitScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit Score'**
+  String get submitScore;
+
+  /// No description provided for @playAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Play Again'**
+  String get playAgain;
+
+  /// No description provided for @globalLeaderboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Global Leaderboard'**
+  String get globalLeaderboard;
+
+  /// No description provided for @noScoresYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No scores yet'**
+  String get noScoresYet;
+
+  /// No description provided for @close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get close;
+
+  /// No description provided for @showLeaderboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Show Leaderboard'**
+  String get showLeaderboard;
+
+  /// No description provided for @errorUnexpected.
+  ///
+  /// In en, this message translates to:
+  /// **'An unexpected error occurred.'**
+  String get errorUnexpected;
+
+  /// No description provided for @authErrorUserDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'This account has been disabled.'**
+  String get authErrorUserDisabled;
+
+  /// No description provided for @authErrorUserNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No account found with this email.'**
+  String get authErrorUserNotFound;
+
+  /// No description provided for @authErrorWrongPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect password.'**
+  String get authErrorWrongPassword;
+
+  /// No description provided for @authErrorEmailAlreadyInUse.
+  ///
+  /// In en, this message translates to:
+  /// **'An account with this email already exists.'**
+  String get authErrorEmailAlreadyInUse;
+
+  /// No description provided for @authErrorWeakPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Password is too weak.'**
+  String get authErrorWeakPassword;
+
+  /// No description provided for @authErrorInvalidEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid email address.'**
+  String get authErrorInvalidEmail;
+
+  /// No description provided for @authErrorOperationNotAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'This sign-in method is not enabled.'**
+  String get authErrorOperationNotAllowed;
+
+  /// No description provided for @authErrorTooManyRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many failed attempts. Please try again later.'**
+  String get authErrorTooManyRequests;
+
+  /// No description provided for @authErrorNetworkRequestFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Network error. Please check your connection.'**
+  String get authErrorNetworkRequestFailed;
+
+  /// No description provided for @authErrorUnexpected.
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication failed. Please try again.'**
+  String get authErrorUnexpected;
+
+  /// No description provided for @firestoreErrorPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'You don\'t have permission to perform this action.'**
+  String get firestoreErrorPermissionDenied;
+
+  /// No description provided for @firestoreErrorNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'The requested data was not found.'**
+  String get firestoreErrorNotFound;
+
+  /// No description provided for @firestoreErrorAlreadyExists.
+  ///
+  /// In en, this message translates to:
+  /// **'This data already exists.'**
+  String get firestoreErrorAlreadyExists;
+
+  /// No description provided for @firestoreErrorResourceExhausted.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many requests. Please try again later.'**
+  String get firestoreErrorResourceExhausted;
+
+  /// No description provided for @firestoreErrorFailedPrecondition.
+  ///
+  /// In en, this message translates to:
+  /// **'Operation failed due to current state.'**
+  String get firestoreErrorFailedPrecondition;
+
+  /// No description provided for @firestoreErrorAborted.
+  ///
+  /// In en, this message translates to:
+  /// **'Operation was aborted.'**
+  String get firestoreErrorAborted;
+
+  /// No description provided for @firestoreErrorOutOfRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Requested data is out of range.'**
+  String get firestoreErrorOutOfRange;
+
+  /// No description provided for @firestoreErrorUnimplemented.
+  ///
+  /// In en, this message translates to:
+  /// **'This feature is not implemented yet.'**
+  String get firestoreErrorUnimplemented;
+
+  /// No description provided for @firestoreErrorInternal.
+  ///
+  /// In en, this message translates to:
+  /// **'An internal error occurred.'**
+  String get firestoreErrorInternal;
+
+  /// No description provided for @firestoreErrorUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Service is currently unavailable.'**
+  String get firestoreErrorUnavailable;
+
+  /// No description provided for @firestoreErrorDataLoss.
+  ///
+  /// In en, this message translates to:
+  /// **'Data loss occurred.'**
+  String get firestoreErrorDataLoss;
+
+  /// No description provided for @firestoreErrorUnauthenticated.
+  ///
+  /// In en, this message translates to:
+  /// **'You must be signed in to perform this action.'**
+  String get firestoreErrorUnauthenticated;
+
+  /// No description provided for @firestoreErrorDeadlineExceeded.
+  ///
+  /// In en, this message translates to:
+  /// **'Request timed out. Please try again.'**
+  String get firestoreErrorDeadlineExceeded;
+
+  /// No description provided for @firestoreErrorUnexpected.
+  ///
+  /// In en, this message translates to:
+  /// **'Database error occurred. Please try again.'**
+  String get firestoreErrorUnexpected;
+
+  /// No description provided for @admobErrorInternal.
+  ///
+  /// In en, this message translates to:
+  /// **'Ad service internal error.'**
+  String get admobErrorInternal;
+
+  /// No description provided for @admobErrorInvalidRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid ad request.'**
+  String get admobErrorInvalidRequest;
+
+  /// No description provided for @admobErrorNetworkError.
+  ///
+  /// In en, this message translates to:
+  /// **'Network error while loading ad.'**
+  String get admobErrorNetworkError;
+
+  /// No description provided for @admobErrorNoFill.
+  ///
+  /// In en, this message translates to:
+  /// **'No ad available at this time.'**
+  String get admobErrorNoFill;
+
+  /// No description provided for @admobErrorUnexpected.
+  ///
+  /// In en, this message translates to:
+  /// **'Ad error occurred.'**
+  String get admobErrorUnexpected;
+
+  /// No description provided for @purchaseErrorCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase was cancelled.'**
+  String get purchaseErrorCancelled;
+
+  /// No description provided for @purchaseErrorPaymentInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment information is invalid.'**
+  String get purchaseErrorPaymentInvalid;
+
+  /// No description provided for @purchaseErrorClientInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Client is not allowed to make purchases.'**
+  String get purchaseErrorClientInvalid;
+
+  /// No description provided for @purchaseErrorPaymentNotAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'Device is not allowed to make payments.'**
+  String get purchaseErrorPaymentNotAllowed;
+
+  /// No description provided for @purchaseErrorProductNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Product is not available for purchase.'**
+  String get purchaseErrorProductNotAvailable;
+
+  /// No description provided for @purchaseErrorProductInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Product ID is invalid.'**
+  String get purchaseErrorProductInvalid;
+
+  /// No description provided for @purchaseErrorStoreProductNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Product is not available in the store.'**
+  String get purchaseErrorStoreProductNotAvailable;
+
+  /// No description provided for @purchaseErrorUnexpected.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase error occurred. Please try again.'**
+  String get purchaseErrorUnexpected;
+
+  /// No description provided for @networkErrorMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Network connection error. Please check your internet connection and try again.'**
+  String get networkErrorMessage;
 }
 
-class AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
-  const AppLocalizationsDelegate();
+class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
+  const _AppLocalizationsDelegate();
 
   @override
-  bool isSupported(Locale locale) => ['en'].contains(locale.languageCode);
-
-  @override
-  Future<AppLocalizations> load(Locale locale) async {
-    Intl.defaultLocale = locale.languageCode;
-    return AppLocalizations();
+  Future<AppLocalizations> load(Locale locale) {
+    return SynchronousFuture<AppLocalizations>(lookupAppLocalizations(locale));
   }
 
   @override
-  bool shouldReload(AppLocalizationsDelegate old) => false;
+  bool isSupported(Locale locale) => <String>['en'].contains(locale.languageCode);
+
+  @override
+  bool shouldReload(_AppLocalizationsDelegate old) => false;
+}
+
+AppLocalizations lookupAppLocalizations(Locale locale) {
+
+
+  // Lookup logic when only language code is specified.
+  switch (locale.languageCode) {
+    case 'en': return AppLocalizationsEn();
+  }
+
+  throw FlutterError(
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.'
+  );
 }

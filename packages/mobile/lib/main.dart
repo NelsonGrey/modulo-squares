@@ -1,66 +1,164 @@
+import 'dart:async';
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:modulo/features/game/game_screen.dart';
-import 'package:modulo/features/website/website_screen.dart';
-// Login screen intentionally not used for launch; auto guest auth.
-import 'package:modulo/l10n/app_localizations.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:modulo_squares/features/auth/login_screen.dart';
+import 'package:modulo_squares/features/game/game_screen.dart';
+import 'package:modulo_squares/features/website/website_screen.dart';
+import 'package:modulo_squares/l10n/app_localizations.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
-import 'package:modulo/core/services/analytics_service.dart';
-import 'package:modulo/core/services/ad_service.dart';
-import 'package:modulo/core/services/consent_service.dart';
-import 'package:modulo/core/services/purchase_service.dart';
-import 'package:modulo/core/config/firebase_options.dart';
-import 'package:modulo/core/services/error_handler.dart';
-import 'package:modulo/core/services/cache_service.dart';
-import 'package:modulo/core/services/asset_service.dart';
-import 'package:modulo/core/di/service_locator.dart';
+import 'package:modulo_squares/core/services/analytics_service.dart';
+import 'package:modulo_squares/core/services/ad_service.dart';
+import 'package:modulo_squares/core/services/consent_service.dart';
+import 'package:modulo_squares/core/services/purchase_service.dart';
+import 'package:modulo_squares/core/config/firebase_options.dart';
+import 'package:modulo_squares/core/services/error_handler.dart';
+import 'package:modulo_squares/core/services/cache_service.dart';
+import 'package:modulo_squares/core/services/asset_service.dart';
+import 'package:modulo_squares/core/di/service_locator.dart';
+
+Future<bool> initializeFirebaseApp() async {
+  if (Firebase.apps.isNotEmpty) {
+    return true;
+  }
+
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    return true;
+  } on FirebaseException catch (error, stackTrace) {
+    // Treat duplicate-app as healthy if a default app already exists.
+    if (error.code == 'duplicate-app' && Firebase.apps.isNotEmpty) {
+      return true;
+    }
+
+    ErrorHandler().handleFirebaseInitError(error, stackTrace);
+    return Firebase.apps.isNotEmpty;
+  } catch (error, stackTrace) {
+    ErrorHandler().handleFirebaseInitError(error, stackTrace);
+    return Firebase.apps.isNotEmpty;
+  }
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  try {
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  } catch (error, stackTrace) {
-    ErrorHandler().handleFirebaseInitError(error, stackTrace);
-    // Continue with limited functionality - some features may not work
+  final firebaseReady = await initializeFirebaseApp();
+
+  // Wire Crashlytics fatal error handlers as early as possible.
+  if (!kIsWeb && firebaseReady) {
+    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+    PlatformDispatcher.instance.onError = (error, stack) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      return true;
+    };
   }
 
   // Setup dependency injection
   setupServiceLocator();
 
-  try {
-    // Configure consent and ad request settings before initializing ads (mobile only)
-    if (!kIsWeb) {
-      await getIt<ConsentService>().configure();
-      await getIt<AdService>().initialize();
-      await getIt<PurchaseService>().initialize();
+  Future<void> runInitStep(String label, Future<void> Function() step) async {
+    try {
+      await step();
+    } catch (error, stackTrace) {
+      ErrorHandler().logError(
+        'Service initialization: $label',
+        error,
+        stackTrace,
+      );
     }
-    await CacheService().initialize();
-    await AssetService().preloadAssets();
-    if (!kIsWeb) {
-      getIt<AdService>().loadInterstitial();
-    }
-  } catch (error, stackTrace) {
-    ErrorHandler().logError('Service initialization', error, stackTrace);
-    // Continue - services will handle their own errors gracefully
   }
 
-  runApp(const ModuloApp());
+  // Configure services independently so one timeout does not block the rest.
+  if (!kIsWeb) {
+    await runInitStep(
+      'consent',
+      () => getIt<ConsentService>().configure().timeout(
+        const Duration(seconds: 8),
+      ),
+    );
+    await runInitStep(
+      'ads',
+      () => getIt<AdService>().initialize().timeout(const Duration(seconds: 8)),
+    );
+    await runInitStep(
+      'purchases',
+      () => getIt<PurchaseService>().initialize().timeout(
+        const Duration(seconds: 8),
+      ),
+    );
+  }
+
+  await runInitStep(
+    'cache',
+    () => CacheService().initialize().timeout(const Duration(seconds: 8)),
+  );
+  await runInitStep(
+    'assets',
+    () => AssetService().preloadAssets().timeout(const Duration(seconds: 8)),
+  );
+
+  if (!kIsWeb) {
+    await runInitStep('preload interstitial', () async {
+      getIt<AdService>().loadInterstitial();
+    });
+  }
+
+  runApp(ModuloApp(firebaseReady: firebaseReady));
 }
 
-class ModuloApp extends StatelessWidget {
-  const ModuloApp({super.key});
+class ModuloApp extends StatefulWidget {
+  const ModuloApp({super.key, required this.firebaseReady});
+
+  final bool firebaseReady;
+
+  @override
+  State<ModuloApp> createState() => _ModuloAppState();
+}
+
+class _ModuloAppState extends State<ModuloApp> {
+  late bool _firebaseReady = widget.firebaseReady;
+  bool _retryingFirebase = false;
+
+  Future<void> _retryFirebaseInitialization() async {
+    if (_retryingFirebase) {
+      return;
+    }
+
+    setState(() {
+      _retryingFirebase = true;
+    });
+
+    final firebaseReady = await initializeFirebaseApp();
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _firebaseReady = firebaseReady;
+      _retryingFirebase = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final FirebaseAnalyticsObserver observer = FirebaseAnalyticsObserver(analytics: FirebaseAnalytics.instance);
+    final navigatorObservers = <NavigatorObserver>[];
+    if (_firebaseReady && Firebase.apps.isNotEmpty) {
+      navigatorObservers.add(
+        FirebaseAnalyticsObserver(analytics: FirebaseAnalytics.instance),
+      );
+    }
+
     return MaterialApp(
       title: 'Modulo Squares',
       debugShowCheckedModeBanner: false,
-      navigatorObservers: [observer],
+      navigatorObservers: navigatorObservers,
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
@@ -71,81 +169,117 @@ class ModuloApp extends StatelessWidget {
         Locale('en'),
         // Add other supported locales here
       ],
-      home: const AuthGate(),
+      home:
+          _firebaseReady
+              ? const AuthGate()
+              : FirebaseRecoveryScreen(
+                isRetrying: _retryingFirebase,
+                onRetry: _retryFirebaseInitialization,
+              ),
     );
   }
 }
 
-class AuthGate extends StatelessWidget {
+class FirebaseRecoveryScreen extends StatelessWidget {
+  const FirebaseRecoveryScreen({
+    super.key,
+    required this.isRetrying,
+    required this.onRetry,
+  });
+
+  final bool isRetrying;
+  final Future<void> Function() onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.cloud_off, size: 56),
+              const SizedBox(height: 16),
+              const Text(
+                'Unable to start app services',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'The app could not reconnect to required services during launch. Retry initialization to continue.',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: isRetrying ? null : () => onRetry(),
+                child: Text(isRetrying ? 'Retrying...' : 'Retry'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
 
-  Future<void> _attemptAnonymousSignIn(BuildContext context) async {
-    try {
-      await FirebaseAuth.instance.signInAnonymously();
-    } catch (error) {
-      if (context.mounted) {
-        ErrorHandler().showErrorSnackBar(
-          context,
-          ErrorHandler().getAuthErrorMessage(error),
-        );
-      }
-    }
+  @override
+  State<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<AuthGate> {
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      getIt<AnalyticsService>().logAppOpen();
+    });
+  }
+
+  Widget _buildAuthWaitingScaffold({String? message}) {
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(),
+            if (message != null) ...[
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Text(message, textAlign: TextAlign.center),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Log app open on first frame
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      getIt<AnalyticsService>().logAppOpen();
-    });
-
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          return _buildAuthWaitingScaffold(message: 'Checking account...');
         }
 
         if (snapshot.hasError) {
-          // Handle authentication stream errors
           ErrorHandler().logError('Auth stream', snapshot.error);
-          return Scaffold(
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                  const SizedBox(height: 16),
-                  const Text('Authentication Error'),
-                  const SizedBox(height: 8),
-                  const Text('Please restart the app or check your connection.'),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () async {
-                      try {
-                        await FirebaseAuth.instance.signInAnonymously();
-                      } catch (error) {
-                        if (context.mounted) {
-                          ErrorHandler().showErrorSnackBar(
-                            context,
-                            ErrorHandler().getAuthErrorMessage(error),
-                          );
-                        }
-                      }
-                    },
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            ),
+          return _buildAuthWaitingScaffold(
+            message: 'Authentication is temporarily unavailable.',
           );
         }
 
         final user = snapshot.data;
         if (user == null) {
-          // Auto sign-in anonymously and show a loading indicator until ready.
-          _attemptAnonymousSignIn(context);
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          return const LoginScreen();
         }
 
         // Set analytics user id once we have a user

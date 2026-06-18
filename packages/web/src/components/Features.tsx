@@ -1,47 +1,54 @@
-const Features: React.FC = () => {
-  const features = [
-    {
-      icon: '🧮',
-      title: 'Modulo Mechanics',
-      description: 'Master the art of modular arithmetic. Every move involves calculating remainders and strategic number placement.'
-    },
-    {
-      icon: '🎯',
-      title: 'Strategic Gameplay',
-      description: 'Plan your moves carefully. Each tile placement affects the entire board and your scoring potential.'
-    },
-    {
-      icon: '⚡',
-      title: 'Power-Ups & Special Tiles',
-      description: 'Unlock special tiles like multipliers, obstacles, and freeze effects to enhance your strategy.'
-    },
-    {
-      icon: '🏆',
-      title: 'Leaderboards',
-      description: 'Compete with players worldwide. Climb the rankings and prove your mathematical prowess.'
-    },
-    {
-      icon: '📱',
-      title: 'Cross-Platform',
-      description: 'Seamlessly sync your progress across iOS and Android devices with cloud save functionality.'
-    },
-    {
-      icon: '🎨',
-      title: 'Beautiful Design',
-      description: 'Enjoy a clean, intuitive interface that focuses on gameplay while maintaining visual appeal.'
-    }
-  ];
+import { Link } from 'react-router-dom';
 
+const features = [
+  {
+    icon: '⬇️',
+    title: 'Falling Numbers',
+    description:
+      'Each round a number drops from the top. Move it left or right before the timer expires — or tap Drop to send it down instantly.',
+  },
+  {
+    icon: '➗',
+    title: 'Divisibility Rules',
+    description:
+      'Land your number in a bucket whose value divides it evenly and score points equal to the bucket value. Wrong bucket? You lose points.',
+  },
+  {
+    icon: '🏆',
+    title: 'Global & Weekly Leaderboards',
+    description:
+      'Compete with players worldwide. Earn ranked badges — Legend, Diamond, Gold, Silver, and Bronze — on the weekly ladder.',
+  },
+  {
+    icon: '📅',
+    title: 'Daily Challenges',
+    description:
+      'A new challenge drops every day with its own leaderboard. Come back daily to set your best time and climb the ranks.',
+  },
+  {
+    icon: '📈',
+    title: 'Progressive Difficulty',
+    description:
+      'Every level the tile falls faster, the number range widens, and combos push your score further. How high can you climb?',
+  },
+  {
+    icon: '👁',
+    title: 'Visual Cues',
+    description:
+      'Toggle bucket highlights to see at a glance which buckets will accept your current number — great for learning, toggleable for challenge.',
+  },
+];
+
+const Features: React.FC = () => {
   return (
-    <section id="features" className="section-padding bg-white">
+    <section className="section-padding bg-white">
       <div className="container-max">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Why You'll Love Modulo Squares
+            Simple to Learn. Hard to Put Down.
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Experience the perfect blend of mathematical challenge and addictive gameplay
-            in this unique puzzle adventure.
+            One mechanic, infinite depth. Guide falling numbers into the right buckets and watch your score climb.
           </p>
         </div>
 
@@ -55,30 +62,23 @@ const Features: React.FC = () => {
               <h3 className="text-xl font-semibold text-gray-900 mb-3">
                 {feature.title}
               </h3>
-              <p className="text-gray-600">
-                {feature.description}
-              </p>
+              <p className="text-gray-600">{feature.description}</p>
             </div>
           ))}
         </div>
 
         <div className="mt-16 text-center">
-          <div className="bg-gradient-to-r from-primary-500 to-secondary-500 rounded-2xl p-8 text-white">
-            <h3 className="text-2xl font-bold mb-4">
-              Ready to Challenge Your Mind?
-            </h3>
+          <div className="bg-linear-to-r from-primary-500 to-secondary-500 rounded-2xl p-8 text-white">
+            <h3 className="text-2xl font-bold mb-4">Ready to Test Your Division Skills?</h3>
             <p className="text-lg mb-6 opacity-90">
-              Join thousands of players who have discovered the joy of mathematical puzzles.
+              Download free on iOS and Android. No ads in the game — just pure puzzle focus.
             </p>
-            <button
-              onClick={() => {
-                const element = document.getElementById('download');
-                element?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="bg-white text-primary-600 font-semibold py-3 px-8 rounded-lg hover:bg-gray-50 transition-colors"
+            <Link
+              to="/download"
+              className="inline-block bg-white text-primary-600 font-semibold py-3 px-8 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              Get Started Now
-            </button>
+              Get the App
+            </Link>
           </div>
         </div>
       </div>

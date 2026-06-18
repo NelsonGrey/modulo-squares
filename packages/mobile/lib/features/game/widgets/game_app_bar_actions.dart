@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:modulo/l10n/app_localizations.dart';
+import 'package:modulo_squares/l10n/app_localizations.dart';
 
 class GameAppBarActions extends StatelessWidget {
   const GameAppBarActions({
@@ -17,17 +17,18 @@ class GameAppBarActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Row(
       children: [
         IconButton(
           icon: const Icon(Icons.leaderboard),
           onPressed: onShowLeaderboard,
-          tooltip: AppLocalizations.of(context).showLeaderboard,
+          tooltip: l10n.showLeaderboard,
         ),
         IconButton(
           icon: const Icon(Icons.menu_book_outlined),
           onPressed: onShowInstructions,
-          tooltip: AppLocalizations.of(context).howToPlay,
+          tooltip: 'How to Play',
         ),
         IconButton(
           icon: const Icon(Icons.help_outline),

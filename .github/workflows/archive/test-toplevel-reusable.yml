@@ -1,0 +1,17 @@
+name: "Test Reusable at Top Level"
+
+on:
+  workflow_dispatch:
+    inputs:
+      message:
+        description: "Message to pass"
+        required: true
+        type: string
+        default: "hello"
+
+jobs:
+  test-toplevel-reusable:
+    name: Call Top Level Reusable
+    uses: mnelson3/nelson-grey/.github/workflows/simple-test-toplevel.yml@main
+    with:
+      message: ${{ github.event.inputs.message }}

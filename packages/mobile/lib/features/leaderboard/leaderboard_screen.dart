@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:modulo/core/services/leaderboard_service.dart';
-import 'package:modulo/core/services/error_handler.dart';
+import 'package:modulo_squares/core/services/leaderboard_service.dart';
+import 'package:modulo_squares/core/services/error_handler.dart';
 
 class LeaderboardScreen extends StatelessWidget {
   const LeaderboardScreen({super.key});

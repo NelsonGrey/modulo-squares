@@ -1,0 +1,24 @@
+name: Test Self-Hosted Runner
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-runner:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Test basic commands
+        run: |
+          echo "Testing self-hosted runner on modulo-squares..."
+          uname -a
+          sw_vers
+          echo "Runner labels: self-hosted, macOS, ARM64, modulo-squares"
+          
+      - name: Test Flutter/Dart (if available)
+        run: |
+          which flutter || echo "Flutter not found"
+          which dart || echo "Dart not found"
+          flutter --version || echo "Flutter version check failed"

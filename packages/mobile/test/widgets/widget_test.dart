@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:modulo/l10n/app_localizations.dart';
-import 'package:modulo/features/game/game_screen.dart';
-import 'package:modulo/core/di/service_locator.dart';
-import 'package:modulo/shared/widgets/grid_cell_widget.dart';
-import 'package:modulo/shared/models/game_board.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:modulo_squares/l10n/app_localizations.dart';
+import 'package:modulo_squares/features/game/game_screen.dart';
+import 'package:modulo_squares/core/di/service_locator.dart';
+import 'package:modulo_squares/shared/widgets/grid_cell_widget.dart';
+import 'package:modulo_squares/shared/models/game_board.dart';
 
 void main() {
   setUpAll(() {
@@ -13,7 +14,13 @@ void main() {
     setupServiceLocator();
   });
 
-  testWidgets('GameScreen displays score and restart button', (WidgetTester tester) async {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
+  testWidgets('GameScreen displays HUD and controls', (
+    WidgetTester tester,
+  ) async {
     // Increase the test surface to avoid overflow with the square grid + controls
     final view = tester.view;
     view.physicalSize = const Size(1200, 2200);
@@ -31,21 +38,22 @@ void main() {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        supportedLocales: [
-          Locale('en', ''),
-        ],
+        supportedLocales: [Locale('en', '')],
         home: GameScreen(),
       ),
     );
     // Allow initial async state (e.g., SharedPreferences load) to settle
     await tester.pumpAndSettle();
 
-    // Verify score label using localization key prefix
-    expect(find.textContaining(AppLocalizations.of(tester.element(find.byType(Scaffold))).score.split(':').first), findsWidgets);
-
-    // Verify Restart button by localized label
     final ctx = tester.element(find.byType(Scaffold));
-    expect(find.text(AppLocalizations.of(ctx).restart), findsOneWidget);
+    final l10n = AppLocalizations.of(ctx);
+    expect(l10n, isNotNull);
+
+    expect(find.text('Modulo Squares'), findsWidgets);
+    expect(find.textContaining('Score:'), findsWidgets);
+    expect(find.text('Left'), findsOneWidget);
+    expect(find.text('Drop'), findsOneWidget);
+    expect(find.text('Right'), findsOneWidget);
   });
 
   group('GridCellWidget', () {
@@ -53,10 +61,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: GridCellWidget(
-              tile: const Tile(value: 5),
-              isSelected: false,
-            ),
+            body: GridCellWidget(tile: const Tile(value: 5), isSelected: false),
           ),
         ),
       );
@@ -82,7 +87,9 @@ void main() {
       expect(find.text('5'), findsNothing);
     });
 
-    testWidgets('displays bonus tile with value and star', (WidgetTester tester) async {
+    testWidgets('displays bonus tile with value and star', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -102,10 +109,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: GridCellWidget(
-              tile: const Tile(value: 3),
-              isSelected: true,
-            ),
+            body: GridCellWidget(tile: const Tile(value: 3), isSelected: true),
           ),
         ),
       );
@@ -119,10 +123,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: GridCellWidget(
-              tile: const Tile(),
-              isSelected: false,
-            ),
+            body: GridCellWidget(tile: const Tile(), isSelected: false),
           ),
         ),
       );
