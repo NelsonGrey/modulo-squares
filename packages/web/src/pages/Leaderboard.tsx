@@ -122,58 +122,49 @@ export default function Leaderboard() {
   }, [weekId]);
 
   return (
-    <div className="bg-white">
-      {/* Header */}
-      <div className="bg-linear-to-br from-primary-600 to-secondary-600 text-white py-16 px-4">
-        <div className="container-max text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-3">Leaderboard</h1>
-          <p className="text-lg opacity-90">
-            Real scores from real players — updated live.
-          </p>
-        </div>
+    <div className="container-max px-4 py-10 max-w-2xl">
+      <h1 className="text-3xl font-bold text-gray-900 mb-1">Leaderboard</h1>
+      <p className="text-gray-500 mb-8">Real scores from real players — updated live.</p>
+
+      {/* Tabs */}
+      <div className="flex gap-2 mb-8 border-b border-gray-200">
+        {(['global', 'weekly'] as Tab[]).map(t => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`pb-3 px-4 text-sm font-semibold capitalize border-b-2 transition-colors ${
+              tab === t
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            {t === 'weekly' ? 'This Week' : 'All-Time'}
+          </button>
+        ))}
       </div>
 
-      <div className="container-max px-4 py-10 max-w-2xl">
-        {/* Tabs */}
-        <div className="flex gap-2 mb-8 border-b border-gray-200">
-          {(['global', 'weekly'] as Tab[]).map(t => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`pb-3 px-4 text-sm font-semibold capitalize border-b-2 transition-colors ${
-                tab === t
-                  ? 'border-primary-600 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              {t === 'weekly' ? 'This Week' : 'All-Time'}
-            </button>
-          ))}
+      {loading ? (
+        <div className="flex justify-center py-16">
+          <div className="w-10 h-10 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
         </div>
+      ) : error ? (
+        <div className="text-center py-16 text-gray-500">
+          <p className="text-4xl mb-3">⚠️</p>
+          <p className="text-lg font-medium">Couldn't load scores right now.</p>
+          <p className="text-sm mt-1">Check your connection and try again.</p>
+        </div>
+      ) : (
+        <>
+          {tab === 'global' && <ScoreList rows={globalScores} />}
+          {tab === 'weekly' && <ScoreList rows={weeklyScores} showBadge />}
+        </>
+      )}
 
-        {loading ? (
-          <div className="flex justify-center py-16">
-            <div className="w-10 h-10 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
-          </div>
-        ) : error ? (
-          <div className="text-center py-16 text-gray-500">
-            <p className="text-4xl mb-3">⚠️</p>
-            <p className="text-lg font-medium">Couldn't load scores right now.</p>
-            <p className="text-sm mt-1">Check your connection and try again.</p>
-          </div>
-        ) : (
-          <>
-            {tab === 'global' && <ScoreList rows={globalScores} />}
-            {tab === 'weekly' && <ScoreList rows={weeklyScores} showBadge />}
-          </>
-        )}
-
-        {tab === 'weekly' && !loading && !error && (
-          <p className="text-xs text-gray-400 text-center mt-6">
-            Week {weekId % 100} of {Math.floor(weekId / 100)} · Badges awarded at week close
-          </p>
-        )}
-      </div>
+      {tab === 'weekly' && !loading && !error && (
+        <p className="text-xs text-gray-400 text-center mt-6">
+          Week {weekId % 100} of {Math.floor(weekId / 100)} · Badges awarded at week close
+        </p>
+      )}
     </div>
   );
 }

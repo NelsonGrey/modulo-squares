@@ -4,14 +4,11 @@ const Footer: React.FC = () => (
   <footer className="bg-gray-900 text-white border-t border-gray-700 py-4 px-4 shrink-0">
     <div className="container-max flex flex-col sm:flex-row items-center justify-between gap-3 text-sm">
       <Link to="/" className="flex items-center space-x-2 shrink-0">
-        <div className="w-6 h-6 bg-primary-600 rounded flex items-center justify-center">
-          <span className="text-white font-bold text-xs">M</span>
-        </div>
+        <img src="/icon-modulo-squares.png" alt="" className="w-6 h-6 rounded" />
         <span className="font-semibold text-white">Modulo Squares</span>
       </Link>
 
       <nav className="flex flex-wrap justify-center gap-x-5 gap-y-1 text-gray-300">
-        <Link to="/" className="hover:text-white transition-colors">Home</Link>
         <Link to="/how-it-works" className="hover:text-white transition-colors">How It Works</Link>
         <Link to="/download" className="hover:text-white transition-colors">Download</Link>
         <Link to="/leaderboard" className="hover:text-white transition-colors">Leaderboard</Link>
