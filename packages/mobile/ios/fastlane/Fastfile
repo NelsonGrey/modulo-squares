@@ -150,7 +150,7 @@ platform :ios do
 
   desc "Build iOS app for development without code signing"
   lane :build_development do
-    sh("cd ../.. && flutter build ios --debug --no-codesign")
+    sh("cd ../.. && flutter build ios --release --no-codesign")
     app_path = "../../build/ios/iphoneos/Runner.app"
     output_dir = "./fastlane/builds"
     sh("mkdir -p #{output_dir}")
@@ -232,7 +232,7 @@ platform :ios do
     Dir.chdir("../../") do
       sh("flutter pub get")
       sh("flutter test")
-      sh("flutter build ios --debug --no-codesign")
+      sh("flutter build ios --release --no-codesign")
     end
   end
 
