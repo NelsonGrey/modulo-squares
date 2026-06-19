@@ -14,7 +14,7 @@ const Footer: React.FC = () => (
         <Link to="/leaderboard" className="hover:text-white transition-colors">Leaderboard</Link>
         <Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link>
         <Link to="/terms" className="hover:text-white transition-colors">Terms</Link>
-        <a href="mailto:support@modulosquares.com" className="hover:text-white transition-colors">Support</a>
+        <Link to="/support" className="hover:text-white transition-colors">Support</Link>
       </nav>
 
       <p className="text-gray-400 shrink-0">© 2026 Modulo Squares</p>
