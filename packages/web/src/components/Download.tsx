@@ -1,4 +1,5 @@
 import SEOHead from './SEOHead';
+import SocialShare from './SocialShare';
 
 const Download: React.FC = () => {
   return (
@@ -63,6 +64,10 @@ const Download: React.FC = () => {
               </a>
             </div>
           </div>
+        </div>
+
+        <div className="mt-12 text-center">
+          <SocialShare label="Know someone who'd enjoy this? Share the game:" />
         </div>
       </div>
     </section>
