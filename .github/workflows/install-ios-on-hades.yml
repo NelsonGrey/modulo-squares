@@ -1,42 +1,55 @@
-name: iOS Distribution (Self-Contained)
+name: Install iOS on HADES Device
 
 on:
   workflow_dispatch:
     inputs:
       environment:
-        description: Environment config to use
+        description: Firebase environment config
         required: true
-        default: dev
+        default: prod
         type: choice
         options:
           - dev
           - staging
           - prod
-      release_type:
-        description: Distribution target
-        required: true
-        default: testflight
-        type: choice
-        options:
-          - build_only
-          - testflight
-      release_notes:
-        description: Optional release notes for TestFlight
-        required: false
-        default: "Manual self-contained iOS distribution"
-        type: string
 
 permissions:
   contents: read
 
 jobs:
-  distribute-ios:
-    name: Build and Distribute iOS
-    uses: ./.github/workflows/ios-build-self-contained.yml
-    with:
-      project_name: modulo-squares
-      environment: ${{ inputs.environment }}
-      release_type: ${{ inputs.release_type }}
-      release_notes: ${{ inputs.release_notes }}
-      beta_group_name: Internal Testers
-    secrets: inherit
+  install-on-device:
+    name: Build and Install on Connected iPhone
+    runs-on: [self-hosted, macos-arm64, modulo-squares]
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify Flutter
+        run: |
+          flutter --version
+          echo "Dart: $(dart --version)"
+
+      - name: Switch mobile configs
+        run: ./scripts/switch-mobile-configs.sh "${{ inputs.environment }}"
+
+      - name: Flutter pub get
+        working-directory: packages/mobile
+        run: flutter pub get
+
+      - name: Pod install
+        working-directory: packages/mobile/ios
+        run: pod install --repo-update
+
+      - name: Build and install release to connected device
+        working-directory: packages/mobile
+        run: flutter install --release
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## iOS Install on HADES" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Environment: ${{ inputs.environment }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Build mode: release" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Runner: $RUNNER_NAME" >> "$GITHUB_STEP_SUMMARY"
