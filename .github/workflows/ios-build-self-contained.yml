@@ -213,7 +213,7 @@ jobs:
         working-directory: packages/mobile
         run: |
           flutter pub get
-          flutter build ios --debug --no-codesign
+          flutter build ios --release --no-codesign
 
       - name: Upload to TestFlight
         if: env.RELEASE_TYPE == 'testflight'
