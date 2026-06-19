@@ -1,7 +1,14 @@
 import { Link } from 'react-router-dom';
+import SEOHead from '../components/SEOHead';
 
 const PrivacyPolicy: React.FC = () => {
   return (
+    <>
+    <SEOHead
+      title="Privacy Policy"
+      description="Privacy policy for the Modulo Squares app and website. Learn how we collect, use, and protect your data."
+      path="/privacy"
+    />
     <div className="bg-white">
       <main className="max-w-4xl mx-auto px-6 py-12">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Privacy Policy</h1>
@@ -238,6 +245,7 @@ const PrivacyPolicy: React.FC = () => {
         </div>
       </main>
     </div>
+    </>
   );
 };
 
