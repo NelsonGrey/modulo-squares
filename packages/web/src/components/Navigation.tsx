@@ -8,6 +8,7 @@ const ROUTE_BG: Record<string, string> = {
   '/leaderboard':   'bg-linear-to-r from-primary-600 to-secondary-600',
   '/privacy':       'bg-gray-600',
   '/terms':         'bg-gray-600',
+  '/support':       'bg-gray-600',
 };
 
 const Navigation: React.FC = () => {
