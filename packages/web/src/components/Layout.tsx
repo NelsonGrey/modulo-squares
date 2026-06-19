@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import Navigation from './Navigation';
 import Footer from './Footer';
 import AdSlot from './AdSlot';
+import ConsentBanner from './ConsentBanner';
 
 // AdSense slot IDs — create these units in your AdSense dashboard and set them here.
 // Also set VITE_ADSENSE_PUBLISHER_ID in .env and uncomment the AdSense script in index.html.
@@ -21,6 +22,7 @@ const Layout = ({ children }: { children: ReactNode }) => (
       <AdSlot slot={AD_ABOVE_FOOTER_SLOT} format="auto" className="shrink-0 bg-white" />
     )}
     <Footer />
+    <ConsentBanner />
   </div>
 );
 
