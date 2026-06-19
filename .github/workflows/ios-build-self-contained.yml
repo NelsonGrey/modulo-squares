@@ -137,9 +137,15 @@ jobs:
 
       - name: Setup Flutter
         run: |
-          # Download and install Flutter SDK
+          # Download and install Flutter SDK — detect ARM64 vs x64
+          FLUTTER_VERSION="3.44.2"
+          if [ "$(uname -m)" = "arm64" ]; then
+            ARCHIVE="flutter_macos_arm64_${FLUTTER_VERSION}-stable.zip"
+          else
+            ARCHIVE="flutter_macos_${FLUTTER_VERSION}-stable.zip"
+          fi
           cd $HOME
-          curl -L https://storage.googleapis.com/flutter_infra_release/releases/stable/macos/flutter_macos_3.38.4-stable.zip -o flutter.zip
+          curl -L "https://storage.googleapis.com/flutter_infra_release/releases/stable/macos/${ARCHIVE}" -o flutter.zip
           unzip -q flutter.zip
           rm flutter.zip
           echo "$HOME/flutter/bin" >> $GITHUB_PATH

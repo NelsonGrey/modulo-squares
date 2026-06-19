@@ -18,7 +18,7 @@ on:
           - DEVELOPMENT
 
 env:
-  FLUTTER_VERSION: '3.32.0'
+  FLUTTER_VERSION: '3.44.2'
   NODE_VERSION: '18'
 
 jobs:
