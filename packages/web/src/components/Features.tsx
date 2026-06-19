@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import SEOHead from './SEOHead';
 
 const features = [
   {
@@ -41,6 +42,12 @@ const features = [
 
 const Features: React.FC = () => {
   return (
+    <>
+    <SEOHead
+      title="How It Works"
+      description="Learn how to play Modulo Squares. Drop falling numbers into matching divisor buckets, score points, and level up as speed and difficulty increase."
+      path="/how-it-works"
+    />
     <section className="section-padding bg-white">
       <div className="container-max">
         <div className="text-center mb-16">
@@ -83,6 +90,7 @@ const Features: React.FC = () => {
         </div>
       </div>
     </section>
+    </>
   );
 };
 

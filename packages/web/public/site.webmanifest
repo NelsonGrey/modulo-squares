@@ -1,7 +1,7 @@
 {
   "name": "Modulo Squares",
   "short_name": "ModuloSquares",
-  "description": "Clear the board with smart remainders - A challenging puzzle game where numbers matter",
+  "description": "Guide falling numbers into the right divisor buckets. Score, level up, and climb the global leaderboard.",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",

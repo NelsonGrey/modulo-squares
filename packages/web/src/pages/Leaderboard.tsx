@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import SEOHead from '../components/SEOHead';
 import { collection, orderBy, query, limit, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 
@@ -122,6 +123,12 @@ export default function Leaderboard() {
   }, [weekId]);
 
   return (
+    <>
+    <SEOHead
+      title="Global Leaderboard"
+      description="See the top Modulo Squares players worldwide. Compete weekly to earn Legend, Diamond, Gold, Silver, and Bronze badges. Updated live."
+      path="/leaderboard"
+    />
     <div className="container-max px-4 py-10 max-w-2xl">
       <h1 className="text-3xl font-bold text-gray-900 mb-1">Leaderboard</h1>
       <p className="text-gray-500 mb-8">Real scores from real players — updated live.</p>
@@ -166,5 +173,6 @@ export default function Leaderboard() {
         </p>
       )}
     </div>
+    </>
   );
 }

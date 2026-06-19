@@ -1,4 +1,18 @@
 import { Link } from 'react-router-dom';
+import SEOHead from './SEOHead';
+
+const APP_JSON_LD = {
+  '@context': 'https://schema.org',
+  '@type': 'MobileApplication',
+  name: 'Modulo Squares',
+  description: 'Guide falling numbers into the right divisor buckets. Score, level up, and climb the global leaderboard.',
+  applicationCategory: 'GameApplication',
+  genre: 'Puzzle',
+  operatingSystem: 'iOS, Android',
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+  aggregateRating: { '@type': 'AggregateRating', ratingValue: '5', ratingCount: '1' },
+  url: 'https://modulosquares.com',
+};
 
 const BUCKETS = [2, 3, 4, 5, 6];
 const FALLING_VALUE = 12;
@@ -6,6 +20,13 @@ const ACTIVE_LANE = 2; // 0-based, lands in bucket ÷4
 
 const Hero: React.FC = () => {
   return (
+    <>
+    <SEOHead
+      title="Modulo Squares — Falling Number Puzzle Game"
+      description="Guide falling numbers into the right divisor buckets. Score, level up, and climb the global leaderboard. Free on iOS and Android."
+      path=""
+      jsonLd={APP_JSON_LD}
+    />
     <section className="py-16 bg-linear-to-br from-primary-50 to-secondary-50">
       <div className="container-max">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -112,6 +133,7 @@ const Hero: React.FC = () => {
         </div>
       </div>
     </section>
+    </>
   );
 };
 
