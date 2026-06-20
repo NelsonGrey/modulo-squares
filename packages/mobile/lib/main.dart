@@ -74,14 +74,37 @@ void main() async {
   // DeviceCheck as the fallback for older devices.
   const bool appCheckDebug =
       bool.fromEnvironment('APP_CHECK_DEBUG', defaultValue: false);
+  const String appCheckDebugToken =
+      String.fromEnvironment('APP_CHECK_DEBUG_TOKEN', defaultValue: '');
 
   if (firebaseReady && !kIsWeb) {
     try {
       await FirebaseAppCheck.instance.activate(
         providerApple: appCheckDebug
-            ? const AppleDebugProvider()
+            ? AppleDebugProvider(
+                debugToken: appCheckDebugToken.isNotEmpty
+                    ? appCheckDebugToken
+                    : null,
+              )
             : const AppleAppAttestWithDeviceCheckFallbackProvider(),
       );
+
+      if (appCheckDebug) {
+        // Immediately verify the debug token is accepted by Firebase.
+        // If this throws, the UUID is not registered in Firebase Console
+        // under App Check → your iOS app → Manage debug tokens.
+        try {
+          await FirebaseAppCheck.instance.getToken(true);
+          debugPrint('[AppCheck] Debug token accepted by Firebase ✓');
+        } catch (e) {
+          debugPrint('[AppCheck] Debug token REJECTED: $e');
+          debugPrint('[AppCheck] Register UUID in Firebase Console → '
+              'App Check → iOS app → Manage debug tokens');
+          if (appCheckDebugToken.isNotEmpty) {
+            debugPrint('[AppCheck] Token to register: $appCheckDebugToken');
+          }
+        }
+      }
     } catch (e) {
       ErrorHandler().logError('App Check activation', e);
     }
@@ -275,6 +298,11 @@ class _AuthGateState extends State<AuthGate> {
     if (_checkedUid == uid) return;
     _checkedUid = uid;
     setState(() => _loadingGamertag = true);
+    // Pre-load the interstitial now so it has maximum time to arrive before
+    // the user finishes creating their gamertag.
+    if (!kIsWeb && getIt.isRegistered<AdService>()) {
+      getIt<AdService>().loadInterstitial();
+    }
     GamertagService.getGamertag(uid).then((tag) {
       if (mounted) {
         setState(() {
@@ -286,7 +314,16 @@ class _AuthGateState extends State<AuthGate> {
   }
 
   void _onGamertagSet() {
-    setState(() => _hasGamertag = true);
+    if (!kIsWeb && getIt.isRegistered<AdService>()) {
+      getIt<AdService>().showInterstitial(
+        trigger: 'gamertag_complete',
+        onClosed: () {
+          if (mounted) setState(() => _hasGamertag = true);
+        },
+      );
+    } else {
+      setState(() => _hasGamertag = true);
+    }
   }
 
   Widget _buildWaiting({String? message}) {
