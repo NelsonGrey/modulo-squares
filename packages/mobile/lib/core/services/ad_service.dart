@@ -87,6 +87,13 @@ class AdService {
       return;
     }
 
+    // If an ad is actively loading, wait up to 2 s for it to arrive.
+    if (_interstitial == null && _isLoading) {
+      for (var i = 0; i < 20 && _interstitial == null; i++) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+    }
+
     final ad = _interstitial;
     if (ad == null) {
       loadInterstitial();
