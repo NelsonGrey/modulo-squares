@@ -3,10 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:modulo_squares/core/services/gamertag_service.dart';
 
-const _kBg = Color(0xFF1A1A2E);
-const _kSurface = Color(0xFF16213E);
-const _kAccent = Color(0xFF4CAF50);
-
 class GamertagScreen extends StatefulWidget {
   const GamertagScreen({super.key, required this.onGamertagSet});
 
@@ -89,16 +85,16 @@ class _GamertagScreenState extends State<GamertagScreen> {
       return const SizedBox(
         width: 16,
         height: 16,
-        child: CircularProgressIndicator(strokeWidth: 2, color: _kAccent),
+        child: CircularProgressIndicator(strokeWidth: 2),
       );
     }
     if (_isAvailable == true) {
       return const Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.check_circle, color: _kAccent, size: 16),
+          Icon(Icons.check_circle, color: Colors.green, size: 16),
           SizedBox(width: 4),
-          Text('Available', style: TextStyle(color: _kAccent, fontSize: 12)),
+          Text('Available', style: TextStyle(color: Colors.green, fontSize: 12)),
         ],
       );
     }
@@ -106,9 +102,9 @@ class _GamertagScreenState extends State<GamertagScreen> {
       return const Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.cancel, color: Colors.redAccent, size: 16),
+          Icon(Icons.cancel, color: Colors.red, size: 16),
           SizedBox(width: 4),
-          Text('Already taken', style: TextStyle(color: Colors.redAccent, fontSize: 12)),
+          Text('Already taken', style: TextStyle(color: Colors.red, fontSize: 12)),
         ],
       );
     }
@@ -128,7 +124,6 @@ class _GamertagScreenState extends State<GamertagScreen> {
     final isGuest = FirebaseAuth.instance.currentUser?.isAnonymous ?? false;
 
     return Scaffold(
-      backgroundColor: _kBg,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
@@ -140,97 +135,51 @@ class _GamertagScreenState extends State<GamertagScreen> {
               const SizedBox(height: 12),
               const Text(
                 'Modulo Squares',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 40),
               const Text(
                 'Choose Your Gamertag',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 8),
               const Text(
                 'This is the name displayed on the leaderboard — not your email address.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: Colors.white60),
+                style: TextStyle(fontSize: 14, color: Colors.grey),
               ),
               const SizedBox(height: 24),
-              Theme(
-                data: Theme.of(context).copyWith(
-                  colorScheme: Theme.of(context).colorScheme.copyWith(
-                    primary: _kAccent,
-                    onSurface: Colors.white,
-                    surface: _kSurface,
-                  ),
-                ),
-                child: TextField(
-                  controller: _controller,
-                  focusNode: _focusNode,
-                  autofocus: true,
-                  maxLength: 20,
-                  autocorrect: false,
-                  enableSuggestions: false,
-                  textCapitalization: TextCapitalization.none,
-                  onChanged: _onChanged,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    labelText: 'Gamertag',
-                    labelStyle: const TextStyle(color: Colors.white60),
-                    hintText: 'e.g. MathWizard42',
-                    hintStyle: const TextStyle(color: Colors.white30),
-                    errorText: _validationError,
-                    counterStyle: const TextStyle(color: Colors.white38),
-                    filled: true,
-                    fillColor: _kSurface,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.white24),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: Colors.white24),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: _kAccent, width: 2),
-                    ),
-                    errorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: Colors.redAccent),
-                    ),
-                    focusedErrorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide:
-                          const BorderSide(color: Colors.redAccent, width: 2),
-                    ),
-                    suffixIcon: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: _buildAvailabilityIndicator(),
-                    ),
+              TextField(
+                controller: _controller,
+                focusNode: _focusNode,
+                autofocus: true,
+                maxLength: 20,
+                autocorrect: false,
+                enableSuggestions: false,
+                textCapitalization: TextCapitalization.none,
+                onChanged: _onChanged,
+                decoration: InputDecoration(
+                  labelText: 'Gamertag',
+                  hintText: 'e.g. MathWizard42',
+                  errorText: _validationError,
+                  border: const OutlineInputBorder(),
+                  suffixIcon: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: _buildAvailabilityIndicator(),
                   ),
                 ),
               ),
-              const SizedBox(height: 4),
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  '3–20 characters · letters, numbers, and underscores only',
-                  style: TextStyle(fontSize: 12, color: Colors.white38),
-                ),
+              const SizedBox(height: 8),
+              const Text(
+                '3–20 characters · letters, numbers, and underscores only',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
               ),
               const SizedBox(height: 24),
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.orange.shade900.withValues(alpha: 0.35),
-                  border: Border.all(color: Colors.orange.shade700),
+                  color: Colors.orange.shade50,
+                  border: Border.all(color: Colors.orange.shade300),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Row(
@@ -244,7 +193,7 @@ class _GamertagScreenState extends State<GamertagScreen> {
                         'Offensive, hateful, or inappropriate gamertags are '
                         'immediately removed. Accounts with repeated violations '
                         'are permanently banned.',
-                        style: TextStyle(fontSize: 13, color: Colors.white70),
+                        style: TextStyle(fontSize: 13),
                       ),
                     ),
                   ],
@@ -256,23 +205,13 @@ class _GamertagScreenState extends State<GamertagScreen> {
                 child: ElevatedButton(
                   onPressed: _canSave ? _save : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _kAccent,
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: Colors.white12,
-                    disabledForegroundColor: Colors.white38,
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
                   ),
                   child: _saving
                       ? const SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
+                          child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Text('Continue', style: TextStyle(fontSize: 16)),
                 ),
@@ -282,7 +221,7 @@ class _GamertagScreenState extends State<GamertagScreen> {
                 const Text(
                   'You are playing as a guest. Your progress will not be saved if you uninstall the app.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 12, color: Colors.white38),
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ],
             ],

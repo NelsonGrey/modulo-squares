@@ -45,22 +45,5 @@ service cloud.firestore {
     match /game_stats/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
-
-    // User documents (gamertag, high score, etc.) - users own their document
-    match /users/{userId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Gamertag uniqueness index - readable by all authenticated users (for
-    // availability checks), writable only by the user whose UID matches the
-    // document's uid field.
-    match /gamertags/{tag} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null
-                    && request.resource.data.uid == request.auth.uid;
-      allow update: if false;
-      allow delete: if false;
-    }
   }
 }
