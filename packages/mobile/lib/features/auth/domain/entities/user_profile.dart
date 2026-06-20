@@ -1,5 +1,3 @@
-// /Users/marknelson/Circus/Repositories/modulo_flutter_project/lib/src/features/profile/domain/entities/user_profile.dart
-
 import 'package:flutter/foundation.dart';
 
 @immutable
@@ -9,7 +7,7 @@ class UserProfile {
   final String? email;
   final String? photoUrl;
   final int highScore;
-  // Add other domain-specific profile fields
+  final String? gamertag;
 
   const UserProfile({
     required this.id,
@@ -17,7 +15,6 @@ class UserProfile {
     this.email,
     this.photoUrl,
     this.highScore = 0,
+    this.gamertag,
   });
-
-  // You might add copyWith, equality, and hashCode methods here if needed
 }

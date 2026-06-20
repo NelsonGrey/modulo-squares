@@ -37,19 +37,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _signInWithGoogle(BuildContext context) async {
-    if (_authInProgress) {
-      return;
-    }
-
-    setState(() {
-      _authInProgress = true;
-    });
-
+    if (_authInProgress) return;
+    setState(() => _authInProgress = true);
     try {
-      // First authenticate the user
       final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
-
-      // Get the ID token from authentication
       final GoogleSignInAuthentication auth = googleUser.authentication;
       final String? idToken = auth.idToken;
 
@@ -63,22 +54,19 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      // Then get authorization for the required scopes (empty list for basic profile)
-      final GoogleSignInClientAuthorization? authorization = await googleUser
-          .authorizationClient
-          .authorizationForScopes([]);
+      final GoogleSignInClientAuthorization? authorization =
+          await googleUser.authorizationClient.authorizationForScopes([]);
 
       if (authorization == null) {
-        // If not authorized, request authorization
-        final auth = await googleUser.authorizationClient.authorizeScopes([]);
-        final AuthCredential credential = GoogleAuthProvider.credential(
-          accessToken: auth.accessToken,
+        final authorized =
+            await googleUser.authorizationClient.authorizeScopes([]);
+        final credential = GoogleAuthProvider.credential(
+          accessToken: authorized.accessToken,
           idToken: idToken,
         );
         await FirebaseAuth.instance.signInWithCredential(credential);
       } else {
-        // Already authorized
-        final AuthCredential credential = GoogleAuthProvider.credential(
+        final credential = GoogleAuthProvider.credential(
           accessToken: authorization.accessToken,
           idToken: idToken,
         );
@@ -92,23 +80,13 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } finally {
-      if (mounted) {
-        setState(() {
-          _authInProgress = false;
-        });
-      }
+      if (mounted) setState(() => _authInProgress = false);
     }
   }
 
   Future<void> _signInWithApple(BuildContext context) async {
-    if (_authInProgress) {
-      return;
-    }
-
-    setState(() {
-      _authInProgress = true;
-    });
-
+    if (_authInProgress) return;
+    setState(() => _authInProgress = true);
     try {
       final appleCredential = await SignInWithApple.getAppleIDCredential(
         scopes: [
@@ -119,18 +97,17 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (appleCredential.identityToken == null) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Apple sign-in failed: No identity token'),
-            ),
+          ErrorHandler().showErrorSnackBar(
+            context,
+            'Apple sign-in failed: no identity token received.',
           );
         }
         return;
       }
 
-      final oauthCredential = OAuthProvider(
-        "apple.com",
-      ).credential(idToken: appleCredential.identityToken);
+      final oauthCredential = OAuthProvider('apple.com').credential(
+        idToken: appleCredential.identityToken,
+      );
       await FirebaseAuth.instance.signInWithCredential(oauthCredential);
     } catch (e) {
       if (context.mounted) {
@@ -140,11 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } finally {
-      if (mounted) {
-        setState(() {
-          _authInProgress = false;
-        });
-      }
+      if (mounted) setState(() => _authInProgress = false);
     }
   }
 
@@ -154,23 +127,15 @@ class _LoginScreenState extends State<LoginScreen> {
     required String password,
     required bool createAccount,
   }) async {
-    if (_authInProgress) {
-      return;
-    }
+    if (_authInProgress) return;
 
     final normalizedEmail = email.trim();
     if (normalizedEmail.isEmpty || password.isEmpty) {
-      ErrorHandler().showErrorSnackBar(
-        context,
-        'Email and password are required.',
-      );
+      ErrorHandler().showErrorSnackBar(context, 'Email and password are required.');
       return;
     }
 
-    setState(() {
-      _authInProgress = true;
-    });
-
+    setState(() => _authInProgress = true);
     try {
       if (createAccount) {
         await FirebaseAuth.instance.createUserWithEmailAndPassword(
@@ -183,9 +148,7 @@ class _LoginScreenState extends State<LoginScreen> {
           password: password,
         );
       }
-      if (context.mounted) {
-        Navigator.of(context).pop();
-      }
+      if (context.mounted) Navigator.of(context).pop();
     } catch (e) {
       if (context.mounted) {
         ErrorHandler().showErrorSnackBar(
@@ -194,11 +157,7 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } finally {
-      if (mounted) {
-        setState(() {
-          _authInProgress = false;
-        });
-      }
+      if (mounted) setState(() => _authInProgress = false);
     }
   }
 
@@ -214,9 +173,7 @@ class _LoginScreenState extends State<LoginScreen> {
           builder: (localContext, setLocalState) {
             return AlertDialog(
               title: Text(
-                createAccount
-                    ? 'Create account with email'
-                    : 'Sign in with email',
+                createAccount ? 'Create account with email' : 'Sign in with email',
               ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -238,11 +195,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 8),
                   TextButton(
-                    onPressed: () {
-                      setLocalState(() {
-                        createAccount = !createAccount;
-                      });
-                    },
+                    onPressed: () => setLocalState(() {
+                      createAccount = !createAccount;
+                    }),
                     child: Text(
                       createAccount
                           ? 'Already have an account? Sign in'
@@ -257,10 +212,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: const Text('Cancel'),
                 ),
                 ElevatedButton(
-                  onPressed:
-                      _authInProgress
-                          ? null
-                          : () => _authenticateWithEmailPassword(
+                  onPressed: _authInProgress
+                      ? null
+                      : () => _authenticateWithEmailPassword(
                             dialogContext,
                             email: emailController.text,
                             password: passwordController.text,
@@ -279,38 +233,114 @@ class _LoginScreenState extends State<LoginScreen> {
     passwordController.dispose();
   }
 
+  Future<void> _signInAsGuest(BuildContext context) async {
+    if (_authInProgress) return;
+    setState(() => _authInProgress = true);
+    try {
+      await FirebaseAuth.instance.signInAnonymously();
+    } catch (e) {
+      if (context.mounted) {
+        ErrorHandler().showErrorSnackBar(
+          context,
+          ErrorHandler().getAuthErrorMessage(e, context),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _authInProgress = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const SizedBox(height: 20),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24),
-            child: Text(
-              'Sign in to continue. An account is required to play and sync progress.',
-              textAlign: TextAlign.center,
-            ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const SizedBox(height: 60),
+              Image.asset('assets/icons/icon.png', width: 88, height: 88),
+              const SizedBox(height: 16),
+              const Text(
+                'Modulo Squares',
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'The Modular Math Puzzle',
+                style: TextStyle(fontSize: 15, color: Colors.grey),
+              ),
+              const SizedBox(height: 48),
+              const Text(
+                'Sign in to save progress and compete on the leaderboard.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _authInProgress
+                      ? null
+                      : () => _signInWithGoogle(context),
+                  icon: const Icon(Icons.g_mobiledata, size: 22),
+                  label: const Text('Sign in with Google'),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _authInProgress
+                      ? null
+                      : () => _signInWithApple(context),
+                  icon: const Icon(Icons.apple, size: 22),
+                  label: const Text('Sign in with Apple'),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: _authInProgress
+                      ? null
+                      : () => _openEmailSignInDialog(context),
+                  icon: const Icon(Icons.email_outlined, size: 20),
+                  label: const Text('Sign in with Email'),
+                ),
+              ),
+              const SizedBox(height: 28),
+              const Row(
+                children: [
+                  Expanded(child: Divider()),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    child: Text('or', style: TextStyle(color: Colors.grey)),
+                  ),
+                  Expanded(child: Divider()),
+                ],
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed: _authInProgress
+                      ? null
+                      : () => _signInAsGuest(context),
+                  child: const Text('Continue as Guest'),
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Guest progress is not backed up and may be lost if you uninstall the app.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 11, color: Colors.grey),
+              ),
+              const SizedBox(height: 32),
+            ],
           ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed:
-                _authInProgress ? null : () => _signInWithGoogle(context),
-            child: const Text('Sign in with Google'),
-          ),
-          const SizedBox(height: 12),
-          ElevatedButton(
-            onPressed:
-                _authInProgress ? null : () => _openEmailSignInDialog(context),
-            child: const Text('Sign in with Email'),
-          ),
-          const SizedBox(height: 12),
-          ElevatedButton(
-            onPressed: _authInProgress ? null : () => _signInWithApple(context),
-            child: const Text('Sign in with Apple'),
-          ),
-        ],
+        ),
       ),
     );
   }

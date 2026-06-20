@@ -8,8 +8,10 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:modulo_squares/features/auth/login_screen.dart';
+import 'package:modulo_squares/features/auth/gamertag_screen.dart';
 import 'package:modulo_squares/features/game/game_screen.dart';
 import 'package:modulo_squares/features/website/website_screen.dart';
+import 'package:modulo_squares/core/services/gamertag_service.dart';
 import 'package:modulo_squares/l10n/app_localizations.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:modulo_squares/core/services/analytics_service.dart';
@@ -232,16 +234,37 @@ class AuthGate extends StatefulWidget {
 }
 
 class _AuthGateState extends State<AuthGate> {
+  String? _checkedUid;
+  bool _hasGamertag = false;
+  bool _loadingGamertag = false;
+
   @override
   void initState() {
     super.initState();
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       getIt<AnalyticsService>().logAppOpen();
     });
   }
 
-  Widget _buildAuthWaitingScaffold({String? message}) {
+  void _checkGamertagForUser(String uid) {
+    if (_checkedUid == uid) return;
+    _checkedUid = uid;
+    setState(() => _loadingGamertag = true);
+    GamertagService.getGamertag(uid).then((tag) {
+      if (mounted) {
+        setState(() {
+          _hasGamertag = tag != null && tag.isNotEmpty;
+          _loadingGamertag = false;
+        });
+      }
+    });
+  }
+
+  void _onGamertagSet() {
+    setState(() => _hasGamertag = true);
+  }
+
+  Widget _buildWaiting({String? message}) {
     return Scaffold(
       body: Center(
         child: Column(
@@ -267,30 +290,33 @@ class _AuthGateState extends State<AuthGate> {
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return _buildAuthWaitingScaffold(message: 'Checking account...');
+          return _buildWaiting(message: 'Checking account...');
         }
 
         if (snapshot.hasError) {
           ErrorHandler().logError('Auth stream', snapshot.error);
-          return _buildAuthWaitingScaffold(
-            message: 'Authentication is temporarily unavailable.',
-          );
+          return _buildWaiting(message: 'Authentication is temporarily unavailable.');
         }
 
         final user = snapshot.data;
         if (user == null) {
+          _checkedUid = null;
           return const LoginScreen();
         }
 
-        // Set analytics user id once we have a user
         getIt<AnalyticsService>().setUserIdFromAuth(user);
 
-        // Show promotional website on web, game on mobile
-        if (kIsWeb) {
-          return const WebsiteScreen();
-        } else {
-          return const GameScreen();
+        _checkGamertagForUser(user.uid);
+
+        if (_loadingGamertag) {
+          return _buildWaiting(message: 'Loading profile...');
         }
+
+        if (!_hasGamertag) {
+          return GamertagScreen(onGamertagSet: _onGamertagSet);
+        }
+
+        return kIsWeb ? const WebsiteScreen() : const GameScreen();
       },
     );
   }
