@@ -2,7 +2,8 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode;
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -60,6 +61,22 @@ void main() async {
       FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
       return true;
     };
+  }
+
+  // Activate App Check before any Firebase service calls.
+  // Debug builds use a rotating debug token (register it in Firebase Console →
+  // App Check → your iOS app → Manage debug tokens).
+  // Release builds use App Attest with DeviceCheck as the fallback.
+  if (firebaseReady && !kIsWeb) {
+    try {
+      await FirebaseAppCheck.instance.activate(
+        providerApple: kDebugMode
+            ? const AppleDebugProvider()
+            : const AppleAppAttestWithDeviceCheckFallbackProvider(),
+      );
+    } catch (e) {
+      ErrorHandler().logError('App Check activation', e);
+    }
   }
 
   // Setup dependency injection
