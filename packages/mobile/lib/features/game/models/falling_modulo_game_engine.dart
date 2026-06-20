@@ -124,7 +124,7 @@ class FallingModuloGameState {
 class FallingModuloGameEngine {
   FallingModuloGameEngine({Random? random}) : _random = random ?? Random();
 
-  static const int laneCount = 10;
+  static const int laneCount = 9;
 
   final Random _random;
 
@@ -171,8 +171,7 @@ class FallingModuloGameEngine {
     final result = <int>[];
     for (var i = 0; i < state.bucketValues.length; i++) {
       final bucketValue = state.bucketValues[i];
-      // Skip dead bucket (value 0) — no divisibility hint applies.
-      if (bucketValue > 0 && state.currentFallingValue % bucketValue == 0) {
+      if (state.currentFallingValue % bucketValue == 0) {
         result.add(i);
       }
     }
@@ -182,33 +181,21 @@ class FallingModuloGameEngine {
   FallingModuloResolveResult resolveCurrentTile(FallingModuloGameState state) {
     final lane = state.currentLane.clamp(0, laneCount - 1);
     final bucketValue = state.bucketValues[lane];
-    final bool isDead = bucketValue == 0;
+    final remainder = state.currentFallingValue % bucketValue;
+    final success = remainder == 0;
 
-    final int remainder;
-    final bool success;
     final int scoreDelta;
-
-    if (isDead) {
-      // Dead bucket: deduct the tile value from score, no divisibility applies.
-      remainder = 0;
-      success = false;
-      scoreDelta = -state.currentFallingValue;
+    if (success) {
+      scoreDelta =
+          bucketValue == 1 ? 0 : state.currentFallingValue * bucketValue;
     } else {
-      remainder = state.currentFallingValue % bucketValue;
-      success = remainder == 0;
-      if (success) {
-        scoreDelta =
-            bucketValue == 1 ? 0 : state.currentFallingValue * bucketValue;
-      } else {
-        scoreDelta = -(state.currentFallingValue * bucketValue * remainder);
-      }
+      scoreDelta = -(state.currentFallingValue * bucketValue * remainder);
     }
 
     final scoreAfter = max(0, state.score + scoreDelta);
     final comboAfter = success ? state.combo + 1 : 0;
-    var nextFillBalance = isDead
-        ? state.fillBalance - 1
-        : (success ? state.fillBalance + 1 : state.fillBalance - remainder);
+    var nextFillBalance =
+        success ? state.fillBalance + 1 : state.fillBalance - remainder;
 
     var nextLevel = state.level;
     var nextResolvedCount = state.tilesResolvedInLevel + 1;
@@ -277,9 +264,7 @@ class FallingModuloGameEngine {
   }
 
   List<int> _randomizedBuckets() {
-    // Nine scoring buckets (1–9) plus one dead bucket (0), shuffled randomly.
-    final values = List<int>.generate(laneCount - 1, (index) => index + 1);
-    values.add(0);
+    final values = List<int>.generate(laneCount, (index) => index + 1);
     values.shuffle(_random);
     return values;
   }
