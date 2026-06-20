@@ -25,7 +25,7 @@
   "dependencies": {
     "@shared/firebase-utils": "file:../firebase-utils",
     "express": "^5.2.1",
-    "firebase-admin": "^14.0.0",
+    "firebase-admin": "^13.0.0",
     "firebase-functions": "^7.2.5"
   },
   "devDependencies": {

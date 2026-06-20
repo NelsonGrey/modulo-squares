@@ -1,0 +1,44 @@
+runConfig:
+  runtime: nodejs22
+
+env:
+  - variable: VITE_FIREBASE_API_KEY
+    secret: VITE_FIREBASE_API_KEY
+    availability:
+      - BUILD
+  - variable: VITE_FIREBASE_AUTH_DOMAIN
+    value: modulo-squares-prod.firebaseapp.com
+    availability:
+      - BUILD
+  - variable: VITE_FIREBASE_PROJECT_ID
+    value: modulo-squares-prod
+    availability:
+      - BUILD
+  - variable: VITE_FIREBASE_STORAGE_BUCKET
+    value: modulo-squares-prod.firebasestorage.app
+    availability:
+      - BUILD
+  - variable: VITE_FIREBASE_MESSAGING_SENDER_ID
+    value: "253948321735"
+    availability:
+      - BUILD
+  - variable: VITE_FIREBASE_APP_ID
+    value: "1:253948321735:web:0f7df38ef2e47fe89ec3e2"
+    availability:
+      - BUILD
+  - variable: VITE_FIREBASE_MEASUREMENT_ID
+    value: G-FY0QLHWYJN
+    availability:
+      - BUILD
+  - variable: VITE_ADSENSE_PUBLISHER_ID
+    value: ca-pub-5198775482699756
+    availability:
+      - BUILD
+  - variable: VITE_ADSENSE_SLOT_BELOW_HEADER
+    value: "4715412267"
+    availability:
+      - BUILD
+  - variable: VITE_ADSENSE_SLOT_ABOVE_FOOTER
+    value: "4417809035"
+    availability:
+      - BUILD

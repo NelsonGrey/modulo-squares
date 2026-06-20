@@ -1,5 +1,14 @@
+import SEOHead from './SEOHead';
+import SocialShare from './SocialShare';
+
 const Download: React.FC = () => {
   return (
+    <>
+    <SEOHead
+      title="Download Free"
+      description="Download Modulo Squares free on the App Store and Google Play. Guide falling numbers into divisor buckets — a fresh math puzzle for iOS and Android."
+      path="/download"
+    />
     <section className="section-padding bg-gray-50">
       <div className="container-max">
         <div className="text-center mb-16">
@@ -56,8 +65,13 @@ const Download: React.FC = () => {
             </div>
           </div>
         </div>
+
+        <div className="mt-12 text-center">
+          <SocialShare label="Know someone who'd enjoy this? Share the game:" />
+        </div>
       </div>
     </section>
+    </>
   );
 };
 

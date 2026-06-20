@@ -253,10 +253,11 @@ class PurchaseService {
         .firstWhere((element) => element?.id == productId, orElse: () => null);
 
     if (product == null) {
-      final error = 'Product not found: $productId';
-      ErrorHandler().logError('Purchase product', error);
-      _purchaseController.addError(error);
-      return;
+      ErrorHandler().logError('Purchase product', 'Product not found: $productId');
+      throw Exception(
+        'Unable to connect to the App Store. '
+        'Please check your connection and try again.',
+      );
     }
 
     final PurchaseParam purchaseParam = PurchaseParam(productDetails: product);
@@ -319,8 +320,8 @@ class PurchaseService {
             id: productId,
             title: 'Unknown Product',
             description: '',
-            price: '\$0.00',
-            rawPrice: 0.0,
+            price: '\$0.99',
+            rawPrice: 0.99,
             currencyCode: 'USD',
           ),
     );

@@ -193,12 +193,13 @@ jobs:
           echo "✅ All coverage thresholds met!"
         working-directory: packages/mobile
 
-      - name: 📊 Upload Coverage
+      - name: 📊 Upload Coverage Report
         if: steps.check-runner.outputs.skip-flutter != 'true'
-        uses: codecov/codecov-action@v4
+        uses: actions/upload-artifact@v4
         with:
-          file: packages/mobile/coverage/lcov.info
-          flags: flutter
+          name: flutter-coverage
+          path: packages/mobile/coverage/lcov.info
+          retention-days: 7
 
   # 🐳 Build and Push Docker Images
   build-docker:

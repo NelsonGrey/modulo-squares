@@ -1,12 +1,15 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:modulo_squares/core/di/service_locator.dart';
 import 'package:modulo_squares/core/services/ad_service.dart';
 import 'package:modulo_squares/core/services/purchase_service.dart';
 import 'package:modulo_squares/features/game/models/falling_modulo_game_engine.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 class FallingModuloGameScreen extends StatefulWidget {
   const FallingModuloGameScreen({super.key});
@@ -34,6 +37,8 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
   bool _resultBurstPositive = true;
   bool _isRunning = false;
   bool _hasStarted = false;
+
+  final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
 
   AdService? get _adServiceOrNull =>
       getIt.isRegistered<AdService>() ? getIt<AdService>() : null;
@@ -238,10 +243,246 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
     );
   }
 
+  void _showAccountError(BuildContext context, dynamic error) {
+    if (!context.mounted) return;
+    final message = error is FirebaseAuthException
+        ? '${error.message ?? error.code}\n\n(code: ${error.code})'
+        : error.toString();
+    showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Account error'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _signOut(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Sign out?'),
+        content: const Text(
+          'You will be returned to the sign-in screen. '
+          'Your progress is saved to your account.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Sign out'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    if (context.mounted) Navigator.of(context).pop();
+    await FirebaseAuth.instance.signOut();
+  }
+
+  Future<void> _linkWithGoogle(BuildContext context) async {
+    try {
+      await _googleSignIn.initialize();
+      final googleUser = await _googleSignIn.authenticate();
+      final auth = googleUser.authentication;
+      final idToken = auth.idToken;
+      if (idToken == null) {
+        _showAccountError(context, 'No ID token returned from Google.');
+        return;
+      }
+      final authorization =
+          await googleUser.authorizationClient.authorizationForScopes([]) ??
+          await googleUser.authorizationClient.authorizeScopes([]);
+      final credential = GoogleAuthProvider.credential(
+        accessToken: authorization.accessToken,
+        idToken: idToken,
+      );
+      await FirebaseAuth.instance.currentUser?.linkWithCredential(credential);
+      if (context.mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Account linked with Google.')),
+        );
+      }
+    } catch (e) {
+      _showAccountError(context, e);
+    }
+  }
+
+  Future<void> _linkWithApple(BuildContext context) async {
+    try {
+      final appleCredential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+      );
+      if (appleCredential.identityToken == null) {
+        _showAccountError(context, 'Apple did not return an identity token.');
+        return;
+      }
+      final credential = OAuthProvider('apple.com')
+          .credential(idToken: appleCredential.identityToken);
+      await FirebaseAuth.instance.currentUser?.linkWithCredential(credential);
+      if (context.mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Account linked with Apple.')),
+        );
+      }
+    } catch (e) {
+      _showAccountError(context, e);
+    }
+  }
+
+  Future<void> _linkWithEmail(BuildContext context) async {
+    final emailController = TextEditingController();
+    final passwordController = TextEditingController();
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (localContext, setLocalState) => AlertDialog(
+          title: const Text('Create account with email'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: emailController,
+                keyboardType: TextInputType.emailAddress,
+                autocorrect: false,
+                enableSuggestions: false,
+                decoration: const InputDecoration(labelText: 'Email'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: passwordController,
+                obscureText: true,
+                autocorrect: false,
+                enableSuggestions: false,
+                decoration: const InputDecoration(labelText: 'Password'),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Password must be 8+ characters with uppercase, '
+                'lowercase, a number, and a special character.',
+                style: TextStyle(fontSize: 11, color: Colors.grey),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                final email = emailController.text.trim();
+                final password = passwordController.text;
+                if (email.isEmpty || password.isEmpty) return;
+                try {
+                  final credential = EmailAuthProvider.credential(
+                    email: email,
+                    password: password,
+                  );
+                  await FirebaseAuth.instance.currentUser
+                      ?.linkWithCredential(credential);
+                  if (dialogContext.mounted) {
+                    Navigator.of(dialogContext).pop();
+                  }
+                  if (context.mounted) {
+                    Navigator.of(context).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Account linked with email.'),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (dialogContext.mounted) {
+                    Navigator.of(dialogContext).pop();
+                  }
+                  _showAccountError(context, e);
+                }
+              },
+              child: const Text('Link account'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    emailController.dispose();
+    passwordController.dispose();
+  }
+
+  Future<void> _openLinkAccountDialog(BuildContext context) async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Link your account'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Choose a sign-in method to link to your guest account. '
+              'Your gamertag and progress will be preserved.',
+            ),
+            const SizedBox(height: 16),
+            _LinkButton(
+              label: 'Link with Google',
+              icon: Icons.g_mobiledata,
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                _linkWithGoogle(context);
+              },
+            ),
+            const SizedBox(height: 8),
+            _LinkButton(
+              label: 'Link with Apple',
+              icon: Icons.apple,
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                _linkWithApple(context);
+              },
+            ),
+            const SizedBox(height: 8),
+            _LinkButton(
+              label: 'Link with Email',
+              icon: Icons.email_outlined,
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                _linkWithEmail(context);
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _openSettingsDialog() async {
     var localVisualCues = _state.visualCuesEnabled;
     final purchaseService = _purchaseServiceOrNull;
     var adsRemoved = purchaseService?.adsRemoved ?? false;
+    final user = FirebaseAuth.instance.currentUser;
+    final isGuest = user?.isAnonymous ?? false;
 
     await showDialog<void>(
       context: context,
@@ -286,16 +527,21 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
                       alignment: Alignment.centerLeft,
                       child: OutlinedButton(
                         onPressed: () async {
-                          await purchaseService.purchaseAdRemoval();
-                          setLocalState(() {
-                            adsRemoved = purchaseService.adsRemoved;
-                          });
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Purchase completed! Ads removed.'),
-                            ),
-                          );
+                          try {
+                            await purchaseService.purchaseAdRemoval();
+                            // Completion arrives via purchaseStream; the store
+                            // payment sheet handles the rest.
+                          } catch (e) {
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  e.toString().replaceFirst('Exception: ', ''),
+                                ),
+                                duration: const Duration(seconds: 4),
+                              ),
+                            );
+                          }
                         },
                         child: Text(
                           'Remove Ads (${purchaseService.getProductPrice('remove_ads')})',
@@ -321,6 +567,29 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
                         child: const Text('Restore Purchases'),
                       ),
                     ),
+                  const Divider(height: 24),
+                  if (isGuest)
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.link),
+                      title: const Text('Link Account'),
+                      subtitle: const Text(
+                        'Save progress by linking to Google, Apple, or Email',
+                      ),
+                      onTap: () {
+                        Navigator.of(dialogContext).pop();
+                        _openLinkAccountDialog(context);
+                      },
+                    ),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.logout, color: Colors.red),
+                    title: const Text(
+                      'Sign Out',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                    onTap: () => _signOut(context),
+                  ),
                 ],
               ),
               actions: [
@@ -815,7 +1084,7 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
               const SizedBox(height: 8),
               _buildOverlayRule(
                 Icons.grid_on_outlined,
-                'Fill 100 squares to level up — wrong buckets cost points',
+                'Fill 100 squares to level up — wrong buckets cost points, the Dead bucket costs your tile value',
               ),
               const SizedBox(height: 32),
               FilledButton.icon(
@@ -901,7 +1170,10 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
             ),
             const SizedBox(height: 32),
             FilledButton.icon(
-              onPressed: _toggleRunning,
+              onPressed: () => _showInterstitialTransition(
+                trigger: 'resume_from_pause',
+                onClosed: _toggleRunning,
+              ),
               icon: const Icon(Icons.play_arrow, size: 22),
               label: const Text(
                 'Resume',
@@ -986,10 +1258,10 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
                         icon: Icons.inbox_outlined,
                         title: 'The Buckets',
                         body:
-                            'Nine buckets sit at the bottom, each labelled 1–9. '
-                            'Their positions are shuffled each level. '
-                            'Land the tile where the number is exactly divisible '
-                            'by the bucket value (remainder = 0).',
+                            'Ten buckets sit at the bottom — nine labelled 1–9 '
+                            'and one red Dead bucket. Their positions are '
+                            'shuffled each level. Land the tile where the number '
+                            'is exactly divisible by the bucket value (remainder = 0).',
                       ),
                       const SizedBox(height: 20),
                       _buildHowToSection(
@@ -998,6 +1270,7 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
                         body:
                             'Success → earn falling number × bucket value points.\n\n'
                             'Miss → lose falling number × bucket value × remainder points.\n\n'
+                            'Dead bucket → lose the falling number outright.\n\n'
                             'Tip: bucket 1 always divides any number — but scores 0. '
                             'Use it to avoid a big penalty when no other bucket fits.',
                       ),
@@ -1098,30 +1371,78 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
     required bool selected,
     required bool divisibleHint,
   }) {
-    final base = selected ? Colors.orange.shade200 : Colors.white;
-    final hintColor = divisibleHint ? Colors.green.shade100 : base;
+    final isDead = value == 0;
+
+    final Color bgColor;
+    final Color borderColor;
+    if (isDead) {
+      bgColor = selected ? Colors.red.shade700 : Colors.red.shade900;
+      borderColor = selected ? Colors.red.shade300 : Colors.red.shade700;
+    } else {
+      final base = selected ? Colors.orange.shade200 : Colors.white;
+      bgColor = divisibleHint ? Colors.green.shade100 : base;
+      borderColor = selected ? Colors.deepOrange : Colors.black26;
+    }
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 8),
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
-        color: hintColor,
-        border: Border.all(
-          color: selected ? Colors.deepOrange : Colors.black26,
-          width: selected ? 2 : 1,
-        ),
+        color: bgColor,
+        border: Border.all(color: borderColor, width: selected ? 2 : 1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('$value', style: const TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 2),
-          Text(
-            '$index',
-            style: TextStyle(fontSize: 10, color: Colors.grey.shade700),
-          ),
+          if (isDead) ...[
+            Icon(Icons.close, size: 16, color: Colors.red.shade100),
+            const SizedBox(height: 2),
+            Text(
+              'DEAD',
+              style: TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.bold,
+                color: Colors.red.shade100,
+              ),
+            ),
+          ] else ...[
+            Text('$value', style: const TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 2),
+            Text(
+              '$index',
+              style: TextStyle(fontSize: 10, color: Colors.grey.shade700),
+            ),
+          ],
         ],
+      ),
+    );
+  }
+}
+
+class _LinkButton extends StatelessWidget {
+  const _LinkButton({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon, size: 20),
+        label: Text(label),
+        style: OutlinedButton.styleFrom(
+          alignment: Alignment.centerLeft,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
       ),
     );
   }
