@@ -3,7 +3,10 @@ import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
-import 'package:modulo_squares/core/services/error_handler.dart';
+
+// Dark background matching the app icon's background colour.
+const _kBg = Color(0xFF1A1A2E);
+const _kAccent = Color(0xFF4CAF50);
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key, this.initializeGoogleSignIn = true});
@@ -30,10 +33,32 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       await _googleSignIn.initialize();
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('Google Sign-In initialization failed: $e');
-      }
+      if (kDebugMode) debugPrint('Google Sign-In init failed: $e');
     }
+  }
+
+  // Shows a dialog with the exact error so nothing is missed.
+  void _showAuthError(BuildContext context, dynamic error) {
+    if (!context.mounted) return;
+    String message;
+    if (error is FirebaseAuthException) {
+      message = '${error.message ?? error.code}\n\n(code: ${error.code})';
+    } else {
+      message = error.toString();
+    }
+    showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Sign-in failed'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _signInWithGoogle(BuildContext context) async {
@@ -45,12 +70,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final String? idToken = auth.idToken;
 
       if (idToken == null) {
-        if (context.mounted) {
-          ErrorHandler().showErrorSnackBar(
-            context,
-            'Failed to get authentication tokens',
-          );
-        }
+        _showAuthError(context, 'No ID token returned from Google.');
         return;
       }
 
@@ -60,25 +80,18 @@ class _LoginScreenState extends State<LoginScreen> {
       if (authorization == null) {
         final authorized =
             await googleUser.authorizationClient.authorizeScopes([]);
-        final credential = GoogleAuthProvider.credential(
-          accessToken: authorized.accessToken,
-          idToken: idToken,
+        await FirebaseAuth.instance.signInWithCredential(
+          GoogleAuthProvider.credential(
+              accessToken: authorized.accessToken, idToken: idToken),
         );
-        await FirebaseAuth.instance.signInWithCredential(credential);
       } else {
-        final credential = GoogleAuthProvider.credential(
-          accessToken: authorization.accessToken,
-          idToken: idToken,
+        await FirebaseAuth.instance.signInWithCredential(
+          GoogleAuthProvider.credential(
+              accessToken: authorization.accessToken, idToken: idToken),
         );
-        await FirebaseAuth.instance.signInWithCredential(credential);
       }
     } catch (e) {
-      if (context.mounted) {
-        ErrorHandler().showErrorSnackBar(
-          context,
-          ErrorHandler().getAuthErrorMessage(e, context),
-        );
-      }
+      _showAuthError(context, e);
     } finally {
       if (mounted) setState(() => _authInProgress = false);
     }
@@ -94,28 +107,16 @@ class _LoginScreenState extends State<LoginScreen> {
           AppleIDAuthorizationScopes.fullName,
         ],
       );
-
       if (appleCredential.identityToken == null) {
-        if (context.mounted) {
-          ErrorHandler().showErrorSnackBar(
-            context,
-            'Apple sign-in failed: no identity token received.',
-          );
-        }
+        _showAuthError(context, 'Apple did not return an identity token.');
         return;
       }
-
-      final oauthCredential = OAuthProvider('apple.com').credential(
-        idToken: appleCredential.identityToken,
+      await FirebaseAuth.instance.signInWithCredential(
+        OAuthProvider('apple.com')
+            .credential(idToken: appleCredential.identityToken),
       );
-      await FirebaseAuth.instance.signInWithCredential(oauthCredential);
     } catch (e) {
-      if (context.mounted) {
-        ErrorHandler().showErrorSnackBar(
-          context,
-          ErrorHandler().getAuthErrorMessage(e, context),
-        );
-      }
+      _showAuthError(context, e);
     } finally {
       if (mounted) setState(() => _authInProgress = false);
     }
@@ -131,7 +132,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     final normalizedEmail = email.trim();
     if (normalizedEmail.isEmpty || password.isEmpty) {
-      ErrorHandler().showErrorSnackBar(context, 'Email and password are required.');
+      _showAuthError(context, 'Email and password are required.');
       return;
     }
 
@@ -150,12 +151,7 @@ class _LoginScreenState extends State<LoginScreen> {
       }
       if (context.mounted) Navigator.of(context).pop();
     } catch (e) {
-      if (context.mounted) {
-        ErrorHandler().showErrorSnackBar(
-          context,
-          ErrorHandler().getAuthErrorMessage(e, context),
-        );
-      }
+      _showAuthError(context, e);
     } finally {
       if (mounted) setState(() => _authInProgress = false);
     }
@@ -173,10 +169,11 @@ class _LoginScreenState extends State<LoginScreen> {
           builder: (localContext, setLocalState) {
             return AlertDialog(
               title: Text(
-                createAccount ? 'Create account with email' : 'Sign in with email',
+                createAccount ? 'Create account' : 'Sign in with email',
               ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   TextField(
                     controller: emailController,
@@ -193,6 +190,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     enableSuggestions: false,
                     decoration: const InputDecoration(labelText: 'Password'),
                   ),
+                  if (createAccount) ...[
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Password must be 8+ characters with uppercase, '
+                      'lowercase, a number, and a special character.',
+                      style: TextStyle(fontSize: 11, color: Colors.grey),
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   TextButton(
                     onPressed: () => setLocalState(() {
@@ -239,12 +244,7 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       await FirebaseAuth.instance.signInAnonymously();
     } catch (e) {
-      if (context.mounted) {
-        ErrorHandler().showErrorSnackBar(
-          context,
-          ErrorHandler().getAuthErrorMessage(e, context),
-        );
-      }
+      _showAuthError(context, e);
     } finally {
       if (mounted) setState(() => _authInProgress = false);
     }
@@ -253,78 +253,85 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: _kBg,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 32),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const SizedBox(height: 60),
-              Image.asset('assets/icons/icon.png', width: 88, height: 88),
-              const SizedBox(height: 16),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Image.asset(
+                  'assets/icons/icon.png',
+                  width: 96,
+                  height: 96,
+                ),
+              ),
+              const SizedBox(height: 18),
               const Text(
                 'Modulo Squares',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
               const SizedBox(height: 6),
               const Text(
                 'The Modular Math Puzzle',
-                style: TextStyle(fontSize: 15, color: Colors.grey),
+                style: TextStyle(fontSize: 15, color: Colors.white54),
               ),
               const SizedBox(height: 48),
               const Text(
                 'Sign in to save progress and compete on the leaderboard.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _authInProgress
-                      ? null
-                      : () => _signInWithGoogle(context),
-                  icon: const Icon(Icons.g_mobiledata, size: 22),
-                  label: const Text('Sign in with Google'),
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _authInProgress
-                      ? null
-                      : () => _signInWithApple(context),
-                  icon: const Icon(Icons.apple, size: 22),
-                  label: const Text('Sign in with Apple'),
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: _authInProgress
-                      ? null
-                      : () => _openEmailSignInDialog(context),
-                  icon: const Icon(Icons.email_outlined, size: 20),
-                  label: const Text('Sign in with Email'),
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.white70),
               ),
               const SizedBox(height: 28),
-              const Row(
+              _AuthButton(
+                label: 'Sign in with Google',
+                icon: Icons.g_mobiledata,
+                onPressed: _authInProgress
+                    ? null
+                    : () => _signInWithGoogle(context),
+              ),
+              const SizedBox(height: 12),
+              _AuthButton(
+                label: 'Sign in with Apple',
+                icon: Icons.apple,
+                onPressed: _authInProgress
+                    ? null
+                    : () => _signInWithApple(context),
+              ),
+              const SizedBox(height: 12),
+              _AuthButton(
+                label: 'Sign in with Email',
+                icon: Icons.email_outlined,
+                outlined: true,
+                onPressed: _authInProgress
+                    ? null
+                    : () => _openEmailSignInDialog(context),
+              ),
+              const SizedBox(height: 28),
+              Row(
                 children: [
-                  Expanded(child: Divider()),
-                  Padding(
+                  Expanded(child: Divider(color: Colors.white24)),
+                  const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 12),
-                    child: Text('or', style: TextStyle(color: Colors.grey)),
+                    child: Text('or',
+                        style: TextStyle(color: Colors.white38, fontSize: 12)),
                   ),
-                  Expanded(child: Divider()),
+                  Expanded(child: Divider(color: Colors.white24)),
                 ],
               ),
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
                 child: TextButton(
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.white60,
+                  ),
                   onPressed: _authInProgress
                       ? null
                       : () => _signInAsGuest(context),
@@ -333,15 +340,70 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 8),
               const Text(
-                'Guest progress is not backed up and may be lost if you uninstall the app.',
+                'Guest progress is not backed up and may be lost if you uninstall.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 11, color: Colors.grey),
+                style: TextStyle(fontSize: 11, color: Colors.white30),
               ),
               const SizedBox(height: 32),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _AuthButton extends StatelessWidget {
+  const _AuthButton({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+    this.outlined = false,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback? onPressed;
+  final bool outlined;
+
+  @override
+  Widget build(BuildContext context) {
+    final content = Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(icon, size: 22, color: outlined ? Colors.white70 : Colors.white),
+        const SizedBox(width: 10),
+        Text(label,
+            style: TextStyle(
+                color: outlined ? Colors.white70 : Colors.white,
+                fontSize: 15)),
+      ],
+    );
+
+    return SizedBox(
+      width: double.infinity,
+      child: outlined
+          ? OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Colors.white30),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: onPressed,
+              child: content,
+            )
+          : ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _kAccent,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: onPressed,
+              child: content,
+            ),
     );
   }
 }
