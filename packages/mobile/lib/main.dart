@@ -3,13 +3,16 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:modulo_squares/features/auth/login_screen.dart';
+import 'package:modulo_squares/features/auth/gamertag_screen.dart';
 import 'package:modulo_squares/features/game/game_screen.dart';
 import 'package:modulo_squares/features/website/website_screen.dart';
+import 'package:modulo_squares/core/services/gamertag_service.dart';
 import 'package:modulo_squares/l10n/app_localizations.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:modulo_squares/core/services/analytics_service.dart';
@@ -58,6 +61,53 @@ void main() async {
       FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
       return true;
     };
+  }
+
+  // Activate App Check before any Firebase service calls.
+  //
+  // Pass --dart-define=APP_CHECK_DEBUG=true when building a dev-signed build
+  // for device testing. The debug provider generates a UUID on first launch
+  // (visible in the device log) — register it in Firebase Console →
+  // App Check → your iOS app → Manage debug tokens.
+  //
+  // App Store / TestFlight builds omit the flag and use App Attest with
+  // DeviceCheck as the fallback for older devices.
+  const bool appCheckDebug =
+      bool.fromEnvironment('APP_CHECK_DEBUG', defaultValue: false);
+  const String appCheckDebugToken =
+      String.fromEnvironment('APP_CHECK_DEBUG_TOKEN', defaultValue: '');
+
+  if (firebaseReady && !kIsWeb) {
+    try {
+      await FirebaseAppCheck.instance.activate(
+        providerApple: appCheckDebug
+            ? AppleDebugProvider(
+                debugToken: appCheckDebugToken.isNotEmpty
+                    ? appCheckDebugToken
+                    : null,
+              )
+            : const AppleAppAttestWithDeviceCheckFallbackProvider(),
+      );
+
+      if (appCheckDebug) {
+        // Immediately verify the debug token is accepted by Firebase.
+        // If this throws, the UUID is not registered in Firebase Console
+        // under App Check → your iOS app → Manage debug tokens.
+        try {
+          await FirebaseAppCheck.instance.getToken(true);
+          debugPrint('[AppCheck] Debug token accepted by Firebase ✓');
+        } catch (e) {
+          debugPrint('[AppCheck] Debug token REJECTED: $e');
+          debugPrint('[AppCheck] Register UUID in Firebase Console → '
+              'App Check → iOS app → Manage debug tokens');
+          if (appCheckDebugToken.isNotEmpty) {
+            debugPrint('[AppCheck] Token to register: $appCheckDebugToken');
+          }
+        }
+      }
+    } catch (e) {
+      ErrorHandler().logError('App Check activation', e);
+    }
   }
 
   // Setup dependency injection
@@ -232,16 +282,51 @@ class AuthGate extends StatefulWidget {
 }
 
 class _AuthGateState extends State<AuthGate> {
+  String? _checkedUid;
+  bool _hasGamertag = false;
+  bool _loadingGamertag = false;
+
   @override
   void initState() {
     super.initState();
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       getIt<AnalyticsService>().logAppOpen();
     });
   }
 
-  Widget _buildAuthWaitingScaffold({String? message}) {
+  void _checkGamertagForUser(String uid) {
+    if (_checkedUid == uid) return;
+    _checkedUid = uid;
+    setState(() => _loadingGamertag = true);
+    // Pre-load the interstitial now so it has maximum time to arrive before
+    // the user finishes creating their gamertag.
+    if (!kIsWeb && getIt.isRegistered<AdService>()) {
+      getIt<AdService>().loadInterstitial();
+    }
+    GamertagService.getGamertag(uid).then((tag) {
+      if (mounted) {
+        setState(() {
+          _hasGamertag = tag != null && tag.isNotEmpty;
+          _loadingGamertag = false;
+        });
+      }
+    });
+  }
+
+  void _onGamertagSet() {
+    if (!kIsWeb && getIt.isRegistered<AdService>()) {
+      getIt<AdService>().showInterstitial(
+        trigger: 'gamertag_complete',
+        onClosed: () {
+          if (mounted) setState(() => _hasGamertag = true);
+        },
+      );
+    } else {
+      setState(() => _hasGamertag = true);
+    }
+  }
+
+  Widget _buildWaiting({String? message}) {
     return Scaffold(
       body: Center(
         child: Column(
@@ -267,30 +352,33 @@ class _AuthGateState extends State<AuthGate> {
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return _buildAuthWaitingScaffold(message: 'Checking account...');
+          return _buildWaiting(message: 'Checking account...');
         }
 
         if (snapshot.hasError) {
           ErrorHandler().logError('Auth stream', snapshot.error);
-          return _buildAuthWaitingScaffold(
-            message: 'Authentication is temporarily unavailable.',
-          );
+          return _buildWaiting(message: 'Authentication is temporarily unavailable.');
         }
 
         final user = snapshot.data;
         if (user == null) {
+          _checkedUid = null;
           return const LoginScreen();
         }
 
-        // Set analytics user id once we have a user
         getIt<AnalyticsService>().setUserIdFromAuth(user);
 
-        // Show promotional website on web, game on mobile
-        if (kIsWeb) {
-          return const WebsiteScreen();
-        } else {
-          return const GameScreen();
+        _checkGamertagForUser(user.uid);
+
+        if (_loadingGamertag) {
+          return _buildWaiting(message: 'Loading profile...');
         }
+
+        if (!_hasGamertag) {
+          return GamertagScreen(onGamertagSet: _onGamertagSet);
+        }
+
+        return kIsWeb ? const WebsiteScreen() : const GameScreen();
       },
     );
   }

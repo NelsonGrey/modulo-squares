@@ -7,6 +7,8 @@
     "packages/*"
   ],
   "scripts": {
+    "build": "npm run build:web",
+    "start": "node scripts/apphosting-server.js",
     "build:app": "cd packages/mobile && flutter build apk --release",
     "build:functions": "cd packages/functions && npm run build",
     "build:web": "cd packages/web && npm run build",

@@ -1,11 +1,8 @@
-import * as functions from 'firebase-functions/v1';
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import admin from 'firebase-admin';
 import express from 'express';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
-
-// Import shared utilities
-import { FunctionsAuthHelpers } from '@shared/firebase-utils';
 
 admin.initializeApp();
 
@@ -26,17 +23,28 @@ const SCORE_SUBMIT_MIN_INTERVAL_MS = 15000;
 const SCORE_SESSION_TTL_MS = 20 * 60 * 1000;
 const PURCHASE_PRODUCTS = new Set(['remove_ads', 'premium_version']);
 
+function verifyAuth(request) {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'User must be authenticated');
+  }
+  return {
+    uid: request.auth.uid,
+    email: request.auth.token?.email,
+    token: request.auth.token,
+  };
+}
+
 function validateLeaderboardPayload({ score, level, playerName }) {
   if (typeof score !== 'number' || score < 0 || score > 999999 || !Number.isInteger(score)) {
-    throw new functions.https.HttpsError('invalid-argument', 'Invalid score: must be integer between 0-999999');
+    throw new HttpsError('invalid-argument', 'Invalid score: must be integer between 0-999999');
   }
 
   if (typeof level !== 'number' || level < 1 || level > 200 || !Number.isInteger(level)) {
-    throw new functions.https.HttpsError('invalid-argument', 'Invalid level: must be integer between 1-200');
+    throw new HttpsError('invalid-argument', 'Invalid level: must be integer between 1-200');
   }
 
   if (typeof playerName !== 'string' || playerName.trim().length < 1 || playerName.trim().length > 50) {
-    throw new functions.https.HttpsError('invalid-argument', 'Invalid player name: must be 1-50 characters');
+    throw new HttpsError('invalid-argument', 'Invalid player name: must be 1-50 characters');
   }
 
   return playerName.trim();
@@ -50,7 +58,7 @@ async function enforceScoreRateLimit(uid, bucketKey) {
   const lastSubmit = Number(rateLimits[bucketKey] || 0);
 
   if (now - lastSubmit < SCORE_SUBMIT_MIN_INTERVAL_MS) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       'resource-exhausted',
       'Too many submissions. Please wait before submitting again.'
     );
@@ -96,7 +104,7 @@ async function issueScoreSession({ uid, mode, challengeId = null, weekId = null 
 
 async function consumeScoreSession({ uid, sessionId, mode, challengeId = null, weekId = null }) {
   if (typeof sessionId !== 'string' || sessionId.trim().length < 8) {
-    throw new functions.https.HttpsError('failed-precondition', 'Missing or invalid score session');
+    throw new HttpsError('failed-precondition', 'Missing or invalid score session');
   }
 
   const ref = admin.firestore().collection('score_sessions').doc(sessionId.trim());
@@ -104,27 +112,27 @@ async function consumeScoreSession({ uid, sessionId, mode, challengeId = null, w
   const now = Date.now();
 
   if (!snap.exists) {
-    throw new functions.https.HttpsError('failed-precondition', 'Score session not found');
+    throw new HttpsError('failed-precondition', 'Score session not found');
   }
 
   const data = snap.data() || {};
   if (data.uid !== uid) {
-    throw new functions.https.HttpsError('permission-denied', 'Score session does not belong to caller');
+    throw new HttpsError('permission-denied', 'Score session does not belong to caller');
   }
   if (data.consumed === true) {
-    throw new functions.https.HttpsError('failed-precondition', 'Score session already consumed');
+    throw new HttpsError('failed-precondition', 'Score session already consumed');
   }
   if (typeof data.expiresAt !== 'number' || data.expiresAt < now) {
-    throw new functions.https.HttpsError('failed-precondition', 'Score session expired');
+    throw new HttpsError('failed-precondition', 'Score session expired');
   }
   if (data.mode !== mode) {
-    throw new functions.https.HttpsError('failed-precondition', 'Score session mode mismatch');
+    throw new HttpsError('failed-precondition', 'Score session mode mismatch');
   }
   if (mode === 'daily' && Number(data.challengeId) !== Number(challengeId)) {
-    throw new functions.https.HttpsError('failed-precondition', 'Score session challenge mismatch');
+    throw new HttpsError('failed-precondition', 'Score session challenge mismatch');
   }
   if (mode === 'weekly' && Number(data.weekId) !== Number(weekId)) {
-    throw new functions.https.HttpsError('failed-precondition', 'Score session week mismatch');
+    throw new HttpsError('failed-precondition', 'Score session week mismatch');
   }
 
   await ref.set(
@@ -137,42 +145,40 @@ async function consumeScoreSession({ uid, sessionId, mode, challengeId = null, w
   );
 }
 
-export const startScoreSession = functions.https.onCall(async (data, context) => {
-  const user = FunctionsAuthHelpers.verifyAuthenticated(context);
+export const startScoreSession = onCall(async (request) => {
+  const user = verifyAuth(request);
   const { uid } = user;
-  const mode = data?.mode;
+  const mode = request.data?.mode;
 
   if (!['global', 'daily', 'weekly'].includes(mode)) {
-    throw new functions.https.HttpsError('invalid-argument', 'Invalid score mode');
+    throw new HttpsError('invalid-argument', 'Invalid score mode');
   }
 
   let challengeId = null;
   let weekId = null;
 
   if (mode === 'daily') {
-    challengeId = data?.challengeId;
+    challengeId = request.data?.challengeId;
     if (typeof challengeId !== 'number' || challengeId <= 0 || !Number.isInteger(challengeId)) {
-      throw new functions.https.HttpsError('invalid-argument', 'Invalid challenge id');
+      throw new HttpsError('invalid-argument', 'Invalid challenge id');
     }
   }
 
   if (mode === 'weekly') {
-    weekId = data?.weekId;
+    weekId = request.data?.weekId;
     if (typeof weekId !== 'number' || weekId <= 0 || !Number.isInteger(weekId)) {
-      throw new functions.https.HttpsError('invalid-argument', 'Invalid week id');
+      throw new HttpsError('invalid-argument', 'Invalid week id');
     }
   }
 
   return issueScoreSession({ uid, mode, challengeId, weekId });
 });
 
-// Cloud Function to validate and process leaderboard submissions
-export const submitScore = functions.https.onCall(async (data, context) => {
-  // Verify user is authenticated
-  const user = FunctionsAuthHelpers.verifyAuthenticated(context);
+export const submitScore = onCall(async (request) => {
+  const user = verifyAuth(request);
   const { uid, email } = user;
 
-  const { score, level, clientTime, playerName, scoreSessionId } = data;
+  const { score, level, clientTime, playerName, scoreSessionId } = request.data;
   const safePlayerName = validateLeaderboardPayload({ score, level, playerName });
 
   try {
@@ -184,7 +190,6 @@ export const submitScore = functions.https.onCall(async (data, context) => {
     const existingScore = Number(existing.data()?.score || 0);
     const bestScore = Math.max(existingScore, score);
 
-    // Store best score per authenticated player with metadata for abuse analysis.
     await leaderboardRef.set({
       userId: uid,
       playerName: safePlayerName,
@@ -194,26 +199,26 @@ export const submitScore = functions.https.onCall(async (data, context) => {
       timestamp: admin.firestore.FieldValue.serverTimestamp(),
       clientTime: clientTime || now,
       serverTime: now,
-      ipAddress: context.rawRequest.ip,
+      ipAddress: request.rawRequest.ip,
     }, { merge: true });
 
     return { success: true, message: 'Score submitted successfully' };
   } catch (error) {
     console.error('Error submitting score:', error);
-    if (error instanceof functions.https.HttpsError) {
+    if (error instanceof HttpsError) {
       throw error;
     }
-    throw new functions.https.HttpsError('internal', 'Failed to submit score');
+    throw new HttpsError('internal', 'Failed to submit score');
   }
 });
 
-export const submitDailyScore = functions.https.onCall(async (data, context) => {
-  const user = FunctionsAuthHelpers.verifyAuthenticated(context);
+export const submitDailyScore = onCall(async (request) => {
+  const user = verifyAuth(request);
   const { uid } = user;
-  const { challengeId, score, level, playerName, clientTime, scoreSessionId } = data;
+  const { challengeId, score, level, playerName, clientTime, scoreSessionId } = request.data;
 
   if (typeof challengeId !== 'number' || challengeId <= 0 || !Number.isInteger(challengeId)) {
-    throw new functions.https.HttpsError('invalid-argument', 'Invalid challenge id');
+    throw new HttpsError('invalid-argument', 'Invalid challenge id');
   }
 
   const safePlayerName = validateLeaderboardPayload({ score, level, playerName });
@@ -246,26 +251,26 @@ export const submitDailyScore = functions.https.onCall(async (data, context) => 
       timestamp: admin.firestore.FieldValue.serverTimestamp(),
       clientTime: clientTime || now,
       serverTime: now,
-      ipAddress: context.rawRequest.ip,
+      ipAddress: request.rawRequest.ip,
     }, { merge: true });
 
     return { success: true, message: 'Daily score submitted successfully' };
   } catch (error) {
     console.error('Error submitting daily score:', error);
-    if (error instanceof functions.https.HttpsError) {
+    if (error instanceof HttpsError) {
       throw error;
     }
-    throw new functions.https.HttpsError('internal', 'Failed to submit daily score');
+    throw new HttpsError('internal', 'Failed to submit daily score');
   }
 });
 
-export const submitWeeklyScore = functions.https.onCall(async (data, context) => {
-  const user = FunctionsAuthHelpers.verifyAuthenticated(context);
+export const submitWeeklyScore = onCall(async (request) => {
+  const user = verifyAuth(request);
   const { uid } = user;
-  const { weekId, score, level, playerName, clientTime, scoreSessionId } = data;
+  const { weekId, score, level, playerName, clientTime, scoreSessionId } = request.data;
 
   if (typeof weekId !== 'number' || weekId <= 0 || !Number.isInteger(weekId)) {
-    throw new functions.https.HttpsError('invalid-argument', 'Invalid week id');
+    throw new HttpsError('invalid-argument', 'Invalid week id');
   }
 
   const safePlayerName = validateLeaderboardPayload({ score, level, playerName });
@@ -298,22 +303,21 @@ export const submitWeeklyScore = functions.https.onCall(async (data, context) =>
       timestamp: admin.firestore.FieldValue.serverTimestamp(),
       clientTime: clientTime || now,
       serverTime: now,
-      ipAddress: context.rawRequest.ip,
+      ipAddress: request.rawRequest.ip,
     }, { merge: true });
 
     return { success: true, message: 'Weekly score submitted successfully' };
   } catch (error) {
     console.error('Error submitting weekly score:', error);
-    if (error instanceof functions.https.HttpsError) {
+    if (error instanceof HttpsError) {
       throw error;
     }
-    throw new functions.https.HttpsError('internal', 'Failed to submit weekly score');
+    throw new HttpsError('internal', 'Failed to submit weekly score');
   }
 });
 
-// Cloud Function to get top scores
-export const getTopScores = functions.https.onCall(async (data, context) => {
-  const limit = data.limit || 10;
+export const getTopScores = onCall(async (request) => {
+  const limit = request.data?.limit || 10;
 
   try {
     const snapshot = await admin.firestore()
@@ -330,26 +334,24 @@ export const getTopScores = functions.https.onCall(async (data, context) => {
     return { scores };
   } catch (error) {
     console.error('Error getting top scores:', error);
-    throw new functions.https.HttpsError('internal', 'Failed to get top scores');
+    throw new HttpsError('internal', 'Failed to get top scores');
   }
 });
 
-// Cloud Function to validate purchases (server-side validation)
-export const validatePurchase = functions.https.onCall(async (data, context) => {
-  // Verify user is authenticated
-  const user = FunctionsAuthHelpers.verifyAuthenticated(context);
+export const validatePurchase = onCall(async (request) => {
+  const user = verifyAuth(request);
   const { uid, email } = user;
 
-  const { productId, purchaseToken, transactionId, platform } = data;
+  const { productId, purchaseToken, transactionId, platform } = request.data;
 
   if (!PURCHASE_PRODUCTS.has(productId)) {
-    throw new functions.https.HttpsError('invalid-argument', 'Unsupported product id');
+    throw new HttpsError('invalid-argument', 'Unsupported product id');
   }
   if (typeof purchaseToken !== 'string' || purchaseToken.length < 10 || purchaseToken.length > 4096) {
-    throw new functions.https.HttpsError('invalid-argument', 'Invalid purchase token');
+    throw new HttpsError('invalid-argument', 'Invalid purchase token');
   }
   if (!['ios', 'android'].includes(platform)) {
-    throw new functions.https.HttpsError('invalid-argument', 'Invalid purchase platform');
+    throw new HttpsError('invalid-argument', 'Invalid purchase platform');
   }
 
   const txId =
@@ -402,12 +404,12 @@ export const validatePurchase = functions.https.onCall(async (data, context) => 
     };
   } catch (error) {
     console.error('Error validating purchase:', error);
-    throw new functions.https.HttpsError('internal', 'Failed to validate purchase');
+    throw new HttpsError('internal', 'Failed to validate purchase');
   }
 });
 
-export const getEntitlements = functions.https.onCall(async (_data, context) => {
-  const user = FunctionsAuthHelpers.verifyAuthenticated(context);
+export const getEntitlements = onCall(async (request) => {
+  const user = verifyAuth(request);
   const { uid } = user;
 
   try {
@@ -422,7 +424,7 @@ export const getEntitlements = functions.https.onCall(async (_data, context) => 
     };
   } catch (error) {
     console.error('Error getting entitlements:', error);
-    throw new functions.https.HttpsError('internal', 'Failed to get entitlements');
+    throw new HttpsError('internal', 'Failed to get entitlements');
   }
 });
 
@@ -435,32 +437,27 @@ if (entryFile === currentFile) {
     console.log(`🚀 Modulo Squares API running on port ${PORT}`);
   });
 
-  // Graceful shutdown handler
   const gracefulShutdown = (signal) => {
     console.log(`\nReceived ${signal}, shutting down gracefully...`);
     server.close(() => {
       console.log('Server closed');
       process.exit(0);
     });
-    
-    // Force shutdown after 30 seconds
+
     setTimeout(() => {
       console.error('Forced shutdown after timeout');
       process.exit(1);
     }, 30000);
   };
 
-  // Handle process termination signals
   process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
   process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-  
-  // Handle uncaught exceptions
+
   process.on('uncaughtException', (error) => {
     console.error('Uncaught exception:', error);
     gracefulShutdown('uncaughtException');
   });
 
-  // Handle unhandled promise rejections
   process.on('unhandledRejection', (reason, promise) => {
     console.error('Unhandled rejection at:', promise, 'reason:', reason);
     gracefulShutdown('unhandledRejection');
