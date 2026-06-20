@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -64,13 +64,21 @@ void main() async {
   }
 
   // Activate App Check before any Firebase service calls.
-  // Debug builds use a rotating debug token (register it in Firebase Console →
-  // App Check → your iOS app → Manage debug tokens).
-  // Release builds use App Attest with DeviceCheck as the fallback.
+  //
+  // Pass --dart-define=APP_CHECK_DEBUG=true when building a dev-signed build
+  // for device testing. The debug provider generates a UUID on first launch
+  // (visible in the device log) — register it in Firebase Console →
+  // App Check → your iOS app → Manage debug tokens.
+  //
+  // App Store / TestFlight builds omit the flag and use App Attest with
+  // DeviceCheck as the fallback for older devices.
+  const bool appCheckDebug =
+      bool.fromEnvironment('APP_CHECK_DEBUG', defaultValue: false);
+
   if (firebaseReady && !kIsWeb) {
     try {
       await FirebaseAppCheck.instance.activate(
-        providerApple: kDebugMode
+        providerApple: appCheckDebug
             ? const AppleDebugProvider()
             : const AppleAppAttestWithDeviceCheckFallbackProvider(),
       );
