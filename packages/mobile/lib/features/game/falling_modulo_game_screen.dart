@@ -481,12 +481,8 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
     var localVisualCues = _state.visualCuesEnabled;
     final purchaseService = _purchaseServiceOrNull;
     var adsRemoved = purchaseService?.adsRemoved ?? false;
-    bool isGuest = false;
-    try {
-      isGuest = FirebaseAuth.instance.currentUser?.isAnonymous ?? false;
-    } catch (_) {
-      // Firebase not initialized (e.g. in tests); treat as non-guest.
-    }
+    final user = FirebaseAuth.instance.currentUser;
+    final isGuest = user?.isAnonymous ?? false;
 
     await showDialog<void>(
       context: context,
@@ -495,112 +491,132 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
           builder: (context, setLocalState) {
             return AlertDialog(
               title: const Text('Settings'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SwitchListTile(
-                    value: localVisualCues,
-                    onChanged: (value) {
-                      setLocalState(() {
-                        localVisualCues = value;
-                      });
-                    },
-                    title: const Text('Visual Cues'),
-                    subtitle: const Text('Highlight divisible buckets'),
-                  ),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('High Score'),
-                    trailing: Text('$_highScore'),
-                  ),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Ads'),
-                    subtitle: Text(
-                      adsRemoved
-                          ? 'Removed for this account'
-                          : 'Interstitial ads shown between every level',
+              contentPadding: const EdgeInsets.symmetric(vertical: 12),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // ── Gameplay ──────────────────────────────────────────
+                    const _SettingsHeader('Gameplay'),
+                    SwitchListTile(
+                      value: localVisualCues,
+                      onChanged: (value) =>
+                          setLocalState(() => localVisualCues = value),
+                      title: const Text('Visual Cues'),
+                      subtitle: const Text(
+                        'Highlight buckets that divide the current number evenly',
+                      ),
                     ),
-                    trailing: Icon(
-                      adsRemoved ? Icons.check_circle : Icons.ads_click,
-                      color: adsRemoved ? Colors.green : Colors.orange,
-                    ),
-                  ),
-                  if (purchaseService != null && !adsRemoved)
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: OutlinedButton(
-                        onPressed: () async {
-                          try {
-                            await purchaseService.purchaseAdRemoval();
-                            // Completion arrives via purchaseStream; the store
-                            // payment sheet handles the rest.
-                          } catch (e) {
-                            if (!context.mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  e.toString().replaceFirst('Exception: ', ''),
-                                ),
-                                duration: const Duration(seconds: 4),
-                              ),
-                            );
-                          }
-                        },
-                        child: Text(
-                          'Remove Ads (${purchaseService.getProductPrice('remove_ads')})',
+                    ListTile(
+                      title: const Text('Best Score'),
+                      trailing: Text(
+                        '$_highScore',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
-                  if (purchaseService != null)
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: TextButton(
-                        onPressed: () async {
-                          await purchaseService.restorePurchases();
-                          setLocalState(() {
-                            adsRemoved = purchaseService.adsRemoved;
-                          });
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Purchase restoration attempted.'),
+
+                    // ── Purchases ─────────────────────────────────────────
+                    if (purchaseService != null) ...[
+                      const Divider(height: 1),
+                      const _SettingsHeader('Purchases'),
+                      ListTile(
+                        leading: Icon(
+                          adsRemoved
+                              ? Icons.check_circle_outline
+                              : Icons.tv_off_outlined,
+                          color: adsRemoved ? Colors.green : Colors.orange,
+                        ),
+                        title: Text(adsRemoved ? 'Ad-Free' : 'Ads Enabled'),
+                        subtitle: Text(
+                          adsRemoved
+                              ? 'Enjoy the game without interruptions'
+                              : 'Short ads play between levels',
+                        ),
+                      ),
+                      if (!adsRemoved)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+                          child: FilledButton(
+                            onPressed: () async {
+                              try {
+                                await purchaseService.purchaseAdRemoval();
+                                // Payment sheet is handled by the store;
+                                // result arrives via purchaseStream.
+                              } catch (e) {
+                                if (!context.mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      e
+                                          .toString()
+                                          .replaceFirst('Exception: ', ''),
+                                    ),
+                                    duration: const Duration(seconds: 4),
+                                  ),
+                                );
+                              }
+                            },
+                            child: Text(
+                              'Remove Ads  —  '
+                              '${purchaseService.getProductPrice('remove_ads')}',
                             ),
-                          );
+                          ),
+                        ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                        child: OutlinedButton(
+                          onPressed: () async {
+                            await purchaseService.restorePurchases();
+                            setLocalState(
+                              () => adsRemoved = purchaseService.adsRemoved,
+                            );
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Purchases restored successfully.'),
+                              ),
+                            );
+                          },
+                          child: const Text('Restore Purchases'),
+                        ),
+                      ),
+                    ],
+
+                    // ── Account ───────────────────────────────────────────
+                    const Divider(height: 1),
+                    const _SettingsHeader('Account'),
+                    if (isGuest)
+                      ListTile(
+                        leading: const Icon(Icons.link),
+                        title: const Text('Link Account'),
+                        subtitle: const Text(
+                          'Save your progress with Google, Apple, or Email',
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () {
+                          Navigator.of(dialogContext).pop();
+                          _openLinkAccountDialog(context);
                         },
-                        child: const Text('Restore Purchases'),
                       ),
-                    ),
-                  const Divider(height: 24),
-                  if (isGuest)
                     ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.link),
-                      title: const Text('Link Account'),
-                      subtitle: const Text(
-                        'Save progress by linking to Google, Apple, or Email',
+                      leading: const Icon(Icons.logout, color: Colors.red),
+                      title: const Text(
+                        'Sign Out',
+                        style: TextStyle(color: Colors.red),
                       ),
-                      onTap: () {
-                        Navigator.of(dialogContext).pop();
-                        _openLinkAccountDialog(context);
-                      },
+                      onTap: () => _signOut(context),
                     ),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.logout, color: Colors.red),
-                    title: const Text(
-                      'Sign Out',
-                      style: TextStyle(color: Colors.red),
-                    ),
-                    onTap: () => _signOut(context),
-                  ),
-                ],
+                  ],
+                ),
               ),
               actions: [
                 TextButton(
-                  onPressed: () {
-                    Navigator.of(dialogContext).pop();
-                  },
+                  onPressed: () => Navigator.of(dialogContext).pop(),
                   child: const Text('Cancel'),
                 ),
                 TextButton(
@@ -1419,6 +1435,27 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+class _SettingsHeader extends StatelessWidget {
+  const _SettingsHeader(this.title);
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: Text(
+        title.toUpperCase(),
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.8,
+          color: Theme.of(context).colorScheme.primary,
+        ),
       ),
     );
   }

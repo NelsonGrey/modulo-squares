@@ -53,7 +53,8 @@ class PurchaseService {
           testMode
               ? _TestInAppPurchase()
               : (inAppPurchase ?? InAppPurchase.instance),
-      _testMode = testMode;
+      _testMode = testMode,
+      _functions = testMode ? null : FirebaseFunctions.instance;
 
   static PurchaseService? _instance;
 
@@ -83,7 +84,7 @@ class PurchaseService {
 
   final InAppPurchase _inAppPurchase;
   final bool _testMode;
-  final FirebaseFunctions _functions = FirebaseFunctions.instance;
+  final FirebaseFunctions? _functions;
 
   // Method for testing to reset the singleton instance
   static void resetInstance() {
@@ -210,7 +211,7 @@ class PurchaseService {
       final transactionId = purchaseDetails.purchaseID ?? '';
       final platform = _resolvePlatform();
 
-      final result = await _functions.httpsCallable('validatePurchase').call({
+      final result = await _functions!.httpsCallable('validatePurchase').call({
         'productId': productId,
         'purchaseToken': receipt,
         'transactionId': transactionId,
@@ -280,7 +281,7 @@ class PurchaseService {
   Future<void> _refreshEntitlementsFromServer() async {
     if (_testMode) return;
     try {
-      final result = await _functions.httpsCallable('getEntitlements').call();
+      final result = await _functions!.httpsCallable('getEntitlements').call();
       final data = Map<String, dynamic>.from(
         (result.data as Map?) ?? <String, dynamic>{},
       );
