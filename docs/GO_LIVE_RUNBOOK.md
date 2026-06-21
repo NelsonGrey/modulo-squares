@@ -1,10 +1,10 @@
 # Modulo Squares — Go Live Document
 
-**Version**: 1.0  
-**Last Updated**: 2026-06-17  
-**App Version**: 0.0.2+3 (increment before release)  
+**Version**: 1.2  
+**Last Updated**: 2026-06-21  
+**App Version**: 0.0.2+3 (increment before release to 1.0.0+1)  
 **Owner**: Mark Nelson  
-**Status**: Pre-Launch — In Progress
+**Status**: Soft Launch Complete — Pre-Submission
 
 ---
 
@@ -12,26 +12,27 @@
 
 | Area | Status | Blocking? |
 |------|--------|-----------|
-| Core gameplay (50+ levels) | ✅ Complete | — |
-| Firebase backend (3 environments) | ✅ Complete | — |
+| Core gameplay (falling mode, dead bucket, 50+ levels) | ✅ Complete | — |
+| Firebase backend (3 environments, Cloud Functions v2) | ✅ Complete | — |
 | AdMob production IDs configured | ✅ Complete | — |
 | Firestore security rules | ✅ Complete | — |
 | CI/CD pipeline (iOS) | ✅ Complete | — |
 | Analytics instrumentation | ✅ Complete | — |
 | Privacy / ATT compliance (iOS) | ✅ Complete | — |
 | Store metadata text | ✅ Complete | — |
-| **Store screenshots** | ❌ Missing | Yes |
+| Firebase Crashlytics wired | ✅ Wired (PR #73) | — |
+| Privacy Policy / Terms pages | ✅ Live at /privacy and /terms | — |
+| Guest → player account linking | ✅ Complete | — |
+| Settings screen redesign | ✅ Complete (2026-06-21) | — |
+| **iOS Store screenshots captured** | ⚠️ iOS 6.5" only (6 shots) | Yes |
 | **App Store Connect app record** | ⚠️ Unconfirmed | Yes |
-| **Privacy Policy / ToS URLs live** | ❌ Missing | Yes |
 | **IAP "remove_ads" in ASC** | ⚠️ Unconfirmed | Yes |
-| **TestFlight beta (100 testers)** | ⚠️ Incomplete | No (soft) |
-| **Firebase Crashlytics** | ✅ Wired (PR #73) | — |
 | **Firebase GitHub Secrets** | ⚠️ Partial | Yes |
+| **TestFlight beta** | ❌ Not started | No (soft) |
 | **Firebase App Check enforcement** | ❌ Not enabled | No (post-launch) |
 | **Google API key restrictions** | ❌ Not applied | No (post-launch) |
 | **Android build** | ❌ Disabled in CI | Phase 2 |
 | **Google Play Console app record** | ❌ Not created | Phase 2 |
-| **Privacy Policy / Terms pages** | ✅ Live at /privacy and /terms (PR #73) | — |
 | **Marketing website domain live** | ⚠️ Unconfirmed | No (soft) |
 
 **iOS Launch is the primary gate.** Android can follow in Phase 2.
@@ -234,8 +235,10 @@ flutter run --release -d <device>
 # Take screenshots directly from device or use Xcode → Window → Devices and Simulators
 ```
 
-- [ ] iPhone 6.7" screenshots captured (min 3)
-- [ ] iPhone 5.5" screenshots captured (min 3)
+- [ ] iPhone 6.7" screenshots captured (min 3) — *(6.5" captured; need 6.7" or confirm 6.5" covers requirement)*
+- [x] iPhone 6.5" screenshots captured — 6 shots in `packages/mobile/assets/store/screenshots/ios-6.5/`:
+  - `01-title-rules.png`, `02-active-gameplay.png`, `03-paused-run.png`
+  - `04-settings.png`, `05-sign-in-sign-up.png`, `06-create-gamertag.png`
 - [ ] App icon 1024×1024 PNG without alpha channel confirmed:
   - Located at `ios/Runner/Assets.xcassets/AppIcon.appiconset/`
   - No gradient-only design (Apple HIG)
@@ -762,8 +765,8 @@ PlatformDispatcher.instance.onError = (error, stack) {
 };
 ```
 
-- [ ] `firebase_crashlytics` package added to `pubspec.yaml`
-- [ ] Crash handler wired in `main.dart`
+- [x] `firebase_crashlytics` package added to `pubspec.yaml` (PR #73)
+- [x] Crash handler wired in `main.dart` (PR #73)
 - [ ] Test crash: `FirebaseCrashlytics.instance.crash()` on a debug build → crash appears in console
 - [ ] Crash-free users target: 99.5%
 
@@ -984,6 +987,7 @@ These secrets must be set in **GitHub → Repository → Settings → Secrets �
 |---------|------|--------|---------|
 | 1.0 | 2026-06-17 | Mark Nelson | Initial comprehensive Go Live document synthesized from full codebase and docs audit |
 | 1.1 | 2026-06-17 | Mark Nelson | Mark completed: Crashlytics wired, Privacy/Terms pages live, keywords deduped, all security alerts resolved (PRs #70–73) |
+| 1.2 | 2026-06-21 | Mark Nelson | Soft launch complete on main. Added: dead bucket visual, guest→player account linking, sign-out, dark gamertag screen, interstitial ads (gamertag + level transitions), Cloud Functions v2 migration, settings screen redesign + tests. iOS 6.5" screenshots captured (6 shots). Readiness summary updated. |
 
 ---
 
