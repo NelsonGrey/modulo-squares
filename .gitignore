@@ -126,6 +126,7 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots/
 packages/mobile/ios/fastlane/builds/
+packages/mobile/ios/builds/
 packages/mobile/ios/fastlane/Payload/
 
 # Firebase
