@@ -196,11 +196,11 @@ This comprehensive guide ensures a smooth production release of Modulo Squares a
 
 ## Version Information
 
-- **Current Version**: 0.0.1+1
-- **Next Version**: [Set version number]
-- **Release Type**: [Major/Minor/Patch]
-- **Target Release Date**: [Set date]
-- **Release Manager**: [Assign person]
+- **Current Version**: 1.0.0+1 (submitted to App Store Review 2026-06-22)
+- **Next Version**: 1.0.1+2 (hotfix) or 1.1.0+2 (feature)
+- **Release Type**: Initial public release
+- **Target Release Date**: Pending App Store approval
+- **Release Manager**: Mark Nelson
 
 ## Release Timeline
 

@@ -370,13 +370,17 @@ class _AuthButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final content = Row(
       mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, size: 22, color: outlined ? Colors.white70 : Colors.white),
         const SizedBox(width: 10),
-        Text(label,
-            style: TextStyle(
-                color: outlined ? Colors.white70 : Colors.white,
-                fontSize: 15)),
+        Flexible(
+          child: Text(label,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                  color: outlined ? Colors.white70 : Colors.white,
+                  fontSize: 15)),
+        ),
       ],
     );
 

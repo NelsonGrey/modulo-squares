@@ -54,7 +54,7 @@ class PurchaseService {
               ? _TestInAppPurchase()
               : (inAppPurchase ?? InAppPurchase.instance),
       _testMode = testMode,
-      _functions = testMode ? null : FirebaseFunctions.instance;
+      _functions = (testMode || inAppPurchase != null) ? null : FirebaseFunctions.instance;
 
   static PurchaseService? _instance;
 
@@ -66,7 +66,6 @@ class PurchaseService {
   // Public constructor for dependency injection and testing
   factory PurchaseService([InAppPurchase? inAppPurchase]) {
     if (inAppPurchase != null) {
-      // For testing, create a new instance with the mock
       return PurchaseService._(inAppPurchase);
     }
     return instance;
@@ -189,8 +188,8 @@ class PurchaseService {
     final String productId = purchaseDetails.productID;
 
     try {
-      if (_testMode) {
-        // Keep tests deterministic without network dependencies.
+      if (_functions == null) {
+        // No Firebase available (test mode or DI testing): update state locally.
         switch (productId) {
           case _adRemovalProductId:
             _adsRemoved = true;
@@ -211,7 +210,7 @@ class PurchaseService {
       final transactionId = purchaseDetails.purchaseID ?? '';
       final platform = _resolvePlatform();
 
-      final result = await _functions!.httpsCallable('validatePurchase').call({
+      final result = await _functions.httpsCallable('validatePurchase').call({
         'productId': productId,
         'purchaseToken': receipt,
         'transactionId': transactionId,
@@ -279,9 +278,9 @@ class PurchaseService {
   }
 
   Future<void> _refreshEntitlementsFromServer() async {
-    if (_testMode) return;
+    if (_functions == null) return;
     try {
-      final result = await _functions!.httpsCallable('getEntitlements').call();
+      final result = await _functions.httpsCallable('getEntitlements').call();
       final data = Map<String, dynamic>.from(
         (result.data as Map?) ?? <String, dynamic>{},
       );
