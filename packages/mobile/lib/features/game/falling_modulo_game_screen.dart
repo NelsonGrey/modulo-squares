@@ -481,8 +481,12 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
     var localVisualCues = _state.visualCuesEnabled;
     final purchaseService = _purchaseServiceOrNull;
     var adsRemoved = purchaseService?.adsRemoved ?? false;
-    final user = FirebaseAuth.instance.currentUser;
-    final isGuest = user?.isAnonymous ?? false;
+    bool isGuest = false;
+    try {
+      isGuest = FirebaseAuth.instance.currentUser?.isAnonymous ?? false;
+    } catch (_) {
+      // Firebase not initialized in test environment.
+    }
 
     await showDialog<void>(
       context: context,
