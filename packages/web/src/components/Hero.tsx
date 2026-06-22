@@ -8,7 +8,7 @@ const APP_JSON_LD = {
   description: 'Guide falling numbers into the right divisor buckets. Score, level up, and climb the global leaderboard.',
   applicationCategory: 'GameApplication',
   genre: 'Puzzle',
-  operatingSystem: 'iOS, Android',
+  operatingSystem: 'iOS',
   offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
   aggregateRating: { '@type': 'AggregateRating', ratingValue: '5', ratingCount: '1' },
   url: 'https://modulosquares.com',
@@ -23,7 +23,7 @@ const Hero: React.FC = () => {
     <>
     <SEOHead
       title="Modulo Squares — Falling Number Puzzle Game"
-      description="Guide falling numbers into the right divisor buckets. Score, level up, and climb the global leaderboard. Free on iOS and Android."
+      description="Guide falling numbers into the right divisor buckets. Score, level up, and climb the global leaderboard. Free on iPhone."
       path=""
       jsonLd={APP_JSON_LD}
     />
