@@ -6,7 +6,7 @@ const Download: React.FC = () => {
     <>
     <SEOHead
       title="Download Free"
-      description="Download Modulo Squares free on the App Store and Google Play. Guide falling numbers into divisor buckets — a fresh math puzzle for iOS and Android."
+      description="Download Modulo Squares free on the App Store. Guide falling numbers into divisor buckets — a fresh math puzzle for iPhone. Android coming soon."
       path="/download"
     />
     <section className="section-padding bg-gray-50">
@@ -16,7 +16,7 @@ const Download: React.FC = () => {
             Download Modulo Squares
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Free to download on iOS and Android. Sign in to sync your scores and compete on global leaderboards.
+            Free to download on iPhone. Sign in to sync your scores and compete on global leaderboards.
           </p>
         </div>
 
@@ -31,10 +31,10 @@ const Download: React.FC = () => {
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">iOS</h3>
               <p className="text-gray-600 mb-6">
-                For iPhone and iPad. Requires iOS 16 or later.
+                For iPhone. Requires iOS 16 or later.
               </p>
               <a
-                href="#"
+                href="https://apps.apple.com/app/id6753350832"
                 className="block w-full bg-black text-white font-semibold py-4 px-6 rounded-xl hover:bg-gray-800 transition-colors text-center"
                 aria-label="Download on the App Store"
               >
@@ -44,9 +44,9 @@ const Download: React.FC = () => {
           </div>
 
           {/* Android */}
-          <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow duration-300">
+          <div className="bg-white rounded-2xl p-8 shadow-lg opacity-60">
             <div className="text-center">
-              <div className="w-16 h-16 bg-secondary-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <div className="w-16 h-16 bg-gray-300 rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <svg viewBox="0 0 24 24" className="w-8 h-8 fill-white">
                   <path d="M17.523 15.341l1.893-3.278a.4.4 0 0 0-.146-.547l-1.921-1.109a7.017 7.017 0 0 0-.635-1.094l.765-2.175a.4.4 0 0 0-.25-.506l-3.454-1.215a.4.4 0 0 0-.503.247l-.766 2.175a6.92 6.92 0 0 0-1.27.001L10.47 5.664a.4.4 0 0 0-.503-.248L6.513 6.633a.4.4 0 0 0-.249.506l.765 2.175a7.01 7.01 0 0 0-.635 1.094L4.474 11.516a.4.4 0 0 0-.147.547l1.894 3.278a.4.4 0 0 0 .547.146l1.921-1.108a6.945 6.945 0 0 0 1.27 0l.766 2.175a.4.4 0 0 0 .503.248l3.454-1.216a.4.4 0 0 0 .249-.506l-.765-2.175a7.01 7.01 0 0 0 .635-1.094l1.921 1.109a.4.4 0 0 0 .547-.147l-.247-.428zM12 14a2 2 0 1 1 0-4 2 2 0 0 1 0 4z" />
                 </svg>
@@ -55,13 +55,9 @@ const Download: React.FC = () => {
               <p className="text-gray-600 mb-6">
                 For phones and tablets. Requires Android 8.0 or later.
               </p>
-              <a
-                href="#"
-                className="block w-full bg-secondary-600 text-white font-semibold py-4 px-6 rounded-xl hover:bg-secondary-700 transition-colors text-center"
-                aria-label="Get it on Google Play"
-              >
-                Get it on Google Play
-              </a>
+              <div className="block w-full bg-gray-200 text-gray-500 font-semibold py-4 px-6 rounded-xl text-center cursor-default">
+                Coming Soon
+              </div>
             </div>
           </div>
         </div>
