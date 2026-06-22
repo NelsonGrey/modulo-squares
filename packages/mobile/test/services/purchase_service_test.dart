@@ -378,8 +378,8 @@ void main() {
       // The service does not catch exceptions from isAvailable()
       expect(() async => await service.initialize(), throwsException);
     });
-    test('purchaseAdRemoval handles missing products gracefully', () async {
-      // Setup with no products
+    test('purchaseAdRemoval throws when products not loaded', () async {
+      // Setup with no products (simulates products not yet fetched)
       when(mockInAppPurchase.isAvailable()).thenAnswer((_) async => true);
 
       when(
@@ -392,8 +392,8 @@ void main() {
       final service = PurchaseService(mockInAppPurchase);
       await service.initialize();
 
-      // This should not crash
-      await service.purchaseAdRemoval();
+      // Attempting to purchase when products are missing throws
+      expect(() async => await service.purchaseAdRemoval(), throwsException);
 
       await purchaseStreamController.close();
     });

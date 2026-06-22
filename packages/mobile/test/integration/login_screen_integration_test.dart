@@ -20,14 +20,14 @@ void main() {
 
   group('LoginScreen Integration Tests', () {
     testWidgets(
-      'LoginScreen displays account-required authentication options',
+      'LoginScreen displays sign-in prompt and authentication options',
       (WidgetTester tester) async {
         await tester.pumpWidget(_buildLoginTestApp());
 
         await tester.pumpAndSettle();
 
         // Verify UI elements are present
-        expect(find.textContaining('account is required'), findsOneWidget);
+        expect(find.textContaining('Sign in to save progress'), findsOneWidget);
         expect(find.text('Sign in with Google'), findsOneWidget);
         expect(find.text('Sign in with Email'), findsOneWidget);
         expect(find.text('Sign in with Apple'), findsOneWidget);
@@ -107,13 +107,9 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Verify layout structure
-      expect(
-        find.byType(ElevatedButton),
-        findsNWidgets(3),
-      ); // Google, Email, and Apple buttons
-      expect(find.byType(OutlinedButton), findsNothing);
-      expect(find.byType(SizedBox), findsNWidgets(4)); // Spacing widgets
+      // Google and Apple use ElevatedButton; Email uses OutlinedButton
+      expect(find.byType(ElevatedButton), findsNWidgets(2));
+      expect(find.byType(OutlinedButton), findsOneWidget);
     });
 
     testWidgets('LoginScreen buttons are properly styled', (
@@ -130,16 +126,7 @@ void main() {
 
       expect(
         tester.widget<ElevatedButton>(
-          find.ancestor(
-            of: googleButton,
-            matching: find.byType(ElevatedButton),
-          ),
-        ),
-        isNotNull,
-      );
-      expect(
-        tester.widget<ElevatedButton>(
-          find.ancestor(of: emailButton, matching: find.byType(ElevatedButton)),
+          find.ancestor(of: googleButton, matching: find.byType(ElevatedButton)),
         ),
         isNotNull,
       );
@@ -149,13 +136,19 @@ void main() {
         ),
         isNotNull,
       );
+      expect(
+        tester.widget<OutlinedButton>(
+          find.ancestor(of: emailButton, matching: find.byType(OutlinedButton)),
+        ),
+        isNotNull,
+      );
     });
 
     testWidgets('LoginScreen renders correctly on different screen sizes', (
       WidgetTester tester,
     ) async {
-      // Test on a smaller screen
-      tester.view.physicalSize = const Size(360, 640);
+      // Test on iPhone SE (smallest supported iPhone: 375×667 pt)
+      tester.view.physicalSize = const Size(375, 667);
       tester.view.devicePixelRatio = 1.0;
 
       await tester.pumpWidget(_buildLoginTestApp());

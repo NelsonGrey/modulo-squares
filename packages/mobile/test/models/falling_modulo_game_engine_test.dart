@@ -17,7 +17,7 @@ void main() {
         expect(state.currentFallingValue, inInclusiveRange(6, 18));
         expect(
           state.bucketValues,
-          unorderedEquals([1, 2, 3, 4, 5, 6, 7, 8, 9]),
+          unorderedEquals([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
         );
         expect(state.progressGridCellCount, 100);
       },
@@ -176,7 +176,7 @@ void main() {
         );
         expect(
           result.state.bucketValues,
-          unorderedEquals([1, 2, 3, 4, 5, 6, 7, 8, 9]),
+          unorderedEquals([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
         );
         expect(result.state.bucketValues, isNot(equals(initial.bucketValues)));
       },
