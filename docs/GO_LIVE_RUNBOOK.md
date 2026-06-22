@@ -935,7 +935,7 @@ Based on D7 retention data:
 | AdMob Android App ID | `ca-app-pub-5198775482699756~4572596676` |
 | iOS Interstitial Ad Unit | `ca-app-pub-5198775482699756/8528576954` |
 | Android Interstitial Ad Unit | `ca-app-pub-5198775482699756/2729455367` |
-| Current app version | `0.0.2+3` (bump before release) |
+| Current app version | `1.0.0+1` |
 | Testflight checklist | `docs/Testflight_Readiness_Checklist.md` |
 | iOS signing guide | `docs/Ios_Signing.md` |
 | Security guide | `docs/Security.md` |

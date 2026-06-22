@@ -9,7 +9,7 @@ submit until all items are checked.
 
 | Field | Current | Action |
 |-------|---------|--------|
-| `pubspec.yaml` version | `0.0.2+2` | Bump `+build` for every new upload; bump `semver` for every functional release |
+| `pubspec.yaml` version | `1.0.0+1` | Bump `+build` for every new upload; bump `semver` for every functional release |
 | Bundle ID | `com.nelsongrey.modulosquares.app.ios` | Must match App Store Connect exactly |
 | Deployment target | iOS 15.0 | Do not lower without explicit sign-off |
 
