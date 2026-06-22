@@ -1,10 +1,10 @@
 # Modulo Squares — Go Live Document
 
-**Version**: 1.2  
-**Last Updated**: 2026-06-21  
-**App Version**: 0.0.2+3 (increment before release to 1.0.0+1)  
+**Version**: 1.3  
+**Last Updated**: 2026-06-22  
+**App Version**: 1.0.0+1  
 **Owner**: Mark Nelson  
-**Status**: Soft Launch Complete — Pre-Submission
+**Status**: 🚀 Submitted for App Store Review
 
 ---
 
@@ -24,11 +24,11 @@
 | Privacy Policy / Terms pages | ✅ Live at /privacy and /terms | — |
 | Guest → player account linking | ✅ Complete | — |
 | Settings screen redesign | ✅ Complete (2026-06-21) | — |
-| **iOS Store screenshots captured** | ⚠️ iOS 6.5" only (6 shots) | Yes |
-| **App Store Connect app record** | ⚠️ Unconfirmed | Yes |
-| **IAP "remove_ads" in ASC** | ⚠️ Unconfirmed | Yes |
-| **Firebase GitHub Secrets** | ⚠️ Partial | Yes |
-| **TestFlight beta** | ❌ Not started | No (soft) |
+| iOS Store screenshots (6.5") | ✅ Captured and uploaded | — |
+| App Store Connect app record | ✅ Confirmed | — |
+| IAP "remove_ads" in ASC | ✅ Confirmed | — |
+| **iOS App Store Review** | 🔄 In Review (submitted 2026-06-22) | BLOCKING |
+| **TestFlight beta** | ❌ Not started | No (post-approval) |
 | **Firebase App Check enforcement** | ❌ Not enabled | No (post-launch) |
 | **Google API key restrictions** | ❌ Not applied | No (post-launch) |
 | **Android build** | ❌ Disabled in CI | Phase 2 |
@@ -988,6 +988,7 @@ These secrets must be set in **GitHub → Repository → Settings → Secrets �
 | 1.0 | 2026-06-17 | Mark Nelson | Initial comprehensive Go Live document synthesized from full codebase and docs audit |
 | 1.1 | 2026-06-17 | Mark Nelson | Mark completed: Crashlytics wired, Privacy/Terms pages live, keywords deduped, all security alerts resolved (PRs #70–73) |
 | 1.2 | 2026-06-21 | Mark Nelson | Soft launch complete on main. Added: dead bucket visual, guest→player account linking, sign-out, dark gamertag screen, interstitial ads (gamertag + level transitions), Cloud Functions v2 migration, settings screen redesign + tests. iOS 6.5" screenshots captured (6 shots). Readiness summary updated. |
+| 1.3 | 2026-06-22 | Mark Nelson | App submitted for App Store review. Version 1.0.0+1, iPhone-only build. Status updated to In Review. |
 
 ---
 
