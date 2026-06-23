@@ -12,6 +12,10 @@ This document provides a complete, step-by-step social media strategy for Modulo
 
 The strategy is built around one core principle: **show the game, not the marketing.** Puzzle games that go viral do so because someone sees gameplay and thinks "I want to try that." Every platform tactic below serves that goal.
 
+## Current Execution Plan
+
+Use [Social Media Execution Plan](Social_Media_Execution_Plan.md) for the current launch checklist, copy bank, account setup status, asset map, and metrics tracker. The execution plan reflects the June 2026 iOS-first launch state: iPhone is the current public launch target, and Android messaging should wait until the Android release is live.
+
 ---
 
 ## 1. Platform Priority & Rationale
@@ -27,7 +31,7 @@ You do not need to be on every platform. Start with these three, in this order:
 | r/puzzles | 550K | Direct audience — puzzle enthusiasts |
 | r/math | 1.4M | Math-curious users who'll appreciate modulo |
 | r/indiegames | 250K | Indie game discovery community |
-| r/AndroidGaming / r/iosgaming | 800K+ | Mobile game discovery |
+| r/iosgaming | 800K+ | Mobile game discovery for the iOS-first launch |
 | r/casual | 300K | Casual gaming audience |
 
 ### Priority 2 — TikTok (Start Week 2–3)
@@ -53,7 +57,7 @@ Create accounts on all platforms using the same handle: **@modulosquares** or **
 Use the same profile image on every platform: the app icon (1024x1024 PNG from the iOS asset set).
 
 **Bio text (copy/paste for each platform)**:
-> Math puzzle game for iOS & Android. Guide falling numbers to their modulo buckets. Free to play. 📲 modulo-squares.com
+> Math puzzle game for iPhone. Guide falling numbers to their modulo buckets. Free to play. 📲 modulo-squares.com
 
 **Link**: `https://modulosquares.com/download`
 
