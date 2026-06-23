@@ -108,6 +108,7 @@ mock-*.js
 .env
 .env.*
 !.env.example
+!packages/web/.env.production
 .env.development
 .env.development.local
 .env.test.local
