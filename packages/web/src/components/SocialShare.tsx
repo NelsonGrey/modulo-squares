@@ -10,7 +10,7 @@ const SHARE_TARGETS = [
     ),
     build: (text: string, url: string) =>
       `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
-    text: 'Playing Modulo Squares — a math puzzle game that\'s weirdly addictive. Free on iOS & Android 🎮',
+    text: 'Playing Modulo Squares — a math puzzle game that\'s weirdly addictive. Free on iPhone 🎮',
   },
   {
     label: 'Reddit',
@@ -20,7 +20,7 @@ const SHARE_TARGETS = [
       </svg>
     ),
     build: (_text: string, url: string) =>
-      `https://www.reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent('Modulo Squares — free math puzzle game for iOS & Android')}`,
+      `https://www.reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent('Modulo Squares — free math puzzle game for iPhone')}`,
     text: '',
   },
   {

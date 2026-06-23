@@ -11,6 +11,8 @@ This comprehensive documentation covers all aspects of the Modulo Squares projec
 ### For Product & Design
 - **[Product Design](PRODUCT_DESIGN.md)** - Features, game mechanics, user experience
 - **[Business Requirements](BUSINESS_REQUIREMENTS.md)** - Project goals and requirements
+- **[Social Media Strategy](Social_Media_Strategy.md)** - organic channel strategy and platform rationale
+- **[Social Media Execution Plan](Social_Media_Execution_Plan.md)** - launch checklist, copy bank, asset map, and metrics tracker
 
 ### For Architecture & Design Patterns
 - **[System Architecture](SYSTEM_ARCHITECTURE.md)** - High-level system design
@@ -63,6 +65,13 @@ This comprehensive documentation covers all aspects of the Modulo Squares projec
 | [Database Schema](DATABASE_SCHEMA.md) | Firestore collections, relationships, models | Backend devs, data engineers |
 | [Flutter Architecture](FLUTTER_ARCHITECTURE.md) | Mobile app structure, patterns, state management | Mobile developers |
 | [Web Frontend Architecture](WEB_FRONTEND_ARCHITECTURE.md) | Web app structure, React patterns, routing | Frontend developers |
+
+### 1a. Product Launch 📣
+
+| Document | Purpose | Audience |
+|----------|---------|----------|
+| [Social Media Strategy](Social_Media_Strategy.md) | Organic social channel strategy and platform rationale | Owner, marketing, product |
+| [Social Media Execution Plan](Social_Media_Execution_Plan.md) | Launch-week checklist, copy bank, asset map, and metrics tracker | Owner, marketing, product |
 
 ### 2. Implementation 💻
 
