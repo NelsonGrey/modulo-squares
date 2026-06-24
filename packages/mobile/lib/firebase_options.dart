@@ -58,7 +58,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyDq66LnI1c7jSSRgs7hbdz-9lMkA92MfqA',
-    appId: '1:784677197785:android:d17a73b27367990061abc8',
+    appId: '1:784677197785:android:2bf6f5985343359661abc8',
     messagingSenderId: '784677197785',
     projectId: 'modulo-squares-dev',
     storageBucket: 'modulo-squares-dev.firebasestorage.app',
@@ -66,12 +66,12 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyCnmHtmyARvoj5FjgZgIkrj1cs8RHo3nQg',
-    appId: '1:784677197785:ios:51104e6b575616cc61abc8',
+    appId: '1:784677197785:ios:fa6f0aac2aa0b54961abc8',
     messagingSenderId: '784677197785',
     projectId: 'modulo-squares-dev',
     storageBucket: 'modulo-squares-dev.firebasestorage.app',
     iosClientId:
-        '784677197785-acn8nnrs4rhoeipg9ek4u6b1p512nqkm.apps.googleusercontent.com',
-    iosBundleId: 'com.nelsongrey.modulosquares.app.ios',
+        '784677197785-1bvq4scskbet0lndg67karbgph2fhrsk.apps.googleusercontent.com',
+    iosBundleId: 'com.modulosquares.app.ios',
   );
 }
