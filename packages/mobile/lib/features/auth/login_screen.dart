@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -37,14 +38,31 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // Shows a dialog with the exact error so nothing is missed.
   void _showAuthError(BuildContext context, dynamic error) {
     if (!context.mounted) return;
+    // Raw error in debug builds only; friendly message in production.
     String message;
-    if (error is FirebaseAuthException) {
-      message = '${error.message ?? error.code}\n\n(code: ${error.code})';
+    if (kDebugMode) {
+      if (error is FirebaseAuthException) {
+        message = '${error.message ?? error.code}\n\n(code: ${error.code})';
+      } else {
+        message = error.toString();
+      }
     } else {
-      message = error.toString();
+      if (error is FirebaseAuthException) {
+        switch (error.code) {
+          case 'user-disabled':
+            message = 'This account has been disabled. Please contact support.';
+          case 'too-many-requests':
+            message = 'Too many attempts. Please wait a moment and try again.';
+          case 'network-request-failed':
+            message = 'No internet connection. Please check your network and try again.';
+          default:
+            message = 'Sign in failed. Please try again.';
+        }
+      } else {
+        message = 'Sign in failed. Please try again.';
+      }
     }
     showDialog<void>(
       context: context,
@@ -91,6 +109,7 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } catch (e) {
+      if (e is PlatformException && e.code == 'sign_in_canceled') { return; }
       _showAuthError(context, e);
     } finally {
       if (mounted) setState(() => _authInProgress = false);
@@ -116,6 +135,8 @@ class _LoginScreenState extends State<LoginScreen> {
             .credential(idToken: appleCredential.identityToken),
       );
     } catch (e) {
+      if (e is SignInWithAppleAuthorizationException &&
+          e.code == AuthorizationErrorCode.canceled) { return; }
       _showAuthError(context, e);
     } finally {
       if (mounted) setState(() => _authInProgress = false);
