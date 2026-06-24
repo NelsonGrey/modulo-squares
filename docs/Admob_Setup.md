@@ -34,7 +34,7 @@ This guide covers setting up Google AdMob for monetization in the Modulo Squares
 2. Select "Android" platform
 3. Enter app details:
    - **App name**: Modulo Squares
-   - **Package name**: `com.nelsongrey.modulosquares.app` (matches AndroidManifest.xml)
+   - **Package name**: `com.modulosquares.app` (matches AndroidManifest.xml)
 4. AdMob will generate an **App ID** (format: `ca-app-pub-XXXXXXXXXX~YYYYYYYYYY`)
 
 ### iOS App
@@ -42,7 +42,7 @@ This guide covers setting up Google AdMob for monetization in the Modulo Squares
 2. Select "iOS" platform
 3. Enter app details:
    - **App name**: Modulo Squares
-   - **Bundle ID**: `com.nelsongrey.modulosquares.app.ios` (matches Info.plist)
+   - **Bundle ID**: `com.modulosquares.app.ios` (matches Info.plist)
 4. AdMob will generate an **App ID** (format: `ca-app-pub-XXXXXXXXXX~YYYYYYYYYY`)
 
 ## Ad Unit Creation

@@ -42,7 +42,7 @@ class _WebsiteScreenState extends State<WebsiteScreen> {
   }
 
   void _launchPlayStore() {
-    _launchUrl('https://play.google.com/store/apps/details?id=com.nelsongrey.modulosquares.app');
+    _launchUrl('https://play.google.com/store/apps/details?id=com.modulosquares.app');
   }
 
   void _launchPrivacyPolicy() {

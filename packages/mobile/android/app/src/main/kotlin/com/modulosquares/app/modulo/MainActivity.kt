@@ -1,4 +1,4 @@
-package com.nelsongrey.modulosquares.app.modulo
+package com.modulosquares.app.modulo
 
 import io.flutter.embedding.android.FlutterActivity
 

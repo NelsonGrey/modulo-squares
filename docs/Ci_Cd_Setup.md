@@ -143,7 +143,7 @@ For Android Google Play Store releases, you need to set up code signing:
 For iOS TestFlight/App Store releases, you need to:
 
 1. **Apple Developer Account**: Sign up at https://developer.apple.com
-2. **App ID**: Register `com.nelsongrey.modulosquares.app.ios`
+2. **App ID**: Register `com.modulosquares.app.ios`
 3. **Certificates**: Create iOS Distribution certificate
 4. **Provisioning Profile**: Create App Store distribution profile
 5. **CI Secrets**: Add iOS secrets listed above

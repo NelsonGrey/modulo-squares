@@ -139,7 +139,7 @@ The iOS build requires a self-hosted runner tagged `self-hosted, macOS, ios`.
 Go to: **appstoreconnect.apple.com → Apps → (+) New App**
 
 - [ ] App record created with:
-  - **Bundle ID**: `com.nelsongrey.modulosquares.app.ios`  
+  - **Bundle ID**: `com.modulosquares.app.ios`  
     *(Must match the provisioning profile exactly — not `com.modulo.squares`)*
   - **SKU**: `modulo-squares-ios-1`
   - **Primary Language**: English (US)
@@ -151,7 +151,7 @@ Go to: **appstoreconnect.apple.com → Apps → (+) New App**
 - [ ] Export compliance: **No** custom encryption beyond OS standard
 - [ ] App privacy questionnaire completed (data collected: analytics via Firebase, identifiers via AdMob ATT)
 
-**Validate**: App record visible at appstoreconnect.apple.com with bundle ID `com.nelsongrey.modulosquares.app.ios`.
+**Validate**: App record visible at appstoreconnect.apple.com with bundle ID `com.modulosquares.app.ios`.
 
 ---
 
@@ -316,7 +316,7 @@ Before building the release IPA, confirm every production config is in place:
 **Signing**
 - [ ] Distribution certificate valid in Keychain (check expiry in Keychain Access)
 - [ ] App Store provisioning profile installed and not expired
-- [ ] Profile covers bundle ID `com.nelsongrey.modulosquares.app.ios`
+- [ ] Profile covers bundle ID `com.modulosquares.app.ios`
 - [ ] `CODE_SIGN_STYLE = Manual` in Release scheme (or Automatic + team configured)
 
 **Version**
@@ -484,7 +484,7 @@ Go to: **play.google.com/console → Create app**
   - **Default language**: English (US)
   - **App or game**: Game
   - **Free or paid**: Free
-- [ ] Package name confirmed: `com.nelsongrey.modulosquares.app.android`
+- [ ] Package name confirmed: `com.modulosquares.app.android`
 - [ ] Content rating questionnaire completed (expected: Everyone)
 - [ ] Data safety form completed:
   - Analytics data (Firebase): disclosed
@@ -656,8 +656,8 @@ Firebase App Check protects backend APIs from unauthorized clients. This is a po
 
 From the hardening matrix — apply these in Google Cloud Console after launch:
 
-- [ ] Firebase API key for iOS restricted to bundle ID `com.nelsongrey.modulosquares.app.ios`
-- [ ] Firebase API key for Android restricted to package name `com.nelsongrey.modulosquares.app.android`
+- [ ] Firebase API key for iOS restricted to bundle ID `com.modulosquares.app.ios`
+- [ ] Firebase API key for Android restricted to package name `com.modulosquares.app.android`
 - [ ] Firebase API key for Web restricted to allowed referrer domains
 - [ ] AdMob API key restricted by app
 
@@ -928,8 +928,8 @@ Based on D7 retention data:
 | AdMob Console | https://apps.admob.com |
 | GitHub Actions | https://github.com/mnelson3/modulo-squares/actions |
 | Web App (prod) | https://modulo-squares-prod.web.app |
-| iOS bundle ID | `com.nelsongrey.modulosquares.app.ios` |
-| Android package | `com.nelsongrey.modulosquares.app.android` |
+| iOS bundle ID | `com.modulosquares.app.ios` |
+| Android package | `com.modulosquares.app.android` |
 | IAP product ID | `remove_ads` |
 | AdMob iOS App ID | `ca-app-pub-5198775482699756~9962129501` |
 | AdMob Android App ID | `ca-app-pub-5198775482699756~4572596676` |
@@ -976,7 +976,7 @@ These secrets must be set in **GitHub → Repository → Settings → Secrets �
 | Android disabled in CI manifest | Android launch delayed | Set `android.enabled: true` when ready for Phase 2 |
 | Marketing domain (modulo-squares.com) status | Lower discoverability | Confirm DNS and Firebase Hosting custom domain |
 | Slack webhook `${SLACK_WEBHOOK_URL}` not set | No CI notifications | Optional: add Slack secret for pipeline alerts |
-| Bundle ID inconsistency in legacy docs | Confusion risk | Canonical ID is `com.nelsongrey.modulosquares.app.ios` — treat older `com.modulo.squares` references as stale |
+| Bundle ID inconsistency in legacy docs | Confusion risk | Canonical ID is `com.modulosquares.app.ios` — treat older `com.modulo.squares` references as stale |
 | `storekit_no_response` in simulator | Non-blocking | Expected behavior; IAP must be tested on real device only |
 
 ---

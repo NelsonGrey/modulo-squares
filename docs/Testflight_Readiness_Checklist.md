@@ -10,7 +10,7 @@ submit until all items are checked.
 | Field | Current | Action |
 |-------|---------|--------|
 | `pubspec.yaml` version | `1.0.0+1` | Bump `+build` for every new upload; bump `semver` for every functional release |
-| Bundle ID | `com.nelsongrey.modulosquares.app.ios` | Must match App Store Connect exactly |
+| Bundle ID | `com.modulosquares.app.ios` | Must match App Store Connect exactly |
 | Deployment target | iOS 15.0 | Do not lower without explicit sign-off |
 
 **Version bump procedure:**
@@ -43,7 +43,7 @@ flutter build ios --simulator     # smoke-build, must exit 0
 
 - [ ] Distribution certificate valid in Keychain (not expired)
 - [ ] Provisioning profile `App Store` is installed and not expired
-- [ ] Profile covers bundle ID `com.nelsongrey.modulosquares.app.ios`
+- [ ] Profile covers bundle ID `com.modulosquares.app.ios`
 - [ ] `CODE_SIGN_STYLE = Manual` configured in Release scheme
 
 Reference: [IOS_CERTIFICATE_SETUP.md](IOS_CERTIFICATE_SETUP.md),
@@ -53,7 +53,7 @@ Reference: [IOS_CERTIFICATE_SETUP.md](IOS_CERTIFICATE_SETUP.md),
 
 ## 4. App Store Connect Setup
 
-- [ ] App record exists for bundle ID `com.nelsongrey.modulosquares.app.ios`
+- [ ] App record exists for bundle ID `com.modulosquares.app.ios`
 - [ ] Build number for this upload is **higher than** all previously uploaded builds
 - [ ] App privacy questionnaire completed (data collection: none / analytics only)
 - [ ] Export compliance acknowledged (no custom encryption beyond OS)

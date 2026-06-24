@@ -29,12 +29,12 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.googleusercontent.apps.253948321735-jn4086nreghm2630go26stptkh2ja730</string>
+				<string>com.googleusercontent.apps.253948321735-hlmtsh9v7v766sac03nt68h9ftk7vsc5</string>
 			</array>
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<string>20260624184430</string>
 	<key>GADApplicationIdentifier</key>
 	<string>ca-app-pub-5198775482699756~9962129501</string>
 	<key>LSRequiresIPhoneOS</key>

@@ -104,7 +104,7 @@ The information below is kept for reference but is no longer the recommended app
 1. **Enroll in Apple Developer Program**: Visit [developer.apple.com/programs](https://developer.apple.com/programs)
 2. **Create App ID**: In Certificates, Identifiers & Profiles → Identifiers
    - Type: App IDs
-   - Bundle ID: `com.nelsongrey.modulosquares.app.ios` (matches Info.plist)
+   - Bundle ID: `com.modulosquares.app.ios` (matches Info.plist)
    - Enable required capabilities (if any)
 
 3. **Create Provisioning Profile**:
@@ -132,7 +132,7 @@ If you prefer manual control:
 ### Build Configuration
 
 #### Runner.xcworkspace Settings
-- **Bundle Identifier**: `com.nelsongrey.modulosquares.app.ios`
+- **Bundle Identifier**: `com.modulosquares.app.ios`
 - **Version**: Match pubspec.yaml version
 - **Build**: Increment for each release
 
