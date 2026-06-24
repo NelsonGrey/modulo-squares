@@ -75,6 +75,7 @@ jobs:
         working-directory: packages/mobile
 
       - name: 🧪 Run Tests
+        timeout-minutes: 15
         run: flutter test --coverage
         working-directory: packages/mobile
 
