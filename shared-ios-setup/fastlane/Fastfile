@@ -554,7 +554,7 @@ platform :ios do
       # Try to extract from archive first, fallback to env vars
       app_identifier = read_bundle_identifier_from_archive
       app_identifier ||= (ENV["APP_IDENTIFIER"] || ENV["APP_ID"] || ENV["FASTLANE_APP_IDENTIFIER"])
-      app_identifier ||= "com.nelsongrey.modulosquares.app.ios"
+      app_identifier ||= "com.modulosquares.app.ios"
 
       UI.message("Determined app identifier: #{app_identifier}")
       UI.message("Detected build info: #{build_info}")
