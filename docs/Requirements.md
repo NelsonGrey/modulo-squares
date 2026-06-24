@@ -254,7 +254,7 @@ leaderboards/global/
 | **App Store Assets** | ✅ Complete | Icons, screenshots, metadata |
 | **TestFlight** | ✅ Complete | Beta distribution configured |
 
-**Bundle Identifier**: `com.nelsongrey.modulosquares.app.ios`  
+**Bundle Identifier**: `com.modulosquares.app.ios`  
 **Deployment Target**: iOS 15.0+
 
 ### 4.2 Android (`packages/app/android/`)
@@ -267,7 +267,7 @@ leaderboards/global/
 | **Play Store Assets** | ✅ Complete | Graphics, store listing |
 | **Target SDK** | ✅ Complete | API 34 (Android 14) |
 
-**Package Name**: `com.nelsongrey.modulosquares.app.android`  
+**Package Name**: `com.modulosquares.app.android`  
 **Min SDK**: API 26 (Android 8.0)
 
 ### 4.3 Web (`packages/app/web/`)
@@ -491,8 +491,8 @@ No manual intervention required for production deployments.
 **Production**:
 - `FIREBASE_PROJECT_ID_PROD`: Production Firebase project
 - `ADMOB_APP_ID_PROD`: Live ad unit IDs  
-- `IOS_BUNDLE_ID`: com.nelsongrey.modulosquares.app.ios
-- `ANDROID_PACKAGE_NAME`: com.nelsongrey.modulosquares.app.android
+- `IOS_BUNDLE_ID`: com.modulosquares.app.ios
+- `ANDROID_PACKAGE_NAME`: com.modulosquares.app.android
 
 ---
 

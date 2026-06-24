@@ -246,7 +246,7 @@ await AnalyticsService.instance.logAdImpression(
 
 #### Android
 ```bash
-adb shell setprop debug.firebase.analytics.app com.nelsongrey.modulosquares.app
+adb shell setprop debug.firebase.analytics.app com.modulosquares.app
 ```
 
 #### iOS

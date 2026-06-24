@@ -58,7 +58,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyBKKxqXgalzbqf9kFBIrAsq2gyFHHSZXF0',
-    appId: '1:253948321735:android:f947b74aee2ce4a79ec3e2',
+    appId: '1:253948321735:android:f58a8b194384a9379ec3e2',
     messagingSenderId: '253948321735',
     projectId: 'modulo-squares-prod',
     storageBucket: 'modulo-squares-prod.firebasestorage.app',
@@ -66,11 +66,11 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyBGdIM2EJ7bsJgX8xB8yDDtqU9DooXF0w4',
-    appId: '1:253948321735:ios:527c4e69b233a2199ec3e2',
+    appId: '1:253948321735:ios:a56e8f3551eabcd79ec3e2',
     messagingSenderId: '253948321735',
     projectId: 'modulo-squares-prod',
     storageBucket: 'modulo-squares-prod.firebasestorage.app',
-    iosClientId: '253948321735-jn4086nreghm2630go26stptkh2ja730.apps.googleusercontent.com',
-    iosBundleId: 'com.nelsongrey.modulosquares.app.ios',
+    iosClientId: '253948321735-hlmtsh9v7v766sac03nt68h9ftk7vsc5.apps.googleusercontent.com',
+    iosBundleId: 'com.modulosquares.app.ios',
   );
 }

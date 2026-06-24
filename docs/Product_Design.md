@@ -399,7 +399,7 @@ User triggers optional reward (e.g., Daily Streak Bonus)
 - Push notifications (iOS 10+)
 
 **App Store**:
-- Bundle ID: `com.nelsongrey.modulosquares.ios`
+- Bundle ID: `com.modulosquares.ios`
 - Category: Games → Puzzle
 - Age Rating: 4+ (PEGI 3)
 - Screenshots: Gameplay, leaderboard, settings
@@ -422,7 +422,7 @@ User triggers optional reward (e.g., Daily Streak Bonus)
 - Firebase Cloud Messaging for notifications
 
 **Play Store**:
-- Package Name: `com.nelsongrey.modulosquares.android`
+- Package Name: `com.modulosquares.android`
 - Category: Games → Puzzle
 - Age Rating: Everyone (ESRB: 3+)
 - Requires: Android 8.0 (API 26)+

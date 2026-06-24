@@ -67,11 +67,11 @@ test_provisioning_profile() {
     security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/$IOS_PROVISIONING_PROFILE.mobileprovision | grep -E "(Name|UUID|TeamName|AppIDName|application-identifier)" || true
 
     # Check bundle ID
-    if security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/$IOS_PROVISIONING_PROFILE.mobileprovision | grep -q "com.nelsongrey.modulosquares.app.ios"; then
+    if security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/$IOS_PROVISIONING_PROFILE.mobileprovision | grep -q "com.modulosquares.app.ios"; then
         echo "✅ Profile contains correct bundle ID"
     else
         echo "❌ Profile does not contain correct bundle ID"
-        echo "Expected: com.nelsongrey.modulosquares.app.ios"
+        echo "Expected: com.modulosquares.app.ios"
         return 1
     fi
 
