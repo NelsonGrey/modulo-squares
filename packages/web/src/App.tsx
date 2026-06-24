@@ -8,6 +8,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import Leaderboard from './pages/Leaderboard';
 import Support from './pages/Support';
+import CookiePolicy from './pages/CookiePolicy';
 
 function App() {
   const showComingSoon = import.meta.env.VITE_SHOW_COMING_SOON === 'true';
@@ -24,6 +25,7 @@ function App() {
       <Route path="/leaderboard" element={<Layout><Leaderboard /></Layout>} />
       <Route path="/privacy" element={<Layout><PrivacyPolicy /></Layout>} />
       <Route path="/terms" element={<Layout><TermsOfService /></Layout>} />
+      <Route path="/cookies" element={<Layout><CookiePolicy /></Layout>} />
       <Route path="/support" element={<Layout><Support /></Layout>} />
     </Routes>
   );
