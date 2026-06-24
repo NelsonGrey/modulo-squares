@@ -22,7 +22,7 @@ permissions:
 
 env:
   FLUTTER_VERSION: '3.44.2'
-  NODE_VERSION: '18'
+  NODE_VERSION: '20'
 
 jobs:
   # 🔍 Determine Environment
@@ -138,7 +138,9 @@ jobs:
         working-directory: .
 
       - name: 📦 Install FlutterFire CLI
-        run: flutter pub global activate flutterfire_cli
+        run: |
+          flutter pub global activate flutterfire_cli
+          echo "$HOME/.pub-cache/bin" >> $GITHUB_PATH
         working-directory: packages/mobile
 
       - name: 🔧 Configure Firebase
