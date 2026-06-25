@@ -22,7 +22,7 @@ permissions:
 
 env:
   FLUTTER_VERSION: '3.44.2'
-  NODE_VERSION: '18'
+  NODE_VERSION: '20'
 
 jobs:
   # 🔍 Determine Environment
@@ -75,6 +75,7 @@ jobs:
         working-directory: packages/mobile
 
       - name: 🧪 Run Tests
+        timeout-minutes: 15
         run: flutter test --coverage
         working-directory: packages/mobile
 
@@ -138,7 +139,9 @@ jobs:
         working-directory: .
 
       - name: 📦 Install FlutterFire CLI
-        run: flutter pub global activate flutterfire_cli
+        run: |
+          flutter pub global activate flutterfire_cli
+          echo "$HOME/.pub-cache/bin" >> $GITHUB_PATH
         working-directory: packages/mobile
 
       - name: 🔧 Configure Firebase
@@ -176,6 +179,51 @@ jobs:
           name: android-aab
           path: packages/mobile/build/app/outputs/bundle/release/app-release.aab
           retention-days: 30
+
+  # 🍎 Build & Upload iOS App to TestFlight
+  build-ios:
+    name: 🍎 Build & Upload iOS to TestFlight
+    runs-on: macos-latest
+    needs: [determine-environment, quality-check]
+    if: needs.determine-environment.outputs.should-deploy == 'true' && (needs.determine-environment.outputs.environment == 'production' || needs.determine-environment.outputs.environment == 'staging')
+    environment: ${{ needs.determine-environment.outputs.environment }}
+    env:
+      APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+      APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+      APP_STORE_CONNECT_KEY: ${{ secrets.APP_STORE_CONNECT_KEY }}
+      FASTLANE_TEAM_ID: ${{ secrets.FASTLANE_TEAM_ID }}
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🦋 Setup Flutter
+        uses: ./.github/actions/setup-flutter
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: 🔄 Switch Mobile Configs
+        run: |
+          CONFIG_ENV="${{ needs.determine-environment.outputs.environment == 'production' && 'prod' || 'staging' }}"
+          npm run config:$CONFIG_ENV
+
+      - name: 📦 Flutter Dependencies
+        run: flutter pub get
+        working-directory: packages/mobile
+
+      - name: 💎 Install Fastlane Dependencies
+        run: bundle install
+        working-directory: packages/mobile/ios
+
+      - name: 🚀 Build & Upload to TestFlight
+        run: bundle exec fastlane beta
+        working-directory: packages/mobile/ios
+        env:
+          RELEASE_NOTES: "Build ${{ github.run_number }} from ${{ github.sha }}"
 
   # 🚀 Deploy to Firebase Hosting
   deploy-web:
