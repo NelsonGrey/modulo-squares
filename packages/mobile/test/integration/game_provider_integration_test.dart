@@ -207,6 +207,10 @@ void main() {
     await gameProvider.initialize();
   });
 
+  tearDown(() {
+    gameProvider.dispose();
+  });
+
   group('GameProvider Integration Tests', () {
     test('initializes with saved high score from SharedPreferences', () async {
       expect(gameProvider.highScore, 100);
