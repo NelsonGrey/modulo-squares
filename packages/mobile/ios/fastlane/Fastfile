@@ -172,20 +172,18 @@ platform :ios do
     authentication_key_id = ENV["APP_STORE_CONNECT_KEY_ID"].to_s.strip
     authentication_issuer_id = ENV["APP_STORE_CONNECT_ISSUER_ID"].to_s.strip
 
-    sh("rm -rf ../Pods")
-    sh("rm -f ../Podfile.lock")
+    sh("rm -rf Pods")
+    sh("rm -f Podfile.lock")
     clear_derived_data
 
-    Dir.chdir("../../") do
+    Dir.chdir("../") do
       sh("rm -rf build")
       sh("flutter clean || true")
       sh("flutter pub get")
     end
 
-    Dir.chdir("..") do
-      sh("rm -f Podfile.lock")
-      sh("pod install --repo-update")
-    end
+    sh("rm -f Podfile.lock")
+    sh("pod install --repo-update")
 
     begin
       build_app(
