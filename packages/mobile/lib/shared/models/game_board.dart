@@ -594,9 +594,18 @@ class GameBoard {
   static bool _searchLikelySolve(GameBoard board, int depth, Set<String> seen) {
     if (board.isBoardClear()) return true;
     if (depth == 0) return false;
+    // Hard cap: relocation moves (tile → empty cell) don't reduce tile count
+    // and can inflate the reachable-state set exponentially for larger boards.
+    // At 8 000 nodes the heuristic is still a good signal; beyond that it's
+    // diminishing returns and risks a test / startup hang.
+    if (seen.length > 8000) return false;
 
+    // Board-state-only key: visit each configuration at most once per DFS call.
+    // Depth-included keys ('$depth|key') allow the same board to be explored
+    // maxDepth times and give no additional pruning benefit over board-only keys
+    // for this kind of heuristic solver.
     final key = board._stateKey();
-    if (!seen.add('$depth|$key')) return false;
+    if (!seen.add(key)) return false;
 
     for (int i = 0; i < board.rows; i++) {
       for (int j = 0; j < board.cols; j++) {
