@@ -42,8 +42,9 @@ void main() {
         home: GameScreen(),
       ),
     );
-    // Allow initial async state (e.g., SharedPreferences load) to settle
-    await tester.pumpAndSettle();
+    // GameScreen's FallingModuloGameScreen has a periodic timer; pumpAndSettle
+    // would hang waiting for it. One pump is enough for the initial state.
+    await tester.pump();
 
     final ctx = tester.element(find.byType(Scaffold));
     final l10n = AppLocalizations.of(ctx);
