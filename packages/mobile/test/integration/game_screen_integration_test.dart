@@ -26,7 +26,7 @@ void main() {
     });
 
     await tester.pumpWidget(const MaterialApp(home: GameScreen()));
-    await tester.pumpAndSettle();
+    await tester.pump();
 
     expect(find.byType(FallingModuloGameScreen), findsOneWidget);
     expect(find.text('Modulo Squares'), findsWidgets);
@@ -43,7 +43,7 @@ void main() {
     });
 
     await tester.pumpWidget(const MaterialApp(home: GameScreen()));
-    await tester.pumpAndSettle();
+    await tester.pump();
 
     expect(find.text('Left'), findsOneWidget);
     expect(find.text('Drop'), findsOneWidget);
