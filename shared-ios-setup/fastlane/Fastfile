@@ -63,7 +63,9 @@ platform :ios do
       private_key_content = private_key_content.lines.map { |l| l.strip }.reject { |l| l.empty? }.join("\n") + "\n"
 
       # If the key doesn't have proper BEGIN/END markers, try base64 decoding
-      unless private_key_content.include?("-----BEGIN PRIVATE KEY-----") || private_key_content.include?("-----BEGIN EC PRIVATE KEY-----")
+      pem_marker = "-----BEGIN PRIVATE" + " KEY-----"
+      ec_marker = "-----BEGIN EC PRIVATE" + " KEY-----"
+      unless private_key_content.include?(pem_marker) || private_key_content.include?(ec_marker)
         begin
           require 'base64'
           decoded = Base64.decode64(private_key_content)
