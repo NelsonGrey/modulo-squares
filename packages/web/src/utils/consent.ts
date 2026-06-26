@@ -31,9 +31,11 @@ function updateGtag(granted: boolean): void {
 export function grantAllConsent(): void {
   try { localStorage.setItem(CONSENT_KEY, 'all'); } catch { /* quota/private mode */ }
   updateGtag(true);
+  window.dispatchEvent(new Event('ms:consent'));
 }
 
 export function grantEssentialOnly(): void {
   try { localStorage.setItem(CONSENT_KEY, 'essential'); } catch { /* quota/private mode */ }
   updateGtag(false);
+  window.dispatchEvent(new Event('ms:consent'));
 }
