@@ -295,6 +295,29 @@ void main() {
       expect(find.text('Sign Out'), findsOneWidget);
     });
 
+    testWidgets('Delete Account option is always shown', (tester) async {
+      await _pumpGame(tester);
+      await _openSettings(tester);
+
+      expect(find.text('Delete Account'), findsOneWidget);
+    });
+
+    testWidgets('tapping Delete Account shows a confirmation dialog',
+        (tester) async {
+      await _pumpGame(tester);
+      await _openSettings(tester);
+
+      await tester.tap(find.text('Delete Account'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Delete account?'), findsOneWidget);
+
+      await tester.tap(find.text('Cancel').last);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Delete account?'), findsNothing);
+    });
+
     testWidgets(
         'Link Account is not shown when Firebase is uninitialised (treats as non-guest)',
         (tester) async {
