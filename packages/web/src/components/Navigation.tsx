@@ -5,6 +5,7 @@ const ROUTE_BG: Record<string, string> = {
   '/':              'bg-primary-600',
   '/how-it-works':  'bg-secondary-600',
   '/download':      'bg-gray-900',
+  '/pricing':       'bg-primary-700',
   '/leaderboard':   'bg-linear-to-r from-primary-600 to-secondary-600',
   '/privacy':       'bg-gray-600',
   '/terms':         'bg-gray-600',
@@ -33,6 +34,9 @@ const Navigation: React.FC = () => {
             </Link>
             <Link to="/download" className="text-white/80 hover:text-white transition-colors">
               Download
+            </Link>
+            <Link to="/pricing" className="text-white/80 hover:text-white transition-colors">
+              Pricing
             </Link>
             <Link to="/leaderboard" className="text-white/80 hover:text-white transition-colors font-medium">
               Leaderboard
@@ -70,6 +74,13 @@ const Navigation: React.FC = () => {
                 className="text-white/80 hover:text-white transition-colors"
               >
                 Download
+              </Link>
+              <Link
+                to="/pricing"
+                onClick={() => setIsMenuOpen(false)}
+                className="text-white/80 hover:text-white transition-colors"
+              >
+                Pricing
               </Link>
               <Link
                 to="/leaderboard"

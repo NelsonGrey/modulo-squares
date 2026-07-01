@@ -6,7 +6,7 @@ const Download: React.FC = () => {
     <>
     <SEOHead
       title="Download Free"
-      description="Download Modulo Squares free on the App Store. Guide falling numbers into divisor buckets — a fresh math puzzle for iPhone. Android coming soon."
+      description="Download Modulo Squares free on the App Store. Guide falling numbered squares into divisor buckets, avoid the Dead bucket, and compete on leaderboards."
       path="/download"
     />
     <section className="section-padding bg-gray-50">
@@ -16,7 +16,8 @@ const Download: React.FC = () => {
             Download Modulo Squares
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Free to download on iPhone. Sign in to sync your scores and compete on global leaderboards.
+            Free to download on iPhone. Sign in to save scores, compete on leaderboards,
+            and decide later whether removing ads is worth it.
           </p>
         </div>
 
@@ -63,6 +64,20 @@ const Download: React.FC = () => {
         </div>
 
         <div className="mt-12 text-center">
+          <div className="max-w-3xl mx-auto mb-10 grid sm:grid-cols-3 gap-4 text-left">
+            <div className="bg-white border border-gray-200 rounded-lg p-5">
+              <h3 className="font-bold text-gray-950 mb-2">For puzzle fans</h3>
+              <p className="text-sm text-gray-600">A quick-session divisibility game with pressure, timing, and clean rules.</p>
+            </div>
+            <div className="bg-white border border-gray-200 rounded-lg p-5">
+              <h3 className="font-bold text-gray-950 mb-2">For competitors</h3>
+              <p className="text-sm text-gray-600">Live leaderboards and weekly badges give every replay a purpose.</p>
+            </div>
+            <div className="bg-white border border-gray-200 rounded-lg p-5">
+              <h3 className="font-bold text-gray-950 mb-2">For learners</h3>
+              <p className="text-sm text-gray-600">Factors and remainders become pattern recognition through play.</p>
+            </div>
+          </div>
           <SocialShare label="Know someone who'd enjoy this? Share the game:" />
         </div>
       </div>
