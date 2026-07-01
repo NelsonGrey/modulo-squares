@@ -53,8 +53,8 @@ These secrets are required for in-repo iOS TestFlight uploads via Fastlane (no e
 **Purpose**: Apple Developer Team ID used for automatic signing
 
 **Used by workflows**:
-- `.github/workflows/ios-build-self-contained.yml`
-- `.github/workflows/install-ios-on-hades.yml` (manual trigger wrapper)
+- `.github/workflows/ci-cd.yml` (the active, GitHub-hosted pipeline — build-ios job)
+- `.github/workflows/install-ios-on-hades.yml` (manual trigger wrapper, self-hosted, for on-device installs)
 
 ### Optional Secrets (for signed Android releases)
 
