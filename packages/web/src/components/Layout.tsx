@@ -10,7 +10,7 @@ const AD_BELOW_HEADER_SLOT = import.meta.env.VITE_ADSENSE_SLOT_BELOW_HEADER as s
 const AD_ABOVE_FOOTER_SLOT = import.meta.env.VITE_ADSENSE_SLOT_ABOVE_FOOTER as string ?? '';
 
 const Layout = ({ children }: { children: ReactNode }) => (
-  <div className="flex flex-col h-dvh">
+  <div className="flex h-dvh flex-col overflow-hidden">
     <Navigation />
     {AD_BELOW_HEADER_SLOT && (
       <AdSlot slot={AD_BELOW_HEADER_SLOT} format="auto" className="shrink-0 bg-white" />
