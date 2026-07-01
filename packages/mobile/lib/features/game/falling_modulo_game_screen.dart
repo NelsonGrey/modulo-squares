@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -287,6 +288,39 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
     if (confirmed != true) return;
     if (context.mounted) Navigator.of(context).pop();
     await FirebaseAuth.instance.signOut();
+  }
+
+  Future<void> _deleteAccount(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete account?'),
+        content: const Text(
+          'This permanently deletes your account, gamertag, saved progress, '
+          'and purchase history. This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Delete account'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    if (context.mounted) Navigator.of(context).pop();
+
+    try {
+      await FirebaseFunctions.instance.httpsCallable('deleteAccount').call();
+      await FirebaseAuth.instance.signOut();
+    } catch (e) {
+      if (context.mounted) _showAccountError(context, e);
+    }
   }
 
   Future<void> _linkWithGoogle(BuildContext context) async {
@@ -614,6 +648,17 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
                         style: TextStyle(color: Colors.red),
                       ),
                       onTap: () => _signOut(context),
+                    ),
+                    ListTile(
+                      leading: const Icon(
+                        Icons.delete_forever,
+                        color: Colors.red,
+                      ),
+                      title: const Text(
+                        'Delete Account',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                      onTap: () => _deleteAccount(context),
                     ),
                   ],
                 ),

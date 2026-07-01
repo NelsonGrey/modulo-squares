@@ -1,10 +1,10 @@
 # Modulo Squares — Go Live Document
 
-**Version**: 1.3  
-**Last Updated**: 2026-06-22  
-**App Version**: 1.0.0+1  
+**Version**: 1.7  
+**Last Updated**: 2026-07-01  
+**App Version**: 1.0.0+2  
 **Owner**: Mark Nelson  
-**Status**: 🚀 Submitted for App Store Review
+**Status**: 🚀 New build uploaded to TestFlight from `staging` 2026-07-01 (all 4 rejection issues fixed) — pending promotion to `main` and App Store resubmission
 
 ---
 
@@ -27,7 +27,7 @@
 | iOS Store screenshots (6.5") | ✅ Captured and uploaded | — |
 | App Store Connect app record | ✅ Confirmed | — |
 | IAP "remove_ads" in ASC | ✅ Confirmed | — |
-| **iOS App Store Review** | 🔄 In Review (submitted 2026-06-22) | BLOCKING |
+| **iOS App Store Review** | ⏳ Rejected 2026-07-01 (build 164) — all 4 issues resolved (2.1a/b, 5.1.1, 4.3a); awaiting resubmission | BLOCKING |
 | **TestFlight beta** | ❌ Not started | No (post-approval) |
 | **Firebase App Check enforcement** | ❌ Not enabled | No (post-launch) |
 | **Google API key restrictions** | ❌ Not applied | No (post-launch) |
@@ -111,24 +111,18 @@ Required secrets and their current status:
 - [ ] All Firebase secrets set and non-empty
 - [ ] `MATCH_PASSWORD` set (if using Fastlane Match for certificates)
 
-**Validate**: Trigger `master-pipeline.yml` → `load-config` job → confirm it completes green.
+**Validate**: Push to `develop` → `ci-cd.yml` → `quality-check` job → confirm it completes green.
 
 ---
 
-### 0.4 Self-Hosted macOS Runner Online
+### 0.4 GitHub-Hosted Runners (No Self-Hosted Dependency)
 
-The iOS build requires a self-hosted runner tagged `self-hosted, macOS, ios`.
+As of 2026-07-01, the active pipeline (`.github/workflows/ci-cd.yml`) runs entirely on GitHub-hosted runners (`ubuntu-latest` for tests/web/Firebase, `macos-latest` for the iOS build + TestFlight upload). There is no self-hosted runner to keep online for normal builds/deploys — this was previously a workaround for keeping the repo private, which no longer applies now that the repo is public.
 
-```bash
-# On GitHub: Settings → Actions → Runners
-# Confirm runner is "Idle" or "Active"
-```
+The only self-hosted workflow remaining is `install-ios-on-hades.yml` (manual `workflow_dispatch`), which installs a release build onto a physically connected iPhone for on-device testing — this inherently needs a real Mac with a device attached, so GitHub-hosted runners can't do it. It's optional and non-blocking for App Store submission.
 
-- [ ] macOS self-hosted runner listed as online in GitHub Actions
-- [ ] Runner has Xcode, Flutter, Fastlane, and bundler installed
-- [ ] Runner can reach App Store Connect APIs
-
-**Validate**: `scripts/check-ios-runner-readiness.sh`
+- [x] Confirmed `ci-cd.yml` build-ios job runs on `macos-latest` (GitHub-hosted)
+- [ ] (Optional) Self-hosted Mac online and reachable, only if you plan to use `install-ios-on-hades.yml` for on-device testing
 
 ---
 
@@ -166,8 +160,8 @@ Go to: **App Store Connect → your app → Monetization → In-App Purchases**
   - **Price**: $2.99 (Tier 3)
   - **Display Name**: Remove Ads
   - **Description**: Remove all ads permanently and enjoy uninterrupted gameplay.
-- [ ] Product status: **Ready to Submit**
-- [ ] Screenshot attached to IAP (required for review)
+- [x] Product status: **Ready to Submit**
+- [x] Screenshot attached to IAP (required for review)
 - [ ] Sandbox tester account created under **Users and Access → Sandbox → Testers**
 
 **Validate**: On a real iPhone, in a release/TestFlight build, tapping "Remove Ads" shows the StoreKit purchase sheet with the correct price.
@@ -429,18 +423,14 @@ Expected review time: 24–72 hours (usually 24 hours for puzzle games with no o
 
 ## Phase 2 — Android Launch (Follow Phase 1 by ~2 Weeks)
 
-Android is currently **disabled** in `.cicd/projects/modulo-squares.yml` (`android.enabled: false`). Enable it and complete the steps below when ready.
+Android has no build job in `ci-cd.yml` yet (removed 2026-06-30 pending Play Store submission readiness; the old manifest-driven `master-pipeline.yml` approach was retired 2026-07-01). When ready for Phase 2, add a `build-android` job directly to `ci-cd.yml` (`ubuntu-latest`, standard `flutter build appbundle --release` + upload step) rather than reviving the old manifest/reusable-workflow pattern.
 
-### 2.1 Enable Android in CI Manifest
+### 2.1 Add Android Build Job to ci-cd.yml
 
-Edit `.cicd/projects/modulo-squares.yml`:
+- [ ] `build-android` job added to `.github/workflows/ci-cd.yml`, gated the same way `build-ios`/`build-web` are (triggered on the relevant branch/environment)
+- [ ] Runs on `ubuntu-latest` (Android builds don't need macOS)
 
-```yaml
-android:
-  enabled: true    # Change from false
-```
-
-**Validate**: `master-pipeline.yml` → `build-android` job appears and runs.
+**Validate**: Push triggers `ci-cd.yml` → `build-android` job appears and runs.
 
 ---
 
@@ -685,18 +675,17 @@ Verify Firestore automatic backups are configured for production:
 Trigger a complete pipeline run against `main` to confirm the production deployment path works end-to-end.
 
 ```bash
-# Via GitHub Actions UI:
-# Actions → Master CI/CD Pipeline → Run workflow
-# action: build_and_deploy
-# environment: production
+# Push to main, or via GitHub Actions UI:
+# Actions → 🚀 CI/CD Pipeline - Build, Test & Deploy → Run workflow
+# environment: PRODUCTION
 ```
 
-- [ ] `load-config` job: green
-- [ ] `test` job: green (or continues-on-error with warning)
+- [ ] `determine-environment` job: green
+- [ ] `quality-check` job: green (flutter analyze + flutter test)
 - [ ] `build-ios` job: green → IPA uploaded to TestFlight
-- [ ] `build-web` job: green → Web deployed to Firebase Hosting
-- [ ] `deploy-firebase` job: green → Rules + Functions deployed
-- [ ] `pipeline-summary` job: green
+- [ ] `build-web` job: green → web build artifact produced
+- [ ] `deploy-web` job: green → Firebase Hosting + rules/functions deployed
+- [ ] `deployment-summary` job: green
 
 **Validate**: Pipeline completes green. TestFlight shows a new build. `https://modulo-squares-prod.web.app` shows updated version.
 
@@ -973,11 +962,14 @@ These secrets must be set in **GitHub → Repository → Settings → Secrets �
 | Issue | Impact | Decision Needed |
 |-------|--------|----------------|
 | `firebase_crashlytics` ~~not in `pubspec.yaml`~~ | ✅ Added ^5.2.4 + wired in main.dart (PR #73) | — |
-| Android disabled in CI manifest | Android launch delayed | Set `android.enabled: true` when ready for Phase 2 |
+| No Android build job in `ci-cd.yml` | Android launch delayed | Add a `build-android` job directly to `ci-cd.yml` when ready for Phase 2 (see Phase 2.1) |
 | Marketing domain (modulo-squares.com) status | Lower discoverability | Confirm DNS and Firebase Hosting custom domain |
 | Slack webhook `${SLACK_WEBHOOK_URL}` not set | No CI notifications | Optional: add Slack secret for pipeline alerts |
 | Bundle ID inconsistency in legacy docs | Confusion risk | Canonical ID is `com.modulosquares.app.ios` — treat older `com.modulo.squares` references as stale |
 | `storekit_no_response` in simulator | Non-blocking | Expected behavior; IAP must be tested on real device only |
+| App Review rejection 2026-07-01 (build 164, 4 issues) | ✅ Resolved | See Document History 1.6. All 4 issues (2.1a, 2.1b, 5.1.1v, 4.3a) resolved; awaiting resubmission |
+| `remove_ads` IAP not submitted for review (2.1b) | ✅ Resolved | IAP review screenshot attached and product status set to "Ready to Submit" in App Store Connect |
+| Duplicate/old test app in same storefronts (4.3a) | ✅ Resolved | Old test app removed from sale, then deleted outright from App Store Connect — no longer just restricted, fully gone |
 
 ---
 
@@ -989,6 +981,11 @@ These secrets must be set in **GitHub → Repository → Settings → Secrets �
 | 1.1 | 2026-06-17 | Mark Nelson | Mark completed: Crashlytics wired, Privacy/Terms pages live, keywords deduped, all security alerts resolved (PRs #70–73) |
 | 1.2 | 2026-06-21 | Mark Nelson | Soft launch complete on main. Added: dead bucket visual, guest→player account linking, sign-out, dark gamertag screen, interstitial ads (gamertag + level transitions), Cloud Functions v2 migration, settings screen redesign + tests. iOS 6.5" screenshots captured (6 shots). Readiness summary updated. |
 | 1.3 | 2026-06-22 | Mark Nelson | App submitted for App Store review. Version 1.0.0+1, iPhone-only build. Status updated to In Review. |
+| 1.4 | 2026-07-01 | Mark Nelson | App Store rejected build 164 (submitted from 1.0.0+2) on 4 grounds: (1) 2.1(a) Sign in with Apple threw an error on iPad — fixed by adding the missing `com.apple.developer.applesignin` entitlement to `Runner.entitlements`; (2) 2.1(b) `remove_ads` IAP never submitted for review — requires manual ASC action (attach screenshot, mark Ready to Submit); (3) 5.1.1(v) no account deletion flow — added `deleteAccount` Cloud Function (wipes Firestore records + deletes the Auth user) plus a "Delete Account" option in the in-game Settings dialog, with tests; (4) 4.3(a) spam/duplicate storefronts — an old test app on the same account overlaps storefronts; requires manual ASC action to restrict its availability. |
+| 1.5 | 2026-07-01 | Mark Nelson | Updated App Review status: 2.1 and 5.1.1 are resolved. `remove_ads` IAP is Ready to Submit with required review screenshot attached in App Store Connect. Remaining blocker is 4.3(a) storefront overlap on the old duplicate/test app. |
+| 1.6 | 2026-07-01 | Mark Nelson | 4.3(a) resolved: the old duplicate/test app was removed from sale in App Store Connect, which then allowed it to be deleted outright (not just restricted to no storefronts). All 4 rejection issues from build 164 are now resolved; next step is uploading a new build and resubmitting. |
+| 1.7 | 2026-07-01 | Mark Nelson | Retired the unused `master-pipeline.yml` (manifest-driven, manual-only, called external private `nelson-grey` reusable workflows + a duplicate `ios-build-self-contained.yml` iOS build implementation), its `.cicd/projects/modulo-squares.yml` manifest, and self-hosted-runner dependencies — none of it was ever the pipeline actually triggered on push. `ci-cd.yml` (fully GitHub-hosted: `ubuntu-latest`/`macos-latest`, no self-hosted runner) is confirmed as the single real CI/CD pipeline. `install-ios-on-hades.yml` (on-device install/testing) is kept as the one intentional self-hosted exception. Updated Phase 0.3, 0.4, 2.1, 4.1, and Appendix C to match. |
+| 1.8 | 2026-07-01 | Mark Nelson | Promoted develop → staging; `ci-cd.yml` build-ios failed first attempt because adding the Sign in with Apple entitlement forced a provisioning profile regen, and the Apple Developer account had hit its certificate cap. Cleared old certificates in the Apple Developer portal, re-ran the failed job, and it succeeded (33m32s) — new build uploaded to TestFlight from `staging`. All 4 App Review rejection issues (2.1a, 2.1b, 5.1.1v, 4.3a) are now fixed in a build that's actually reached TestFlight. Next: promote to `main` and submit for App Store review. |
 
 ---
 

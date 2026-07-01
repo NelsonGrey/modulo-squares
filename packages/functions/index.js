@@ -428,6 +428,54 @@ export const getEntitlements = onCall(async (request) => {
   }
 });
 
+async function deleteCollection(ref) {
+  const snap = await ref.get();
+  if (snap.empty) return;
+  const batch = admin.firestore().batch();
+  snap.docs.forEach((doc) => batch.delete(doc.ref));
+  await batch.commit();
+}
+
+export const deleteAccount = onCall(async (request) => {
+  const { uid } = verifyAuth(request);
+  const firestore = admin.firestore();
+
+  try {
+    await deleteCollection(
+      firestore.collection('purchases').doc(uid).collection('transactions')
+    );
+
+    const gamertagsSnap = await firestore
+      .collection('gamertags')
+      .where('uid', '==', uid)
+      .get();
+    if (!gamertagsSnap.empty) {
+      const batch = firestore.batch();
+      gamertagsSnap.docs.forEach((doc) => batch.delete(doc.ref));
+      await batch.commit();
+    }
+
+    await Promise.all([
+      firestore.collection('users').doc(uid).delete(),
+      firestore.collection('user_profiles').doc(uid).delete(),
+      firestore.collection('game_stats').doc(uid).delete(),
+      firestore.collection('entitlements').doc(uid).delete(),
+      firestore.collection('purchases').doc(uid).delete(),
+      firestore.collection('modulo_leaderboard').doc(uid).delete(),
+    ]);
+
+    await admin.auth().deleteUser(uid);
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error deleting account:', error);
+    if (error instanceof HttpsError) {
+      throw error;
+    }
+    throw new HttpsError('internal', 'Failed to delete account');
+  }
+});
+
 // Start Express server for Docker deployment
 const entryFile = process.argv[1] ?? '';
 const currentFile = fileURLToPath(import.meta.url);

@@ -9,6 +9,7 @@ import TermsOfService from './pages/TermsOfService';
 import Leaderboard from './pages/Leaderboard';
 import Support from './pages/Support';
 import CookiePolicy from './pages/CookiePolicy';
+import Pricing from './pages/Pricing';
 
 function App() {
   const showComingSoon = import.meta.env.VITE_SHOW_COMING_SOON === 'true';
@@ -22,6 +23,7 @@ function App() {
       <Route path="/" element={<Layout><Hero /></Layout>} />
       <Route path="/how-it-works" element={<Layout><Features /></Layout>} />
       <Route path="/download" element={<Layout><Download /></Layout>} />
+      <Route path="/pricing" element={<Layout><Pricing /></Layout>} />
       <Route path="/leaderboard" element={<Layout><Leaderboard /></Layout>} />
       <Route path="/privacy" element={<Layout><PrivacyPolicy /></Layout>} />
       <Route path="/terms" element={<Layout><TermsOfService /></Layout>} />
