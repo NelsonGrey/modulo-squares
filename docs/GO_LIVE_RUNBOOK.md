@@ -1,10 +1,10 @@
 # Modulo Squares — Go Live Document
 
-**Version**: 1.7  
+**Version**: 1.9  
 **Last Updated**: 2026-07-01  
 **App Version**: 1.0.0+2  
 **Owner**: Mark Nelson  
-**Status**: 🚀 New build uploaded to TestFlight from `staging` 2026-07-01 (all 4 rejection issues fixed) — pending promotion to `main` and App Store resubmission
+**Status**: 🚀 Production build (all 4 rejection issues fixed) live on TestFlight from `main` 2026-07-01 — pending manual App Store resubmission in App Store Connect
 
 ---
 
@@ -986,6 +986,7 @@ These secrets must be set in **GitHub → Repository → Settings → Secrets �
 | 1.6 | 2026-07-01 | Mark Nelson | 4.3(a) resolved: the old duplicate/test app was removed from sale in App Store Connect, which then allowed it to be deleted outright (not just restricted to no storefronts). All 4 rejection issues from build 164 are now resolved; next step is uploading a new build and resubmitting. |
 | 1.7 | 2026-07-01 | Mark Nelson | Retired the unused `master-pipeline.yml` (manifest-driven, manual-only, called external private `nelson-grey` reusable workflows + a duplicate `ios-build-self-contained.yml` iOS build implementation), its `.cicd/projects/modulo-squares.yml` manifest, and self-hosted-runner dependencies — none of it was ever the pipeline actually triggered on push. `ci-cd.yml` (fully GitHub-hosted: `ubuntu-latest`/`macos-latest`, no self-hosted runner) is confirmed as the single real CI/CD pipeline. `install-ios-on-hades.yml` (on-device install/testing) is kept as the one intentional self-hosted exception. Updated Phase 0.3, 0.4, 2.1, 4.1, and Appendix C to match. |
 | 1.8 | 2026-07-01 | Mark Nelson | Promoted develop → staging; `ci-cd.yml` build-ios failed first attempt because adding the Sign in with Apple entitlement forced a provisioning profile regen, and the Apple Developer account had hit its certificate cap. Cleared old certificates in the Apple Developer portal, re-ran the failed job, and it succeeded (33m32s) — new build uploaded to TestFlight from `staging`. All 4 App Review rejection issues (2.1a, 2.1b, 5.1.1v, 4.3a) are now fixed in a build that's actually reached TestFlight. Next: promote to `main` and submit for App Store review. |
+| 1.9 | 2026-07-01 | Mark Nelson | Promoted staging → main (with explicit "Approved" per branch protection convention). Production `ci-cd.yml` run on main completed fully green in 26m33s — quality-check, build-web, build-ios (production TestFlight upload), and Firebase production deploy all succeeded. All 4 App Review rejection issues are fixed in a real production build now on TestFlight. Only remaining step: select this build in App Store Connect and submit for review. |
 
 ---
 
