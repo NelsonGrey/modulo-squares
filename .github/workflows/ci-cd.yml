@@ -16,6 +16,11 @@ on:
           - PRODUCTION
           - STAGING
           - DEVELOPMENT
+      submit_to_app_store:
+        description: 'Also submit the already-uploaded build to App Store review (PRODUCTION only)'
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -174,6 +179,29 @@ jobs:
         working-directory: packages/mobile/ios
         env:
           RELEASE_NOTES: "Build ${{ github.run_number }} from ${{ github.sha }}"
+
+  # 📮 Submit an already-uploaded build to App Store review
+  submit-app-store:
+    name: 📮 Submit to App Store Review
+    runs-on: macos-latest
+    needs: [determine-environment, quality-check]
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.submit_to_app_store == 'true' && needs.determine-environment.outputs.environment == 'production'
+    environment: production
+    env:
+      APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+      APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+      APP_STORE_CONNECT_KEY: ${{ secrets.APP_STORE_CONNECT_KEY }}
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 💎 Install Fastlane Dependencies
+        run: bundle install
+        working-directory: packages/mobile/ios
+
+      - name: 📮 Submit to App Store Review
+        run: bundle exec fastlane submit_to_app_store
+        working-directory: packages/mobile/ios
 
   # 🚀 Deploy to Firebase Hosting
   deploy-web:
