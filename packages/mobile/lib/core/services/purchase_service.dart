@@ -313,19 +313,16 @@ class PurchaseService {
 
   /// Get formatted price for a product
   String getProductPrice(String productId) {
-    final product = _products.firstWhere(
-      (element) => element.id == productId,
-      orElse:
-          () => ProductDetails(
-            id: productId,
-            title: 'Unknown Product',
-            description: '',
-            price: '\$0.99',
-            rawPrice: 0.99,
-            currencyCode: 'USD',
-          ),
-    );
-    return product.price;
+    // On real iOS devices, in_app_purchase_storekit populates this list with
+    // AppStoreProduct2Details (a ProductDetails subclass), so its runtime
+    // element type is more specific than the declared List<ProductDetails>.
+    // firstWhere's orElse must return that exact runtime type, so cast down
+    // to the base type first rather than constructing a ProductDetails
+    // directly in orElse (which throws a type error on every real device).
+    final product = _products
+        .cast<ProductDetails?>()
+        .firstWhere((element) => element?.id == productId, orElse: () => null);
+    return product?.price ?? '\$0.99';
   }
 
   /// Check if a product is already purchased
