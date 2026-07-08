@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class GamertagService {
@@ -58,12 +60,27 @@ class GamertagService {
 
   /// Returns the gamertag for a user, or null if not yet set.
   static Future<String?> getGamertag(String uid) async {
-    try {
-      final doc = await _db.collection('users').doc(uid).get();
-      return doc.data()?['gamertag'] as String?;
-    } catch (_) {
-      return null;
+    // Right after sign-in, the Auth ID token can take a moment to propagate
+    // to Firestore's underlying connection, so this first read can fail with
+    // permission-denied even though the security rules are correct and the
+    // user really is authenticated. Retry briefly before giving up so a
+    // returning user with a real gamertag isn't misdiagnosed as new.
+    const maxAttempts = 3;
+    for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        final doc = await _db.collection('users').doc(uid).get();
+        return doc.data()?['gamertag'] as String?;
+      } on FirebaseException catch (e) {
+        if (e.code == 'permission-denied' && attempt < maxAttempts) {
+          await Future.delayed(Duration(milliseconds: 400 * attempt));
+          continue;
+        }
+        return null;
+      } catch (_) {
+        return null;
+      }
     }
+    return null;
   }
 
   /// Saves the gamertag atomically: user record + uniqueness index.
