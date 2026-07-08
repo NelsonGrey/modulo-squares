@@ -5,6 +5,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:modulo_squares/core/auth/apple_sign_in_nonce.dart';
 import 'package:modulo_squares/core/di/service_locator.dart';
 import 'package:modulo_squares/core/services/ad_service.dart';
 import 'package:modulo_squares/core/services/purchase_service.dart';
@@ -354,18 +355,23 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
 
   Future<void> _linkWithApple(BuildContext context) async {
     try {
+      final rawNonce = generateAppleSignInNonce();
       final appleCredential = await SignInWithApple.getAppleIDCredential(
         scopes: [
           AppleIDAuthorizationScopes.email,
           AppleIDAuthorizationScopes.fullName,
         ],
+        nonce: sha256OfString(rawNonce),
       );
       if (appleCredential.identityToken == null) {
         _showAccountError(context, 'Apple did not return an identity token.');
         return;
       }
-      final credential = OAuthProvider('apple.com')
-          .credential(idToken: appleCredential.identityToken);
+      final credential = OAuthProvider('apple.com').credential(
+        idToken: appleCredential.identityToken,
+        rawNonce: rawNonce,
+        accessToken: appleCredential.authorizationCode,
+      );
       await FirebaseAuth.instance.currentUser?.linkWithCredential(credential);
       if (context.mounted) {
         Navigator.of(context).pop();

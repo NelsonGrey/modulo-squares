@@ -4,6 +4,7 @@ import 'package:flutter/services.dart' show PlatformException;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:modulo_squares/core/auth/apple_sign_in_nonce.dart';
 
 // Dark background matching the app icon's background colour.
 const _kBg = Color(0xFF1A1A2E);
@@ -120,19 +121,24 @@ class _LoginScreenState extends State<LoginScreen> {
     if (_authInProgress) return;
     setState(() => _authInProgress = true);
     try {
+      final rawNonce = generateAppleSignInNonce();
       final appleCredential = await SignInWithApple.getAppleIDCredential(
         scopes: [
           AppleIDAuthorizationScopes.email,
           AppleIDAuthorizationScopes.fullName,
         ],
+        nonce: sha256OfString(rawNonce),
       );
       if (appleCredential.identityToken == null) {
         _showAuthError(context, 'Apple did not return an identity token.');
         return;
       }
       await FirebaseAuth.instance.signInWithCredential(
-        OAuthProvider('apple.com')
-            .credential(idToken: appleCredential.identityToken),
+        OAuthProvider('apple.com').credential(
+          idToken: appleCredential.identityToken,
+          rawNonce: rawNonce,
+          accessToken: appleCredential.authorizationCode,
+        ),
       );
     } catch (e) {
       if (e is SignInWithAppleAuthorizationException &&

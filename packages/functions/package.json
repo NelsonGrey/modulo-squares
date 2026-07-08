@@ -29,7 +29,7 @@
     "firebase-functions": "^7.2.5"
   },
   "devDependencies": {
-    "eslint": "^10.5.0",
-    "prettier": "^3.0.0"
+    "eslint": "^10.6.0",
+    "prettier": "^3.9.4"
   }
 }
