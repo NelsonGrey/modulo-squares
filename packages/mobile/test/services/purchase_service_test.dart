@@ -160,6 +160,51 @@ void main() {
       expect(price, isA<String>());
       expect(price, isNotEmpty);
     });
+
+    test(
+      'getProductPrice falls back to default price when the loaded '
+      'products list holds a ProductDetails subclass (regression test for '
+      'the real-device crash: on iOS, in_app_purchase_storekit populates '
+      'this list with AppStoreProduct2Details, a ProductDetails subclass, '
+      'so the list\'s runtime element type is more specific than the '
+      'declared List<ProductDetails> — firstWhere\'s orElse must match '
+      'that runtime type or it throws a TypeError)',
+      () async {
+        when(mockInAppPurchase.isAvailable()).thenAnswer((_) async => true);
+
+        final mockProduct = MockProductDetails();
+        when(mockProduct.id).thenReturn('remove_ads');
+        when(mockProduct.title).thenReturn('Remove Ads');
+        when(mockProduct.description).thenReturn('Remove ads from the game');
+        when(mockProduct.price).thenReturn('\$0.99');
+
+        // Must be a List<MockProductDetails>, not a List<ProductDetails>,
+        // to reproduce the real bug: on a real device the list's runtime
+        // element type is a ProductDetails subclass (AppStoreProduct2Details),
+        // and a plain `[mockProduct]` literal here would get inferred as
+        // List<ProductDetails> from the surrounding parameter type instead,
+        // silently defeating the regression test.
+        final List<MockProductDetails> mockProducts = [mockProduct];
+
+        when(
+          mockInAppPurchase.queryProductDetails({'remove_ads', 'premium_version'}),
+        ).thenAnswer(
+          (_) async => ProductDetailsResponse(productDetails: mockProducts, notFoundIDs: [], error: null),
+        );
+
+        final purchaseStreamController = StreamController<List<PurchaseDetails>>();
+        when(mockInAppPurchase.purchaseStream).thenAnswer((_) => purchaseStreamController.stream);
+
+        await purchaseService.initialize();
+
+        // Product not in the list — exercises the orElse fallback path.
+        final price = purchaseService.getProductPrice('premium_version');
+
+        expect(price, '\$0.99');
+
+        await purchaseStreamController.close();
+      },
+    );
   });
 
   group('PurchaseService - Purchase Flow', () {
