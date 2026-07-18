@@ -236,11 +236,54 @@ jobs:
           firebase use $PROJECT_ID --token "${{ secrets.FIREBASE_TOKEN }}"
           firebase deploy --only hosting --token "${{ secrets.FIREBASE_TOKEN }}"
 
+  # 🔥 Deploy Cloud Functions
+  deploy-functions:
+    name: 🔥 Deploy Functions to Firebase (${{ needs.determine-environment.outputs.environment }})
+    runs-on: ubuntu-latest
+    needs: [determine-environment, quality-check]
+    if: needs.determine-environment.outputs.should-deploy == 'true'
+    environment: ${{ needs.determine-environment.outputs.environment }}
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      # packages/functions lives in a separate private repo (business logic
+      # shouldn't be world-readable on this public repo). It lands at the
+      # exact path it used to occupy, so firebase*.json's "source":
+      # "packages/functions" keeps working unchanged.
+      - name: 📥 Checkout Functions (private companion repo)
+        uses: actions/checkout@v4
+        with:
+          repository: NelsonGrey/modulo-squares-functions
+          token: ${{ secrets.FUNCTIONS_REPO_PAT }}
+          ref: ${{ needs.determine-environment.outputs.environment == 'production' && 'main' || needs.determine-environment.outputs.environment == 'staging' && 'staging' || 'develop' }}
+          path: packages/functions
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: 📦 Install Function Dependencies
+        run: npm install
+        working-directory: packages/functions
+
+      - name: 📦 Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: 🔥 Deploy to Firebase
+        run: |
+          CONFIG_ENV="${{ needs.determine-environment.outputs.environment == 'development' && 'dev' || needs.determine-environment.outputs.environment == 'staging' && 'staging' || 'prod' }}"
+          cp firebase.$CONFIG_ENV.json firebase.json
+          PROJECT_ID="${{ needs.determine-environment.outputs.environment == 'production' && 'modulo-squares-prod' || needs.determine-environment.outputs.environment == 'staging' && 'modulo-squares-staging' || 'modulo-squares-dev' }}"
+          firebase use $PROJECT_ID --token "${{ secrets.FIREBASE_TOKEN }}"
+          firebase deploy --only functions --token "${{ secrets.FIREBASE_TOKEN }}"
+
   # 📊 Deployment Summary
   deployment-summary:
     name: 📊 Deployment Summary (${{ needs.determine-environment.outputs.environment }})
     runs-on: ubuntu-latest
-    needs: [determine-environment, deploy-web]
+    needs: [determine-environment, deploy-web, deploy-functions]
     if: always() && needs.determine-environment.outputs.should-deploy == 'true'
     steps:
       - name: 📊 Generate Deployment Report
@@ -260,6 +303,7 @@ jobs:
           fi
 
           echo "| 🌐 Web App | ${{ needs.deploy-web.result }} | $WEB_URL |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔥 Functions | ${{ needs.deploy-functions.result }} | - |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Build Date**: $(date)" >> $GITHUB_STEP_SUMMARY
           echo "**Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY

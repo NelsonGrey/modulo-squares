@@ -370,3 +370,8 @@ Desktop.ini
 *.xcuserdata
 *.xcodeproj/project.xcworkspace/
 packages/mobile/ios/_floatsignTemp/
+
+# packages/functions now lives in a separate private repo
+# (NelsonGrey/modulo-squares-functions). CI checks it out to this path at
+# deploy time; a local clone here for manual deploys/dev is untracked.
+packages/functions/
