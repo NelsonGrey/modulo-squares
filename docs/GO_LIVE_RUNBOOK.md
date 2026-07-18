@@ -558,10 +558,14 @@ flutter build appbundle --release
 
 ### 3.1 Firebase Production Deployment
 
-Ensure all Firebase resources are deployed to `modulo-squares-prod`:
+`packages/functions` lives in a separate private repo, [NelsonGrey/modulo-squares-functions](https://github.com/NelsonGrey/modulo-squares-functions) (business logic kept off the public repo). `ci-cd.yml`'s `deploy-functions` job checks it out automatically on every push to `main`/`staging`/`develop` (or via `workflow_dispatch`), so in the normal case you don't need to do anything manual here — push/dispatch and let CI deploy hosting + functions + rules together.
+
+For a manual deploy from your machine, clone the companion repo into `packages/functions` first (it's gitignored, so this won't touch git state):
 
 ```bash
-# From repo root
+# From repo root — one-time per checkout, or whenever you want the latest functions source
+git clone --branch main https://github.com/NelsonGrey/modulo-squares-functions.git packages/functions
+
 firebase use modulo-squares-prod
 
 # Deploy everything
@@ -684,7 +688,8 @@ Trigger a complete pipeline run against `main` to confirm the production deploym
 - [ ] `quality-check` job: green (flutter analyze + flutter test)
 - [ ] `build-ios` job: green → IPA uploaded to TestFlight
 - [ ] `build-web` job: green → web build artifact produced
-- [ ] `deploy-web` job: green → Firebase Hosting + rules/functions deployed
+- [ ] `deploy-web` job: green → Firebase Hosting deployed
+- [ ] `deploy-functions` job: green → Cloud Functions deployed from NelsonGrey/modulo-squares-functions
 - [ ] `deployment-summary` job: green
 
 **Validate**: Pipeline completes green. TestFlight shows a new build. `https://modulo-squares-prod.web.app` shows updated version.
