@@ -12,7 +12,7 @@ const PrivacyPolicy: React.FC = () => {
     <div className="bg-white">
       <main className="max-w-4xl mx-auto px-6 py-12">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Privacy Policy</h1>
-        <p className="text-gray-500 mb-8">Last updated: June 17, 2026</p>
+        <p className="text-gray-500 mb-8">Last updated: July 19, 2026</p>
 
         <div className="prose prose-gray max-w-none space-y-8">
 
@@ -48,7 +48,7 @@ const PrivacyPolicy: React.FC = () => {
 
             <h3 className="text-lg font-medium text-gray-800 mt-4 mb-2">2.3 Analytics</h3>
             <p className="text-gray-700 leading-relaxed">
-              We use Firebase Analytics to collect anonymized usage data, including:
+              In the mobile app, we use Firebase Analytics to collect anonymized usage data, including:
             </p>
             <ul className="list-disc list-inside text-gray-700 mt-2 space-y-1">
               <li>App opens and session duration</li>
@@ -58,8 +58,18 @@ const PrivacyPolicy: React.FC = () => {
               <li>Device type, OS version, and country (aggregated, not precise location)</li>
             </ul>
             <p className="text-gray-700 leading-relaxed mt-3">
-              Analytics data is used solely to improve the game experience and understand player engagement.
-              Firebase Analytics data is subject to{' '}
+              On the website, we use Google Tag Manager to load Google Analytics (GA4), which collects
+              anonymized usage data such as pages visited, session duration, and general device/browser
+              information. Website analytics cookies are only set if you accept them via the cookie
+              banner — see our{' '}
+              <Link to="/cookies" className="text-primary-600 hover:text-primary-700 underline">
+                Cookie Policy
+              </Link>{' '}
+              for details.
+            </p>
+            <p className="text-gray-700 leading-relaxed mt-3">
+              Analytics data is used solely to improve the game experience, understand player engagement,
+              and understand website traffic. This data is subject to{' '}
               <a href="https://firebase.google.com/support/privacy" target="_blank" rel="noopener noreferrer"
                 className="text-primary-600 hover:text-primary-700 underline">
                 Google's Privacy Policy
@@ -68,9 +78,9 @@ const PrivacyPolicy: React.FC = () => {
 
             <h3 className="text-lg font-medium text-gray-800 mt-4 mb-2">2.4 Advertising</h3>
             <p className="text-gray-700 leading-relaxed">
-              Modulo Squares uses Google AdMob to display interstitial advertisements between levels.
-              AdMob may collect and use your advertising identifier (IDFA on iOS, GAID on Android)
-              to serve personalized ads.
+              Modulo Squares uses Google AdMob to display interstitial advertisements between levels
+              in the mobile app. AdMob may collect and use your advertising identifier (IDFA on iOS,
+              GAID on Android) to serve personalized ads.
             </p>
             <p className="text-gray-700 leading-relaxed mt-3">
               On iOS, we display the App Tracking Transparency (ATT) prompt before collecting any
@@ -83,13 +93,25 @@ const PrivacyPolicy: React.FC = () => {
               personalized where consent is granted.
             </p>
             <p className="text-gray-700 leading-relaxed mt-3">
-              AdMob's data practices are governed by{' '}
+              The website (modulosquares.com) separately uses Google AdSense to display ads. AdSense
+              may set cookies and use similar technologies to serve ads and measure their performance,
+              including showing personalized ads based on your interests. Advertising cookies are only
+              set on the website if you accept them via the cookie banner; declining still allows the
+              site to show non-personalized ads.
+            </p>
+            <p className="text-gray-700 leading-relaxed mt-3">
+              AdMob's and AdSense's data practices are governed by{' '}
               <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer"
                 className="text-primary-600 hover:text-primary-700 underline">
                 Google's Privacy Policy
               </a>.
               You can opt out of personalized advertising at any time via your device settings
-              (iOS: Settings → Privacy &amp; Security → Tracking; Android: Settings → Google → Ads).
+              (iOS: Settings → Privacy &amp; Security → Tracking; Android: Settings → Google → Ads) or,
+              for the website, via{' '}
+              <a href="https://adssettings.google.com" target="_blank" rel="noopener noreferrer"
+                className="text-primary-600 hover:text-primary-700 underline">
+                Google Ads Settings
+              </a>.
             </p>
 
             <h3 className="text-lg font-medium text-gray-800 mt-4 mb-2">2.5 In-App Purchases</h3>
@@ -196,7 +218,19 @@ const PrivacyPolicy: React.FC = () => {
                 <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer"
                   className="text-primary-600 hover:text-primary-700 underline">
                   Google AdMob
-                </a>{' '}(Advertising)
+                </a>{' '}(Mobile app advertising)
+              </li>
+              <li>
+                <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer"
+                  className="text-primary-600 hover:text-primary-700 underline">
+                  Google Tag Manager &amp; Google Analytics
+                </a>{' '}(Website analytics)
+              </li>
+              <li>
+                <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer"
+                  className="text-primary-600 hover:text-primary-700 underline">
+                  Google AdSense
+                </a>{' '}(Website advertising)
               </li>
               <li>
                 <a href="https://www.apple.com/legal/privacy/" target="_blank" rel="noopener noreferrer"
