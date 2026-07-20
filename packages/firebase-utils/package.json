@@ -24,17 +24,17 @@
   },
   "dependencies": {
     "firebase": "^12.15.0",
-    "firebase-admin": "^14.0.0",
+    "firebase-admin": "^14.2.0",
     "protobufjs": "^8.6.3"
   },
   "devDependencies": {
     "@types/node": "^26.1.0",
-    "@typescript-eslint/eslint-plugin": "^8.63.0",
+    "@typescript-eslint/eslint-plugin": "^8.64.0",
     "@typescript-eslint/parser": "^8.63.0",
-    "eslint": "^10.6.0",
+    "eslint": "^10.7.0",
     "prettier": "^3.9.4",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.9"
+    "vitest": "^4.1.10"
   },
   "peerDependencies": {
     "firebase": "^12.15.0"
