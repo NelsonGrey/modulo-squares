@@ -4,7 +4,8 @@ import { getAuth, connectAuthEmulator } from 'firebase/auth';
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
 import { getStorage, connectStorageEmulator } from 'firebase/storage';
-import admin from 'firebase-admin';
+import { initializeApp as initializeAdminApp, getApps as getAdminApps } from 'firebase-admin/app';
+import { getFirestore as getAdminFirestore, FieldValue, } from 'firebase-admin/firestore';
 import { createRequire } from 'module';
 const nodeRequire = createRequire(import.meta.url);
 /**
@@ -111,10 +112,10 @@ export class AuthHelpers {
  */
 export class FirestoreCrudHelpers {
     static get db() {
-        if (!admin.apps.length) {
-            admin.initializeApp();
+        if (!getAdminApps().length) {
+            initializeAdminApp();
         }
-        return admin.firestore();
+        return getAdminFirestore();
     }
     /**
      * Create a document with standard metadata
@@ -123,8 +124,8 @@ export class FirestoreCrudHelpers {
         const documentData = {
             ...data,
             createdBy: userId,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            createdAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
         };
         let docRef;
         if (options?.id) {
@@ -160,7 +161,7 @@ export class FirestoreCrudHelpers {
     static async updateDocument(collection, documentId, data, options) {
         const updateData = {
             ...data,
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
         };
         if (options?.merge) {
             await this.db.collection(collection).doc(documentId).set(updateData, { merge: true });
@@ -212,8 +213,8 @@ export class FirestoreCrudHelpers {
             const documentData = {
                 ...doc.data,
                 createdBy: userId,
-                createdAt: admin.firestore.FieldValue.serverTimestamp(),
-                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                createdAt: FieldValue.serverTimestamp(),
+                updatedAt: FieldValue.serverTimestamp(),
             };
             let docRef;
             if (doc.id) {
@@ -234,7 +235,7 @@ export class FirestoreCrudHelpers {
         for (const update of updates) {
             const updateData = {
                 ...update.data,
-                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                updatedAt: FieldValue.serverTimestamp(),
             };
             const docRef = this.db.collection(collection).doc(update.id);
             batch.update(docRef, updateData);
