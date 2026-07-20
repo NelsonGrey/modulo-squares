@@ -4,7 +4,15 @@ import { getAuth, Auth, connectAuthEmulator } from 'firebase/auth';
 import { getFirestore, Firestore, connectFirestoreEmulator } from 'firebase/firestore';
 import { getFunctions, Functions, connectFunctionsEmulator } from 'firebase/functions';
 import { getStorage, FirebaseStorage, connectStorageEmulator } from 'firebase/storage';
-import admin from 'firebase-admin';
+import { initializeApp as initializeAdminApp, getApps as getAdminApps } from 'firebase-admin/app';
+import {
+  getFirestore as getAdminFirestore,
+  FieldValue,
+  Firestore as AdminFirestore,
+  DocumentReference as AdminDocumentReference,
+  Query as AdminQuery,
+  WhereFilterOp,
+} from 'firebase-admin/firestore';
 import { createRequire } from 'module';
 
 const nodeRequire = createRequire(import.meta.url);
@@ -141,12 +149,12 @@ export class AuthHelpers {
  * Firestore CRUD helpers for Firebase Functions
  */
 export class FirestoreCrudHelpers {
-  private static get db(): admin.firestore.Firestore {
-    if (!admin.apps.length) {
-      admin.initializeApp();
+  private static get db(): AdminFirestore {
+    if (!getAdminApps().length) {
+      initializeAdminApp();
     }
 
-    return admin.firestore();
+    return getAdminFirestore();
   }
 
   /**
@@ -161,11 +169,11 @@ export class FirestoreCrudHelpers {
     const documentData = {
       ...data,
       createdBy: userId,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     };
 
-    let docRef: admin.firestore.DocumentReference;
+    let docRef: AdminDocumentReference;
     if (options?.id) {
       docRef = this.db.collection(collection).doc(options.id);
       if (options?.merge) {
@@ -205,7 +213,7 @@ export class FirestoreCrudHelpers {
   ): Promise<void> {
     const updateData = {
       ...data,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     };
 
     if (options?.merge) {
@@ -228,13 +236,13 @@ export class FirestoreCrudHelpers {
   static async queryDocuments(
     collection: string,
     options?: {
-      filters?: Array<{ field: string; operator: admin.firestore.WhereFilterOp; value: any }>;
+      filters?: Array<{ field: string; operator: WhereFilterOp; value: any }>;
       orderBy?: { field: string; direction: 'asc' | 'desc' };
       limit?: number;
       offset?: number;
     }
   ): Promise<any[]> {
-    let query: admin.firestore.Query = this.db.collection(collection);
+    let query: AdminQuery = this.db.collection(collection);
 
     // Apply filters
     if (options?.filters) {
@@ -278,11 +286,11 @@ export class FirestoreCrudHelpers {
       const documentData = {
         ...doc.data,
         createdBy: userId,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
       };
 
-      let docRef: admin.firestore.DocumentReference;
+      let docRef: AdminDocumentReference;
       if (doc.id) {
         docRef = this.db.collection(collection).doc(doc.id);
         batch.set(docRef, documentData);
@@ -307,7 +315,7 @@ export class FirestoreCrudHelpers {
     for (const update of updates) {
       const updateData = {
         ...update.data,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
       };
 
       const docRef = this.db.collection(collection).doc(update.id);
