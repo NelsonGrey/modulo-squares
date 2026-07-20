@@ -3,7 +3,7 @@ import { Auth } from 'firebase/auth';
 import { Firestore } from 'firebase/firestore';
 import { Functions } from 'firebase/functions';
 import { FirebaseStorage } from 'firebase/storage';
-import admin from 'firebase-admin';
+import { WhereFilterOp } from 'firebase-admin/firestore';
 export interface FirebaseConfig {
     apiKey: string;
     authDomain: string;
@@ -78,7 +78,7 @@ export declare class FirestoreCrudHelpers {
     static queryDocuments(collection: string, options?: {
         filters?: Array<{
             field: string;
-            operator: admin.firestore.WhereFilterOp;
+            operator: WhereFilterOp;
             value: any;
         }>;
         orderBy?: {
