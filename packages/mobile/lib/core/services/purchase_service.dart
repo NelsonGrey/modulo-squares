@@ -77,9 +77,7 @@ class PurchaseService {
   }
 
   static const String _adRemovalProductId = 'remove_ads';
-  static const String _premiumProductId = 'premium_version';
   static const String _adRemovalPrefKey = 'ads_removed';
-  static const String _premiumPrefKey = 'premium_unlocked';
 
   final InAppPurchase _inAppPurchase;
   final bool _testMode;
@@ -101,9 +99,6 @@ class PurchaseService {
 
   bool _adsRemoved = false;
   bool get adsRemoved => _adsRemoved;
-
-  bool _premiumUnlocked = false;
-  bool get premiumUnlocked => _premiumUnlocked;
 
   bool _isAvailable = false;
   bool get isAvailable => _isAvailable;
@@ -143,7 +138,7 @@ class PurchaseService {
 
   /// Query available products from the store
   Future<void> _queryProductDetails() async {
-    final Set<String> productIds = {_adRemovalProductId, _premiumProductId};
+    final Set<String> productIds = {_adRemovalProductId};
     final ProductDetailsResponse response = await _inAppPurchase
         .queryProductDetails(productIds);
 
@@ -195,12 +190,6 @@ class PurchaseService {
             _adsRemoved = true;
             await _savePurchaseState(_adRemovalPrefKey, true);
             break;
-          case _premiumProductId:
-            _premiumUnlocked = true;
-            _adsRemoved = true;
-            await _savePurchaseState(_premiumPrefKey, true);
-            await _savePurchaseState(_adRemovalPrefKey, true);
-            break;
         }
         _purchaseController.add(PurchaseResult.completed);
         return;
@@ -225,9 +214,7 @@ class PurchaseService {
       );
 
       _adsRemoved = entitlements['adsRemoved'] == true;
-      _premiumUnlocked = entitlements['premiumUnlocked'] == true;
       await _savePurchaseState(_adRemovalPrefKey, _adsRemoved);
-      await _savePurchaseState(_premiumPrefKey, _premiumUnlocked);
 
       _purchaseController.add(PurchaseResult.completed);
     } catch (error) {
@@ -239,11 +226,6 @@ class PurchaseService {
   /// Initiate purchase for ad removal
   Future<void> purchaseAdRemoval() async {
     await _purchaseProduct(_adRemovalProductId);
-  }
-
-  /// Initiate purchase for premium version
-  Future<void> purchasePremium() async {
-    await _purchaseProduct(_premiumProductId);
   }
 
   /// Purchase a specific product
@@ -274,7 +256,6 @@ class PurchaseService {
   Future<void> _loadPurchaseStates() async {
     final prefs = await SharedPreferences.getInstance();
     _adsRemoved = prefs.getBool(_adRemovalPrefKey) ?? false;
-    _premiumUnlocked = prefs.getBool(_premiumPrefKey) ?? false;
   }
 
   Future<void> _refreshEntitlementsFromServer() async {
@@ -286,10 +267,8 @@ class PurchaseService {
       );
 
       _adsRemoved = data['adsRemoved'] == true;
-      _premiumUnlocked = data['premiumUnlocked'] == true;
 
       await _savePurchaseState(_adRemovalPrefKey, _adsRemoved);
-      await _savePurchaseState(_premiumPrefKey, _premiumUnlocked);
     } catch (error) {
       ErrorHandler().logError('Refresh entitlements', error);
     }
@@ -330,8 +309,6 @@ class PurchaseService {
     switch (productId) {
       case _adRemovalProductId:
         return _adsRemoved;
-      case _premiumProductId:
-        return _premiumUnlocked;
       default:
         return false;
     }

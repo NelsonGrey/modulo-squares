@@ -606,7 +606,7 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
                               }
                             },
                             child: Text(
-                              'Remove Ads  —  '
+                              'Unlock Premium  —  '
                               '${purchaseService.getProductPrice('remove_ads')}',
                             ),
                           ),
