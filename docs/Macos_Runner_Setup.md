@@ -1,5 +1,7 @@
 # macOS Self-Hosted Runner Setup Guide
 
+> **Optional-device-workflow reference (reviewed 2026-07-20):** Normal CI/TestFlight uses GitHub-hosted macOS. A self-hosted Mac is needed only for the manual `install-ios-on-hades.yml` connected-device workflow.
+
 This guide covers setting up macOS self-hosted runners for the Modulo Squares project to enable cost-effective iOS builds.
 
 ## 🎯 Overview

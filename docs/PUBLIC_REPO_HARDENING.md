@@ -1,5 +1,7 @@
 # Public Repository Hardening Guide
 
+> **Current control guide (reviewed 2026-07-20):** Functions business logic now lives in the private companion repository. Console-side API restrictions, App Check, secrets, and branch rules still require periodic verification.
+
 This repository is public for operational reasons. The controls below reduce IP and abuse risk.
 
 ## 1) Legal and ownership controls

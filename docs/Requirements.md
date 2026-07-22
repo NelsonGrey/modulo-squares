@@ -1,5 +1,7 @@
 # Modulo Squares - Technical Requirements & Implementation Status
 
+> **Requirements history (reviewed 2026-07-20):** “Production Ready” and completion percentages below are historical assertions, not current release evidence. Use [Current State](Current_State.md) and [Go-Live Runbook](GO_LIVE_RUNBOOK.md).
+
 **Version**: 1.0  
 **Last Updated**: February 12, 2026  
 **Status**: Production Ready (100% Complete)  
@@ -523,15 +525,15 @@ No manual intervention required for production deployments.
 | Document | Location | Purpose |
 |----------|----------|---------|
 | **README.md** | `/README.md` | Project overview, setup instructions |
-| **DEVELOPER_GUIDE.md** | `/docs/DEVELOPER_GUIDE.md` | Technical implementation details |
-| **BUSINESS_REQUIREMENTS.md** | `/docs/BUSINESS_REQUIREMENTS.md` | Business case and strategy |
+| **Developer_Guide.md** | `/docs/Developer_Guide.md` | Technical implementation details |
+| **Business_Requirements.md** | `/docs/Business_Requirements.md` | Business case and strategy |
 | **CI/CD Documentation** | `../nelson-grey/docs/` | Infrastructure and deployment |
 | **API Documentation** | Auto-generated dartdoc | Code-level documentation |
 
 ### 12.2 Code Documentation
 - All public APIs documented with dartdoc comments
 - Complex algorithms include inline explanations
-- Architecture diagrams in DEVELOPER_GUIDE.md
+- Architecture diagrams in Developer_Guide.md
 
 ---
 

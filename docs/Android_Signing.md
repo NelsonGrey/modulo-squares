@@ -1,5 +1,7 @@
 # Android Release Signing Configuration
 
+> **Phase 2 reference (reviewed 2026-07-20):** Android source/signing support exists, but the active CI pipeline does not build or publish Android. Follow [Release Checklist](Release_Checklist.md) when Android delivery is activated.
+
 ## Creating a Keystore
 
 ### Option 1: Using Android Studio

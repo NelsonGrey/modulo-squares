@@ -1,5 +1,7 @@
 # Self-Hosted GitHub Actions Runners Implementation Guide
 
+> **Historical infrastructure guide (reviewed 2026-07-20):** Normal CI and TestFlight no longer depend on self-hosted runners. Only the manual HADES connected-device workflow intentionally remains self-hosted.
+
 ## 💰 Cost Analysis
 
 ### Current GitHub Actions Costs (Paid Plan)

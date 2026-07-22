@@ -1,5 +1,7 @@
 # iOS Development Documentation Index
 
+> **Reference index (reviewed 2026-07-20):** Use [Go-Live Runbook](GO_LIVE_RUNBOOK.md) for current launch state and [CI/CD Setup](Ci_Cd_Setup.md) for the active workflow.
+
 > **Complete Guide Collection**: All documentation for setting up iOS projects with certificates, CI/CD, and automation.
 
 ## 📚 Documentation Overview
@@ -9,7 +11,7 @@ This collection provides everything needed to set up iOS projects with professio
 ## 📖 Available Guides
 
 ### 1. iOS Certificate Setup Guide
-**File**: [`IOS_CERTIFICATE_SETUP.md`](./IOS_CERTIFICATE_SETUP.md)
+**File**: [`Ios_Certificate_Setup.md`](./Ios_Certificate_Setup.md)
 **Purpose**: Complete step-by-step guide for setting up iOS certificate repositories
 **Use When**: Starting a new iOS project, setting up certificates for the first time
 **Includes**:
@@ -20,7 +22,7 @@ This collection provides everything needed to set up iOS projects with professio
 - Troubleshooting common issues
 
 ### 2. iOS Certificate Quick Reference
-**File**: [`IOS_CERTIFICATE_QUICK_REFERENCE.md`](./IOS_CERTIFICATE_QUICK_REFERENCE.md)
+**File**: [`Ios_Certificate_Quick_Reference.md`](./Ios_Certificate_Quick_Reference.md)
 **Purpose**: Fast setup commands and essential configurations
 **Use When**: Need a quick cheatsheet, setting up multiple projects
 **Includes**:
@@ -30,7 +32,7 @@ This collection provides everything needed to set up iOS projects with professio
 - Troubleshooting quick fixes
 
 ### 3. iOS CI/CD Integration Guide
-**File**: [`IOS_CICD_INTEGRATION_GUIDE.md`](./IOS_CICD_INTEGRATION_GUIDE.md)
+**File**: [`Ios_Cicd_Integration_Guide.md`](./Ios_Cicd_Integration_Guide.md)
 **Purpose**: Complete CI/CD automation for iOS projects
 **Use When**: Setting up automated builds, deployments, and testing
 **Includes**:
@@ -42,7 +44,7 @@ This collection provides everything needed to set up iOS projects with professio
 - Performance optimization
 
 ### 4. iOS Project Template
-**File**: [`IOS_CICD_INTEGRATION_GUIDE.md`](./IOS_CICD_INTEGRATION_GUIDE.md)
+**File**: [`Ios_Cicd_Integration_Guide.md`](./Ios_Cicd_Integration_Guide.md)
 **Purpose**: Complete project starter with all configurations
 **Use When**: Creating a new iOS project from scratch
 **Includes**:
@@ -67,9 +69,9 @@ This collection provides everything needed to set up iOS projects with professio
 ### Option 1: Use the Template (Recommended)
 ```bash
 # 1. Copy the template files to your new project
-cp docs/IOS_CICD_INTEGRATION_GUIDE.md your-new-project/
-cp docs/IOS_CERTIFICATE_SETUP.md your-new-project/docs/
-cp docs/IOS_CICD_INTEGRATION_GUIDE.md your-new-project/docs/
+cp docs/Ios_Cicd_Integration_Guide.md your-new-project/
+cp docs/Ios_Certificate_Setup.md your-new-project/docs/
+cp docs/Ios_Cicd_Integration_Guide.md your-new-project/docs/
 
 # 2. Follow the setup script in the template
 cd your-new-project
@@ -80,13 +82,13 @@ chmod +x scripts/setup-ios-project.sh
 ### Option 2: Manual Setup
 ```bash
 # 1. Create certificate repository
-# Follow: IOS_CERTIFICATE_SETUP.md
+# Follow: Ios_Certificate_Setup.md
 
 # 2. Setup Fastlane
-# Follow: IOS_CERTIFICATE_QUICK_REFERENCE.md
+# Follow: Ios_Certificate_Quick_Reference.md
 
 # 3. Configure CI/CD
-# Follow: IOS_CICD_INTEGRATION_GUIDE.md
+# Follow: Ios_Cicd_Integration_Guide.md
 ```
 
 ## 📋 Checklist for New Projects
@@ -200,8 +202,8 @@ Track these to ensure successful implementation:
 4. GitHub Issues in this repository
 
 ### Related Documentation
-- [macOS Runner Setup Guide](./MACOS_RUNNER_SETUP.md)
-- [CI/CD Pipeline Guide](./CI_CD_SETUP.md)
+- [macOS Runner Setup Guide](./Macos_Runner_Setup.md)
+- [CI/CD Pipeline Guide](./Ci_Cd_Setup.md)
 - [Fastlane Documentation](https://docs.fastlane.tools)
 - [App Store Connect API](https://developer.apple.com/support/app-store-connect-api/)
 
@@ -216,5 +218,5 @@ With these guides, you can:
 - ✅ Scale to multiple iOS projects
 - ✅ Save costs with optimized infrastructure
 
-**Start with the [iOS Certificate Setup](./IOS_CERTIFICATE_SETUP.md)** for your first project!</content>
+**Start with the [iOS Certificate Setup](./Ios_Certificate_Setup.md)** for your first project!</content>
 <parameter name="filePath">/Users/marknelson/Circus/Repositories/wishlist-wizard/docs/IOS_DOCUMENTATION_INDEX.md

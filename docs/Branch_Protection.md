@@ -1,5 +1,7 @@
 # Branch Protection Rules Setup
 
+> **Operational reference (reviewed 2026-07-20):** Repository files cannot prove live GitHub rulesets. Verify current branch protections and environment gates in GitHub before relying on checked items here.
+
 ## Recommended Branch Protection Rules
 
 Set up the following branch protection rules in your GitHub repository:

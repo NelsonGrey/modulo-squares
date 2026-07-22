@@ -1,5 +1,7 @@
 # Zero-Touch iOS Build Migration Summary
 
+> **Historical migration record (reviewed 2026-07-20):** The current pipeline uses GitHub-hosted macOS and the active Fastlane lanes. Retain this document for decision history only.
+
 ## Problem Solved
 The modulo-squares iOS build was failing with keychain interaction prompts during TestFlight uploads, preventing the "Master CI/CD Pipeline" from operating without user input.
 

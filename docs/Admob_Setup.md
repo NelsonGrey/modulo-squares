@@ -1,5 +1,7 @@
 # AdMob Configuration Guide
 
+> **Operational reference (reviewed 2026-07-20):** Current IDs and runtime behavior are defined in `packages/mobile/lib/core/config/admob_config.dart`, `ad_service.dart`, and `consent_service.dart`. Reverify AdMob/UMP console state before release.
+
 This guide covers setting up Google AdMob for monetization in the Modulo Squares Flutter app, including production configuration, testing, and privacy compliance.
 
 ## Table of Contents
