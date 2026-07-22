@@ -1,35 +1,23 @@
-# Modulo Squares - Full Description
+Modulo Squares turns divisibility into a fast, strategic arcade puzzle.
 
-Challenge your mind with Modulo Squares, a unique puzzle game that combines strategy, logic, and mathematical thinking!
+Guide each falling numbered square into the right bucket before time runs out. A clean division grows your score and combo. A remainder costs points. One dead bucket can punish a careless move, so read the board, move quickly, and plan ahead.
 
-**Core Gameplay:**
-- Navigate a 4x4 grid filled with numbers
-- Use modulo operations to clear tiles strategically
-- Progress through increasingly challenging levels
-- Master special tiles that add exciting twists
+HOW TO PLAY
+• Move the falling number left or right across ten lanes
+• Land on a bucket that divides the number evenly
+• Build combos to increase your movement speed
+• Fill the progress grid to advance to the next level
+• Adapt as the number range expands and the drop speed increases
 
-**Key Features:**
-- ✅ Intuitive tap-to-move and swipe controls
-- ✅ Level-based progression system
-- ✅ Special tiles with unique effects
-- ✅ Global leaderboard competition
-- ✅ Cross-platform play (iOS, Android, Web)
-- ✅ Ad-supported free-to-play experience
+FEATURES
+• Quick, replayable falling-number gameplay
+• Optional visual cues for learning divisibility patterns
+• Persistent local high score across runs
+• Sign in with Apple, Google, or email
+• Free, ad-supported play
+• One-time Unlock Premium purchase (removes ads) with purchase restoration
+• Account deletion from in-app Settings
 
-**How to Play:**
-1. Select a numbered tile on the grid
-2. Move it to an adjacent empty space or occupied tile
-3. When moving to an occupied tile, apply modulo operation
-4. Clear all numbers to complete the level
-5. Unlock new challenges and climb the leaderboard!
+Modulo Squares is designed for puzzle fans, competitive players, and anyone who wants arithmetic practice to feel like a game instead of a worksheet.
 
-**Perfect for:**
-- Puzzle game enthusiasts
-- Math lovers and logic thinkers
-- Casual gamers seeking brain-teasing challenges
-- Players who enjoy strategic gameplay
-
-**Why Modulo Squares?**
-Unlike traditional match-3 or tile-sliding games, Modulo Squares introduces mathematical strategy through modulo operations. Each move requires careful calculation and planning, creating a truly unique gaming experience that rewards logical thinking and pattern recognition.
-
-Download now and start your modulo mastery journey!
+Download free and see how long you can keep the numbers falling.
