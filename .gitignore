@@ -375,3 +375,6 @@ packages/mobile/ios/_floatsignTemp/
 # (NelsonGrey/modulo-squares-functions). CI checks it out to this path at
 # deploy time; a local clone here for manual deploys/dev is untracked.
 packages/functions/
+
+# Claude Code local tool settings/permissions (per-machine, not project config)
+.claude/

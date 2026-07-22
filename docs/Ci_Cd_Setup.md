@@ -1,208 +1,109 @@
-# CI/CD Setup Guide
+# CI/CD Setup
 
-This guide explains how to set up continuous integration and deployment for the Modulo Squares project with Firebase environments.
+**Updated**: 2026-07-20
+**Active workflow**: `.github/workflows/ci-cd.yml`
 
-## 🚀 Overview
+## Triggers
 
-The project uses GitHub Actions for CI/CD with three Firebase environments:
-- **DEV**: `modulo-squares-dev` (develop branch)
-- **STAGING**: `modulo-squares-staging` (staging branch)
-- **PROD**: `modulo-squares-prod` (main branch)
+- Push to `develop`, `staging`, or `main`.
+- Pull request targeting those branches.
+- Manual dispatch with environment selection and optional App Store submission.
 
-## 📋 Prerequisites
+Pull requests run validation/build work but do not deploy. Push/manual runs on mapped branches can deploy.
 
-1. **Firebase Projects**: Ensure you have created three Firebase projects:
-   - `modulo-squares-dev`
-   - `modulo-squares-staging`
-   - `modulo-squares-prod`
+## Toolchain
 
-2. **Firebase CLI**: Install Firebase CLI globally
-   ```bash
-   npm install -g firebase-tools
-   ```
+- Flutter `3.44.2`
+- Node.js `20`
+- `ubuntu-latest` for quality, web, Hosting, and Functions jobs
+- `macos-latest` for iOS/TestFlight/App Store jobs
 
-3. **GitHub Repository**: Ensure you have a GitHub repository set up
+## Jobs
 
-## 🔧 GitHub Secrets Setup
+| Job | Runs when | Behavior |
+|---|---|---|
+| `determine-environment` | every run | Maps branch/input to development, staging, or production and decides whether deployment is allowed |
+| `quality-check` | every run | Flutter setup, `flutter analyze`, `flutter test --coverage`, coverage artifact |
+| `build-web` | after quality | `npm ci` and React production build, uploads `web-build` |
+| `build-ios` | deployable `staging`/`main` runs | Switches native config, installs Fastlane, uploads TestFlight build |
+| `submit-app-store` | manual production submission only | Runs Fastlane `submit_to_app_store` against an already uploaded build; it is not dependent on `build-ios` |
+| `deploy-web` | deployable runs | Downloads web artifact and deploys Firebase Hosting |
+| `deploy-functions` | deployable runs | Checks out private Functions repo and deploys Functions |
+| `deployment-summary` | deployable runs, always | Summarizes job results and environment URLs |
 
-Add the following **environment-specific** secrets to your GitHub repository:
+Firestore rules are configured in Firebase descriptors but the current `deploy-web` command deploys Hosting only. Functions deployment deploys Functions only. Run `npm run deploy:rules` or an explicit rules deploy when rules change; do not assume every pipeline run updates rules.
 
-### Required Secrets
-- `FIREBASE_TOKEN_DEVELOPMENT`: Firebase CI token for DEV environment
-- `FIREBASE_TOKEN_STAGING`: Firebase CI token for STAGING environment
-- `FIREBASE_TOKEN_PRODUCTION`: Firebase CI token for PROD environment
+## Branch mapping
 
-### iOS Secrets (for TestFlight/App Store releases)
-- `IOS_CERTIFICATE`: Base64 encoded iOS distribution certificate (.p12)
-- `IOS_CERTIFICATE_PASSWORD`: iOS certificate password
-- `IOS_PROVISIONING_PROFILE`: Base64 encoded provisioning profile (.mobileprovision)
-- `FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD`: App-specific password for Apple ID
-- `IOS_TEAM_ID`: Apple Developer Team ID
+| Branch | Environment | Functions branch |
+|---|---|---|
+| `develop` | development | `develop` |
+| `staging` | staging | `staging` |
+| `main` | production | `main` |
 
-## 🏗️ Branch Strategy
+## Required secrets
 
-```
-main (PROD)     ← Production releases
-├── staging     ← Staging environment
-└── develop     ← Development environment
-```
+Core iOS/Fastlane:
 
-### Branch Protection Rules
+- `APP_STORE_CONNECT_KEY_ID`
+- `APP_STORE_CONNECT_ISSUER_ID`
+- `APP_STORE_CONNECT_KEY`
+- `FASTLANE_TEAM_ID`
 
-Set up branch protection for:
-- `main`: Require PR reviews, status checks
-- `staging`: Require status checks
-- `develop`: Allow direct pushes for development
+Firebase/private Functions:
 
-## 🚀 Deployment Workflow
+- `FIREBASE_TOKEN`
+- `FUNCTIONS_REPO_PAT`
 
-### Automatic Deployments
-- **Push to `develop`**: Deploys to DEV environment
-- **Push to `staging`**: Deploys to STAGING environment
-- **Push to `main`**: Deploys to PROD + creates release
+These are the secret names referenced directly by the active workflow. Audit the workflow itself before rotating or removing any value.
 
-### Manual Deployments
-Use the deployment scripts for manual deployments:
+## App Store submission
 
-```bash
-# Deploy to development
-./scripts/deploy.sh dev
+Automatic branch deployments upload to TestFlight. Submission to review is deliberately separate:
 
-# Deploy to staging
-./scripts/deploy.sh staging
+1. Confirm the intended corrected build has already been uploaded and processed in App Store Connect.
+2. Dispatch `ci-cd.yml`.
+3. Select `production`.
+4. Set `submit_to_app_store` to true.
+5. Verify the desired build/IAP/version state in App Store Connect.
 
-# Deploy to production
-./scripts/deploy.sh prod
-```
+Fastlane's submission lane skips binary upload and metadata/screenshots and uses the already uploaded build. It excludes IAP from `precheck`; IAP review state must be handled in App Store Connect.
 
-On Windows:
-```powershell
-.\scripts\deploy.ps1 dev
-.\scripts\deploy.ps1 staging
-.\scripts\deploy.ps1 prod
-```
+## Android
 
-## 🔍 Environment URLs
+The Android platform project and signing helpers are tracked, but the active pipeline has no Android build or Google Play deployment job. Treat Android release docs as Phase 2/reference until that job is added and verified.
 
-After deployment, your app will be available at:
-- **DEV**: https://modulo-squares-dev.web.app
-- **STAGING**: https://modulo-squares-staging.web.app
-- **PROD**: https://modulo-squares-prod.web.app
+## Other workflows
 
-## 🧪 Testing
+- `codeql.yml`: CodeQL scanning.
+- `dependabot-auto-merge.yml`: patch/minor Dependabot approval and auto-merge logic.
+- `install-ios-on-hades.yml`: manual build/install on a connected device via self-hosted Mac.
+- `.github/workflows/archive/*`: inactive historical workflows.
 
-### Local Testing
-```bash
-# Test DEV environment locally
-firebase use modulo-squares-dev
-firebase serve
-
-# Test STAGING environment locally
-firebase use modulo-squares-staging
-firebase serve
-
-# Test PROD environment locally
-firebase use modulo-squares-prod
-firebase serve
-```
-
-### CI Testing
-The CI pipeline runs:
-- Flutter analyze
-- Unit tests with coverage
-- Integration tests (if configured)
-
-## 📱 Mobile App Releases
-
-When pushing to `main`, the CI pipeline automatically:
-1. Builds Android APK and AAB (signed with keystore if provided)
-2. Builds iOS (with codesigning if certificates are configured)
-3. Creates a GitHub release with download links
-
-### Android Signing Setup
-
-For Android Google Play Store releases, you need to set up code signing:
-
-1. **Generate Keystore**:
-   ```bash
-   cd packages/mobile/android
-   ./generate_keystore.sh
-   ```
-
-2. **Configure Signing**: Copy `local.properties.example` to `local.properties` and update with your keystore details
-
-3. **CI/CD Secrets**: Add Android secrets listed above
-
-4. **Test Build**:
-   ```bash
-   flutter build appbundle --release
-   ```
-
-### iOS Code Signing Setup
-
-For iOS TestFlight/App Store releases, you need to:
-
-1. **Apple Developer Account**: Sign up at https://developer.apple.com
-2. **App ID**: Register `com.modulosquares.app.ios`
-3. **Certificates**: Create iOS Distribution certificate
-4. **Provisioning Profile**: Create App Store distribution profile
-5. **CI Secrets**: Add iOS secrets listed above
-
-Run the setup script:
-```bash
-cd packages/mobile/ios
-./setup_codesigning.sh
-```
-
-### Fastlane Setup
-
-The project includes Fastlane configuration for automated iOS deployment:
+## Local approximation
 
 ```bash
-cd packages/mobile/ios
-gem install fastlane
-fastlane beta    # Deploy to TestFlight
-fastlane release # Deploy to App Store
+npm ci
+npm run lint
+npm run check
+npm run build:web
+
+cd packages/mobile
+flutter pub get
+flutter analyze
+flutter test --coverage
+flutter build ios --release --no-codesign
 ```
 
-## 🔧 Firebase Configuration
+Local commands do not validate GitHub environment protection, secret availability, TestFlight/App Store Connect, or Firebase deploy permissions.
 
-### Project Setup
-Each Firebase project needs:
-- Hosting enabled
-- Authentication configured (Google, Apple, Anonymous)
-- Firestore database
-- Analytics enabled
+## Change checklist
 
-### Hosting Targets
-The `.firebaserc` file defines hosting targets for each environment.
+When changing CI:
 
-## 🐛 Troubleshooting
-
-### Common Issues
-
-1. **Firebase Token Expired**
-   ```bash
-   firebase logout
-   firebase login:ci
-   # Update FIREBASE_TOKEN secret
-   ```
-
-2. **Build Failures**
-   - Check Flutter version compatibility
-   - Ensure all dependencies are properly specified
-   - Verify Firebase configuration
-
-3. **Deployment Failures**
-   - Verify Firebase project permissions
-   - Check hosting target configuration
-   - Ensure build artifacts exist
-
-### Logs
-Check GitHub Actions logs for detailed error information.
-
-## 📚 Additional Resources
-
-- [Firebase Hosting Documentation](https://firebase.google.com/docs/hosting)
-- [GitHub Actions Documentation](https://docs.github.com/en/actions)
-- [Flutter Deployment Guide](https://flutter.dev/docs/deployment/web)
+- keep action versions and documented tool versions aligned;
+- preserve pull-request non-deployment guards;
+- verify all `needs` relationships and `if: always()` behavior;
+- update `GO_LIVE_RUNBOOK.md` and this document;
+- test with a non-production branch before production;
+- keep Functions source checkout scoped to the private repository and correct branch.

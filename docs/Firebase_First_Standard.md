@@ -1,5 +1,7 @@
 # Firebase-First Architecture Standard
 
+> **Cross-project design reference (reviewed 2026-07-20):** This is not a literal map of the current repository. In particular, Functions source is private and the Flutter client does not consume `@shared/firebase-utils`. See [System Architecture](System_Architecture.md).
+
 This document defines the standardized Firebase-first architecture that all projects must follow to ensure consistency, simplicity, and cost-effectiveness.
 
 ## Overview

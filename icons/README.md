@@ -1,11 +1,13 @@
 # Icons Directory
 
+**Updated**: 2026-07-20
+
 This directory contains the canonical icon assets for the Modulo Squares project.
 
 ## Master Icons
 
 - **`icon-modulo-squares.png`**: High-resolution master icon (1024x1024 or larger recommended)
-- **`icon-modulo-squares.svg`**: Vector format master icon (optional, preferred for scaling)
+- The current master is the clean-landing-centered 1024px RGB icon applied on 2026-07-07.
 
 ## Automated Icon Generation
 
@@ -45,7 +47,7 @@ Navigate to `packages/mobile/android/app/src/main/res/mipmap-*/` directories.
 
 ## Current Icon Design
 
-The current icon features the Modulo Squares game logo - a stylized geometric design representing the modular arithmetic puzzle concept.
+The current icon shows a falling `15` tile above divisor buckets `3`, `5`, and `6`, with bucket `5` highlighted. The original production set is retained under `archive/2026-07-08-previous-icon`.
 
 ## Updating the Icon
 

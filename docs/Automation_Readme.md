@@ -1,5 +1,7 @@
 # 🚀 Wishlist Wizard - Complete Automation Suite
 
+> **Historical template (reviewed 2026-07-20):** This document describes a Wishlist Wizard/zero-touch automation design, not the active Modulo Squares pipeline. Use [CI/CD Setup](Ci_Cd_Setup.md); do not run these commands as current production instructions.
+
 > **Zero-Touch DevOps**: Fully automated CI/CD, deployment, monitoring, and security for the entire Wishlist Wizard platform.
 
 ## 🎯 Overview

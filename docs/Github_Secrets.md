@@ -1,101 +1,44 @@
 # GitHub Secrets Setup
 
-## Required Secrets
+**Updated**: 2026-07-20
 
-### Environment-Specific Firebase Tokens
-Each Firebase environment requires its own authentication token for security and access control.
+The active workflow references these secrets directly:
 
-#### FIREBASE_TOKEN_DEVELOPMENT
-**Purpose**: Authenticates GitHub Actions with Firebase for DEV environment deployments
+| Secret | Used by | Purpose |
+|---|---|---|
+| `APP_STORE_CONNECT_KEY_ID` | `build-ios`, `submit-app-store` | App Store Connect API key ID |
+| `APP_STORE_CONNECT_ISSUER_ID` | `build-ios`, `submit-app-store` | App Store Connect issuer ID |
+| `APP_STORE_CONNECT_KEY` | `build-ios`, `submit-app-store` | `.p8` private key content or supported base64 form |
+| `FASTLANE_TEAM_ID` | `build-ios` | Apple Developer Team ID for automatic signing |
+| `FIREBASE_TOKEN` | `deploy-web`, `deploy-functions` | Firebase CLI authentication |
+| `FUNCTIONS_REPO_PAT` | `deploy-functions` | Read access to private companion Functions repo |
 
-**How to get it**:
-```bash
-# Login to Firebase and select DEV project
-firebase use modulo-squares-dev
-firebase login:ci
-```
+Secrets may be stored per GitHub Environment (`development`, `staging`, `production`) or at repository scope as appropriate. Environment protection and least privilege are recommended for production.
 
-#### FIREBASE_TOKEN_STAGING
-**Purpose**: Authenticates GitHub Actions with Firebase for STAGING environment deployments
+## Private Functions token
 
-**How to get it**:
-```bash
-# Login to Firebase and select STAGING project
-firebase use modulo-squares-staging
-firebase login:ci
-```
+Use a fine-grained token limited to read-only Contents access for `NelsonGrey/modulo-squares-functions`. Do not grant write/admin access. Rotate it when access changes or exposure is suspected.
 
-#### FIREBASE_TOKEN_PRODUCTION
-**Purpose**: Authenticates GitHub Actions with Firebase for PROD environment deployments
+## Firebase authentication
 
-**How to get it**:
-```bash
-# Login to Firebase and select PROD project
-firebase use modulo-squares-prod
-firebase login:ci
-```
+The current workflow uses one secret name, `FIREBASE_TOKEN`, and selects the project from branch/environment logic. It does not reference older environment-specific token names.
 
-**Where to add them**: GitHub Repository → Settings → Secrets and variables → Actions → New repository secret
+Firebase CLI login tokens are legacy-style credentials; migrate to workload identity/service-account federation when the delivery design supports it.
 
-### iOS Self-Contained Distribution Secrets
-These secrets are required for in-repo iOS TestFlight uploads via Fastlane (no external nelson-grey credential sharing).
+## iOS key format
 
-#### APP_STORE_CONNECT_KEY_ID
-**Purpose**: App Store Connect API key ID
+`packages/mobile/ios/fastlane/Fastfile` accepts PEM text or base64 key material and normalizes it into a temporary `.p8` file. Store only the private key value, never the key filename or a public download URL.
 
-#### APP_STORE_CONNECT_ISSUER_ID
-**Purpose**: App Store Connect issuer ID
+## Optional/future Android secrets
 
-#### APP_STORE_CONNECT_KEY
-**Purpose**: App Store Connect private key content (`.p8`) or base64 encoded key
+Android is not built by active CI. A future signed Android job may require a base64 keystore, store/key passwords, and alias. Define exact names in the workflow before adding them to GitHub; avoid maintaining unused privileged secrets.
 
-#### FASTLANE_TEAM_ID
-**Purpose**: Apple Developer Team ID used for automatic signing
+## Verification
 
-**Used by workflows**:
-- `.github/workflows/ci-cd.yml` (the active, GitHub-hosted pipeline — build-ios job)
-- `.github/workflows/install-ios-on-hades.yml` (manual trigger wrapper, self-hosted, for on-device installs)
+1. Review secret references in `.github/workflows/ci-cd.yml`.
+2. Review environment protection and branch policies.
+3. Run a staging pipeline.
+4. Confirm the TestFlight, Hosting, and Functions jobs authenticate without printing secret content.
+5. Run production only after staging succeeds.
 
-### Optional Secrets (for signed Android releases)
-
-#### ANDROID_KEYSTORE
-**Purpose**: Base64 encoded Android keystore file for signed releases
-
-**How to get it**:
-```bash
-# Convert keystore to base64
-base64 -i your-keystore.jks
-```
-
-#### ANDROID_KEYSTORE_PASSWORD
-**Purpose**: Password for the Android keystore
-
-#### ANDROID_KEY_ALIAS
-**Purpose**: Alias of the key in the keystore
-
-#### ANDROID_KEY_PASSWORD
-**Purpose**: Password for the key in the keystore
-
-## Environment Setup
-
-The CI/CD pipeline automatically detects the environment based on the branch and uses the appropriate Firebase token:
-
-- `develop` → DEV environment (`FIREBASE_TOKEN_DEV`)
-- `staging` → STAGING environment (`FIREBASE_TOKEN_STAGING`)
-- `main` → PROD environment (`FIREBASE_TOKEN_PROD`)
-
-## Testing the Setup
-
-1. **Add all three Firebase tokens to GitHub secrets**
-
-2. **Push to develop branch**:
-   ```bash
-   git checkout develop
-   git push origin develop
-   ```
-
-3. **Check GitHub Actions**: Go to Actions tab in your repository
-
-4. **Verify deployment**: Visit https://modulo-squares-dev.web.app
-
-Repeat for `staging` and `main` branches.
+Never paste values into issues, logs, screenshots, documentation, or chat.

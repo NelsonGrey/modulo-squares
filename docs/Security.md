@@ -1,114 +1,71 @@
-# 🔒 Security Guidelines for Modulo Squares
+# Security
 
-## 🚨 CRITICAL SECURITY REQUIREMENTS
+**Updated**: 2026-07-20
 
-### Never Commit These Files
-The following files **MUST NEVER** be committed to version control:
+## Security model
 
-- `packages/mobile/ios/app_store_connect_key.p8` - App Store Connect API private key
-- `packages/mobile/ios/*.p8` - Any .p8 private key files
-- `packages/mobile/android/app/*.jks` - Android keystores
-- `packages/mobile/android/app/*.keystore` - Android keystores
-- `**/*service-account-key.json` - Firebase service account keys
-- `packages/mobile/ios/certs/*.p12` - iOS certificates
-- `packages/mobile/ios/certs/*.pem` - Certificate files
+- Firebase Auth establishes identity.
+- Firestore rules enforce owner access and deny client writes to server-authoritative collections.
+- Callable Functions handle score submissions, purchase validation, entitlement reads, and deletion.
+- App Check is integrated in the client; production enforcement is an external setting.
+- Secrets and signing material are stored in GitHub environments/secrets or ignored local files.
+- Functions business logic is kept in a private companion repository.
 
-### Required GitHub Repository Secrets
+## Firestore controls
 
-#### App Store Connect (iOS)
-- `APP_STORE_CONNECT_KEY_ID` - App Store Connect API Key ID
-- `APP_STORE_CONNECT_ISSUER_ID` - App Store Connect API Issuer ID
-- `APP_STORE_CONNECT_KEY` - Base64 encoded private key (.p8 file content)
-- `FASTLANE_APPLE_ID` - Apple Developer email
-- `FASTLANE_TEAM_ID` - Apple Developer Team ID
-- `MATCH_PASSWORD` - Match repository password
+Current public rules:
 
-#### Firebase
-- `FIREBASE_TOKEN_DEVELOPMENT` - Firebase CI token for dev environment
-- `FIREBASE_TOKEN_STAGING` - Firebase CI token for staging environment
-- `FIREBASE_TOKEN_PRODUCTION` - Firebase CI token for prod environment
+- allow public read/no client write for global, daily, and weekly leaderboards;
+- allow owner read/no client write for purchases and entitlements;
+- allow owner read/write for profiles, stats, and user documents;
+- allow authenticated gamertag reads and one-time claims tied to the caller UID;
+- deny everything else by omission.
 
-#### Android (Optional for signed releases)
-- `ANDROID_KEYSTORE` - Base64 encoded Android keystore
-- `ANDROID_KEYSTORE_PASSWORD` - Keystore password
-- `ANDROID_KEY_ALIAS` - Key alias
-- `ANDROID_KEY_PASSWORD` - Key password
+Deploy rules explicitly when they change; the active Hosting and Functions jobs do not currently deploy rules.
 
-## 🔄 Security Incident Response
+## Client configuration
 
-### If a Secret is Exposed:
+Firebase and AdMob identifiers are client-visible by design, but they must be restricted by bundle/package IDs, API allowlists, quotas, App Check, and backend/rules authorization. Presence in source does not make unrestricted use safe.
 
-1. **IMMEDIATELY** revoke the compromised credential
-2. **ROTATE** to new credentials
-3. **UPDATE** all GitHub secrets
-4. **AUDIT** access logs for unauthorized activity
-5. **NOTIFY** team members
+Never track:
 
-### App Store Connect Key Compromise:
-1. Delete the compromised API key in App Store Connect
-2. Create new API key with minimal required permissions
-3. Update `APP_STORE_CONNECT_KEY_ID`, `APP_STORE_CONNECT_ISSUER_ID`, and `APP_STORE_CONNECT_KEY` secrets
-4. Test CI/CD pipeline with new credentials
+- service-account JSON;
+- Apple `.p8`, signing certificates, provisioning profiles, keystores, or passwords;
+- GitHub/Firebase tokens;
+- private Functions credentials or provider secrets;
+- raw purchase receipts in logs or docs.
 
-### Firebase Token Compromise:
-1. Revoke the compromised token
-2. Generate new CI token: `firebase login:ci`
-3. Update appropriate `FIREBASE_TOKEN_*` secret
-4. Verify deployments still work
+## Authentication
 
-## 🛡️ Security Best Practices
+Apple Sign-In uses a cryptographic nonce. Google/Apple/email flows should be tested against account collision/linking cases. Error messages should remain useful without exposing provider internals.
 
-### Development
-- Use `.env` files for local development (never commit)
-- Test with dummy/test credentials in development
-- Use separate Firebase projects per environment
+Gamertags are validated client-side for format and blocked terms, but server-side uniqueness/moderation must remain authoritative.
 
-### CI/CD
-- All secrets stored in GitHub repository secrets
-- No hardcoded credentials in workflows
-- Temporary files cleaned up after builds
-- Use environment-specific service accounts
+## Scores and purchases
 
-### Public Repository Controls
-- Keep repository license proprietary unless an open-source release is explicitly intended
-- Keep branch protection enabled on long-lived branches
-- Restrict GitHub Actions to trusted/verified allowlists
-- Disable forking if your GitHub plan/settings allow it
-- Move business-critical logic (anti-abuse, scoring, monetization) to private backend services
+- Do not permit direct client leaderboard writes.
+- Validate session, identity, score bounds, timing, and replay protection on the server.
+- Verify platform receipts/tokens with Apple/Google; never trust local entitlement flags.
+- Keep purchase transaction IDs idempotent.
+- Avoid returning sensitive verification details to clients.
 
-### Code Review
-- Check for accidentally committed secrets in PRs
-- Review `.gitignore` changes
-- Verify secret usage in workflows
+## Account deletion
 
-## 🚦 Security Checklist
+The in-app Settings flow calls `deleteAccount`. Compliance validation must confirm every user-owned/current server collection is deleted or legally retained with a disclosed basis, then confirm the Firebase Auth identity is removed.
 
-### Before Committing:
-- [ ] No `.p8`, `.jks`, or service account files committed
-- [ ] No hardcoded API keys or tokens in code
-- [ ] No secrets in `.env` files (use `.env.example` templates)
+## Web security
 
-### Before Deploying:
-- [ ] All required GitHub secrets are set
-- [ ] Firebase tokens are valid and not expired
-- [ ] App Store Connect API key has correct permissions
-- [ ] Android keystore is properly configured (if used)
-- [ ] Public-repo hardening checklist reviewed (`docs/PUBLIC_REPO_HARDENING.md`)
+- Firebase Hosting/Nginx must preserve SPA routing while setting appropriate security headers.
+- GTM/AdSense scripts expand the third-party trust surface and must remain consent-controlled.
+- Keep dependencies patched through Dependabot and CodeQL.
+- Never inject user-controlled HTML into policy, support, leaderboard, or metadata surfaces.
 
-### After Security Incident:
-- [ ] Compromised credentials revoked
-- [ ] New credentials generated and tested
-- [ ] Team notified of incident
-- [ ] Security practices reviewed and improved
+## Operational checklist
 
-## 📞 Emergency Contacts
-
-If you suspect a security breach:
-1. Immediately notify repository administrator
-2. Revoke potentially compromised credentials
-3. Document the incident for post-mortem analysis
-
----
-
-**Last Updated**: June 8, 2026
-**Version**: 1.1.0
+- Review GitHub secrets and environment protections quarterly.
+- Enforce least privilege for `FUNCTIONS_REPO_PAT` and Firebase deployment credentials.
+- Rotate tokens/certificates after exposure or staff/device changes.
+- Test Firestore rules and Functions with emulators/private tests.
+- Verify App Check and API-key restrictions in Firebase/Google Cloud consoles.
+- Review CodeQL, Dependabot, npm audit, Flutter/Dart advisories, and App Store privacy disclosures.
+- Keep [PUBLIC_REPO_HARDENING.md](PUBLIC_REPO_HARDENING.md) and [SOLUTION_HARDENING_MATRIX.md](SOLUTION_HARDENING_MATRIX.md) current.
