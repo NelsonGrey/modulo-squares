@@ -222,15 +222,15 @@ void main() {
       expect(find.text('Short ads play between levels'), findsOneWidget);
     });
 
-    testWidgets('Remove Ads button is shown when ads are not removed',
+    testWidgets('Unlock Premium button is shown when ads are not removed',
         (tester) async {
       await _pumpGame(tester);
       await _openSettings(tester);
 
-      expect(find.textContaining('Remove Ads'), findsOneWidget);
+      expect(find.textContaining('Unlock Premium'), findsOneWidget);
     });
 
-    testWidgets('Remove Ads button includes the product price', (tester) async {
+    testWidgets('Unlock Premium button includes the product price', (tester) async {
       await _pumpGame(tester);
       await _openSettings(tester);
 
@@ -246,7 +246,7 @@ void main() {
       expect(find.text('Restore Purchases'), findsOneWidget);
     });
 
-    testWidgets('shows "Ad-Free" and hides Remove Ads when ads are removed',
+    testWidgets('shows "Ad-Free" and hides Unlock Premium when ads are removed',
         (tester) async {
       // Simulate ads already removed via prefs (PurchaseService.createForTesting
       // respects SharedPreferences).
@@ -266,7 +266,7 @@ void main() {
         find.text('Enjoy the game without interruptions'),
         findsOneWidget,
       );
-      expect(find.textContaining('Remove Ads'), findsNothing);
+      expect(find.textContaining('Unlock Premium'), findsNothing);
     });
 
     testWidgets('Restore Purchases button shown even when ads are removed',
