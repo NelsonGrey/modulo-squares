@@ -160,7 +160,7 @@ mixin GameDialogs {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Remove Ads'),
+          title: const Text('Unlock Premium'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -173,7 +173,7 @@ mixin GameDialogs {
               else
                 ListTile(
                   leading: const Icon(Icons.block, color: Colors.orange),
-                  title: const Text('Remove Ads'),
+                  title: const Text('Unlock Premium'),
                   subtitle: Text(
                     'Price: ${purchaseService.getProductPrice('remove_ads')}',
                   ),

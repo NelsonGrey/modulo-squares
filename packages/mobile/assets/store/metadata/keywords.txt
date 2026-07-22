@@ -1,1 +1,1 @@
-modulo,puzzle,math,numbers,brain,logic,strategy,grid,tiles,mathematical,thinking,game,free,arcade
+modulo,divisibility,math,puzzle,numbers,arcade,logic,brain,strategy,falling,score
