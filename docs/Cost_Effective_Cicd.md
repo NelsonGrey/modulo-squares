@@ -1,5 +1,7 @@
 # Cost-Effective CI/CD Testing Strategy
 
+> **Historical strategy (reviewed 2026-07-20):** Pricing and runner assumptions can change. Normal CI now uses GitHub-hosted runners; only the optional HADES device-install workflow is self-hosted.
+
 This guide explains how to test and develop your CI/CD pipelines without consuming expensive GitHub Actions minutes.
 
 ## 🎯 Problem

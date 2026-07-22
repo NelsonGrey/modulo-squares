@@ -1,7 +1,8 @@
 # Modulo Squares Proposed Icon Set - Clean Landing Centered
 
-This folder contains a non-destructive proposed icon set for the selected
-Modulo Squares icon concept. No current production icon files were overwritten.
+This folder contains the source and generated set for the clean-landing-centered
+concept. The set was promoted to production on 2026-07-07; this directory remains
+the reproducible source/reference copy.
 
 ## Concept
 
@@ -31,7 +32,7 @@ The iOS 1024px marketing icon is RGB/no-alpha and sized for App Store review.
 
 ## Replacement Targets
 
-Only copy these files into production paths after explicit approval:
+These were the production replacement targets used after approval:
 
 - `ios/AppIcon.appiconset/*` -> `packages/mobile/ios/Runner/Assets.xcassets/AppIcon.appiconset/`
 - `android/res/*` -> `packages/mobile/android/app/src/main/res/`

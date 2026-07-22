@@ -1,5 +1,7 @@
 # CI/CD Workstreams (modulo-squares)
 
+> **Historical workstream (reviewed 2026-07-20):** Workflow names, runner assumptions, and open tasks below predate the current GitHub-hosted `.github/workflows/ci-cd.yml`. Use [CI/CD Setup](Ci_Cd_Setup.md).
+
 ## Requirements
 - iOS distribution is zero-touch:
   - App Store Connect auth via API key secrets.
@@ -8,9 +10,10 @@
 - Branch/environment mapping is consistent with repo environments.
 - Self-hosted runners are resilient (auto-restart + watchdog).
 
-## Current state
-- iOS distribution workflow: [modulo-squares/.github/workflows/ios-cicd-release.yml](../.github/workflows/ios-cicd-release.yml)
-- Token refresh health check LaunchAgent: [modulo-squares/com.modulo-squares.runner-token-refresh.plist](../com.modulo-squares.runner-token-refresh.plist)
+## Historical state described by this file
+- The former `ios-cicd-release.yml` workflow is no longer tracked.
+- The former runner token-refresh LaunchAgent is no longer tracked.
+- Current workflow: [CI/CD Setup](Ci_Cd_Setup.md).
 
 ## Workstreams
 

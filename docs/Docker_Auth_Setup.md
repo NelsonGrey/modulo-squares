@@ -1,5 +1,7 @@
 # Docker Hub Authentication Setup
 
+> **Tooling reference (reviewed 2026-07-20):** Docker runner scripts remain in the repository, but the active application pipeline does not build or publish application Docker images.
+
 This guide explains how to configure Docker Hub authentication using Personal Access Tokens (PATs) instead of stored credentials, which avoids macOS keychain issues.
 
 ## 🔑 Create Docker Hub Personal Access Token

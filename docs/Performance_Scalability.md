@@ -1,5 +1,7 @@
 # Modulo Squares - Performance & Scalability Guide
 
+> **Planning/reference material (reviewed 2026-07-20):** Examples below include legacy APIs and proposed controls. Validate current behavior against [System Architecture](System_Architecture.md) and the private Functions repo before implementation.
+
 ## Overview
 
 This document covers performance optimization strategies, scalability considerations, and monitoring for Modulo Squares across all platforms.
@@ -764,7 +766,7 @@ artillery run load-test.yml
 
 ## Related Documentation
 
-- [System Architecture](SYSTEM_ARCHITECTURE.md)
-- [Database Schema](DATABASE_SCHEMA.md)
-- [CI/CD Setup](CI_CD_SETUP.md)
-- [Deployment Guide](DEPLOYMENT_GUIDE.md)
+- [System Architecture](System_Architecture.md)
+- [Database Schema](Database_Schema.md)
+- [CI/CD Setup](Ci_Cd_Setup.md)
+- [Go-Live Runbook](GO_LIVE_RUNBOOK.md)

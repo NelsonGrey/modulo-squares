@@ -1,5 +1,7 @@
 # iOS Release Signing Configuration
 
+> **Operational reference (reviewed 2026-07-20):** The active CI/Fastlane files are authoritative. Signing assets and App Store Connect state must be reverified externally.
+
 > **Updated**: This project now uses automatic signing with App Store Connect API authentication (non-interactive workflow).
 
 ## Overview
@@ -8,7 +10,7 @@ This project uses automatic signing and App Store Connect API key authentication
 
 ## Quick Setup
 
-1. **Follow the setup guide**: [iOS Certificate Setup Guide](./IOS_CERTIFICATE_SETUP.md)
+1. **Follow the setup guide**: [iOS Certificate Setup Guide](./Ios_Certificate_Setup.md)
 2. **Run the setup script**: `./scripts/ios-local-dev.sh sync`
 3. **Configure GitHub secrets** as documented in the setup guide
 4. **Test the build** using GitHub Actions

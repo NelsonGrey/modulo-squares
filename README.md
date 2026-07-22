@@ -1,470 +1,155 @@
 # Modulo Squares
 
-A Firebase-powered puzzle game built with Flutter, featuring in-app purchases, ads, and cross-platform support.
+Modulo Squares is a falling-number arcade puzzle built with Flutter and Firebase. Guide each number into one of ten divisor buckets before it lands, build combos, fill the progress grid, and chase a persistent local high score.
 
-## 🎮 Game Concept
+The repository contains the mobile app, the public React website, shared Firebase utilities, Firestore rules, release automation, and project documentation. Server-side Cloud Functions live in a separate private companion repository and are checked out by CI only when Functions are deployed.
 
-Modulo Squares is a strategic puzzle game played on a 4x4 grid where players move numbered tiles to clear the board using modulo arithmetic. The core mechanic involves moving tiles into adjacent squares - when a tile's value is less than or equal to the target square's value, a modulo operation occurs, potentially clearing tiles and advancing the game.
+## Current status
 
-**Objective:** Clear the entire board of numbers to win!
+- Mobile version: `1.0.0+2`
+- Primary mobile platforms: iOS and Android; iOS is the current release focus
+- Public website: [modulosquares.com](https://modulosquares.com)
+- Active branch workflow: `.github/workflows/ci-cd.yml`
+- Toolchain used by CI: Flutter `3.44.2`, Dart `>=3.7.0`, Node.js `20`
+- Current gameplay entry point: `GameScreen` -> `FallingModuloGameScreen`
+- App Store state: the last repository-confirmed state is a corrected production build on TestFlight awaiting manual App Store resubmission; verify App Store Connect before treating that status as current
 
-## 🏗️ Project Structure
+See [Current State](docs/Current_State.md), [Documentation Index](docs/Documentation_Index.md), and [Go-Live Runbook](docs/GO_LIVE_RUNBOOK.md).
 
-```
-modulo-squares/
+## Repository layout
+
+```text
+.
+├── .github/
+│   ├── actions/                 # Reusable setup actions
+│   └── workflows/               # Active and archived GitHub Actions workflows
+├── docs/                        # Product, engineering, operations, and release docs
+├── icons/                       # Current icon, proposals, and archived icon assets
+├── monitoring/                  # Lightweight runner/deployment status server
 ├── packages/
-│   ├── app/                    # Main Flutter application
-│   │   ├── lib/               # Flutter source code
-│   │   │   ├── core/          # Application core (services, config)
-│   │   │   ├── features/      # Feature-based architecture
-│   │   │   │   ├── auth/      # Authentication feature
-│   │   │   │   ├── game/      # Game feature
-│   │   │   │   └── leaderboard/# Leaderboard feature
-│   │   │   ├── shared/        # Shared components
-│   │   │   ├── l10n/          # Localization
-│   │   │   └── main.dart      # App entry point
-│   │   ├── android/           # Android platform code
-│   │   ├── ios/               # iOS platform code
-│   │   ├── web/               # Web platform code
-│   │   └── test/              # Unit and widget tests
-│   └── shared/               # Shared utilities (future use)
-├── firebase.json             # Firebase configuration
-├── .firebaserc              # Firebase project configuration
-├── analysis_options.yaml    # Dart/Flutter linting rules
-└── pubspec.yaml             # Flutter dependencies
+│   ├── firebase-utils/          # Shared TypeScript Firebase helpers
+│   ├── firestore-rules/         # Firestore security rules
+│   ├── mobile/                  # Flutter application and tests
+│   ├── shared/                  # Reserved shared package area
+│   └── web/                     # React/Vite marketing site and public leaderboard
+├── scripts/                     # Environment, signing, deployment, and runner helpers
+├── shared-ios-setup/            # Reusable Fastlane/Match reference configuration
+├── firebase*.json               # Per-environment Firebase configuration
+└── package.json                 # Root orchestration scripts
 ```
 
-## 🚀 Features
+`packages/functions/` is intentionally ignored. For a manual Functions deployment, clone the private `NelsonGrey/modulo-squares-functions` repository into that exact path. CI performs this checkout with `FUNCTIONS_REPO_PAT`.
 
-- **Cross-Platform**: iOS, Android, and Web support
-- **Firebase Integration**: Authentication, Firestore, Analytics
-- **Monetization**: AdMob ads and in-app purchases
-- **Game Mechanics**: Modulo arithmetic, special tiles, progressive difficulty
-- **Leaderboards**: Global high scores with Firebase
-- **Offline Play**: Local gameplay with cloud sync
-- **Privacy Compliant**: App Tracking Transparency, consent management
+## Product behavior
 
-## 🐳 Containerization & Docker
+The native app requires Firebase initialization and authentication. Players sign in with Apple, Google, or email/password, choose a unique gamertag, and then enter falling-mode gameplay. The active game includes:
 
-The project includes Docker containerization for web and API components, enabling consistent deployments across environments.
+- ten lanes containing shuffled buckets `1` through `9` plus one dead bucket `0`;
+- automatic falling with left/right controls and a 500 ms spawn pause;
+- a success when `fallingValue % bucketValue == 0`;
+- score, combo, high-score, level, and progress-grid feedback;
+- optional divisibility cues, persisted locally;
+- interstitial ads and a non-consumable `remove_ads` purchase;
+- global, daily, and weekly leaderboard infrastructure backed by callable Functions (the public React leaderboard reads it, but current falling gameplay does not submit or open it);
+- sign-out, account linking, purchase restoration, and permanent account deletion.
 
-### Docker Setup
+Older board-clearing classes and tests remain in the tree as legacy/reference code. They are not the app's current gameplay entry point.
 
-**Prerequisites:**
-- Docker Desktop or Docker Engine
-- Docker Hub account (for image publishing)
+## Web application
 
-**Quick Start:**
-```bash
-# Set up Docker Hub authentication
-./setup-docker-auth.sh
+`packages/web` is a React 19, TypeScript, Vite 8, and Tailwind CSS 4 site. It provides:
 
-# Build and run web app locally
-cd packages/web
-docker build -t modulo-squares-web .
-docker run -p 8080:80 modulo-squares-web
+- `/`, `/how-it-works`, `/download`, and `/pricing` marketing routes;
+- a live Firestore-backed `/leaderboard` route;
+- `/privacy`, `/terms`, `/cookies`, and `/support` policy/support routes;
+- route-level metadata, `robots.txt`, and `sitemap.xml`;
+- Google Tag Manager/GA4 and Google AdSense under consent controls.
 
-# Build and run API locally
-cd packages/functions
-docker build -t modulo-squares-api .
-docker run -p 3000:3000 modulo-squares-api
-```
+The Flutter web target still exists for compatibility, but Firebase Hosting deploys the React build from `packages/web/dist`.
 
-### Docker Images
+## Local setup
 
-- **`packages/web/Dockerfile`**: Multi-stage build for the Flutter web app
-  - Build stage: Compiles Flutter web assets
-  - Runtime stage: Nginx serving static files with production optimizations
-- **`packages/functions/Dockerfile`**: Node.js container for Firebase Functions API
-  - Includes Express server wrapper for containerized deployment
+Prerequisites:
 
-### CI/CD with Docker
-
-The GitHub Actions pipeline automatically:
-- Builds Docker images for web and API components
-- Pushes images to Docker Hub with version tags
-- Deploys containers to production environments
-
-**Environment Variables Required:**
-- `DOCKERHUB_USERNAME`: Your Docker Hub username
-- `DOCKERHUB_TOKEN`: Docker Hub Personal Access Token
-
-For detailed Docker authentication setup, see [DOCKER_AUTH_SETUP.md](docs/DOCKER_AUTH_SETUP.md).
-
-### Local Development with Docker
-
-```bash
-# Run full stack with Docker Compose (future enhancement)
-# docker-compose up
-
-# Or run individual services
-docker run -d --name web-app -p 8080:80 modulo-squares-web:latest
-docker run -d --name api-server -p 3000:3000 modulo-squares-api:latest
-```
-
-## 🛠️ Tech Stack
-
-- **Framework**: Flutter 3.32.0
-- **Language**: Dart
-- **Backend**: Firebase (Auth, Firestore, Analytics, Functions)
-- **Ads**: Google AdMob with consent management
-- **Purchases**: In-app purchases for ad removal
-- **State Management**: Provider pattern with feature-based architecture
-- **Architecture**: Clean Architecture with dependency injection
-
-## Development
-
-### Prerequisites
-- Flutter 3.32.0+
-- Node.js 18+
+- Flutter `3.44.2` recommended; Dart SDK `>=3.7.0 <4.0.0`
+- Node.js `20` (`.nvmrc` currently pins `20.3.2`)
 - Firebase CLI
-- Android Studio (for Android development)
-- Xcode (for iOS development)
+- Xcode and CocoaPods for iOS work
+- Android Studio/JDK for Android work
+- Ruby `3.2.2` for the mobile Fastlane setup
 
-### Setup
 ```bash
-# Install root dependencies
 npm install
+npm --prefix packages/firebase-utils install
 
-# Install functions dependencies
-npm run install:all
-
-# Login to Firebase
-firebase login
-```
-
-### Development Commands
-```bash
-# Run Flutter app
-cd packages/mobile && flutter run
-
-# Run functions locally
-firebase emulators:start
-
-# Test Flutter app
-npm run test:app
-
-# Deploy all services
-npm run deploy:all
-```
-
-#### iOS Development
-For iOS development with proper certificate management:
-
-```bash
-# Local iOS development (avoids interactive signing dialogs)
-./scripts/ios-local-dev.sh help    # Show available commands
-./scripts/ios-local-dev.sh sync    # Sync certificates (first time)
-./scripts/ios-local-dev.sh build   # Build debug version
-./scripts/ios-local-dev.sh test    # Run tests and build
-./scripts/ios-local-dev.sh beta    # Build and upload to TestFlight
-```
-
-See [iOS Signing Documentation](docs/IOS_SIGNING.md) for detailed setup instructions.
-
-### Building
-```bash
-# Build Android APK
-npm run build:app
-
-# Build web app
-cd packages/mobile && flutter build web
-```
-
-## 📦 Packages
-
-### App (`packages/mobile/`)
-The main Flutter application with cross-platform support.
-
-**Key Components:**
-- **Core Services**: AdMob, Analytics, Leaderboard, Purchase, Asset management
-- **Features**: Authentication (Google/Apple/Anonymous), Game logic, Leaderboards
-- **UI**: Game screen, Login screen, Leaderboard screen with responsive design
-- **Platform Support**: iOS, Android, Web with platform-specific optimizations
-
-### Shared (`packages/shared/`)
-Shared utilities and common code (currently minimal, designed for future expansion).
-
-## 🏗️ Architecture
-
-This project follows a **feature-based clean architecture** with clear separation of concerns:
-
-```
-lib/
-├── core/                          # Application-wide services and configuration
-│   ├── config/                    # App configuration (AdMob, Firebase)
-│   ├── di/                        # Dependency injection setup
-│   └── services/                  # Core services (ads, analytics, leaderboard)
-├── features/                      # Feature-based architecture
-│   ├── auth/                      # Authentication feature
-│   │   ├── data/                  # Data layer (repositories, datasources)
-│   │   ├── domain/                # Domain layer (entities, usecases)
-│   │   ├── login_screen.dart      # UI layer
-│   │   └── profile_screen.dart
-│   ├── game/                      # Game feature
-│   │   ├── game_screen.dart       # Main game UI
-│   │   ├── game_state.dart        # Game state management
-│   │   ├── providers/             # State providers
-│   │   └── widgets/               # Game-specific widgets
-│   └── leaderboard/               # Leaderboard feature
-│       └── leaderboard_screen.dart
-├── shared/                        # Shared components across features
-│   ├── models/                    # Common data models
-│   └── widgets/                   # Reusable UI components
-├── l10n/                          # Localization files
-└── main.dart                      # App entry point
-```
-
-### Architecture Principles
-
-- **Feature-based**: Code organized by business features rather than technical layers
-- **Clean Architecture**: Separation between data, domain, and presentation layers
-- **Dependency Injection**: Services injected using GetIt for testability
-- **Immutable Models**: Game state managed with immutable data structures
-- **Platform Agnostic**: Core logic separated from platform-specific code
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Flutter 3.32.0+
-- Dart SDK
-- Android Studio (for Android development)
-- Xcode 15+ (for iOS development)
-- Firebase CLI (for backend deployment)
-
-### Firebase Setup
-
-1. **Create Firebase Project**: Visit [console.firebase.google.com](https://console.firebase.google.com)
-2. **Enable Services**:
-   - Authentication (Anonymous, Google, Apple sign-in)
-   - Firestore Database
-   - Firebase Analytics
-3. **Add Apps**: Register Android and iOS apps in Firebase console
-4. **Download Config Files**:
-   - `google-services.json` → `packages/mobile/android/app/`
-   - `GoogleService-Info.plist` → `packages/mobile/ios/Runner/`
-
-### Installation
-
-```bash
-# Clone the repository
-git clone <repository-url>
-cd modulo-squares
-
-# Install Flutter dependencies
-cd packages/app
+cd packages/mobile
 flutter pub get
+cd ../..
 
-# Run the app
-flutter run
+npm run dev:web
 ```
 
-### Development Commands
+The root `install:all` command installs root and Firebase utility dependencies. Flutter dependencies must be fetched separately.
+
+Environment-specific native Firebase files are already represented by `.dev`, `.staging`, and `.prod` variants. Switch them with:
 
 ```bash
-# Run on specific platform
-flutter run -d ios        # iOS simulator/device
-flutter run -d android    # Android emulator/device
-flutter run -d chrome     # Web browser
+npm run config:dev
+npm run config:staging
+npm run config:prod
+```
 
-# Run tests
-flutter test
+## Build and validation
 
-# Analyze code
+```bash
+# Flutter
+cd packages/mobile
 flutter analyze
-
-# Format code
-flutter format .
-```
-
-## 🧪 Testing
-
-```bash
-# Run all tests
-flutter test
-
-# Run with coverage
 flutter test --coverage
+flutter build ios --release --no-codesign
 
-# Run specific test file
-flutter test test/models/game_board_test.dart
+# Web
+cd packages/web
+npm run lint
+npm run build
 
-# Run integration tests (if available)
-flutter test integration_test
+# Shared Firebase utilities
+cd packages/firebase-utils
+npm run lint
+npm run check
+npm run build
 ```
 
-## 📱 Building for Production
+From the repository root, `npm run lint`, `npm run check`, `npm run build:web`, and `npm run test:app` wrap the corresponding package commands.
 
-### Android
-```bash
-# Build APK
-flutter build apk --release
+## CI/CD
 
-# Build App Bundle (recommended)
-flutter build appbundle --release
-```
+The active pipeline runs for pushes to `develop`, `staging`, and `main`, for pull requests targeting those branches, and by manual dispatch.
 
-### iOS
-```bash
-# Build for iOS
-flutter build ios --release
+- `quality-check`: Flutter analyze and test on Ubuntu
+- `build-web`: React production build on Ubuntu
+- `build-ios`: TestFlight build/upload on macOS for deployable `staging` and `main` runs
+- `submit-app-store`: manual production-only App Store submission gate
+- `deploy-web`: Firebase Hosting deployment
+- `deploy-functions`: private Functions checkout and Firebase deployment
+- `deployment-summary`: consolidated result summary
 
-# Open Xcode for distribution
-open ios/Runner.xcworkspace
-```
+The manual `install-ios-on-hades.yml` workflow is the only intentional self-hosted path. Files under `.github/workflows/archive/` are historical and are not active pipelines.
 
-### Web
-```bash
-# Build for web
-flutter build web
-```
+## Firebase environments
 
-## 🚀 Deployment
+| Environment | Project | Branch |
+|---|---|---|
+| Development | `modulo-squares-dev` | `develop` |
+| Staging | `modulo-squares-staging` | `staging` |
+| Production | `modulo-squares-prod` | `main` |
 
-The project uses GitHub Actions for CI/CD with three Firebase environments and Docker-based container deployments:
+Firestore client writes are limited to each signed-in user's `users`, `user_profiles`, and `game_stats` documents plus initial gamertag claims. Leaderboards, purchases, and entitlements are server-authoritative.
 
-- **DEV**: `modulo-squares-dev` (develop branch)
-- **STAGING**: `modulo-squares-staging` (staging branch)
-- **PROD**: `modulo-squares-prod` (main branch)
+## Documentation
 
-### Environment URLs
-- **DEV**: https://modulo-squares-dev.web.app
-- **STAGING**: https://modulo-squares-staging.web.app
-- **PROD**: https://modulo-squares-prod.web.app
-
-### Automatic Deployments
-- Push to `develop` → Deploys to DEV (Docker containers + Firebase)
-- Push to `staging` → Deploys to STAGING (Docker containers + Firebase)
-- Push to `main` → Deploys to PROD + creates release (Docker containers + Firebase + mobile builds)
-
-### Containerized Components
-- **Web App**: Docker container with Nginx serving Flutter web build
-- **API Functions**: Docker container with Node.js/Express wrapping Firebase Functions
-- **Mobile Apps**: Native Android/iOS builds via Flutter
-
-### Manual Deployments
-```bash
-# Deploy to development
-./scripts/deploy.sh dev
-
-# Deploy to staging
-./scripts/deploy.sh staging
-
-# Deploy to production
-./scripts/deploy.sh prod
-```
-
-For detailed CI/CD setup instructions, see [CI_CD_SETUP.md](CI_CD_SETUP.md).
-
-### Mobile App Releases
-When pushing to `main`, the CI pipeline automatically builds and creates GitHub releases with:
-- Android APK and AAB files
-- iOS build artifacts
-
-## 📊 Analytics & Monitoring
-
-The app includes comprehensive Firebase Analytics tracking:
-- User engagement and retention metrics
-- Game progression and difficulty analysis
-- Ad performance monitoring
-- Crash reporting and error tracking
-
-## 🔮 Future Enhancements
-
-- Enhanced animations and visual effects
-- Sound effects and haptic feedback
-- Daily challenges and tournaments
-- Social features (friend leaderboards, achievements)
-- Cloud save functionality
-- Advanced analytics and A/B testing
-- More special tile types and power-ups
-
-## 🤝 Contributing
-
-External code contributions are currently closed. This repository is public for transparency and operational needs, but development is maintained by the project owner.
-
-If you want to collaborate, open an issue describing your proposal first.
-
-## 📄 License
-
-All rights reserved. See the `LICENSE` file for permitted use.
-
----
-
-**Project by:** Mark Nelson
-
-## Getting Started
-
-To get a local copy up and running, follow these simple steps.
-
-### Prerequisites
-
-*   Flutter SDK: Install Flutter
-*   An editor like VS Code or Android Studio with Flutter plugins.
-*   Firebase project: Set up a Firebase project for authentication, Firestore, and Analytics.
-
-### Firebase Setup
-
-1.  Create a Firebase project at [https://console.firebase.google.com/](https://console.firebase.google.com/)
-2.  Enable Authentication with Anonymous sign-in
-3.  Enable Firestore Database
-4.  Enable Google Analytics
-5.  Add Android and iOS apps to your Firebase project
-6.  Download and place the configuration files:
-    - `google-services.json` in `android/app/`
-    - `GoogleService-Info.plist` in `ios/Runner/`
-
-### Installation
-
-1.  Clone the repo:
-    ```sh
-    git clone <your-repository-url>
-    ```
-2.  Navigate to the project directory:
-    ```sh
-    cd modulo-squares
-    ```
-3.  Install dependencies:
-    ```sh
-    flutter pub get
-    ```
-4.  Run the app:
-    ```sh
-    flutter run
-    ```
-
-### Testing
-
-Run the test suite:
-```sh
-flutter test
-```
-
-Run with code coverage:
-```sh
-flutter test --coverage
-```
-
-## Future Enhancements
-
-*   Enhanced animations for tile movements and value changes.
-*   Sound effects and haptic feedback.
-*   More special tile types and power-ups.
-*   Daily challenges and tournaments.
-*   Social features (friend leaderboards, achievements).
-*   Cloud save functionality for cross-device progress.
-*   Advanced analytics and player behavior insights.
-*   A/B testing framework for game balance.
-*   Offline mode with local leaderboards.
-
-## Contributing
-
-External code contributions are currently closed. For partnership or licensed use inquiries, open an issue and include your intended use.
+Start at [docs/Documentation_Index.md](docs/Documentation_Index.md). It labels each document as current, operational reference, planning, or historical so that old implementation proposals are not mistaken for live behavior.
 
 ## License
 
-All rights reserved. See the `LICENSE` file for terms.
-
----
-
-Project by: Mark Nelson
+See [LICENSE](LICENSE).

@@ -1,5 +1,7 @@
 # 🚀 Zero-Touch DevOps - Quick Reference for AI Agents
 
+> **Historical Wishlist Wizard template (reviewed 2026-07-20):** Do not treat these commands or filenames as current Modulo Squares instructions. Use [CI/CD Setup](Ci_Cd_Setup.md).
+
 ## 🎯 Mission Brief
 Implement the Wishlist Wizard zero-touch DevOps automation suite on a new project. This eliminates manual credential management and provides automated CI/CD, monitoring, and deployment.
 

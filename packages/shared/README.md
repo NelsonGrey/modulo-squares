@@ -1,9 +1,5 @@
-# Shared Package
+# Shared package area
 
-This package contains shared code, types, and utilities used across the monorepo packages.
+**Status**: reserved; no shared runtime implementation is currently stored here.
 
-## Contents
-
-- `types/` - TypeScript type definitions
-- `utils/` - Utility functions
-- `constants/` - Shared constants
+Reusable TypeScript Firebase helpers live in `packages/firebase-utils`. Flutter code is currently maintained inside `packages/mobile`.

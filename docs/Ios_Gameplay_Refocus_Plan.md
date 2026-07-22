@@ -1,5 +1,7 @@
 # iOS-First Gameplay Refocus Plan
 
+> **Implemented planning history (reviewed 2026-07-20):** The falling-mode refocus is now the live `GameScreen` path. Use [Game Mechanics](Game_Mechanics.md) for current rules; unchecked items below remain proposals unless verified in code.
+
 Version: 1.0  
 Date: 2026-03-07  
 Scope: iOS gameplay quality and retention only (Android release path deferred)

@@ -1,5 +1,7 @@
 # iOS CI/CD Integration Guide
 
+> **Reusable reference (reviewed 2026-07-20):** Generic templates below may differ from Modulo Squares. The active implementation is `.github/workflows/ci-cd.yml` plus `packages/mobile/ios/fastlane/Fastfile`.
+
 > **Automation Template**: Complete CI/CD setup for iOS projects with certificate management, testing, and distribution.
 
 ## 🎯 Overview
@@ -382,6 +384,6 @@ jobs:
 ---
 
 **📖 Related Documentation:**
-- [iOS Certificate Setup](./IOS_CERTIFICATE_SETUP.md)
-- [macOS Runner Setup Guide](./MACOS_RUNNER_SETUP.md)</content>
-<parameter name="filePath">/Users/marknelson/Circus/Repositories/wishlist-wizard/docs/IOS_CICD_INTEGRATION_GUIDE.md
+- [iOS Certificate Setup](./Ios_Certificate_Setup.md)
+- [macOS Runner Setup Guide](./Macos_Runner_Setup.md)</content>
+<parameter name="filePath">/Users/marknelson/Circus/Repositories/wishlist-wizard/docs/Ios_Cicd_Integration_Guide.md

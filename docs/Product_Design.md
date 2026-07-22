@@ -1,5 +1,7 @@
 # Modulo Squares - Product Design & Feature Specifications
 
+> **Product history (reviewed 2026-07-20):** The shipping game is the falling divisor-bucket mode, not the board-clearing/50-level design described in parts of this document. Use [Game Mechanics](Game_Mechanics.md) for current behavior.
+
 **Version**: 1.0  
 **Last Updated**: February 12, 2026  
 **Status**: ✅ SHIPPED & OPERATIONAL  
@@ -362,7 +364,7 @@ User triggers optional reward (e.g., Daily Streak Bonus)
    - Exclusive challenges
    - Early access to new levels
 
-**Revenue Target**: 85% ads, 12% IAP ad removal, 3% premium (see BUSINESS_REQUIREMENTS.md)
+**Revenue Target**: 85% ads, 12% IAP ad removal, 3% premium (see Business_Requirements.md)
 
 ---
 

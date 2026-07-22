@@ -1,21 +1,28 @@
-# modulo
+# Modulo Squares mobile app
 
-A new Flutter project.
+Flutter application for the falling-number Modulo Squares game.
 
-## Test iOS Distribution
+## Requirements
 
-Testing automated iOS distribution workflow.
+- Flutter `3.44.2` recommended by CI
+- Dart `>=3.7.0 <4.0.0`
+- Xcode/CocoaPods for iOS
+- Android Studio/JDK for Android
+- Ruby `3.2.2` for Fastlane
 
-## Getting Started
+## Commands
 
-This project is a starting point for a Flutter application.
+```bash
+flutter pub get
+flutter analyze
+flutter test --coverage
+flutter run
+flutter build ios --release --no-codesign
+flutter build appbundle --release
+```
 
-A few resources to get you started if this is your first Flutter project:
+Run `../../scripts/switch-mobile-configs.sh dev|staging|prod` before an environment-specific native build.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+`lib/features/game/game_screen.dart` is the gameplay entry point and delegates to `FallingModuloGameScreen`. The older `GameBoard`/`GameProvider` implementation remains as legacy/reference code and tests.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-# Test commit to trigger CI/CD pipeline
+See [the root README](../../README.md), [Game Mechanics](../../docs/Game_Mechanics.md), and [Testing](../../docs/Testing.md).

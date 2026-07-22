@@ -1,5 +1,7 @@
 # Modulo Squares - Social Media Execution Plan
 
+> **Marketing plan (reviewed 2026-07-20):** Launch-state text below reflects its 2026-06-22 planning date. Verify App Store availability and current calls to action before publishing scheduled copy.
+
 **Version**: 1.0
 **Date**: 2026-06-22
 **Owner**: Mark Nelson
@@ -325,4 +327,3 @@ Weekly review questions:
 - [ ] One Reddit launch post is selected and subreddit rules are checked.
 - [ ] The website share copy does not claim Android availability.
 - [ ] A metrics tracker is ready before the first launch post.
-
