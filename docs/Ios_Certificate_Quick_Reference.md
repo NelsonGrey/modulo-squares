@@ -1,5 +1,7 @@
 # iOS Certificate Setup - Quick Reference
 
+> **Operational reference (reviewed 2026-07-20):** Match/App Store Connect state is external and time-sensitive. Compare commands with the active Fastfile/workflow before use.
+
 > **Cheatsheet**: Fast setup commands and essential configurations for new iOS projects.
 
 ## 🚀 Quick Setup Commands
@@ -168,9 +170,9 @@ For each new project, update these values:
 - GitHub hosted: ~$0.08/minute
 - Self-hosted: FREE (your hardware)
 
-See [macOS Runner Setup](./MACOS_RUNNER_SETUP.md) for details.
+See [macOS Runner Setup](./Macos_Runner_Setup.md) for details.
 
 ---
 
-**📖 Full Guide**: [iOS Certificate Setup](./IOS_CERTIFICATE_SETUP.md)</content>
-<parameter name="filePath">/Users/marknelson/Circus/Repositories/wishlist-wizard/docs/IOS_CERTIFICATE_QUICK_REFERENCE.md
+**📖 Full Guide**: [iOS Certificate Setup](./Ios_Certificate_Setup.md)</content>
+<parameter name="filePath">/Users/marknelson/Circus/Repositories/wishlist-wizard/docs/Ios_Certificate_Quick_Reference.md

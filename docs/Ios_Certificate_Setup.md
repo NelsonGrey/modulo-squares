@@ -1,5 +1,7 @@
 # iOS Certificate Setup Guide
 
+> **Operational reference (reviewed 2026-07-20):** Reverify certificate, profile, Match repository, and App Store Connect API-key state before every release.
+
 This guide explains how to set up iOS certificates and provisioning profiles for the modulo-squares Flutter app using Fastlane Match.
 
 ## Overview

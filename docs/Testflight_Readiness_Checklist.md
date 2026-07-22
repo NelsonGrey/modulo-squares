@@ -1,5 +1,7 @@
 # TestFlight Readiness Checklist
 
+> **Operational reference (reviewed 2026-07-20):** Match this checklist to app version `1.0.0+2`, Flutter `3.44.2`, and the active Fastlane/workflow files before each upload.
+
 Use this checklist before every TestFlight upload. Work top-to-bottom; do not
 submit until all items are checked.
 
@@ -46,8 +48,8 @@ flutter build ios --simulator     # smoke-build, must exit 0
 - [ ] Profile covers bundle ID `com.modulosquares.app.ios`
 - [ ] `CODE_SIGN_STYLE = Manual` configured in Release scheme
 
-Reference: [IOS_CERTIFICATE_SETUP.md](IOS_CERTIFICATE_SETUP.md),
-[IOS_SIGNING.md](IOS_SIGNING.md)
+Reference: [Ios_Certificate_Setup.md](Ios_Certificate_Setup.md),
+[Ios_Signing.md](Ios_Signing.md)
 
 ---
 
@@ -107,7 +109,7 @@ Authentication is account-required in the active production flow.
   iPhone SE (small) and iPhone Pro Max (large) form factors
 - [ ] App icon matches 1024×1024 asset (no gradient-only icon per Apple HIG)
 
-Reference: [STORE_ASSETS.md](STORE_ASSETS.md)
+Reference: [Store_Assets.md](Store_Assets.md)
 
 ---
 

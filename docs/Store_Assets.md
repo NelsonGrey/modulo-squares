@@ -1,108 +1,68 @@
-# Store Assets Preparation Guide
+# Store Assets
 
-## App Icons
+**Updated**: 2026-07-20
 
-### Android Icons
-Create the following icon sizes and place them in `android/app/src/main/res/`:
-- `mipmap-mdpi/ic_launcher.png` (48x48)
-- `mipmap-hdpi/ic_launcher.png` (72x72)
-- `mipmap-xhdpi/ic_launcher.png` (96x96)
-- `mipmap-xxhdpi/ic_launcher.png` (144x144)
-- `mipmap-xxxhdpi/ic_launcher.png` (192x192)
+Store-console requirements change. Verify current Apple/Google requirements at submission time; this file records repository sources and current product messaging.
 
-### iOS Icons
-Icons are generated automatically from `ios/Runner/Assets.xcassets/AppIcon.appiconset/` when you provide a 1024x1024 PNG.
+## Canonical sources
 
-### Web/Icon
-- `web/icons/Icon-192.png` (192x192)
-- `web/icons/Icon-512.png` (512x512)
-- `web/icons/Icon-maskable-192.png` (192x192)
-- `web/icons/Icon-maskable-512.png` (512x512)
+| Asset | Location |
+|---|---|
+| Master icon | `icons/icon-modulo-squares.png` |
+| Mobile launcher source | `packages/mobile/assets/icons/icon.png` |
+| iOS icon set | `packages/mobile/ios/Runner/Assets.xcassets/AppIcon.appiconset` |
+| Android icons | `packages/mobile/android/app/src/main/res/mipmap-*` |
+| React web icons | `packages/web/public` |
+| Flutter web icons | `packages/mobile/web` |
+| Store description | `packages/mobile/assets/store/metadata/description.txt` |
+| Short description | `packages/mobile/assets/store/metadata/short_description.txt` |
+| Keywords | `packages/mobile/assets/store/metadata/keywords.txt` |
+| iOS screenshots | `packages/mobile/assets/store/screenshots/ios-6.5` |
 
-## Screenshots
+The clean-landing-centered icon was promoted to production on 2026-07-07. The prior icon set is archived under `icons/archive/2026-07-08-previous-icon`.
 
-### Required Screenshots
+## Current product story
 
-#### Android (Google Play)
-- **Phone**: 8 screenshots (1080x1920 or higher)
-- **Tablet**: 2-3 screenshots (recommended)
-- **TV**: Not required for mobile game
+Store copy and screenshots must show the falling divisor-bucket game:
 
-#### iOS (App Store)
-- **iPhone 6.5"**: 3-5 screenshots (1242x2688)
-- **iPhone 5.5"**: 3-5 screenshots (1080x1920)
-- **iPad Pro**: 1-3 screenshots (2048x2732)
+- guide a falling number across ten lanes;
+- choose a bucket that divides it evenly;
+- build combos and fill the progress grid;
+- avoid the dead bucket and remainder penalties;
+- compete on global/weekly leaderboards;
+- play free with an optional one-time Remove Ads purchase.
 
-### Screenshot Guidelines
-1. **Show Gameplay**: Demonstrate core mechanics (modulo operations, level progression)
-2. **High Quality**: Clean, well-lit screenshots
-3. **No UI Overlays**: Remove debug info, FPS counters
-4. **Variety**: Show different levels, special tiles, leaderboard
-5. **Branding**: Include app name/icon subtly if needed
+Do not use the retired 4x4 tile-clearing description.
 
-## Store Listing Metadata
+## Current screenshot set
 
-### App Information
-- **Name**: Modulo Squares (30 chars max)
-- **Short Description**: 80 characters max
-- **Full Description**: 4000 characters max
-- **Category**: Puzzle/Casual Games
+The repository contains six iOS 6.5-inch screenshots:
 
-### Keywords (App Store)
-modulo, puzzle, math, numbers, brain, logic, strategy, free, ads
+- `01-title-rules.png`
+- `02-active-gameplay.png`
+- `03-paused-run.png`
+- `04-settings.png`
+- `05-sign-in-sign-up.png`
+- `06-create-gamertag.png`
 
-### Privacy Policy URL
-Required for apps with ads/user data collection.
+Before submission, verify that App Store Connect accepts this device class for the current app configuration and add any required sizes directly from a current simulator/device.
 
-### Support Information
-- **Website**: Your website URL
-- **Email**: Support email address
-- **Marketing URL**: Optional
+## Icon generation
 
-## Feature Graphic (Google Play)
-- **Size**: 1024x500 pixels
-- **Shows**: On Play Store listing
-- **Content**: App name, key features, gameplay preview
-
-## Promotional Graphics (Optional)
-- **Icon**: 512x512 PNG (for store promotions)
-- **Banner**: 1200x627 (for social media)
-
-## Implementation Steps
-
-1. **Design App Icon**: Create a 1024x1024 PNG with your app icon
-2. **Generate Screenshots**: Take high-quality screenshots of gameplay
-3. **Write Descriptions**: Craft compelling store descriptions
-4. **Test Assets**: Verify all assets display correctly
-5. **Prepare Metadata**: Fill out all store listing information
-6. **Create Privacy Policy**: If not already done
-
-## File Organization
-
-```
-assets/
-├── store/
-│   ├── icons/
-│   │   ├── app_icon_1024x1024.png
-│   │   └── feature_graphic_1024x500.png
-│   ├── screenshots/
-│   │   ├── android/
-│   │   │   ├── phone_01.png
-│   │   │   ├── phone_02.png
-│   │   │   └── ...
-│   │   └── ios/
-│   │       ├── iphone_01.png
-│   │       ├── iphone_02.png
-│   │       └── ...
-│   └── metadata/
-│       ├── description.txt
-│       ├── short_description.txt
-│       └── keywords.txt
+```bash
+./scripts/apply-new-icon.sh icons/icon-modulo-squares.png
 ```
 
-## Tools & Resources
+Review every platform output and confirm the iOS marketing icon is 1024x1024 RGB without alpha.
 
-- **Icon Generation**: Use online tools like appicon.co or makeappicon.com
-- **Screenshot Tools**: Android Studio, Xcode, or physical devices
-- **Design Software**: Figma, Sketch, or Adobe Creative Suite
-- **Guidelines**: Follow [Google Play](https://support.google.com/googleplay/android-developer/answer/1078870) and [App Store](https://developer.apple.com/app-store/product-page/) guidelines
+## Submission checklist
+
+- [ ] Metadata describes falling mode and fits current store limits.
+- [ ] Screenshots match the submitted binary and contain no debug overlays.
+- [ ] Icon matches the binary and has no prohibited transparency.
+- [ ] Privacy/support/marketing URLs are live.
+- [ ] Privacy answers reflect Auth, Firestore, Analytics, Crashlytics, AdMob/AdSense, ATT/UMP, and IAP.
+- [ ] `remove_ads` product copy and review screenshot are current.
+- [ ] Android feature graphics/screenshots are created when Phase 2 begins.
+
+Store-console upload status is tracked in [GO_LIVE_RUNBOOK.md](GO_LIVE_RUNBOOK.md), not inferred from local files.

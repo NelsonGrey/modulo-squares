@@ -1,5 +1,7 @@
 # ZERO-TOUCH CI/CD Setup Guide
 
+> **Historical setup guide (reviewed 2026-07-20):** The active pipeline is `.github/workflows/ci-cd.yml`; normal builds use GitHub-hosted runners. Do not use this as the production setup checklist.
+
 This guide covers the complete ZERO-TOUCH DevOps pipeline for the Modulo Squares project, including automated certificate management, token refresh, and self-hosted runner maintenance.
 
 ## 🚀 Overview

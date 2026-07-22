@@ -1,5 +1,7 @@
 # Test Artifact Cleanup Guide
 
+> **Historical cleanup proposal (reviewed 2026-07-20):** Do not delete tests solely from this list. Legacy board-mode tests remain intentional coverage until the legacy code boundary is resolved; see [Testing](Testing.md).
+
 **Status**: Implementation in progress  
 **Priority**: High  
 **Estimated Time**: 5-10 minutes
@@ -136,12 +138,11 @@ After cleanup, verify:
 
 ## Related Documentation
 
-- See parent document: [CODE_QUALITY_ANALYSIS.md](./CODE_QUALITY_ANALYSIS.md) - Issue #5
-- See [TESTING.md](./TESTING.md) - General testing guidelines
+- See parent document: [Code_Quality_Analysis.md](./Code_Quality_Analysis.md) - Issue #5
+- See [Testing.md](./Testing.md) - General testing guidelines
 
 ---
 
 **Created**: 2024  
 **Author**: Code Quality Analysis System  
 **Status**: Ready for Implementation  
-
