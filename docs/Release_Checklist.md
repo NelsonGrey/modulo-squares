@@ -1,233 +1,71 @@
 # Production Release Checklist
 
-This comprehensive guide ensures a smooth production release of Modulo Squares across all platforms (Android, iOS, Web).
+**Updated**: 2026-07-20
+**App version**: `1.0.0+2`
 
-## Table of Contents
+Use [GO_LIVE_RUNBOOK.md](GO_LIVE_RUNBOOK.md) for current launch blockers and review history. This checklist is for a repeatable release.
 
-1. [Pre-Release Preparation](#pre-release-preparation)
-2. [Code & Configuration](#code--configuration)
-3. [Platform-Specific Setup](#platform-specific-setup)
-4. [Assets & Store Listings](#assets--store-listings)
-5. [Build & Distribution](#build--distribution)
-6. [Post-Release Monitoring](#post-release-monitoring)
-7. [Emergency Procedures](#emergency-procedures)
+## Source and version
 
-## Pre-Release Preparation
+- [ ] Confirm target branch is synchronized with its upstream.
+- [ ] Confirm `pubspec.yaml` version/build is intentional.
+- [ ] Review user-facing changes and update store metadata/screenshots.
+- [ ] Update current documentation and release notes.
+- [ ] Confirm private Functions branch is compatible with the public client.
 
-### ✅ Development & Testing
-- [x] Run `flutter analyze` - no issues
-- [x] Run `flutter test` - all tests pass (42/42)
-- [ ] Test on physical devices (iOS, Android)
-- [ ] Performance testing completed
-- [ ] Memory leak testing completed
-- [ ] Beta testing with external users (optional)
+## Validation
 
-### ✅ Version Management
-- [ ] Update version in `pubspec.yaml` (semantic versioning: major.minor.patch+build)
-- [ ] Update version in Android `build.gradle.kts`
-- [ ] Update version in iOS Xcode project
-- [ ] Update changelog and release notes
+- [ ] `npm ci` succeeds at the root.
+- [ ] `npm run lint` passes.
+- [ ] `npm run check` passes.
+- [ ] `npm run build:web` passes.
+- [ ] `flutter analyze` passes in `packages/mobile`.
+- [ ] `flutter test --coverage` passes.
+- [ ] iOS release build or TestFlight build succeeds.
+- [ ] Android app bundle succeeds when Android is in release scope.
+- [ ] Firestore rules and private Functions tests pass.
 
-### ✅ Feature Flags & Configuration
-- [ ] Disable debug/test features
-- [ ] Enable production analytics
-- [ ] Configure production AdMob IDs
-- [ ] Set production Firebase configuration
+## Mobile acceptance
 
-## Code & Configuration
+- [ ] Apple, Google, and email sign-in work on supported real devices.
+- [ ] New and returning gamertag flows work.
+- [ ] Falling game start/pause/movement/scoring/level-up work.
+- [ ] Visual cues and high score persist.
+- [ ] Resolve leaderboard scope: wire falling-run submission/navigation and test it, or remove leaderboard claims from release/store surfaces.
+- [ ] ATT/UMP and interstitial cadence comply with policy.
+- [ ] `remove_ads` purchase and restore work; ads remain removed after restart.
+- [ ] Sign out/account link paths work.
+- [ ] Delete Account removes the account and expected backend data.
 
-### ✅ Firebase Configuration
-- [ ] Verify production `google-services.json` in `android/app/`
-- [ ] Verify production `GoogleService-Info.plist` in `ios/Runner/`
-- [ ] Test Firebase services (Auth, Firestore, Analytics)
-- [ ] Verify Firestore security rules
-- [ ] Test Firebase Functions (if applicable)
+## Website acceptance
 
-### ✅ AdMob Configuration
-- [ ] Replace test ad unit IDs with production IDs
-- [ ] Update `lib/core/config/admob_config.dart`
-- [ ] Update Android `AndroidManifest.xml` with production App ID
-- [ ] Update iOS `Info.plist` with production App ID
-- [ ] Test ads in release mode on physical devices
-- [ ] Verify consent management (UMP SDK)
+- [ ] All nine routes render directly and through client navigation.
+- [ ] Canonical metadata, robots, and sitemap are correct.
+- [ ] Leaderboard loads current Firestore data and handles empty/error states.
+- [ ] Consent defaults to denied and saved choices restore correctly.
+- [ ] GTM/GA4 and AdSense behavior matches policy disclosures.
+- [ ] Mobile/tablet/desktop layout and keyboard accessibility are checked.
 
-### ✅ Privacy & Compliance
-- [x] Implement App Tracking Transparency (ATT) for iOS
-- [x] Add ATT permission strings to Info.plist
-- [ ] Test ATT permission flow
-- [ ] Create/update privacy policy
-- [ ] Verify GDPR compliance
-- [ ] Complete App Store Privacy Nutrition Labels
-- [ ] Complete Google Play Data Safety form
+## Deployment
 
-## Platform-Specific Setup
+- [ ] Promote through `develop` -> `staging` -> `main` as appropriate.
+- [ ] Confirm `quality-check`, `build-web`, and `build-ios` results.
+- [ ] Confirm Hosting deployment and production route smoke test.
+- [ ] Confirm private Functions checkout/deployment result.
+- [ ] Deploy Firestore rules explicitly if changed.
+- [ ] Confirm TestFlight build processing and internal smoke test.
 
-### Android Release Setup
+## Store submission
 
-#### ✅ Signing Configuration
-- [ ] Generate/upload keystore to secure location
-- [ ] Create `android/local.properties` with signing info:
-  ```
-  storePassword=your_keystore_password
-  keyPassword=your_key_password
-  keyAlias=modulo_key
-  storeFile=modulo_keystore.jks
-  ```
-- [ ] Update `.gitignore` to exclude keystore files
-- [ ] Test release build: `flutter build appbundle --release`
+- [ ] App Store record, bundle ID, privacy answers, support/privacy URLs, screenshots, and age rating are current.
+- [ ] `remove_ads` is associated with the submission as required.
+- [ ] Correct TestFlight build is selected.
+- [ ] Dispatch production App Store submission only after manual verification.
+- [ ] Record review state/date in `GO_LIVE_RUNBOOK.md`.
 
-#### ✅ Play Store Preparation
-- [ ] Create Google Play Console account/app
-- [ ] Upload store assets (icons, screenshots, feature graphic)
-- [ ] Fill in store listing information
-- [ ] Set up pricing and distribution
-- [ ] Configure content rating
-- [ ] Set up internal/beta testing tracks
+## Post-release
 
-### iOS Release Setup
-
-#### ✅ Signing Configuration
-- [ ] Enroll in Apple Developer Program ($99/year)
-- [ ] Create App ID in developer portal
-- [ ] Configure Xcode signing (automatic recommended)
-- [ ] Test release build: `flutter build ios --release`
-
-#### ✅ App Store Preparation
-- [ ] Create App Store Connect account
-- [ ] Create app record with bundle ID
-- [ ] Upload store assets (icons, screenshots)
-- [ ] Fill in app information and metadata
-- [ ] Set up pricing and availability
-- [ ] Configure in-app purchases (if applicable)
-
-### Web Release Setup (Optional)
-
-#### ✅ Firebase Hosting
-- [ ] Configure Firebase Hosting
-- [ ] Update `web/index.html` for production
-- [ ] Test web build: `flutter build web`
-- [ ] Deploy to Firebase Hosting
-
-## Assets & Store Listings
-
-### ✅ App Assets
-- [ ] Design app icon (1024x1024 PNG)
-- [ ] Generate platform-specific icons
-- [ ] Create high-quality screenshots:
-  - [ ] Android: 8 phone screenshots (1080x1920+)
-  - [ ] iOS: 3-5 screenshots per device type
-- [ ] Create Play Store feature graphic (1024x500)
-- [ ] Test assets display correctly on all platforms
-
-### ✅ Store Metadata
-- [ ] App name (30 chars max)
-- [ ] Short description (80 chars)
-- [ ] Full description (4000 chars)
-- [ ] Keywords for App Store
-- [ ] Category selection
-- [ ] Privacy policy URL
-- [ ] Support/contact information
-- [ ] Age rating and content guidelines
-
-## Build & Distribution
-
-### Android Release Process
-1. [ ] Build: `flutter build appbundle --release`
-2. [ ] Upload `.aab` file to Google Play Console
-3. [ ] Create release in internal/beta track first
-4. [ ] Test internal release thoroughly
-5. [ ] Promote to production when ready
-
-### iOS Release Process
-1. [ ] Build: `flutter build ios --release`
-2. [ ] Open `ios/Runner.xcworkspace` in Xcode
-3. [ ] Archive the app (Product → Archive)
-4. [ ] Upload to App Store Connect via Xcode
-5. [ ] Wait for processing (~30 minutes)
-6. [ ] Submit for review or add to TestFlight
-
-### Web Release Process (Optional)
-1. [ ] Build: `flutter build web --release`
-2. [ ] Deploy to Firebase Hosting: `firebase deploy --only hosting`
-3. [ ] Test deployed web app functionality
-
-## Post-Release Monitoring
-
-### ✅ Analytics & Performance
-- [ ] Monitor Firebase Analytics events
-- [ ] Track user acquisition and retention
-- [ ] Monitor crash reports (Firebase Crashlytics)
-- [ ] Track AdMob performance and revenue
-- [ ] Monitor app store ratings and reviews
-
-### ✅ Issue Response
-- [ ] Monitor app store review responses
-- [ ] Address critical bug reports promptly
-- [ ] Plan hotfix releases for critical issues
-- [ ] Communicate with users about known issues
-
-### ✅ Performance Optimization
-- [ ] Monitor app startup time
-- [ ] Track memory usage and battery consumption
-- [ ] Analyze user flow completion rates
-- [ ] Optimize based on real-world usage data
-
-## Emergency Procedures
-
-### Hotfix Release
-1. **Identify Issue**: Determine severity and impact
-2. **Create Fix**: Develop and test fix on separate branch
-3. **Version Bump**: Increment patch version (e.g., 1.0.0 → 1.0.1)
-4. **Build & Test**: Create release builds and test thoroughly
-5. **Deploy**: Submit to app stores with priority
-6. **Communicate**: Inform users about the fix
-
-### Rollback Plan
-1. **Assess Impact**: Determine if rollback is necessary
-2. **Previous Version**: Identify last stable version
-3. **Store Submission**: Submit previous version as update
-4. **User Communication**: Explain rollback and expected fix timeline
-
-### Contact Information
-- **Google Play Support**: play.google.com/console
-- **App Store Connect**: appstoreconnect.apple.com
-- **Firebase Support**: firebase.google.com/support
-- **AdMob Support**: support.google.com/admob
-
-## Version Information
-
-- **Current Version**: 1.0.0+1 (submitted to App Store Review 2026-06-22)
-- **Next Version**: 1.0.1+2 (hotfix) or 1.1.0+2 (feature)
-- **Release Type**: Initial public release
-- **Target Release Date**: Pending App Store approval
-- **Release Manager**: Mark Nelson
-
-## Release Timeline
-
-### Week 1: Preparation
-- Code freeze and final testing
-- Asset creation and store preparation
-- Beta testing and feedback collection
-
-### Week 2: Platform Setup
-- Android signing and Play Store setup
-- iOS signing and App Store setup
-- Final configuration verification
-
-### Week 3: Release
-- Build and submit to stores
-- Monitor approval process
-- Prepare for launch
-
-### Week 4+: Post-Release
-- Monitor analytics and user feedback
-- Address issues and plan updates
-- Plan next release cycle
-
----
-
-**Release Checklist Version**: 2.0
-**Last Updated**: October 2025
-**Next Review**: [Set date]
-
-This checklist ensures comprehensive coverage of all release aspects for the Modulo Squares application.
+- [ ] Confirm production authentication, Firestore, Functions, ads, purchases, and deletion.
+- [ ] Check Crashlytics, Analytics, Functions logs, Hosting, and cost dashboards.
+- [ ] Confirm public store listing/version if approved.
+- [ ] Triage regressions and document rollback/hotfix decisions.

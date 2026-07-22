@@ -1,5 +1,7 @@
 # 🚀 CI/CD Setup Checklist
 
+> **Historical setup snapshot (reviewed 2026-07-20):** Checked items are not proof of current console state. Use [Environment Setup](Environment_Setup.md), [CI/CD Setup](Ci_Cd_Setup.md), and the [Go-Live Runbook](GO_LIVE_RUNBOOK.md).
+
 ## ✅ Completed Tasks
 
 ### Firebase Setup
@@ -127,7 +129,7 @@ If you encounter any issues:
 1. Check the CI/CD logs in GitHub Actions
 2. Verify Firebase project permissions
 3. Ensure GitHub secrets are properly configured
-4. Review the documentation in `CI_CD_SETUP.md`
+4. Review the documentation in `Ci_Cd_Setup.md`
 
 ## ✅ Final Status
 

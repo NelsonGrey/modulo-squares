@@ -1,5 +1,7 @@
 # Act CLI Testing Guide
 
+> **Historical reference (reviewed 2026-07-20):** The active workflow is `.github/workflows/ci-cd.yml`. `act` does not reproduce macOS/TestFlight, GitHub environments, or the private Functions checkout; validate current jobs against [CI/CD Setup](Ci_Cd_Setup.md).
+
 ## 🎭 Testing Workflows Locally with Act
 
 `act` allows you to run GitHub Actions workflows locally using Docker, preventing costly failures on GitHub.

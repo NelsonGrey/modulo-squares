@@ -1,5 +1,7 @@
 # TestFlight Upload Guide (Non-Interactive Signing)
 
+> **Operational reference (reviewed 2026-07-20):** CI normally performs TestFlight upload. Use manual commands only after checking `packages/mobile/ios/fastlane/Fastfile` and current App Store Connect credentials.
+
 This project now uploads to TestFlight using:
 - Automatic signing
 - App Store Connect API key authentication

@@ -1,118 +1,62 @@
 # Mobile Configuration Setup
 
-This document explains the mobile-specific Firebase configuration setup for the Modulo Squares Flutter app.
+**Updated**: 2026-07-20
 
-## Overview
+The Flutter app tracks environment-specific Firebase native configuration and copies one environment into each platform's active filename before a build.
 
-Similar to the web Firebase configs, mobile apps now have environment-specific configuration files that are automatically switched during CI/CD builds.
+## Files
 
-## Configuration Files
+### Android: `packages/mobile/android/app`
 
-### Android (`packages/app/android/app/`)
+- `google-services.dev.json`
+- `google-services.staging.json`
+- `google-services.prod.json`
+- `google-services.json` (active copy)
 
-- `google-services.dev.json` - Development environment
-- `google-services.staging.json` - Staging environment
-- `google-services.prod.json` - Production environment
-- `google-services.json` - Active config (switched automatically)
+### iOS: `packages/mobile/ios/Runner`
 
-### iOS (`packages/app/ios/Runner/`)
+- `GoogleService-Info.dev.plist`
+- `GoogleService-Info.staging.plist`
+- `GoogleService-Info.prod.plist`
+- `GoogleService-Info.plist` (active copy)
 
-- `GoogleService-Info.dev.plist` - Development environment
-- `GoogleService-Info.staging.plist` - Staging environment
-- `GoogleService-Info.prod.plist` - Production environment
-- `GoogleService-Info.plist` - Active config (switched automatically)
+## Switch environments
 
-## Usage
-
-### Local Development
-
-Switch configs manually using npm scripts:
+From the repository root:
 
 ```bash
-# Switch to development
 npm run config:dev
-
-# Switch to staging
 npm run config:staging
-
-# Switch to production
 npm run config:prod
 ```
 
-### CI/CD
-
-Configs are automatically switched in GitHub Actions based on the deployment environment:
-
-- `develop` branch → Development configs
-- `staging` branch → Staging configs
-- `main` branch → Production configs
-
-## Setup Requirements
-
-⚠️ **Important**: The placeholder API keys in the config files need to be replaced with actual Firebase API keys from the Firebase Console.
-
-### Getting Firebase Config Files
-
-1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Select the appropriate project:
-   - `modulo-squares-dev`
-   - `modulo-squares-staging`
-   - `modulo-squares-prod`
-3. Go to Project Settings → General → Your apps
-4. Download the config files for Android/iOS
-5. Replace the placeholder files in this repository
-
-### Required Replacements
-
-In each environment's config files, replace:
-- `AIzaSyDUMMY_API_KEY_*` with actual Firebase API keys
-- Ensure project IDs match the Firebase projects
-- Verify bundle/package names are correct
-
-## Build Scripts
-
-The `scripts/switch-mobile-configs.sh` script handles config switching:
+or:
 
 ```bash
-./scripts/switch-mobile-configs.sh [dev|staging|prod]
+./scripts/switch-mobile-configs.sh dev|staging|prod
 ```
 
-This script:
-1. Validates the environment parameter
-2. Copies the appropriate Android config to `google-services.json`
-3. Copies the appropriate iOS config to `GoogleService-Info.plist`
-4. Reports success/failure
+The active CI workflow selects staging for the staging iOS build and production for the main iOS build. Development does not run the iOS build job.
 
-## Integration
+## Projects
 
-The mobile configs integrate with the existing Firebase CLI setup:
+- `dev` -> `modulo-squares-dev`
+- `staging` -> `modulo-squares-staging`
+- `prod` -> `modulo-squares-prod`
 
-- Firebase CLI uses `firebase.*.json` files for project configuration
-- Flutter build process uses the active `google-services.json` and `GoogleService-Info.plist`
-- CI/CD automatically switches configs before building
+## Verification
 
-## Troubleshooting
+- Confirm the selected JSON/plist project ID before a release build.
+- Confirm bundle/application IDs match the registered Firebase apps.
+- Confirm sign-in providers and URL schemes for the selected environment.
+- Treat client API keys as public identifiers but apply console-side app/API/quota restrictions.
+- Do not hand-edit the active copy when the environment source file should change.
 
-### Build Fails with Wrong Environment
+After switching:
 
-If builds are using the wrong Firebase environment:
-
-1. Check which config files are currently active
-2. Run the appropriate config switch command
-3. Clean and rebuild: `flutter clean && flutter pub get`
-
-### Missing API Keys
-
-If authentication fails:
-
-1. Verify API keys are not placeholders
-2. Check Firebase Console for correct keys
-3. Ensure keys match the project environment
-
-### Config Not Switching in CI/CD
-
-If CI/CD uses wrong configs:
-
-1. Check the branch → environment mapping
-2. Verify the config switch step runs before Flutter build
-3. Check CI/CD logs for config switch output
+```bash
+cd packages/mobile
+flutter clean
+flutter pub get
+flutter run
+```

@@ -1,5 +1,7 @@
 # Modulo Squares — Social Media Strategy
 
+> **Marketing strategy (reviewed 2026-07-20):** Channel/platform details are time-sensitive. Current product messaging should describe the falling divisor-bucket game and link to `https://modulosquares.com`.
+
 **Version**: 1.0
 **Date**: June 2026
 **Owner**: Mark Nelson

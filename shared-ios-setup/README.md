@@ -1,5 +1,7 @@
 # Shared iOS Setup - Zero-Touch Deployment
 
+> **Historical reusable template (reviewed 2026-07-20):** Modulo Squares uses the tracked Fastlane configuration under `packages/mobile/ios/fastlane` and the active GitHub workflow. Do not copy this template over the current setup without reviewing differences.
+
 This folder contains the proven, successful iOS configuration from wishlist-wizard that has demonstrated reliable TestFlight uploads and App Store deployments.
 
 ## Files Included

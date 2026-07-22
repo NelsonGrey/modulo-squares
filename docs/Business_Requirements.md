@@ -1,5 +1,7 @@
 # Modulo Squares - Business Requirements Document
 
+> **Planning baseline (reviewed 2026-07-20):** Targets and checked requirements below are product assumptions/history, not evidence of current implementation or release status. See [Current State](Current_State.md) and [Go-Live Runbook](GO_LIVE_RUNBOOK.md).
+
 **Version**: 1.0  
 **Last Updated**: June 2, 2026  
 **Status**: Approved  
@@ -277,7 +279,7 @@ Create intellectually engaging puzzle experiences that prove mathematics can be 
 - Any future guest mode must define local progress rules, leaderboard restrictions, and conversion prompts.
 - Premium scope beyond ad removal must be explicitly documented and enforced in UI, services, and tests.
 
-Reference: see [Player Access Tiers](PLAYER_ACCESS_TIERS.md) for implementation-aligned detail.
+Reference: current access/upgrade positioning is implemented on the React `/pricing` route; see [Web Frontend Architecture](Web_Frontend_Architecture.md).
 
 ---
 
@@ -596,9 +598,9 @@ Reference: see [Player Access Tiers](PLAYER_ACCESS_TIERS.md) for implementation-
 - [Link to cost analysis]
 
 ### Appendix C: Referenced Documents
-- [Link to Product Design Document](./PRODUCT_DESIGN.md)
-- [Link to Technical Architecture](./docs/DEVELOPER_GUIDE.md)
-- [Link to CI/CD Infrastructure](../nelson-grey/docs/ARCHITECTURE.md)
+- [Link to Product Design Document](./Product_Design.md)
+- [Link to Technical Architecture](Developer_Guide.md)
+- [Link to CI/CD Infrastructure](Ci_Cd_Setup.md)
 
 ---
 
