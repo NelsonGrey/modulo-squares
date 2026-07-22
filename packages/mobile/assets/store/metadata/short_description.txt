@@ -1,1 +1,1 @@
-Challenge your mind with unique modulo-based puzzles! Clear the grid using strategic mathematical operations.
+Guide falling numbers into the right divisor buckets and build your high score.
