@@ -27,7 +27,7 @@ permissions:
 
 env:
   FLUTTER_VERSION: '3.44.2'
-  NODE_VERSION: '20'
+  NODE_VERSION: '24'
 
 jobs:
   # 🔍 Determine Environment
