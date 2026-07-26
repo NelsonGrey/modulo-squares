@@ -234,9 +234,9 @@ void main() {
       await _pumpGame(tester);
       await _openSettings(tester);
 
-      // The purchase service returns $0.99 as a fallback price when no store
+      // The purchase service returns $2.99 as a fallback price when no store
       // product is loaded (test environment has no App Store connection).
-      expect(find.textContaining('\$0.99'), findsOneWidget);
+      expect(find.textContaining('\$2.99'), findsOneWidget);
     });
 
     testWidgets('Restore Purchases button is always shown', (tester) async {
@@ -334,6 +334,31 @@ void main() {
       await _openSettings(tester);
 
       expect(find.text('Switch Mode'), findsNothing);
+    });
+  });
+
+  // ── Settings dialog — Legal & Support section ─────────────────────────────
+
+  group('Settings dialog — Legal & Support section', () {
+    testWidgets('Privacy Policy option is shown', (tester) async {
+      await _pumpGame(tester);
+      await _openSettings(tester);
+
+      expect(find.text('Privacy Policy'), findsOneWidget);
+    });
+
+    testWidgets('Terms of Service option is shown', (tester) async {
+      await _pumpGame(tester);
+      await _openSettings(tester);
+
+      expect(find.text('Terms of Service'), findsOneWidget);
+    });
+
+    testWidgets('Support option is shown', (tester) async {
+      await _pumpGame(tester);
+      await _openSettings(tester);
+
+      expect(find.text('Support'), findsOneWidget);
     });
   });
 

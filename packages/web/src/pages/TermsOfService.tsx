@@ -12,7 +12,7 @@ const TermsOfService: React.FC = () => {
     <div className="bg-white">
       <main className="max-w-4xl mx-auto px-6 py-12">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Terms of Service</h1>
-        <p className="text-gray-500 mb-8">Last updated: June 17, 2026</p>
+        <p className="text-gray-500 mb-8">Last updated: July 23, 2026</p>
 
         <div className="prose prose-gray max-w-none space-y-8">
 
@@ -25,8 +25,9 @@ const TermsOfService: React.FC = () => {
             </p>
             <p className="text-gray-700 leading-relaxed mt-3">
               These Terms constitute a legally binding agreement between you and Modulo Squares
-              ("we," "our," or "us"). We reserve the right to update these Terms at any time.
-              Continued use of the App after updates constitutes acceptance.
+              ("we," "our," or "us"). Modulo Squares is a product of Nelson Grey LLC. We reserve
+              the right to update these Terms at any time. Continued use of the App after updates
+              constitutes acceptance.
             </p>
           </section>
 
@@ -113,7 +114,7 @@ const TermsOfService: React.FC = () => {
             <h2 className="text-xl font-semibold text-gray-900 mb-3">6. Intellectual Property</h2>
             <p className="text-gray-700 leading-relaxed">
               All content in the App — including but not limited to graphics, audio, game mechanics,
-              code, and text — is owned by or licensed to Modulo Squares and is protected by
+              code, and text — is owned by or licensed to Nelson Grey LLC and is protected by
               copyright, trademark, and other intellectual property laws.
             </p>
             <p className="text-gray-700 leading-relaxed mt-3">
@@ -139,10 +140,10 @@ const TermsOfService: React.FC = () => {
           <section>
             <h2 className="text-xl font-semibold text-gray-900 mb-3">8. Limitation of Liability</h2>
             <p className="text-gray-700 leading-relaxed">
-              TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, WE SHALL NOT BE LIABLE FOR
-              ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES ARISING
-              FROM YOUR USE OF OR INABILITY TO USE THE APP, INCLUDING BUT NOT LIMITED TO LOSS
-              OF DATA, LOST PROFITS, OR LOSS OF GAME PROGRESS.
+              TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, MODULO SQUARES AND NELSON GREY LLC
+              SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE
+              DAMAGES ARISING FROM YOUR USE OF OR INABILITY TO USE THE APP, INCLUDING BUT NOT
+              LIMITED TO LOSS OF DATA, LOST PROFITS, OR LOSS OF GAME PROGRESS.
             </p>
             <p className="text-gray-700 leading-relaxed mt-3">
               OUR TOTAL LIABILITY TO YOU FOR ANY CLAIMS ARISING UNDER THESE TERMS SHALL NOT
