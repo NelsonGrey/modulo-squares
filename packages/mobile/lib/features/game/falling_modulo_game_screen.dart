@@ -12,6 +12,7 @@ import 'package:modulo_squares/core/services/purchase_service.dart';
 import 'package:modulo_squares/features/game/models/falling_modulo_game_engine.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class FallingModuloGameScreen extends StatefulWidget {
   const FallingModuloGameScreen({super.key});
@@ -263,6 +264,11 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _openLegalLink(String path) async {
+    final uri = Uri.parse('https://modulosquares.com/$path');
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
   Future<void> _signOut(BuildContext context) async {
@@ -665,6 +671,28 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
                         style: TextStyle(color: Colors.red),
                       ),
                       onTap: () => _deleteAccount(context),
+                    ),
+
+                    // ── Legal & Support ──────────────────────────────────
+                    const Divider(height: 1),
+                    const _SettingsHeader('Legal & Support'),
+                    ListTile(
+                      leading: const Icon(Icons.privacy_tip_outlined),
+                      title: const Text('Privacy Policy'),
+                      trailing: const Icon(Icons.open_in_new, size: 18),
+                      onTap: () => _openLegalLink('privacy'),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.description_outlined),
+                      title: const Text('Terms of Service'),
+                      trailing: const Icon(Icons.open_in_new, size: 18),
+                      onTap: () => _openLegalLink('terms'),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.help_outline),
+                      title: const Text('Support'),
+                      trailing: const Icon(Icons.open_in_new, size: 18),
+                      onTap: () => _openLegalLink('support'),
                     ),
                   ],
                 ),

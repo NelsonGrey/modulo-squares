@@ -418,10 +418,10 @@ Android has no build job in `ci-cd.yml` yet (removed 2026-06-30 pending Play Sto
 
 ### 2.1 Add Android Build Job to ci-cd.yml
 
-- [ ] `build-android` job added to `.github/workflows/ci-cd.yml`, gated the same way `build-ios`/`build-web` are (triggered on the relevant branch/environment)
-- [ ] Runs on `ubuntu-latest` (Android builds don't need macOS)
+- [x] `build-android` job added to `.github/workflows/ci-cd.yml` (2026-07-26), gated the same way as `build-ios` (production/staging only)
+- [x] Runs on `ubuntu-latest` (Android builds don't need macOS)
 
-**Validate**: Push triggers `ci-cd.yml` → `build-android` job appears and runs.
+**Validate**: Push triggers `ci-cd.yml` → `build-android` job appears and runs. (Not yet exercised on a real push — `ANDROID_KEYSTORE*` GitHub Secrets below still need to be set first.)
 
 ---
 
@@ -433,26 +433,31 @@ The keystore is required for production `.aab` builds. Store it securely — **n
 # Generate keystore (one-time, if not already done)
 cd packages/mobile/android
 ./generate_keystore.sh
-
-# Or manually:
-keytool -genkey -v \
-  -keystore modulo_keystore.jks \
-  -keyalg RSA -keysize 2048 -validity 10000 \
-  -alias modulo_key
 ```
 
-- [ ] Keystore file generated and stored in a **secure location outside the repo** (e.g., 1Password, AWS Secrets Manager)
-- [ ] `android/local.properties` configured:
-  ```
-  storePassword=<password>
-  keyPassword=<password>
-  keyAlias=modulo_key
-  storeFile=<absolute/path/to/modulo_keystore.jks>
-  ```
-- [ ] `android/local.properties` and `*.jks` confirmed in `.gitignore`
-- [ ] `ANDROID_KEYSTORE` (base64), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` set as GitHub Secrets
+The script (and `app/build.gradle.kts`'s fallback defaults) use `upload-keystore.jks` /
+alias `upload` — use those, not the `modulo_keystore.jks` / `modulo_key` names from an
+earlier draft of this doc, unless you deliberately change the script.
 
-**Validate**: `flutter build appbundle --release` exits 0 and produces `.aab`.
+Note: on this JDK, PKCS12 keystores (the default) don't support separate store/key
+passwords — `keytool` silently ignores a distinct `-keypass`, so `keyPassword` in
+`local.properties` must equal `storePassword`.
+
+- [x] Keystore file generated (2026-07-26) and stored outside the repo at
+      `~/.android-keystores/modulo-squares/upload-keystore.jks` (`chmod 600`) — **also
+      copy this file and its password into 1Password or equivalent; the local copy is not
+      backed up anywhere else**
+- [x] `android/local.properties` configured:
+  ```
+  storeFile=/absolute/path/to/upload-keystore.jks
+  storePassword=<password>
+  keyAlias=upload
+  keyPassword=<same password as storePassword>
+  ```
+- [x] `android/local.properties` and `*.jks` confirmed in `.gitignore`
+- [ ] `ANDROID_KEYSTORE` (base64 of the `.jks`), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` (`upload`), `ANDROID_KEY_PASSWORD` set as GitHub Secrets — **not yet done**, needed before `build-android` can run in CI
+
+**Validate**: `flutter build appbundle --release` exits 0 and produces `.aab`. ✅ confirmed 2026-07-26 on a real device build.
 
 ---
 
@@ -466,29 +471,32 @@ Go to: **play.google.com/console → Create app**
   - **App or game**: Game
   - **Free or paid**: Free
 - [ ] Package name confirmed: `com.modulosquares.app.android`
-- [ ] Content rating questionnaire completed (expected: Everyone)
-- [ ] Data safety form completed:
+- [ ] Content rating questionnaire completed (expected: Everyone) — draft answers in [PLAY_STORE_LISTING_PREP.md](PLAY_STORE_LISTING_PREP.md)
+- [ ] Data safety form completed — draft answers in [PLAY_STORE_LISTING_PREP.md](PLAY_STORE_LISTING_PREP.md) (covers auth/email identifiers that this checklist's short version below omits)
   - Analytics data (Firebase): disclosed
   - Advertising ID (AdMob): disclosed
-  - No health, financial, or sensitive data
+  - Email/name/user ID (sign-in): disclosed
+  - No health, financial, or location data
 
 **Validate**: App record visible in Play Console.
+
+*This step requires a Google Play Console developer account (one-time $25 registration if not already done) and can only be done by whoever owns that Google account — not something that can be automated from this repo.*
 
 ---
 
 ### 2.4 Android AdMob Configuration
 
-- [ ] `androidAppId` in `admob_config.dart` = `ca-app-pub-5198775482699756~4572596676` ✅ (already set)
-- [ ] `androidInterstitialId` = `ca-app-pub-5198775482699756/2729455367` ✅ (already set)
-- [ ] AdMob App ID in `android/app/src/main/AndroidManifest.xml` matches production:
+- [x] `androidAppId` in `admob_config.dart` = `ca-app-pub-5198775482699756~4572596676` ✅ (already set)
+- [x] `androidInterstitialId` = `ca-app-pub-5198775482699756/2729455367` ✅ (already set)
+- [x] AdMob App ID in `android/app/src/main/AndroidManifest.xml` matches production:
   ```xml
   <meta-data
     android:name="com.google.android.gms.ads.APPLICATION_ID"
     android:value="ca-app-pub-5198775482699756~4572596676"/>
   ```
-- [ ] `android:allowBackup="false"` confirmed in `AndroidManifest.xml` ✅
+- [x] `android:allowBackup="false"` confirmed in `AndroidManifest.xml` ✅
 
-**Validate**: Release build on real Android device shows ads (not blank) and no AdMob initialization errors in logcat.
+**Validate**: Release build on real Android device shows ads (not blank) and no AdMob initialization errors in logcat. ✅ confirmed 2026-07-26 (ad SDK initialized and served a test creative on a real Galaxy S24 running the signed release build).
 
 ---
 
@@ -503,9 +511,10 @@ Screenshots required for Play Store submission:
 | Feature graphic | 1024×500 | 1 (required) |
 | App icon | 512×512 PNG | 1 (required) |
 
-- [ ] Phone screenshots captured on Android device (release build)
-- [ ] Feature graphic created (1024×500)
-- [ ] Adaptive icon files in `android/app/src/main/res/mipmap-*` directories
+- [x] Phone screenshots captured on Android device (release build) — 4 captured 2026-07-26 on a real Galaxy S24, cropped to 1080×2120 (under the 2:1 max ratio) at `output/imagegen/play_store/modulo-squares-phone-*.png`. Consider adding 1-2 more at a later game state — these are all from an early, mostly-empty board.
+- [ ] Feature graphic created (1024×500) — **not generated**; needs actual graphic design (Canva/Figma), not something screenshot-cropping can produce
+- [x] Adaptive icon files in `android/app/src/main/res/mipmap-*` directories (pre-existing)
+- [x] 512×512 app icon ready at `output/imagegen/play_store/modulo-squares-icon-512.png` (reused from `packages/mobile/web/icons/Icon-512.png`, already the right size/no-alpha)
 - [ ] All assets uploaded to Play Console
 
 **Validate**: Play Console store listing preview renders completely.
