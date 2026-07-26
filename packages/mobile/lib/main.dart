@@ -11,7 +11,6 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:modulo_squares/features/auth/login_screen.dart';
 import 'package:modulo_squares/features/auth/gamertag_screen.dart';
 import 'package:modulo_squares/features/game/game_screen.dart';
-import 'package:modulo_squares/features/website/website_screen.dart';
 import 'package:modulo_squares/core/services/gamertag_service.dart';
 import 'package:modulo_squares/l10n/app_localizations.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
@@ -297,7 +296,13 @@ class _AuthGateState extends State<AuthGate> {
   void _checkGamertagForUser(String uid) {
     if (_checkedUid == uid) return;
     _checkedUid = uid;
-    setState(() => _loadingGamertag = true);
+    // Defer to after this frame: build() is still running here (this is called
+    // from AuthGate's own StreamBuilder), and setState() cannot be called
+    // synchronously on a widget that is currently building itself.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() => _loadingGamertag = true);
+    });
     // Pre-load the interstitial now so it has maximum time to arrive before
     // the user finishes creating their gamertag.
     if (!kIsWeb && getIt.isRegistered<AdService>()) {
@@ -378,7 +383,7 @@ class _AuthGateState extends State<AuthGate> {
           return GamertagScreen(onGamertagSet: _onGamertagSet);
         }
 
-        return kIsWeb ? const WebsiteScreen() : const GameScreen();
+        return const GameScreen();
       },
     );
   }

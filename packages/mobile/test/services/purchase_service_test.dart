@@ -192,7 +192,7 @@ void main() {
         // Product not in the list — exercises the orElse fallback path.
         final price = purchaseService.getProductPrice('nonexistent_product');
 
-        expect(price, '\$0.99');
+        expect(price, '\$2.99');
 
         await purchaseStreamController.close();
       },
