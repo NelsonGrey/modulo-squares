@@ -1,0 +1,15 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.modulosquares.app.android",
+      "sha256_cert_fingerprints": [
+        "FB:2A:26:A5:16:7E:A8:18:09:60:3D:36:9E:17:D5:B2:CB:C2:E0:69:97:66:6B:81:74:B2:61:C7:8E:A3:43:8E"
+      ]
+    }
+  }
+]
