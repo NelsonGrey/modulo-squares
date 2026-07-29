@@ -23,12 +23,24 @@ class _LoginScreenState extends State<LoginScreen> {
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
   bool _authInProgress = false;
 
+  // Populated from the live Firebase password policy (see
+  // _loadPasswordPolicy). These defaults match today's enforced policy so
+  // the signup dialog is still usable if the fetch fails (e.g. offline);
+  // the authoritative check in _authenticateWithEmailPassword() re-verifies
+  // against the real policy regardless of whether this fetch succeeded.
+  int _policyMinLength = 8;
+  bool _policyRequiresUpper = true;
+  bool _policyRequiresLower = true;
+  bool _policyRequiresDigit = true;
+  bool _policyRequiresSymbol = true;
+
   @override
   void initState() {
     super.initState();
     if (widget.initializeGoogleSignIn) {
       _initializeGoogleSignIn();
     }
+    _loadPasswordPolicy();
   }
 
   Future<void> _initializeGoogleSignIn() async {
@@ -39,11 +51,91 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _loadPasswordPolicy() async {
+    try {
+      final status = await FirebaseAuth.instance.validatePassword(
+        FirebaseAuth.instance,
+        ' ',
+      );
+      final policy = status.passwordPolicy;
+      if (!mounted) return;
+      setState(() {
+        _policyMinLength = policy.minPasswordLength;
+        // A null field means Firebase doesn't enforce that character class
+        // for this policy -- default to not-required, or the client would
+        // reject passwords the server actually accepts.
+        _policyRequiresUpper = policy.containsUppercaseCharacter ?? false;
+        _policyRequiresLower = policy.containsLowercaseCharacter ?? false;
+        _policyRequiresDigit = policy.containsNumericCharacter ?? false;
+        _policyRequiresSymbol =
+            policy.containsNonAlphanumericCharacter ?? false;
+      });
+    } catch (_) {
+      // Keep the defaults above -- _authenticateWithEmailPassword() still
+      // authoritatively re-checks the real password against the live policy.
+    }
+  }
+
+  String _passwordRequirementsHint() {
+    final requirements = <String>[
+      if (_policyRequiresUpper) 'uppercase letter',
+      if (_policyRequiresLower) 'lowercase letter',
+      if (_policyRequiresDigit) 'number',
+      if (_policyRequiresSymbol) 'special character',
+    ];
+    if (requirements.isEmpty) {
+      return 'Password must be $_policyMinLength+ characters.';
+    }
+    return 'Password must be $_policyMinLength+ characters with '
+        '${requirements.join(', ')}.';
+  }
+
+  // Quick pass using the cached live policy, so users get immediate
+  // feedback without a network round-trip. _authenticateWithEmailPassword()
+  // re-validates authoritatively against Firebase itself before submitting,
+  // so this never needs to be the last word on whether a password is
+  // accepted.
+  String? _quickPasswordCheck(String password) {
+    if (password.length < _policyMinLength) {
+      return 'Password must be at least $_policyMinLength characters.';
+    }
+    if (_policyRequiresUpper && !password.contains(RegExp(r'[A-Z]'))) {
+      return 'Password must include an uppercase letter.';
+    }
+    if (_policyRequiresLower && !password.contains(RegExp(r'[a-z]'))) {
+      return 'Password must include a lowercase letter.';
+    }
+    if (_policyRequiresDigit && !password.contains(RegExp(r'[0-9]'))) {
+      return 'Password must include a number.';
+    }
+    if (_policyRequiresSymbol && !password.contains(RegExp(r'[^A-Za-z0-9]'))) {
+      return 'Password must include a special character.';
+    }
+    return null;
+  }
+
+  String _describePasswordPolicyFailure(PasswordValidationStatus status) {
+    final missing = <String>[
+      if (!status.meetsMinPasswordLength)
+        'be at least $_policyMinLength characters',
+      if (!status.meetsUppercaseRequirement) 'include an uppercase letter',
+      if (!status.meetsLowercaseRequirement) 'include a lowercase letter',
+      if (!status.meetsDigitsRequirement) 'include a number',
+      if (!status.meetsSymbolsRequirement) 'include a special character',
+    ];
+    if (missing.isEmpty) {
+      return 'Password does not meet the requirements for this account.';
+    }
+    return 'Password must ${missing.join(', ')}.';
+  }
+
   void _showAuthError(BuildContext context, dynamic error) {
     if (!context.mounted) return;
     // Raw error in debug builds only; friendly message in production.
     String message;
-    if (kDebugMode) {
+    if (error is String) {
+      message = error;
+    } else if (kDebugMode) {
       if (error is FirebaseAuthException) {
         message = '${error.message ?? error.code}\n\n(code: ${error.code})';
       } else {
@@ -166,6 +258,25 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _authInProgress = true);
     try {
       if (createAccount) {
+        final quickCheckError = _quickPasswordCheck(password);
+        if (quickCheckError != null) {
+          _showAuthError(context, quickCheckError);
+          return;
+        }
+
+        // Authoritative check against the live Firebase policy -- catches
+        // drift between this dialog's cached copy and the real policy
+        // (e.g. it changed after this screen loaded, or the initial fetch
+        // failed) before spending a round-trip on account creation.
+        final status = await FirebaseAuth.instance.validatePassword(
+          FirebaseAuth.instance,
+          password,
+        );
+        if (!status.isValid) {
+          _showAuthError(context, _describePasswordPolicyFailure(status));
+          return;
+        }
+
         await FirebaseAuth.instance.createUserWithEmailAndPassword(
           email: normalizedEmail,
           password: password,
@@ -219,10 +330,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   if (createAccount) ...[
                     const SizedBox(height: 8),
-                    const Text(
-                      'Password must be 8+ characters with uppercase, '
-                      'lowercase, a number, and a special character.',
-                      style: TextStyle(fontSize: 11, color: Colors.grey),
+                    Text(
+                      _passwordRequirementsHint(),
+                      style: const TextStyle(fontSize: 11, color: Colors.grey),
                     ),
                   ],
                   const SizedBox(height: 8),
