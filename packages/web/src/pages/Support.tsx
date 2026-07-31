@@ -59,9 +59,9 @@ const Support: React.FC = () => {
             <h2 className="text-lg font-semibold text-gray-900 mb-2">Delete your account or data</h2>
             <p className="text-gray-600 mb-2">
               You can permanently delete your account and all associated data (profile,
-              gamertag, saved progress, and leaderboard entries) at any time from inside
-              the app: open <strong>Settings → Delete Account</strong>. This is
-              immediate and cannot be undone.
+              gamertag, and saved progress) at any time from inside the app: open{' '}
+              <strong>Settings → Delete Account</strong>. This is immediate and cannot
+              be undone.
             </p>
             <p className="text-gray-600">
               If you signed in with email, Google, or Apple and can't access the app,
@@ -75,11 +75,13 @@ const Support: React.FC = () => {
             </p>
             <p className="text-gray-600 mt-2">
               Guest accounts (Continue as Guest) have no email or password, so we can't
-              verify ownership through this form — in-app deletion (Settings → Delete
-              Account) is the only way to remove one. If you can't reach it,
-              uninstalling the app removes all locally-stored guest progress from your
-              device, though the server-side guest account record isn't deleted unless
-              you use the in-app option first.
+              verify a deletion request from this form by email alone. If you can still
+              open the app, in-app deletion (Settings → Delete Account) is the fastest
+              option. If you can't, open <strong>Settings → Player ID</strong> before you
+              lose access, copy that ID, and send it to us using the topic below — we can
+              verify and delete a guest account by its Player ID. Uninstalling the app on
+              its own only clears locally-stored progress; it doesn't delete the
+              server-side account record.
             </p>
           </div>
 

@@ -4,10 +4,12 @@ import 'dart:math' as math;
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:modulo_squares/core/auth/apple_sign_in_nonce.dart';
 import 'package:modulo_squares/core/di/service_locator.dart';
 import 'package:modulo_squares/core/services/ad_service.dart';
+import 'package:modulo_squares/core/services/analytics_service.dart';
 import 'package:modulo_squares/core/services/purchase_service.dart';
 import 'package:modulo_squares/features/game/models/falling_modulo_game_engine.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -326,6 +328,7 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
     );
     if (confirmed != true) return;
     if (context.mounted) Navigator.of(context).pop();
+    await getIt<AnalyticsService>().clearUserId();
     await FirebaseAuth.instance.signOut();
   }
 
@@ -360,6 +363,7 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_highScorePrefKey);
       if (mounted) setState(() => _highScore = 0);
+      await getIt<AnalyticsService>().clearUserId();
       await FirebaseAuth.instance.signOut();
     } catch (e) {
       if (context.mounted) _showAccountError(context, e);
@@ -707,6 +711,26 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
                           onTap: () {
                             Navigator.of(dialogContext).pop();
                             _openLinkAccountDialog(context);
+                          },
+                        ),
+                      if (isGuest)
+                        ListTile(
+                          leading: const Icon(Icons.badge_outlined),
+                          title: const Text('Player ID'),
+                          subtitle: Text(
+                            'Guest accounts have no email — include this ID in a '
+                            'support request if you need your account deleted and '
+                            "can't reach the app.\n"
+                            '${FirebaseAuth.instance.currentUser?.uid ?? ''}',
+                          ),
+                          trailing: const Icon(Icons.copy, size: 20),
+                          onTap: () {
+                            final uid = FirebaseAuth.instance.currentUser?.uid;
+                            if (uid == null) return;
+                            Clipboard.setData(ClipboardData(text: uid));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Player ID copied')),
+                            );
                           },
                         ),
                       ListTile(

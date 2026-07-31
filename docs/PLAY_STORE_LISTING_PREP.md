@@ -152,15 +152,61 @@ all collected AND shared with Google.
   `fallingMode.highScore` SharedPreferences key, so the confirmation dialog's promise
   to delete "saved progress" wasn't fully true. Now cleared as part of deletion.
 
-**Not changed, considered:** Codex's device-ID finding argued Advertising ID can't be
-OPTIONAL because a brand-new user's very first ad load happens before they've had any
-chance to purchase `remove_ads`. That's true but not a bug — `PurchaseService.initialize()`
-is awaited before the first `loadInterstitial()` call in `main.dart`, so a *returning*
-purchaser's cached entitlement is loaded first and the guard correctly stops ad
-requests from that point on. OPTIONAL describes "the user has a way to stop this,"
-matching how Play's Data Safety schema is used across the ad-supported app ecosystem —
-it doesn't mean collection can never happen for even a moment before a user's first-ever
-purchase decision. Left as OPTIONAL.
+**Third correction round** — Codex re-raised the device-ID/optional dispute a second
+time with a *different, correct* argument, and found several more gaps that only
+surfaced by tracing what's actually wired into the live app vs. defined-but-unused
+service code:
+
+- **Device ID is REQUIRED, not optional, after all** — Codex's earlier argument (ad
+  timing on first install) wasn't the real issue; the real issue is that Firebase
+  Analytics assigns its own device/app-instance identifier for every session
+  regardless of purchase state, with no opt-out. The `ad_service.dart` guard from the
+  prior round is still correct and still worth having (a purchaser genuinely stops
+  triggering *AdMob's* identifier collection), but it doesn't make the whole "Device or
+  other IDs" category avoidable, since Analytics' own identifier isn't gated by it.
+  Changed to REQUIRED, added the Analytics purpose.
+- **Firebase UID is shared, not just collected** — same Analytics-sharing treatment
+  already applied to app interactions/location; `setUserId` sends it to Google.
+- **Approximate location and app interactions were missing the Advertising
+  purpose** — AdMob independently uses IP-derived coarse location and measures ad
+  impressions for its own purposes, separate from the app's own Analytics events.
+  Added to both.
+- **Diagnostics was missing Advertising and Fraud prevention purposes** — the Mobile
+  Ads SDK's own diagnostic signals (load/render failures, latency) serve those
+  purposes in addition to Crashlytics' app-functionality/analytics use.
+- **The "Other actions" (gameplay events) declaration was wrong, not just
+  incomplete.** Codex flagged (P2) that the shipped route (`main.dart` → `GameScreen`
+  → `FallingModuloGameScreen`) has no `AnalyticsService` gameplay calls or
+  `LeaderboardService` submissions. Checked directly: `GameProvider` — the class that
+  defines all the gameplay logging (`logLevelComplete`, `logMove`, etc.) — is
+  referenced nowhere outside its own file and its own integration test.
+  `LeaderboardService.submitScore` / `submitDailyScore` / `submitWeeklyScore` have
+  **zero call sites anywhere in the app.** Both are dead code from an earlier
+  architecture, never wired into the live game. Consequence: removed the "Other
+  actions" data type entirely (not just its App functionality purpose), and reverted
+  the gamertag's (`PSL_NAME`) App functionality purpose added in the prior round —
+  that was justified by the same false "sent with leaderboard submissions" premise.
+  Gamertag purpose is Account management only, which is what's actually true.
+- **Purchase history's Analytics purpose — considered, declined.** Codex argued
+  Firebase Analytics auto-logs Play Billing purchase events. Plausible in general, but
+  there's no `logEvent` call anywhere in `AnalyticsService` for purchases, and that
+  automatic instrumentation is tied to a native Play Billing Library integration path
+  this app (Flutter's `in_app_purchase` plugin, own `validatePurchase` Cloud Function)
+  doesn't use. Left as app functionality + fraud prevention only.
+- **Account deletion didn't clear the Analytics user ID** — `setUserIdFromAuth` never
+  gets called with `null` (`AuthGate` returns `LoginScreen` instead of calling it), so
+  the deleted user's Firebase UID stayed attached to all subsequent Analytics events.
+  Added `AnalyticsService.clearUserId()`, called from both Sign Out and Delete Account.
+- **Guest account deletion still had no real off-app path.** Documenting that
+  "in-app is the only option" (prior round) doesn't satisfy the requirement that a
+  shipped account type have *some* way to request deletion. Added a "Player ID" tile
+  in Settings (guest accounts only) that shows and copies the Firebase UID, and
+  updated [Support.tsx](../packages/web/src/pages/Support.tsx) to have guests send
+  that ID as their deletion request — the only thing that can actually verify a
+  credential-less anonymous account.
+- Also fixed: the deletion confirmation copy on the support page promised "leaderboard
+  entries" would be deleted — inaccurate given leaderboard submission is dead code:
+  there are none to delete. Removed that claim.
 
 **Still needed:**
 - Content rating questionnaire — no API found for this one, Play Console UI only.
