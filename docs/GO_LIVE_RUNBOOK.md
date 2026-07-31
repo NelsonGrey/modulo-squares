@@ -534,7 +534,7 @@ Screenshots required for Play Store submission:
 | App icon | 512×512 PNG | 1 (required) |
 
 - [x] Phone screenshots captured on Android device (release build) — 4 captured 2026-07-26 on a real Galaxy S24, cropped to 1080×2120 (under the 2:1 max ratio) at `output/imagegen/play_store/modulo-squares-phone-*.png`. Consider adding 1-2 more at a later game state — these are all from an early, mostly-empty board.
-- [ ] Feature graphic created (1024×500) — **not generated**; needs actual graphic design (Canva/Figma), not something screenshot-cropping can produce
+- [x] Feature graphic created (1024×500) — generated 2026-07-31 via HTML/CSS rendered at exact dimensions (`output/imagegen/play_store/modulo-squares-feature-graphic-1024x500.png`), 24-bit RGB confirmed, no alpha
 - [x] Adaptive icon files in `android/app/src/main/res/mipmap-*` directories (pre-existing)
 - [x] 512×512 app icon ready at `output/imagegen/play_store/modulo-squares-icon-512.png` (reused from `packages/mobile/web/icons/Icon-512.png`, already the right size/no-alpha)
 - [ ] All assets uploaded to Play Console

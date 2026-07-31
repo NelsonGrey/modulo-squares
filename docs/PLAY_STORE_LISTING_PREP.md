@@ -72,10 +72,17 @@ cropped to 1080×2120 (under Play's 2:1 max screenshot aspect ratio):
 - `modulo-squares-phone-04-settings.png` — settings dialog showing the $2.99 IAP price
 - `modulo-squares-icon-512.png` — 512×512 app icon (reused from the web favicon asset)
 
+- `modulo-squares-feature-graphic-1024x500.png` — feature graphic (1024×500, required),
+  generated 2026-07-31 via an HTML/CSS layout rendered through Playwright at exact
+  dimensions (24-bit RGB, no alpha, confirmed). Uses the actual brand palette
+  (`primary`/`secondary` blue-indigo gradient from the web site, `#1A1A2E`/`#4CAF50`
+  navy/green from the mobile app icon) and depicts the real game mechanic — an "18" tile
+  falling toward a highlighted "6" bucket (18 mod 6 = 0) — rather than a generic banner.
+
 **Still needed, not generated here:**
-- Feature graphic (1024×500, required) — needs actual graphic design; not something a
-  screenshot crop or this session's toolset can produce well. Recommend Canva/Figma using
-  the existing brand colors from the login screen (`#1a1b3a`-ish dark navy background,
-  green accent).
 - Consider capturing 1-2 more gameplay screenshots at a higher level/later game state for
   variety (the ones here are all from an early, mostly-empty board).
+- **Everything else in this document is drafted and ready to paste, but nothing can
+  actually be submitted until the Play Console app record exists** (Go Live Runbook
+  §2.3) — there is no API for creating a new app in Play Console, only for managing one
+  that already exists. That step needs your Google account and can't be automated.
