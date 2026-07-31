@@ -473,14 +473,9 @@ passwords — `keytool` silently ignores a distinct `-keypass`, so `keyPassword`
 
 Go to: **play.google.com/console → Create app**
 
-- [ ] App created:
-  - **App name**: Modulo Squares
-  - **Default language**: English (US)
-  - **App or game**: Game
-  - **Free or paid**: Free
-- [ ] Package name confirmed: `com.modulosquares.app.android`
-- [ ] Content rating questionnaire completed (expected: Everyone) — draft answers in [PLAY_STORE_LISTING_PREP.md](PLAY_STORE_LISTING_PREP.md)
-- [ ] Data safety form completed — draft answers in [PLAY_STORE_LISTING_PREP.md](PLAY_STORE_LISTING_PREP.md) (covers auth/email identifiers that this checklist's short version below omits)
+- [x] App created (confirmed via API 2026-07-31 — see §2.3c) — Package name: `com.modulosquares.app.android`
+- [ ] Content rating questionnaire completed (expected: Everyone) — draft answers in [PLAY_STORE_LISTING_PREP.md](PLAY_STORE_LISTING_PREP.md). No API for this, Play Console UI only.
+- [ ] Data safety form completed — draft answers in [PLAY_STORE_LISTING_PREP.md](PLAY_STORE_LISTING_PREP.md) (covers auth/email identifiers that this checklist's short version below omits). No API for this, Play Console UI only.
   - Analytics data (Firebase): disclosed
   - Advertising ID (AdMob): disclosed
   - Email/name/user ID (sign-in): disclosed
@@ -488,7 +483,23 @@ Go to: **play.google.com/console → Create app**
 
 **Validate**: App record visible in Play Console.
 
-*This step requires a Google Play Console developer account (one-time $25 registration if not already done) and can only be done by whoever owns that Google account — not something that can be automated from this repo.*
+*App creation itself required a Google Play Console developer account and could only be done by whoever owns that Google account — confirmed done. Content rating and data safety remain UI-only, no Android Publisher API endpoint exists for either.*
+
+---
+
+### 2.3c Store Listing — Populated via API (2026-07-31)
+
+Once the service account was granted Play Console access, the store listing was completed directly via the Android Publisher API (`androidpublisher.googleapis.com`) using `google-play-console-service@modulo-squares-prod.iam.gserviceaccount.com` — no Play Console UI clicking needed for any of this:
+
+- [x] Title, short description, full description set for `en-US` (from `packages/mobile/assets/store/metadata/`)
+- [x] Icon, feature graphic, and all 4 phone screenshots uploaded and committed
+- [x] Confirmed via a fresh `edits.insert` read-back after commit — all of the above persisted
+
+**Found in the process**: the **internal testing track already has a completed release** (`versionCode 2`, i.e. `1.0.0+2`) — this app is further along than earlier checklist entries suggested. Production track has zero releases; nothing here is publicly visible yet.
+
+**Auth notes for next time** (cost real time working this out): `gcloud auth print-access-token --impersonate-service-account=...` silently ignores `--scopes` and always returns a `cloud-platform`-only token, which the Android Publisher API rejects (same issue as GA4/GTM/Search Console in §3.2b). The fix is the same: `gcloud auth activate-service-account --key-file=...` then request `https://www.googleapis.com/auth/androidpublisher` explicitly on the *directly activated* identity, not via impersonation. Also: the active `gcloud` account reverted between separate tool calls at least once mid-session — reactivate the service account and use its token within the same shell invocation as the API call rather than assuming it persists across calls.
+
+**Not done — deliberately paused, not blocked**: the `remove_ads` in-app product. The legacy `inappproducts.insert` endpoint returns `PERMISSION_DENIED: Please migrate to the new publishing API` for this app — it's been migrated to the newer `monetization.onetimeproducts` model, which requires structured `purchaseOptions` with regional pricing/availability configs and tax category codes, not just a flat price. Getting a real revenue/compliance product wrong via blind API calls is a different risk tier than an image upload; this needs either careful, deliberate construction with an explicit base price and target regions confirmed first, or doing it through Play Console's guided pricing wizard.
 
 ---
 
@@ -537,7 +548,7 @@ Screenshots required for Play Store submission:
 - [x] Feature graphic created (1024×500) — generated 2026-07-31 via HTML/CSS rendered at exact dimensions (`output/imagegen/play_store/modulo-squares-feature-graphic-1024x500.png`), 24-bit RGB confirmed, no alpha
 - [x] Adaptive icon files in `android/app/src/main/res/mipmap-*` directories (pre-existing)
 - [x] 512×512 app icon ready at `output/imagegen/play_store/modulo-squares-icon-512.png` (reused from `packages/mobile/web/icons/Icon-512.png`, already the right size/no-alpha)
-- [ ] All assets uploaded to Play Console
+- [x] All assets uploaded to Play Console — via API 2026-07-31, see §2.3c
 
 **Validate**: Play Console store listing preview renders completely.
 
@@ -545,11 +556,18 @@ Screenshots required for Play Store submission:
 
 ### 2.6 Android IAP Setup
 
-Go to: **Play Console → Monetize → Products → In-app products**
+**Note (2026-07-31)**: this app has been migrated to Play's newer one-time-product model —
+`inappproducts.insert` (the endpoint this checklist originally assumed) returns
+`PERMISSION_DENIED: Please migrate to the new publishing API`. Use
+`monetization.onetimeproducts` instead, either via **Play Console → Monetize → Products →
+In-app products** (the Console UI already targets the right API underneath) or via
+`onetimeproducts.patch?allowMissing=true`, which requires a `purchaseOptions` array with
+regional pricing configs and a `taxAndComplianceSettings.productTaxCategoryCode`, not just
+a flat price — deliberately not attempted via raw API calls in this session, see §2.3c.
 
 - [ ] Product `remove_ads` created:
   - **Product ID**: `remove_ads` (must match iOS product ID)
-  - **Product type**: Managed product (one-time)
+  - **Product type**: One-time product, managed (non-consumable)
   - **Price**: $2.99
   - **Status**: Active
 - [ ] Test on real Android device with Google Play test account

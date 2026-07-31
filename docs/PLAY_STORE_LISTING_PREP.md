@@ -79,10 +79,18 @@ cropped to 1080×2120 (under Play's 2:1 max screenshot aspect ratio):
   navy/green from the mobile app icon) and depicts the real game mechanic — an "18" tile
   falling toward a highlighted "6" bucket (18 mod 6 = 0) — rather than a generic banner.
 
-**Still needed, not generated here:**
+**Update (2026-07-31): title, both descriptions, icon, feature graphic, and all 4
+screenshots are now live in Play Console** — pushed via the Android Publisher API
+using `google-play-console-service@modulo-squares-prod.iam.gserviceaccount.com`, not
+manually. See [GO_LIVE_RUNBOOK.md](GO_LIVE_RUNBOOK.md) §2.3c for how and what to watch
+out for if doing this again.
+
+**Still needed:**
+- Content rating questionnaire and data safety form — no API for either, Play Console UI
+  only.
+- `remove_ads` in-app product — the API exists (`monetization.onetimeproducts`) but
+  requires regional pricing/tax structure this session deliberately didn't guess at; do
+  via Play Console's guided pricing UI or a carefully-constructed API call with an
+  explicit base price and target regions confirmed first.
 - Consider capturing 1-2 more gameplay screenshots at a higher level/later game state for
   variety (the ones here are all from an early, mostly-empty board).
-- **Everything else in this document is drafted and ready to paste, but nothing can
-  actually be submitted until the Play Console app record exists** (Go Live Runbook
-  §2.3) — there is no API for creating a new app in Play Console, only for managing one
-  that already exists. That step needs your Google account and can't be automated.
