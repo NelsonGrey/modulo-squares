@@ -363,18 +363,22 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
 
     try {
       await FirebaseFunctions.instance.httpsCallable('deleteAccount').call();
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_highScorePrefKey);
-      if (mounted) setState(() => _highScore = 0);
-      // Best-effort cleanup — an Analytics SDK error here must not block
-      // sign-out after the account has already been deleted server-side.
-      try {
-        await getIt<AnalyticsService>().clearUserId();
-      } catch (_) {}
-      await FirebaseAuth.instance.signOut();
     } catch (e) {
       if (context.mounted) _showAccountError(context, e);
+      return;
     }
+
+    // The account is deleted server-side past this point — everything below is
+    // best-effort local cleanup and must never prevent sign-out.
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_highScorePrefKey);
+    } catch (_) {}
+    if (mounted) setState(() => _highScore = 0);
+    try {
+      await getIt<AnalyticsService>().clearUserId();
+    } catch (_) {}
+    await FirebaseAuth.instance.signOut();
   }
 
   Future<void> _linkWithGoogle(BuildContext context) async {

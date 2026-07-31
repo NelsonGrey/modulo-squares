@@ -248,6 +248,28 @@ the app actually collects. Either wire up real gameplay analytics logging from
 also means the "compete on the leaderboard" claim in the app description and store
 listing isn't backed by working code — `LeaderboardService.submitScore` is never
 called, so no scores are ever actually submitted to the public leaderboard.
+**Update 2026-07-31: this is now a tracked priority** — the user's next marketing
+promotion depends on the leaderboard actually working. Plan: wire real score
+submission into `FallingModuloGameScreen`, fix the `gamertags` Firestore
+over-exposure alongside it, then correct/fulfil the Privacy Policy and Analytics
+claims once they're true.
+
+**Sixth correction round:**
+- **User ID sharing was missing an App functionality purpose.**
+  `GamertagService.isAvailable` fetches the *entire* `gamertags/{tag}` document
+  (including its `uid` field) for every authenticated client's tag-availability
+  check, even though the app only reads `.exists` — the raw UID still crosses the
+  wire to another user's device. Added App functionality to `PSL_USER_ACCOUNT`'s
+  sharing purposes alongside Analytics. Same root cause as the Firestore
+  over-exposure flagged above — not fixed here for the same blast-radius reason.
+- **The post-deletion local cleanup could still block sign-out (P2), one step
+  earlier than the previous fix caught.** `SharedPreferences.getInstance()`/`.remove()`
+  ran *before* the try/catch that protected the Analytics call — if either threw, it
+  skipped straight to the outer catch, which reports a deletion error and leaves a
+  stale authenticated session even though the backend `deleteAccount` call already
+  succeeded. Restructured so only the `deleteAccount` call itself can produce an
+  error message; everything after it (prefs cleanup, Analytics cleanup, sign-out) is
+  unconditional best-effort cleanup that always ends in sign-out.
 
 **Still needed:**
 - Content rating questionnaire — no API found for this one, Play Console UI only.
