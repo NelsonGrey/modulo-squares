@@ -135,6 +135,33 @@ collected only, not shared; Crash logs and Diagnostics collected only, not share
 purposes); App interactions, Other actions, Approximate location, and Advertising ID
 all collected AND shared with Google.
 
+**Second correction round** (same `@codex review`, against the fix commit itself) found
+4 more gaps, 3 fixed:
+- Gamertag (Name) purpose was missing App functionality — it's sent as `playerName`
+  with every leaderboard submission, not just used for account management. Fixed in
+  the CSV.
+- Guest account deletion instructions were incomplete — anonymous accounts have no
+  email, so the "email us to verify" path doesn't work for them.
+  [Support.tsx](../packages/web/src/pages/Support.tsx) now says explicitly that in-app
+  deletion is the only option for guests, and doesn't promise something (email
+  verification, automatic inactive-account cleanup) that isn't actually true or
+  verifiable from this repo.
+- Account deletion didn't clear local progress — `_deleteAccount` in
+  [falling_modulo_game_screen.dart](../packages/mobile/lib/features/game/falling_modulo_game_screen.dart)
+  called the backend `deleteAccount` function and signed out, but never cleared the
+  `fallingMode.highScore` SharedPreferences key, so the confirmation dialog's promise
+  to delete "saved progress" wasn't fully true. Now cleared as part of deletion.
+
+**Not changed, considered:** Codex's device-ID finding argued Advertising ID can't be
+OPTIONAL because a brand-new user's very first ad load happens before they've had any
+chance to purchase `remove_ads`. That's true but not a bug — `PurchaseService.initialize()`
+is awaited before the first `loadInterstitial()` call in `main.dart`, so a *returning*
+purchaser's cached entitlement is loaded first and the guard correctly stops ad
+requests from that point on. OPTIONAL describes "the user has a way to stop this,"
+matching how Play's Data Safety schema is used across the ad-supported app ecosystem —
+it doesn't mean collection can never happen for even a moment before a user's first-ever
+purchase decision. Left as OPTIONAL.
+
 **Still needed:**
 - Content rating questionnaire — no API found for this one, Play Console UI only.
 - `remove_ads` in-app product — the API exists (`monetization.onetimeproducts`) but

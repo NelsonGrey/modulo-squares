@@ -357,6 +357,9 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
 
     try {
       await FirebaseFunctions.instance.httpsCallable('deleteAccount').call();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_highScorePrefKey);
+      if (mounted) setState(() => _highScore = 0);
       await FirebaseAuth.instance.signOut();
     } catch (e) {
       if (context.mounted) _showAccountError(context, e);

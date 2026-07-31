@@ -64,13 +64,22 @@ const Support: React.FC = () => {
               immediate and cannot be undone.
             </p>
             <p className="text-gray-600">
-              If you can't access the app, select <strong>"Delete My Account &amp;
-              Data"</strong> as the topic below, or email{' '}
+              If you signed in with email, Google, or Apple and can't access the app,
+              select <strong>"Delete My Account &amp; Data"</strong> as the topic below,
+              or email{' '}
               <a href="mailto:support@modulosquares.com?subject=Delete%20My%20Account%20%26%20Data" className="text-primary-600 hover:underline">
                 support@modulosquares.com
               </a>{' '}
               from the address on your account, and we'll delete it manually within 30
               days.
+            </p>
+            <p className="text-gray-600 mt-2">
+              Guest accounts (Continue as Guest) have no email or password, so we can't
+              verify ownership through this form — in-app deletion (Settings → Delete
+              Account) is the only way to remove one. If you can't reach it,
+              uninstalling the app removes all locally-stored guest progress from your
+              device, though the server-side guest account record isn't deleted unless
+              you use the in-app option first.
             </p>
           </div>
 
