@@ -4,6 +4,7 @@ import SEOHead from '../components/SEOHead';
 const TOPICS = [
   'Bug Report',
   'Account / Login',
+  'Delete My Account & Data',
   'Leaderboard Issue',
   'Purchase / In-App',
   'Feature Request',
@@ -53,6 +54,25 @@ const Support: React.FC = () => {
             </a>
             .
           </p>
+
+          <div className="rounded-xl bg-gray-50 border border-gray-200 p-6 mb-10">
+            <h2 className="text-lg font-semibold text-gray-900 mb-2">Delete your account or data</h2>
+            <p className="text-gray-600 mb-2">
+              You can permanently delete your account and all associated data (profile,
+              gamertag, saved progress, and leaderboard entries) at any time from inside
+              the app: open <strong>Settings → Delete Account</strong>. This is
+              immediate and cannot be undone.
+            </p>
+            <p className="text-gray-600">
+              If you can't access the app, select <strong>"Delete My Account &amp;
+              Data"</strong> as the topic below, or email{' '}
+              <a href="mailto:support@modulosquares.com?subject=Delete%20My%20Account%20%26%20Data" className="text-primary-600 hover:underline">
+                support@modulosquares.com
+              </a>{' '}
+              from the address on your account, and we'll delete it manually within 30
+              days.
+            </p>
+          </div>
 
           {status === 'sent' ? (
             <div className="rounded-xl bg-green-50 border border-green-200 p-8 text-center">

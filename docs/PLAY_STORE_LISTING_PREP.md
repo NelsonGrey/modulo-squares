@@ -90,18 +90,50 @@ out for if doing this again.
 `androidpublisher.applications.dataSafety` (POST, body `{"safetyLabels": "<csv>"}`,
 takes the raw CSV in [Play's Data Safety export/import
 format](https://support.google.com/googleplay/android-developer/answer/10787469)).
-Submitted 2026-07-31, confirmed HTTP 204. Full CSV committed at
-[play-store-data-safety-declaration.csv](play-store-data-safety-declaration.csv).
 First submission attempt 400'd with `Response missing for PSL_DATA_DELETION_URL` —
 Google requires this in addition to `PSL_ACCOUNT_DELETION_URL`; both point at
-`https://modulosquares.com/support` since in-app account deletion removes all
-associated data too. Answers reflect actual app behavior verified against code, not
-the earlier draft table above (which is now superseded by the CSV): Name/Email/User ID
-collected only (not shared), required except Name which is OPTIONAL (only supplied via
-Google/Apple sign-in); Crash logs (Crashlytics) collected only, not shared, REQUIRED
-(no opt-out toggle exists in the app); App interactions (Firebase Analytics) and
-Advertising ID (AdMob) both collected AND shared with Google — Advertising ID is
-OPTIONAL since the `remove_ads` IAP eliminates it entirely.
+`https://modulosquares.com/support`, which now has an explicit account/data-deletion
+section (see below) rather than just a generic contact form. Full CSV committed at
+[play-store-data-safety-declaration.csv](play-store-data-safety-declaration.csv).
+
+**Correction round (same day, via `@codex review`):** the first submitted version
+undercounted what the app actually collects. Codex found 10 real gaps by reading the
+code directly — all verified and fixed before resubmitting (final submission also
+confirmed HTTP 204):
+- **Purchase history** wasn't declared — `PurchaseService._completePurchase` sends
+  product ID, receipt, and transaction ID to the `validatePurchase` Cloud Function on
+  every `remove_ads` purchase/restore.
+- **Email was marked required** — wrong, since `Continue as Guest`
+  (`signInAnonymously()`) never collects it. Now OPTIONAL, and anonymous guest
+  accounts are declared under account creation methods (`PSL_ACM_OTHER`).
+- **Gamertag (Name) was marked optional** — wrong, `GamertagScreen` is mandatory for
+  every account including guests before the game is reachable. Now REQUIRED.
+- **Advertising ID was declared OPTIONAL but wasn't actually avoidable** —
+  `AdService.loadInterstitial()` requested ads regardless of purchase state; only
+  `showInterstitial()` checked `adsRemoved`. Fixed in code
+  ([ad_service.dart](../packages/mobile/lib/core/services/ad_service.dart)) so
+  purchasers stop triggering ad requests entirely, which is what makes OPTIONAL true.
+- **User ID's Analytics purpose was missing** — `AuthGate` → `setUserIdFromAuth` feeds
+  the Firebase UID straight into `FirebaseAnalytics.setUserId`.
+- **Approximate location (country) wasn't declared** — Firebase Analytics derives it
+  for every session with no opt-out; already disclosed in `PrivacyPolicy.tsx` but
+  missing from the CSV.
+- **Diagnostics wasn't declared separately from crash logs** — Crashlytics attaches
+  device/OS technical context to every report, also already disclosed in the privacy
+  policy.
+- **Gameplay events weren't declared as "Other actions"** — `AnalyticsService` sends
+  level results, scores, ranks, and badges beyond generic app interactions;
+  `LeaderboardService` submits scores.
+- **The deletion URL pointed at a generic contact form** with no deletion-specific
+  option or instructions — [Support.tsx](../packages/web/src/pages/Support.tsx) now has
+  an explicit "Delete your account or data" section and a dedicated topic.
+
+Remaining answers reflect actual app behavior verified against code, not assumed from
+the earlier draft table above (now fully superseded by the CSV): Name/Email/User ID
+collected only, not shared; Crash logs and Diagnostics collected only, not shared
+(Crashlytics treated as a data processor, not shared with Google for Google's own
+purposes); App interactions, Other actions, Approximate location, and Advertising ID
+all collected AND shared with Google.
 
 **Still needed:**
 - Content rating questionnaire — no API found for this one, Play Console UI only.

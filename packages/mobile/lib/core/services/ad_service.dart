@@ -52,6 +52,7 @@ class AdService {
 
   void loadInterstitial() {
     if (_testMode) return; // Skip ad loading in test mode
+    if (_purchaseService.adsRemoved) return; // Purchaser: don't request ads at all
 
     if (_isLoading || _interstitial != null) return;
     _isLoading = true;
