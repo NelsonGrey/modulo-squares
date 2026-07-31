@@ -67,10 +67,11 @@ void main() async {
   // Pass --dart-define=APP_CHECK_DEBUG=true when building a dev-signed build
   // for device testing. The debug provider generates a UUID on first launch
   // (visible in the device log) — register it in Firebase Console →
-  // App Check → your iOS app → Manage debug tokens.
+  // App Check → your iOS/Android app → Manage debug tokens.
   //
   // App Store / TestFlight builds omit the flag and use App Attest with
-  // DeviceCheck as the fallback for older devices.
+  // DeviceCheck as the fallback for older devices. Play Store / internal
+  // testing builds omit the flag and use Play Integrity.
   const bool appCheckDebug =
       bool.fromEnvironment('APP_CHECK_DEBUG', defaultValue: false);
   const String appCheckDebugToken =
@@ -86,19 +87,26 @@ void main() async {
                     : null,
               )
             : const AppleAppAttestWithDeviceCheckFallbackProvider(),
+        providerAndroid: appCheckDebug
+            ? AndroidDebugProvider(
+                debugToken: appCheckDebugToken.isNotEmpty
+                    ? appCheckDebugToken
+                    : null,
+              )
+            : const AndroidPlayIntegrityProvider(),
       );
 
       if (appCheckDebug) {
         // Immediately verify the debug token is accepted by Firebase.
         // If this throws, the UUID is not registered in Firebase Console
-        // under App Check → your iOS app → Manage debug tokens.
+        // under App Check → your iOS/Android app → Manage debug tokens.
         try {
           await FirebaseAppCheck.instance.getToken(true);
           debugPrint('[AppCheck] Debug token accepted by Firebase ✓');
         } catch (e) {
           debugPrint('[AppCheck] Debug token REJECTED: $e');
           debugPrint('[AppCheck] Register UUID in Firebase Console → '
-              'App Check → iOS app → Manage debug tokens');
+              'App Check → iOS/Android app → Manage debug tokens');
           if (appCheckDebugToken.isNotEmpty) {
             debugPrint('[AppCheck] Token to register: $appCheckDebugToken');
           }

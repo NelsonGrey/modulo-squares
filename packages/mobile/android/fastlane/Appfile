@@ -1,0 +1,5 @@
+# fastlane Appfile for Modulo Squares Android
+# This file contains app-specific configuration for fastlane
+
+json_key_data ENV["GOOGLE_PLAY_SERVICE_ACCOUNT_JSON"]
+package_name "com.modulosquares.app.android"
