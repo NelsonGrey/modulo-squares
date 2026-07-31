@@ -7,7 +7,6 @@ const DIVISIBILITY_TRICKS = [
   { n: 4, rule: 'The last two digits, read as their own number, divide by 4.', example: '316 → 16 ÷ 4 = 4, so 316 is divisible by 4.' },
   { n: 5, rule: 'The last digit is 0 or 5.', example: '210 → ends in 0, divisible by 5.' },
   { n: 9, rule: 'The digits add up to a multiple of 9 — same trick as 3, one level up.', example: '2+7+0=9, so 270 is divisible by 9.' },
-  { n: 10, rule: 'The last digit is 0.', example: '400 → ends in 0, divisible by 10.' },
 ];
 
 const MISTAKES = [
@@ -100,7 +99,8 @@ const StrategyGuide: React.FC = () => {
             clock. Each level widens the number range (roughly 6-18 at level 1, growing
             to 15-45+ by level 10 and beyond) and speeds up the drop interval by about 4%
             per level, so you're reading larger numbers with less time to react. The
-            number of tiles needed to complete a level grows too. None of this changes
+            fill target that completes a level stays fixed the whole run — the numbers
+            just get bigger and the clock gets faster around it. None of this changes
             which divisibility tricks apply — it just raises how fast and how far you
             have to apply them.
           </p>

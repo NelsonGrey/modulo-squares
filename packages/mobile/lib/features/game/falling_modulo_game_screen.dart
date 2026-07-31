@@ -28,6 +28,11 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
   static const String _visualCuesPrefKey = 'fallingMode.visualCuesEnabled';
   static const String _highScorePrefKey = 'fallingMode.highScore';
 
+  // Android's play-services-auth SDK throws IllegalArgumentException
+  // ("requestedScopes cannot be null or empty") if this list is empty --
+  // see the matching constant in login_screen.dart.
+  static const List<String> _googleAuthScopes = ['email'];
+
   final FallingModuloGameEngine _engine = FallingModuloGameEngine();
   late FallingModuloGameState _state;
   Timer? _timer;
@@ -369,8 +374,12 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
         return;
       }
       final authorization =
-          await googleUser.authorizationClient.authorizationForScopes([]) ??
-          await googleUser.authorizationClient.authorizeScopes([]);
+          await googleUser.authorizationClient.authorizationForScopes(
+            _googleAuthScopes,
+          ) ??
+          await googleUser.authorizationClient.authorizeScopes(
+            _googleAuthScopes,
+          );
       final credential = GoogleAuthProvider.credential(
         accessToken: authorization.accessToken,
         idToken: idToken,
@@ -1317,65 +1326,81 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
         color: Colors.black.withValues(alpha: 0.72),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: SingleChildScrollView(
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.pause_circle_filled_outlined,
-                size: 72,
-                color: Colors.white.withValues(alpha: 0.9),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Paused',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 28,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Level ${_state.level}  ·  Score ${_state.score}',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.6),
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(height: 32),
-              FilledButton.icon(
-                onPressed:
-                    () => _showInterstitialTransition(
-                      trigger: 'resume_from_pause',
-                      onClosed: _toggleRunning,
+      // Same fix as _buildPreGameOverlay: SingleChildScrollView gives its
+      // child unbounded height, so a bare Center shrink-wraps to the top
+      // instead of actually centering. LayoutBuilder + minHeight keeps it
+      // centered while still allowing scroll if content overflows.
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.pause_circle_filled_outlined,
+                      size: 72,
+                      color: Colors.white.withValues(alpha: 0.9),
                     ),
-                icon: const Icon(Icons.play_arrow, size: 22),
-                label: const Text(
-                  'Resume',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
-                ),
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size(180, 52),
-                  backgroundColor: Colors.lightBlue.shade400,
-                  foregroundColor: Colors.white,
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Paused',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 28,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Level ${_state.level}  ·  Score ${_state.score}',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.6),
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    FilledButton.icon(
+                      onPressed:
+                          () => _showInterstitialTransition(
+                            trigger: 'resume_from_pause',
+                            onClosed: _toggleRunning,
+                          ),
+                      icon: const Icon(Icons.play_arrow, size: 22),
+                      label: const Text(
+                        'Resume',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(180, 52),
+                        backgroundColor: Colors.lightBlue.shade400,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      onPressed: () => _confirmNewRun(context),
+                      icon: const Icon(Icons.replay, size: 20),
+                      label: const Text('New Game'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: BorderSide(
+                          color: Colors.white.withValues(alpha: 0.4),
+                        ),
+                        minimumSize: const Size(180, 48),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: () => _confirmNewRun(context),
-                icon: const Icon(Icons.replay, size: 20),
-                label: const Text('New Game'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  side: BorderSide(color: Colors.white.withValues(alpha: 0.4)),
-                  minimumSize: const Size(180, 48),
-                ),
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
