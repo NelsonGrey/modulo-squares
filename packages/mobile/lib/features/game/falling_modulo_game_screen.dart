@@ -1212,67 +1212,86 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
         color: Colors.black.withValues(alpha: 0.80),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: SingleChildScrollView(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Modulo Squares',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 26,
+      // SingleChildScrollView gives its child unbounded height in the scroll
+      // direction, so a bare Center would shrink-wrap and render pinned to
+      // the top instead of actually centering. LayoutBuilder + a minHeight
+      // constraint forces the content to be at least as tall as the visible
+      // area (so Center has room to center) while still allowing it to grow
+      // taller and scroll if content ever overflows a small screen.
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 32,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Modulo Squares',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 26,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      _buildOverlayRule(
+                        Icons.arrow_downward,
+                        'A number falls — guide it left or right into a bucket',
+                      ),
+                      const SizedBox(height: 8),
+                      _buildOverlayRule(
+                        Icons.calculate_outlined,
+                        'Land it where the number is divisible by the bucket value',
+                      ),
+                      const SizedBox(height: 8),
+                      _buildOverlayRule(
+                        Icons.grid_on_outlined,
+                        'Fill 100 squares to level up — wrong buckets cost points, the Dead bucket costs your tile value',
+                      ),
+                      const SizedBox(height: 32),
+                      FilledButton.icon(
+                        onPressed: _toggleRunning,
+                        icon: const Icon(Icons.play_arrow, size: 22),
+                        label: const Text(
+                          'Start Game',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size(200, 52),
+                          backgroundColor: Colors.lightBlue.shade400,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextButton.icon(
+                        onPressed: _showHowToPlaySheet,
+                        icon: Icon(
+                          Icons.info_outline,
+                          size: 16,
+                          color: Colors.lightBlue.shade200,
+                        ),
+                        label: Text(
+                          'How to Play',
+                          style: TextStyle(color: Colors.lightBlue.shade200),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 24),
-                _buildOverlayRule(
-                  Icons.arrow_downward,
-                  'A number falls — guide it left or right into a bucket',
-                ),
-                const SizedBox(height: 8),
-                _buildOverlayRule(
-                  Icons.calculate_outlined,
-                  'Land it where the number is divisible by the bucket value',
-                ),
-                const SizedBox(height: 8),
-                _buildOverlayRule(
-                  Icons.grid_on_outlined,
-                  'Fill 100 squares to level up — wrong buckets cost points, the Dead bucket costs your tile value',
-                ),
-                const SizedBox(height: 32),
-                FilledButton.icon(
-                  onPressed: _toggleRunning,
-                  icon: const Icon(Icons.play_arrow, size: 22),
-                  label: const Text(
-                    'Start Game',
-                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
-                  ),
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size(200, 52),
-                    backgroundColor: Colors.lightBlue.shade400,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextButton.icon(
-                  onPressed: _showHowToPlaySheet,
-                  icon: Icon(
-                    Icons.info_outline,
-                    size: 16,
-                    color: Colors.lightBlue.shade200,
-                  ),
-                  label: Text(
-                    'How to Play',
-                    style: TextStyle(color: Colors.lightBlue.shade200),
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }

@@ -93,13 +93,13 @@ Missing assets to produce before launch week:
 
 ## Phased Launch Plan
 
-### Phase A0 - Available Now (Web Build, No Waiting On Apple)
+### Phase A0 - Available Now (Site Content, No Waiting On Apple)
 
-The React web build at `https://modulosquares.com` is live and playable today — this doesn't require App Store approval and isn't covered by the Ground Rules restriction on iOS "available now" language (it's a different, already-available product surface). Use it to start Reddit/TikTok content immediately instead of sitting idle through App Review:
+**Correction (2026-07-31): the web build at `https://modulosquares.com` is a marketing site, not a playable game** — `packages/web/src` has no gameplay route, no game engine, no interactive canvas; `Hero.tsx`'s falling-squares animation is a static, non-interactive illustration. Do not post "free to play in browser" — that's a false claim. What *is* real and postable today without waiting on App Review: the two long-form content pages added alongside this correction, `/strategy-guide` and `/modular-arithmetic-explained`, which are genuine original writing, not a demo of the game itself.
 
-- [ ] Post to `r/WebGames` or `r/puzzles`: "I built a falling-squares puzzle game about divisibility — free to play in browser." Link `https://modulosquares.com` directly (skip the `/download` App Store funnel, since there's no App Store link to give yet). Close with a specific, answerable question (e.g. "is the level 1-10 difficulty ramp too fast?") — a real question reliably outperforms a flat announcement.
-- [ ] Record one TikTok clip from the web build (screen-record the browser, portrait crop) as a placeholder while iOS/Android clips aren't ready yet.
-- [ ] Do **not** call this "the app" in these posts — say "the game" or "the browser version" so it doesn't read as a false claim once mobile is live and people go looking for it on a store.
+- [ ] Post to `r/math` or `r/askmath`: share the modular arithmetic explainer as a plain math writeup (cryptography/hashing/calendar examples), not as game marketing — this is the kind of content those subs actually welcome. Mention the game is in development, don't lead with it.
+- [ ] Do **not** record a "gameplay" clip from the website — there is nothing to record. Save gameplay clips for the actual iOS/Android builds once available.
+- [ ] Do **not** call the website "the game" or imply it's playable in any post — it's the marketing/info site only.
 
 ### Phase A - App Review Waiting Room
 

@@ -116,7 +116,7 @@ const Features: React.FC = () => {
             >
               <h2 className="text-xl font-bold text-gray-950 mb-2">Strategy Guide →</h2>
               <p className="text-gray-600">
-                Divisibility shortcuts, when to use the Dead bucket on purpose, and the
+                Divisibility shortcuts, why bucket 1 is always a safe landing, and the
                 mistakes that keep players off the leaderboard.
               </p>
             </Link>

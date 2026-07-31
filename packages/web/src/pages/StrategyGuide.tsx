@@ -16,8 +16,8 @@ const MISTAKES = [
     body: 'Long division on a falling tile costs you the tile. Divisibility rules exist so you never actually have to divide — you check the last digit or the digit sum and move on. If you catch yourself computing an exact quotient, you\'re working harder than the level requires.',
   },
   {
-    title: 'Ignoring the Dead bucket until it\'s too late',
-    body: 'New players treat the Dead bucket as pure punishment and try to avoid it at all costs, even when a tile clearly doesn\'t match any live bucket. That hesitation is what actually costs points — a fast, correct trip to Dead beats a slow, wrong guess at a live bucket every time.',
+    title: 'Forgetting bucket 1 is always a safe landing',
+    body: 'Every board always includes a bucket labeled 1, and every number divides evenly by 1 — so there is always a correct bucket for whatever is falling. Players who don\'t realize this sometimes freeze on an unfamiliar number and land in Dead by default. Dead only costs you; bucket 1 never does.',
   },
   {
     title: 'Locking onto one bucket instead of scanning all of them',
@@ -34,7 +34,7 @@ const StrategyGuide: React.FC = () => {
     <>
       <SEOHead
         title="Strategy Guide"
-        description="A real strategy guide for Modulo Squares: divisibility shortcuts, when to use the Dead bucket on purpose, how level pacing changes, and the mistakes that separate beginners from leaderboard regulars."
+        description="A real strategy guide for Modulo Squares: divisibility shortcuts, why bucket 1 is always a safe landing, how level pacing actually changes, and the mistakes that separate beginners from leaderboard regulars."
         path="/strategy-guide"
       />
       <section className="section-padding bg-white">
@@ -70,38 +70,39 @@ const StrategyGuide: React.FC = () => {
             ))}
           </div>
           <p className="text-gray-700 mb-10">
-            Buckets for 6, 7, and 8 don't have a single clean digit trick — that's
-            intentional, and it's what makes higher levels harder. For 6, check divisible
-            by 2 <em>and</em> by 3. For 8, check whether the last three digits divide by
-            8, which is really just the "divisible by 4" trick applied twice. 7 has no
-            fast shortcut worth memorizing; recognizing multiples of 7 by sight is a
-            skill that only comes from repetition, which is exactly why it shows up more
-            often at higher levels.
+            Buckets for 6, 7, and 8 don't have a single clean digit trick. For 6, check
+            divisible by 2 <em>and</em> by 3. For 8, check whether the last three digits
+            divide by 8, which is really just the "divisible by 4" trick applied twice.
+            7 has no fast shortcut worth memorizing — recognizing multiples of 7 by sight
+            is a skill that only comes from repetition. Every board always includes all
+            nine buckets (1 through 9) plus Dead, just reshuffled into different lanes
+            each level, so you can't predict where 7 will land, only that it's always
+            somewhere on the board.
           </p>
 
           <h2 className="text-2xl font-bold text-gray-950 mb-4">
-            The Dead bucket is a tool, not just a penalty
+            Bucket 1 is your safety net
           </h2>
           <p className="text-gray-700 mb-10">
-            Every falling number that doesn't cleanly divide into any live bucket
-            belongs in Dead — and choosing Dead on purpose, quickly, is a real skill.
-            The players who climb the leaderboard fastest aren't the ones who avoid
-            Dead entirely; they're the ones who recognize a no-match number instantly
-            and route it there without hesitating, instead of burning time hunting for
-            a bucket that was never going to work.
+            Every number divides evenly by 1, and a bucket labeled 1 is on the board at
+            every level — so there is never a falling number without a correct home.
+            Landing in Dead is never actually necessary; it only happens when you freeze
+            on an unfamiliar number instead of falling back to bucket 1. If you don't
+            immediately recognize a divisor, look for 1 rather than guessing or
+            defaulting to Dead — it costs nothing and it's always right.
           </p>
 
           <h2 className="text-2xl font-bold text-gray-950 mb-4">
             How level pacing changes as you climb
           </h2>
           <p className="text-gray-700 mb-10">
-            Early levels use a small number range and a forgiving drop speed, which is
-            why divisibility-by-2/5/10 buckets carry most beginners through level 10.
-            Past that, the number range widens and drop speed increases together, which
-            is what makes 3/9 (digit-sum) and 4/8 (last-digits) buckets start to matter
-            more. By the levels where 6 and 7 buckets appear regularly, the game is
-            testing whether you've actually built the pattern-recognition habit, not
-            whether you can do math faster under a shorter clock.
+            The nine buckets never change — what changes is the falling numbers and the
+            clock. Each level widens the number range (roughly 6-18 at level 1, growing
+            to 15-45+ by level 10 and beyond) and speeds up the drop interval by about 4%
+            per level, so you're reading larger numbers with less time to react. The
+            number of tiles needed to complete a level grows too. None of this changes
+            which divisibility tricks apply — it just raises how fast and how far you
+            have to apply them.
           </p>
 
           <h2 className="text-2xl font-bold text-gray-950 mb-4">
