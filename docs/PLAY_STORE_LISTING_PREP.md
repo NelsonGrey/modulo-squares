@@ -85,9 +85,26 @@ using `google-play-console-service@modulo-squares-prod.iam.gserviceaccount.com`,
 manually. See [GO_LIVE_RUNBOOK.md](GO_LIVE_RUNBOOK.md) §2.3c for how and what to watch
 out for if doing this again.
 
+**Update (2026-07-31): Data Safety declaration submitted, live.** Correction to the
+"no API" note below — there is an API:
+`androidpublisher.applications.dataSafety` (POST, body `{"safetyLabels": "<csv>"}`,
+takes the raw CSV in [Play's Data Safety export/import
+format](https://support.google.com/googleplay/android-developer/answer/10787469)).
+Submitted 2026-07-31, confirmed HTTP 204. Full CSV committed at
+[play-store-data-safety-declaration.csv](play-store-data-safety-declaration.csv).
+First submission attempt 400'd with `Response missing for PSL_DATA_DELETION_URL` —
+Google requires this in addition to `PSL_ACCOUNT_DELETION_URL`; both point at
+`https://modulosquares.com/support` since in-app account deletion removes all
+associated data too. Answers reflect actual app behavior verified against code, not
+the earlier draft table above (which is now superseded by the CSV): Name/Email/User ID
+collected only (not shared), required except Name which is OPTIONAL (only supplied via
+Google/Apple sign-in); Crash logs (Crashlytics) collected only, not shared, REQUIRED
+(no opt-out toggle exists in the app); App interactions (Firebase Analytics) and
+Advertising ID (AdMob) both collected AND shared with Google — Advertising ID is
+OPTIONAL since the `remove_ads` IAP eliminates it entirely.
+
 **Still needed:**
-- Content rating questionnaire and data safety form — no API for either, Play Console UI
-  only.
+- Content rating questionnaire — no API found for this one, Play Console UI only.
 - `remove_ads` in-app product — the API exists (`monetization.onetimeproducts`) but
   requires regional pricing/tax structure this session deliberately didn't guess at; do
   via Play Console's guided pricing UI or a carefully-constructed API call with an
