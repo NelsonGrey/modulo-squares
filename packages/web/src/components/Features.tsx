@@ -109,7 +109,30 @@ const Features: React.FC = () => {
             </div>
           </div>
 
-          <div className="mt-14 bg-primary-50 border border-primary-100 rounded-lg p-8 text-center">
+          <div className="mt-14 grid sm:grid-cols-2 gap-5 mb-14">
+            <Link
+              to="/strategy-guide"
+              className="block border border-gray-200 rounded-lg p-6 hover:border-primary-400 hover:shadow-md transition-all"
+            >
+              <h2 className="text-xl font-bold text-gray-950 mb-2">Strategy Guide →</h2>
+              <p className="text-gray-600">
+                Divisibility shortcuts, when to use the Dead bucket on purpose, and the
+                mistakes that keep players off the leaderboard.
+              </p>
+            </Link>
+            <Link
+              to="/modular-arithmetic-explained"
+              className="block border border-gray-200 rounded-lg p-6 hover:border-primary-400 hover:shadow-md transition-all"
+            >
+              <h2 className="text-xl font-bold text-gray-950 mb-2">What Is Modular Arithmetic? →</h2>
+              <p className="text-gray-600">
+                The math behind the game, and where it shows up in cryptography,
+                hashing, and calendars.
+              </p>
+            </Link>
+          </div>
+
+          <div className="bg-primary-50 border border-primary-100 rounded-lg p-8 text-center">
             <h2 className="text-2xl font-bold text-gray-950 mb-3">
               Ready to test the pattern?
             </h2>
