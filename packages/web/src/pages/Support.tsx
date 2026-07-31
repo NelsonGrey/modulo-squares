@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router';
 import SEOHead from '../components/SEOHead';
 
 const TOPICS = [
@@ -58,10 +59,15 @@ const Support: React.FC = () => {
           <div className="rounded-xl bg-gray-50 border border-gray-200 p-6 mb-10">
             <h2 className="text-lg font-semibold text-gray-900 mb-2">Delete your account or data</h2>
             <p className="text-gray-600 mb-2">
-              You can permanently delete your account and all associated data (profile,
-              gamertag, and saved progress) at any time from inside the app: open{' '}
-              <strong>Settings → Delete Account</strong>. This is immediate and cannot
-              be undone.
+              You can permanently delete your account at any time from inside the app:
+              open <strong>Settings → Delete Account</strong>. This immediately deletes
+              your profile, gamertag, and saved progress, and cannot be undone. Analytics
+              and crash-report data already sent before deletion is retained separately
+              per our standard 60–90 day retention window — see our{' '}
+              <Link to="/privacy" className="text-primary-600 hover:underline">
+                Privacy Policy
+              </Link>{' '}
+              for details.
             </p>
             <p className="text-gray-600">
               If you signed in with email, Google, or Apple and can't access the app,
@@ -74,14 +80,17 @@ const Support: React.FC = () => {
               days.
             </p>
             <p className="text-gray-600 mt-2">
-              Guest accounts (Continue as Guest) have no email or password, so we can't
-              verify a deletion request from this form by email alone. If you can still
-              open the app, in-app deletion (Settings → Delete Account) is the fastest
-              option. If you can't, open <strong>Settings → Player ID</strong> before you
-              lose access, copy that ID, and send it to us using the topic below — we can
-              verify and delete a guest account by its Player ID. Uninstalling the app on
-              its own only clears locally-stored progress; it doesn't delete the
-              server-side account record.
+              Guest accounts (Continue as Guest) have no email or password, so
+              in-app deletion (Settings → Delete Account) is the only way to delete one
+              with certainty — it's tied to your actual signed-in session, so there's
+              nothing to impersonate. If you can't open the app, you can send us the
+              Player ID shown under <strong>Settings → Player ID</strong> using the
+              topic below; because a guest account can't be cryptographically verified
+              from outside the app, we'll delete it on a best-effort basis rather than
+              guarantee it, and may ask for additional details (e.g. roughly when you
+              last played) to reduce the chance of deleting the wrong account.
+              Uninstalling the app on its own only clears locally-stored progress; it
+              doesn't delete the server-side account record.
             </p>
           </div>
 

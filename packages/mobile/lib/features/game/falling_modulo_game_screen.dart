@@ -328,7 +328,10 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
     );
     if (confirmed != true) return;
     if (context.mounted) Navigator.of(context).pop();
-    await getIt<AnalyticsService>().clearUserId();
+    // Best-effort cleanup — an Analytics SDK error must never block sign-out.
+    try {
+      await getIt<AnalyticsService>().clearUserId();
+    } catch (_) {}
     await FirebaseAuth.instance.signOut();
   }
 
@@ -363,7 +366,11 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_highScorePrefKey);
       if (mounted) setState(() => _highScore = 0);
-      await getIt<AnalyticsService>().clearUserId();
+      // Best-effort cleanup — an Analytics SDK error here must not block
+      // sign-out after the account has already been deleted server-side.
+      try {
+        await getIt<AnalyticsService>().clearUserId();
+      } catch (_) {}
       await FirebaseAuth.instance.signOut();
     } catch (e) {
       if (context.mounted) _showAccountError(context, e);

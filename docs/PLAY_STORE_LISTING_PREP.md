@@ -187,12 +187,9 @@ service code:
   the gamertag's (`PSL_NAME`) App functionality purpose added in the prior round —
   that was justified by the same false "sent with leaderboard submissions" premise.
   Gamertag purpose is Account management only, which is what's actually true.
-- **Purchase history's Analytics purpose — considered, declined.** Codex argued
-  Firebase Analytics auto-logs Play Billing purchase events. Plausible in general, but
-  there's no `logEvent` call anywhere in `AnalyticsService` for purchases, and that
-  automatic instrumentation is tied to a native Play Billing Library integration path
-  this app (Flutter's `in_app_purchase` plugin, own `validatePurchase` Cloud Function)
-  doesn't use. Left as app functionality + fraud prevention only.
+- **Purchase history's Analytics purpose — considered, declined this round, accepted
+  next round.** See below — turned out to be right after all, just not for the reason
+  first argued.
 - **Account deletion didn't clear the Analytics user ID** — `setUserIdFromAuth` never
   gets called with `null` (`AuthGate` returns `LoginScreen` instead of calling it), so
   the deleted user's Firebase UID stayed attached to all subsequent Analytics events.
@@ -202,11 +199,55 @@ service code:
   shipped account type have *some* way to request deletion. Added a "Player ID" tile
   in Settings (guest accounts only) that shows and copies the Firebase UID, and
   updated [Support.tsx](../packages/web/src/pages/Support.tsx) to have guests send
-  that ID as their deletion request — the only thing that can actually verify a
-  credential-less anonymous account.
+  that ID as their deletion request.
 - Also fixed: the deletion confirmation copy on the support page promised "leaderboard
   entries" would be deleted — inaccurate given leaderboard submission is dead code:
   there are none to delete. Removed that claim.
+
+**Fifth correction round:**
+- **Purchase history's Analytics purpose — reconsidered, accepted.** Declined last
+  round for lack of code evidence, but `PrivacyPolicy.tsx` section 2.3 explicitly
+  lists "In-app purchase events" as something Firebase Analytics collects in this
+  app — a direct, already-published commitment, not speculation about SDK internals.
+  The evidence was in the wrong file. Added, collected and shared.
+- **Device ID was missing Firebase App Check's fraud-prevention purpose** —
+  `main.dart` activates App Check (Play Integrity on Android, App Attest on iOS) on
+  every production launch, sending a device/app attestation identifier independent of
+  Analytics or AdMob. Added.
+- **Analytics cleanup could block sign-out (P2)** — `clearUserId()` was awaited
+  directly before `FirebaseAuth.signOut()`/inside the delete flow; an SDK error there
+  would leave the user stuck signed in (sign-out path) or shown a false error after a
+  successful deletion (delete-account path). Now wrapped in try/catch at both call
+  sites — best-effort cleanup, never blocks the actual auth operation.
+- **The deletion page claimed "immediate" deletion of "all associated data"** — not
+  true; `PrivacyPolicy.tsx` already discloses that Analytics/crash data already sent is
+  retained for 60–90 days regardless. Support.tsx now discloses that distinction and
+  links to the privacy policy instead of overclaiming.
+- **The guest "Player ID" deletion path (added last round) claimed more security than
+  it has.** `packages/firestore-rules/firestore.rules` allows any authenticated
+  user — including any other guest — to read the `gamertags` collection, which maps
+  public gamertags to Firebase UIDs. A public gamertag is visible on the leaderboard,
+  so anyone can look up another player's UID and submit a deletion request
+  impersonating them; bare UID possession isn't proof of ownership. Support.tsx no
+  longer claims we "verify" a guest account by Player ID — it now says deletion by
+  Player ID is best-effort, not guaranteed, and that we may ask for corroborating
+  details.
+  **The Firestore rule itself is a pre-existing, real over-exposure issue independent
+  of this PR — worth its own fix (the uniqueness check it supports only needs tag
+  existence, not the whole document including its `uid` field), but changing it safely
+  means moving gamertag-uniqueness checking server-side, which has enough blast radius
+  (breaks gamertag creation for real users if done carelessly) to deserve its own PR
+  with its own testing, not a rushed edit inside this one.**
+
+**Also surfaced, not fixed here — flagged for a product decision:**
+`PrivacyPolicy.tsx` (2.3 Analytics) explicitly promises "Level starts and completions"
+are tracked via Firebase Analytics. That's the same `GameProvider` gameplay-logging
+code confirmed dead above — the live, public privacy policy currently overstates what
+the app actually collects. Either wire up real gameplay analytics logging from
+`FallingModuloGameScreen`, or correct the privacy policy copy to match reality. This
+also means the "compete on the leaderboard" claim in the app description and store
+listing isn't backed by working code — `LeaderboardService.submitScore` is never
+called, so no scores are ever actually submitted to the public leaderboard.
 
 **Still needed:**
 - Content rating questionnaire — no API found for this one, Play Console UI only.
