@@ -423,6 +423,14 @@ Android has no build job in `ci-cd.yml` yet (removed 2026-06-30 pending Play Sto
 
 **Validate**: Push triggers `ci-cd.yml` → `build-android` job appears and runs. (Not yet exercised on a real push — `ANDROID_KEYSTORE*` GitHub Secrets below still need to be set first.)
 
+**Sign-in options are now platform-exclusive (fixed 2026-07-31)**: `login_screen.dart` previously showed *both* "Sign in with Google" and "Sign in with Apple" on *both* platforms — confirmed via on-device screenshots that Android was rendering an Apple Sign-In button. Fixed by gating each button on `defaultTargetPlatform` (not `dart:io Platform`, which reports the host OS and would make both buttons vanish during `flutter test` on a Mac): Google only shows on Android, Apple only shows on iOS, Email shows on both. Also gated the Google Sign-In SDK initialization itself to Android-only. Verified via widget tests using `debugDefaultTargetPlatformOverride` (reset as the literal last line inside each test body via try/finally — Flutter's test binding checks debug vars are unset immediately after the test callback returns, before any `tearDown()`/`addTearDown()` callback runs) and confirmed on-device on Android (Google + Email only, no Apple). The website has no sign-in at all (`packages/web/src/firebase.ts` only initializes Firestore, no Auth) — confirmed, nothing to fix there.
+
+**Google Sign-In on Android — fixed and verified on-device 2026-07-31**. Two independent bugs stacked, both now fixed:
+1. The `modulo-squares-prod` Firebase Android app (`com.modulosquares.app.android`) had zero SHA certificate fingerprints registered that matched either the debug or release/upload keystore. This guarantees `ApiException 10` (`DEVELOPER_ERROR`) before Google's native account picker even appears, for every real-device or CI-signed build. Fixed by registering SHA-1 and SHA-256 for both the debug keystore (`~/.android/debug.keystore`) and the release/upload keystore (`~/.android-keystores/modulo-squares/upload-keystore.jks`) via the Firebase Android SHA API.
+2. After the account picker/consent screen (i.e. after bug 1 was fixed), sign-in still failed with `GoogleSignInException(... IllegalArgumentException: requestedScopes cannot be null or empty)`. `packages/mobile/lib/features/auth/login_screen.dart`'s `_signInWithGoogle` called `authorizationClient.authorizationForScopes([])` / `authorizeScopes([])` with an empty scopes list — Android's `play-services-auth` SDK (unlike iOS) rejects an empty list. Fixed by passing `_kGoogleAuthScopes = ['email']` instead.
+
+Verified end-to-end on a real device (Galaxy S24 Ultra, `flutter build apk --debug`, adb install): Google account picker → consent screen → Firebase sign-in → reached the "Choose Your Gamertag" onboarding screen with no errors. `flutter analyze` clean, all 323 tests pass. Not yet re-verified with a **release**-signed build (the debug-keystore SHA fix should cover it, but confirm on the next real release build before shipping).
+
 ---
 
 ### 2.2 Android Keystore Setup
@@ -455,7 +463,7 @@ passwords — `keytool` silently ignores a distinct `-keypass`, so `keyPassword`
   keyPassword=<same password as storePassword>
   ```
 - [x] `android/local.properties` and `*.jks` confirmed in `.gitignore`
-- [ ] `ANDROID_KEYSTORE` (base64 of the `.jks`), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` (`upload`), `ANDROID_KEY_PASSWORD` set as GitHub Secrets — **not yet done**, needed before `build-android` can run in CI
+- [x] `ANDROID_KEYSTORE` (base64 of the `.jks`), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` (`upload`), `ANDROID_KEY_PASSWORD` set as GitHub Secrets (confirmed set 2026-07-26)
 
 **Validate**: `flutter build appbundle --release` exits 0 and produces `.aab`. ✅ confirmed 2026-07-26 on a real device build.
 
@@ -481,6 +489,20 @@ Go to: **play.google.com/console → Create app**
 **Validate**: App record visible in Play Console.
 
 *This step requires a Google Play Console developer account (one-time $25 registration if not already done) and can only be done by whoever owns that Google account — not something that can be automated from this repo.*
+
+---
+
+### 2.3b Play Console Publishing Automation (added 2026-07-31)
+
+CI can now upload signed `.aab` builds straight to the Play Console internal testing track via `fastlane` (`packages/mobile/android/fastlane/Fastfile`, lanes `internal` and `promote_to_production`), authenticated as the `google-play-console-service@modulo-squares-prod.iam.gserviceaccount.com` service account. Trigger via `workflow_dispatch` → environment `PRODUCTION` → `upload_to_play_store: true`.
+
+- [x] Service account exists in `modulo-squares-prod`, Google Play Android Developer API enabled
+- [x] Project-level org-policy exception added for `constraints/iam.disableServiceAccountKeyCreation` on `modulo-squares-prod` (the org-wide default blocks new SA keys; this exception is scoped to just this project)
+- [x] JSON key created, stored as GitHub secret `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`
+- [x] `packages/mobile/android/fastlane/{Appfile,Fastfile}` + `Gemfile` added; `upload-play-store` CI job added to `ci-cd.yml`
+- [ ] **Manual, no API exists for this**: once the Play Console app record (2.3 above) exists, invite `google-play-console-service@modulo-squares-prod.iam.gserviceaccount.com` under **Play Console → Users and permissions** with at least "Release to testing tracks" + "View app information" permissions. If Setup → API access doesn't already show `modulo-squares-prod` as the linked GCP project, link it there first — the invite option won't appear otherwise.
+
+**Validate**: after the manual invite, a `workflow_dispatch` run with `upload_to_play_store: true` completes and the build shows up under Play Console → Testing → Internal testing.
 
 ---
 
@@ -533,6 +555,19 @@ Go to: **Play Console → Monetize → Products → In-app products**
 - [ ] Test on real Android device with Google Play test account
 
 **Validate**: In release build, "Remove Ads" purchase completes successfully with test account.
+
+---
+
+### 2.6b Test Lab / Pre-Launch Report Login Credentials (fixed 2026-07-31)
+
+Play Console runs an automatic Robo crawl (pre-launch report) on every upload, and Firebase Test Lab uses the same Robo mechanism for manual runs. Both have a "Login credentials" screen with two *different* kinds of fields — don't confuse them:
+
+- **Username / Password** — the actual test account email and password to type in. Always fill these with a real test account's credentials.
+- **Username resource name / Password resource name** — *optional*. This is meant to be the target field's native Android `resource-id` (a technical identifier, hence no spaces allowed) — **not** the visible label text ("Email address"). Guessing at one from the label (e.g. `Email_address`) targets nothing and the crawl fails to sign in.
+
+**Leave the resource name fields blank.** Flutter apps don't expose per-widget native Android resource-ids the way Java/Kotlin apps do (the whole UI renders on one Skia canvas), so a resource name can't reliably target a Flutter `TextField` anyway. The actual fix, already in place in `login_screen.dart`'s email sign-in dialog: both `TextField`s have `autofillHints: [AutofillHints.email]` / `[AutofillHints.password]` — this is a real Android Autofill Framework signal, and it's what Robo's auto-detection actually keys off for Flutter apps, not label heuristics or resource-ids.
+
+**Validate**: with the resource name fields blank and a real test account in Username/Password, a Test Lab Robo run or Play Console pre-launch report should successfully sign in via the email/password flow rather than getting stuck at the login screen.
 
 ---
 
@@ -607,11 +642,39 @@ npm run build
 - [ ] Web app builds without errors
 - [ ] Deployed to Firebase Hosting (via CI or manual `firebase deploy --only hosting`)
 - [ ] Privacy Policy and Terms of Service pages live at stable URLs
-- [ ] GTM container `GTM-TR4PP272` loads GA4 only under the intended consent state (Firebase Analytics is mobile-only)
+- [x] GTM container `GTM-TR4PP272` loads GA4 only — fixed 2026-07-31. The **live published version had 3 unidentified foreign tags** (`GT-NNQN3TRC`, `G-XE3S1JCHE6`, `GT-PLWHPB8L`) firing on every pageview alongside the correct `G-FY0QLHWYJN` tag — none of them matched Modulo Squares' GA4 property, Vehicle Vitals', or Nelson Grey's containers; likely auto-linked by GTM's setup wizard from whatever Google account was signed in during original configuration and never noticed. The default workspace already had them removed, just never published — the live site had been silently serving the stale, contaminated version. Published the already-correct draft as version 5; confirmed live now shows only `Google Tag - GA4`. Also found and soft-deleted an orphaned, zero-data-stream duplicate GA4 property (`modulo-squares`, id `490033756`, recoverable until 2026-09-04) — the real property is `modulo-squares-prod` (id `508678430`), which correctly aggregates web + iOS + Android streams. See §3.2b below for how this was done and how to do it again.
+- [ ] Consent-gating for GA4 in GTM (Firebase Analytics is mobile-only) — not yet verified; the tag-identity fix above is separate from whether it respects the consent banner
 - [ ] App Store / Google Play download links on landing page
 - [ ] SEO meta tags present (title, description, og:image for social sharing)
 
 **Validate**: Visit `https://modulo-squares-prod.web.app` — landing page loads, links work, policy pages accessible.
+
+---
+
+### 3.2b Marketing Tools API Access (added 2026-07-31)
+
+GA4, Google Tag Manager, and Search Console are all reachable via API using a dedicated service account — `marketing-tools-service@modulo-squares-prod.iam.gserviceaccount.com`. AdSense and Google Ads are **not** covered by this (see below).
+
+- [x] APIs enabled on `modulo-squares-prod`: `analyticsadmin`, `analyticsdata`, `tagmanager`, `searchconsole`, `adsense`
+- [x] Service account created, invited as a user in all three products' own permission systems (GTM account-level User Management, GA4 Property Access Management, Search Console Users and permissions)
+- [x] Key created locally (not committed anywhere — treat like any other credential)
+
+**How to authenticate** (the two gotchas that cost real time getting here):
+1. `gcloud auth application-default login --scopes=...` using the default/shared gcloud CLI OAuth client is **blocked by Google** for these products' scopes ("This app is blocked") — not a config error, Google no longer allows its shared client to request Analytics/Tag Manager/Search Console scopes at all. Don't retry this path.
+2. `gcloud auth print-access-token --impersonate-service-account=...` silently **ignores `--scopes`** and always mints a `cloud-platform`-only token, which none of these three products' APIs accept. The fix: directly activate the key (`gcloud auth activate-service-account --key-file=...` or `gcloud config set account marketing-tools-service@...`) and pass `--scopes` to `print-access-token` on that *directly activated* identity — that code path honors `--scopes`, impersonation does not.
+
+Working pattern:
+```bash
+gcloud config set account marketing-tools-service@modulo-squares-prod.iam.gserviceaccount.com
+TOKEN=$(gcloud auth print-access-token --scopes="https://www.googleapis.com/auth/analytics.readonly,https://www.googleapis.com/auth/tagmanager.readonly,https://www.googleapis.com/auth/webmasters.readonly" --project=modulo-squares-prod)
+curl -s -H "Authorization: Bearer $TOKEN" "https://tagmanager.googleapis.com/tagmanager/v2/accounts"
+gcloud config set account admin@nelsongrey.com   # restore default identity when done
+```
+Mutating calls (GTM `create_version`/`publish`, GA4 property delete, etc.) need broader scopes — `tagmanager.edit.containers` + `tagmanager.edit.containerversions` + `tagmanager.publish` for GTM, `analytics.edit` for GA4. Mutating calls also reliably hit the Claude Code auto-mode classifier as a "sensitive action" — plan on running those yourself rather than expecting the agent to execute them directly.
+
+**Key resource IDs** (found during the 2026-07-31 audit): GTM account `6359833234` ("Nelson Grey", shared across projects), Modulo Squares container `accounts/6359833234/containers/255875092` (`GTM-TR4PP272`), default workspace `.../workspaces/5`; GA4 account `355849154` ("Modulo Squares"), real property `properties/508678430` (`modulo-squares-prod`, web+iOS+Android streams, measurement ID `G-FY0QLHWYJN`).
+
+**AdSense and Google Ads are different auth models, not yet connected**: AdSense's permission system doesn't support inviting a service account as a delegated user the way GA4/GTM/Search Console do — it needs the actual AdSense account owner's own interactive OAuth consent (a custom, Google-verified OAuth client, not the shared gcloud client, which is blocked the same way for AdSense scopes). Google Ads additionally requires a developer token application through Google — not worth pursuing without a concrete decision to run paid Ads campaigns first.
 
 ---
 

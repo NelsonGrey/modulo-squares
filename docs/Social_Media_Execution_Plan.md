@@ -1,11 +1,13 @@
 # Modulo Squares - Social Media Execution Plan
 
-> **Marketing plan (reviewed 2026-07-20):** Launch-state text below reflects its 2026-06-22 planning date. Verify App Store availability and current calls to action before publishing scheduled copy.
+> **Marketing plan (reviewed 2026-07-31):** Launch-state text below reflects its 2026-06-22 planning date. Verify App Store availability and current calls to action before publishing scheduled copy.
 
-**Version**: 1.0
-**Date**: 2026-06-22
+**Version**: 1.1
+**Date**: 2026-06-22 (accounts/URL section updated 2026-07-31)
 **Owner**: Mark Nelson
-**Launch state**: iOS submitted for App Store Review; Android is Phase 2
+**Launch state**: iOS resubmitted 2026-07-22 after prior rejections, still in App Store Review as of 2026-07-31. Android CI/publishing pipeline is now wired (see [GO_LIVE_RUNBOOK.md](GO_LIVE_RUNBOOK.md) §2.3b) but the Play Console app record itself doesn't exist yet — still Phase 2, not live.
+
+**Known App Store URL (do not post publicly until approval — see Ground Rules)**: `https://apps.apple.com/app/id6753350832`. Use this to fill `TODO_APP_STORE_URL` in the copy bank below the moment approval lands — no need to go find it again.
 
 ---
 
@@ -28,13 +30,14 @@ This plan implements the broader guidance in [Social Media Strategy](Social_Medi
 
 | Platform | Handle | Purpose | Status |
 |---|---|---|---|
-| X / Twitter | `@modulosquares` preferred, `@modulosquaresgame` fallback | Fast launch updates, daily score prompts, dev updates | TODO |
-| Reddit user | `u/modulosquares` preferred | Community participation and launch posts | TODO |
-| Reddit community | `r/ModuloSquares` preferred | Owned support and challenge hub | TODO |
-| TikTok | `@modulosquares` preferred | Short gameplay clips | TODO |
-| Instagram | `@modulosquares` preferred | Reserved handle and reposted short clips | TODO |
-| YouTube | Modulo Squares | Reserved handle and future how-to videos | TODO |
-| Product Hunt | Mark Nelson / Modulo Squares | Launch listing after app stability is confirmed | TODO |
+| X / Twitter | `@modulosquares` (linked in site footer) | Fast launch updates, daily score prompts, dev updates | ✅ Created (confirmed 2026-07-31) |
+| Reddit community | `r/ModuloSquares` (linked in site footer) | Owned support and challenge hub | ✅ Created (confirmed 2026-07-31) |
+| TikTok | `@modulosquares` (linked in site footer) | Short gameplay clips | ✅ Created (confirmed 2026-07-31) |
+| Instagram | `@modulosquares` preferred | Reserved handle and reposted short clips | TODO — not started, Priority 4 per strategy doc |
+| YouTube | Modulo Squares | Reserved handle and future how-to videos | TODO — not started, Priority 5 per strategy doc |
+| Product Hunt | Mark Nelson / Modulo Squares | Launch listing after app stability is confirmed | TODO — deferred until closer to stable public launch |
+
+Profile image, bio, and footer linking (Step 2 below) are already done for the three created accounts — confirm they still match the copy in this doc before the next posting push, since it's been a few weeks.
 
 ### Profile Setup
 
@@ -89,6 +92,14 @@ Missing assets to produce before launch week:
 - Product Hunt gallery set using the App Store screenshots.
 
 ## Phased Launch Plan
+
+### Phase A0 - Available Now (Site Content, No Waiting On Apple)
+
+**Correction (2026-07-31): the web build at `https://modulosquares.com` is a marketing site, not a playable game** — `packages/web/src` has no gameplay route, no game engine, no interactive canvas; `Hero.tsx`'s falling-squares animation is a static, non-interactive illustration. Do not post "free to play in browser" — that's a false claim. What *is* real and postable today without waiting on App Review: the two long-form content pages added alongside this correction, `/strategy-guide` and `/modular-arithmetic-explained`, which are genuine original writing, not a demo of the game itself.
+
+- [ ] Post to `r/math` or `r/askmath`: share the modular arithmetic explainer as a plain math writeup (cryptography/hashing/calendar examples), not as game marketing — this is the kind of content those subs actually welcome. Mention the game is in development, don't lead with it.
+- [ ] Do **not** record a "gameplay" clip from the website — there is nothing to record. Save gameplay clips for the actual iOS/Android builds once available.
+- [ ] Do **not** call the website "the game" or imply it's playable in any post — it's the marketing/info site only.
 
 ### Phase A - App Review Waiting Room
 
