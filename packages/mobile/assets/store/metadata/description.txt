@@ -13,7 +13,7 @@ FEATURES
 • Quick, replayable falling-number gameplay
 • Optional visual cues for learning divisibility patterns
 • Persistent local high score across runs
-• Sign in with Apple, Google, or email
+• Sign in to save progress and compete on the leaderboard
 • Free, ad-supported play
 • One-time Unlock Premium purchase (removes ads) with purchase restoration
 • Account deletion from in-app Settings
