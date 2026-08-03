@@ -17,7 +17,8 @@ platform :android do
       skip_upload_metadata: true,
       skip_upload_images: true,
       skip_upload_screenshots: true,
-      json_key_data: ENV["GOOGLE_PLAY_SERVICE_ACCOUNT_JSON"]
+      json_key_data: ENV["GOOGLE_PLAY_SERVICE_ACCOUNT_JSON"],
+      package_name: "com.modulosquares.app.android"
     )
 
     UI.success("✅ Uploaded to Play Console internal testing track")
@@ -35,7 +36,8 @@ platform :android do
       skip_upload_metadata: true,
       skip_upload_images: true,
       skip_upload_screenshots: true,
-      json_key_data: ENV["GOOGLE_PLAY_SERVICE_ACCOUNT_JSON"]
+      json_key_data: ENV["GOOGLE_PLAY_SERVICE_ACCOUNT_JSON"],
+      package_name: "com.modulosquares.app.android"
     )
 
     UI.success("✅ Promoted internal release to production (rollout: #{rollout})")
