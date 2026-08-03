@@ -253,6 +253,13 @@ jobs:
           name: app-release-bundle-production
           path: packages/mobile/build/app/outputs/bundle/release/
 
+      - name: 💎 Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2.2"
+          bundler-cache: true
+          working-directory: packages/mobile/android
+
       - name: 💎 Install Fastlane Dependencies
         run: bundle install
         working-directory: packages/mobile/android

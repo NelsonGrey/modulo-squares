@@ -1,0 +1,1 @@
+Welcome to Modulo Squares. Guide falling numbers into divisible buckets, build combos, fill the grid, and chase your best score.
