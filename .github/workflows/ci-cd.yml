@@ -264,12 +264,6 @@ jobs:
         run: bundle install
         working-directory: packages/mobile/android
 
-      - name: 🔍 DEBUG - check secret is populated (temporary, remove after diagnosis)
-        run: |
-          echo "GOOGLE_PLAY_SERVICE_ACCOUNT_JSON length: ${#GOOGLE_PLAY_SERVICE_ACCOUNT_JSON}"
-          echo "First char: ${GOOGLE_PLAY_SERVICE_ACCOUNT_JSON:0:1}"
-          echo "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" | python3 -c "import json,sys; d=json.load(sys.stdin); print('valid JSON, client_email:', d.get('client_email'))" || echo "NOT VALID JSON"
-
       - name: 📮 Upload to Play Console
         run: bundle exec fastlane internal aab_path:${{ github.workspace }}/packages/mobile/build/app/outputs/bundle/release/app-release.aab
         working-directory: packages/mobile/android
