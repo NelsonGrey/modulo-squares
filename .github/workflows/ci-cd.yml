@@ -265,7 +265,7 @@ jobs:
         working-directory: packages/mobile/android
 
       - name: 📮 Upload to Play Console
-        run: bundle exec fastlane internal
+        run: bundle exec fastlane internal aab_path:${{ github.workspace }}/packages/mobile/build/app/outputs/bundle/release/app-release.aab
         working-directory: packages/mobile/android
 
   # 📮 Submit an already-uploaded build to App Store review
