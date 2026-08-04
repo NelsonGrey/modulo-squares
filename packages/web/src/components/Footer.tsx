@@ -43,6 +43,8 @@ const Footer: React.FC = () => (
         {/* Main nav */}
         <nav className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-gray-300">
           <Link to="/how-it-works" className="hover:text-white transition-colors">How It Works</Link>
+          <Link to="/strategy-guide" className="hover:text-white transition-colors">Strategy Guide</Link>
+          <Link to="/modular-arithmetic-explained" className="hover:text-white transition-colors">Modular Arithmetic</Link>
           <Link to="/download" className="hover:text-white transition-colors">Download</Link>
           <Link to="/pricing" className="hover:text-white transition-colors">Pricing</Link>
           <Link to="/leaderboard" className="hover:text-white transition-colors">Leaderboard</Link>

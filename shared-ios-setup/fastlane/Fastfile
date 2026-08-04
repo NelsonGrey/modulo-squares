@@ -295,14 +295,11 @@ platform :ios do
           # Re-sign all embedded frameworks in the archive before export (workaround for codesign errors)
           UI.message("Re-signing embedded frameworks in the archive...")
 
-          # Try to get a codesign identity from common environment variables set by match/sigh
-          codesign_identity = ENV["sigh_com_nelsongrey_wishlistwizard_app_ios_appstore_certificate-name"]
-          if codesign_identity.nil? || codesign_identity.to_s.empty?
-            UI.message("No direct sigh env var found; searching for any sigh_* env key containing 'certificate'...")
-            env_key = ENV.keys.find { |k| k.start_with?("sigh_") && k.downcase.include?("certificate") }
-            codesign_identity = ENV[env_key] if env_key
-            UI.message("Found env key #{env_key} => #{codesign_identity}") if env_key
-          end
+          # Try to get a codesign identity from any sigh_* environment variable set by match/sigh
+          UI.message("Searching for any sigh_* env key containing 'certificate'...")
+          env_key = ENV.keys.find { |k| k.start_with?("sigh_") && k.downcase.include?("certificate") }
+          codesign_identity = ENV[env_key] if env_key
+          UI.message("Found env key #{env_key} => #{codesign_identity}") if env_key
 
           # Fallback: try to detect an identity SHA from environment
           if codesign_identity.nil? || codesign_identity.to_s.empty?

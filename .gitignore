@@ -125,7 +125,6 @@ mobile/.expo/
 # Fastlane
 fastlane/report.xml
 fastlane/Preview.html
-fastlane/screenshots/
 packages/mobile/ios/fastlane/builds/
 packages/mobile/ios/builds/
 packages/mobile/ios/fastlane/Payload/
@@ -297,6 +296,7 @@ android/
 ios/
 !packages/mobile/android/
 !packages/mobile/ios/
+!packages/mobile/android/fastlane/metadata/android/
 *.keystore
 *.jks
 android/.gradle/
