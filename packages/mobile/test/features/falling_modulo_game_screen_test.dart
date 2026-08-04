@@ -31,6 +31,13 @@ Future<void> _openSettings(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
+/// Expand a collapsed Settings section (Gameplay starts expanded; the rest
+/// don't) by tapping its header.
+Future<void> _expandSection(WidgetTester tester, String header) async {
+  await tester.tap(find.text(header));
+  await tester.pumpAndSettle();
+}
+
 // ── Setup / teardown ─────────────────────────────────────────────────────────
 
 void main() {
@@ -58,8 +65,9 @@ void main() {
       expect(find.textContaining('Score'), findsWidgets);
     });
 
-    testWidgets('drop progress indicator starts at zero during spawn delay',
-        (tester) async {
+    testWidgets('drop progress indicator starts at zero during spawn delay', (
+      tester,
+    ) async {
       await _pumpGame(tester);
       final indicator = tester.widget<LinearProgressIndicator>(
         find.byType(LinearProgressIndicator),
@@ -67,15 +75,17 @@ void main() {
       expect(indicator.value, 0.0);
     });
 
-    testWidgets('shows pre-game overlay and paused state before first start',
-        (tester) async {
+    testWidgets('shows pre-game overlay and paused state before first start', (
+      tester,
+    ) async {
       await _pumpGame(tester);
       expect(find.text('Fall: Paused'), findsOneWidget);
       expect(find.text('Start Game'), findsOneWidget);
     });
 
-    testWidgets('tapping Start Game reveals the Pause AppBar button',
-        (tester) async {
+    testWidgets('tapping Start Game reveals the Pause AppBar button', (
+      tester,
+    ) async {
       await _pumpGame(tester);
       await tester.tap(find.text('Start Game'));
       await tester.pump();
@@ -108,25 +118,27 @@ void main() {
     });
 
     testWidgets(
-        'PURCHASES section header is absent when no purchase service is registered',
-        (tester) async {
-      await _pumpGame(tester);
-      await _openSettings(tester);
+      'PURCHASES section header is absent when no purchase service is registered',
+      (tester) async {
+        await _pumpGame(tester);
+        await _openSettings(tester);
 
-      expect(find.text('PURCHASES'), findsNothing);
-    });
+        expect(find.text('PURCHASES'), findsNothing);
+      },
+    );
 
     testWidgets(
-        'PURCHASES section header appears when purchase service is registered',
-        (tester) async {
-      getIt.registerLazySingleton<PurchaseService>(
-        () => PurchaseService.createForTesting(),
-      );
-      await _pumpGame(tester);
-      await _openSettings(tester);
+      'PURCHASES section header appears when purchase service is registered',
+      (tester) async {
+        getIt.registerLazySingleton<PurchaseService>(
+          () => PurchaseService.createForTesting(),
+        );
+        await _pumpGame(tester);
+        await _openSettings(tester);
 
-      expect(find.text('PURCHASES'), findsOneWidget);
-    });
+        expect(find.text('PURCHASES'), findsOneWidget);
+      },
+    );
   });
 
   // ── Settings dialog — Gameplay section ───────────────────────────────────
@@ -165,8 +177,9 @@ void main() {
       expect(find.text('0'), findsWidgets);
     });
 
-    testWidgets('Best Score reflects a saved high score from prefs',
-        (tester) async {
+    testWidgets('Best Score reflects a saved high score from prefs', (
+      tester,
+    ) async {
       SharedPreferences.setMockInitialValues({
         'fallingMode.highScore': 42,
         'fallingMode.visualCuesEnabled': true,
@@ -179,16 +192,16 @@ void main() {
       expect(find.text('42'), findsWidgets);
     });
 
-    testWidgets('Visual Cues switch can be toggled inside the dialog',
-        (tester) async {
+    testWidgets('Visual Cues switch can be toggled inside the dialog', (
+      tester,
+    ) async {
       await _pumpGame(tester);
       await _openSettings(tester);
 
       final switchFinder = find.byType(Switch);
       expect(switchFinder, findsOneWidget);
 
-      final switchBefore =
-          tester.widget<Switch>(switchFinder).value;
+      final switchBefore = tester.widget<Switch>(switchFinder).value;
 
       await tester.tap(switchFinder);
       await tester.pump();
@@ -210,44 +223,54 @@ void main() {
     testWidgets('shows "Ads Enabled" when ads are not removed', (tester) async {
       await _pumpGame(tester);
       await _openSettings(tester);
+      await _expandSection(tester, 'PURCHASES');
 
       expect(find.text('Ads Enabled'), findsOneWidget);
     });
 
-    testWidgets('shows subtitle about ads playing between levels',
-        (tester) async {
+    testWidgets('shows subtitle about ads playing between levels', (
+      tester,
+    ) async {
       await _pumpGame(tester);
       await _openSettings(tester);
+      await _expandSection(tester, 'PURCHASES');
 
       expect(find.text('Short ads play between levels'), findsOneWidget);
     });
 
-    testWidgets('Unlock Premium button is shown when ads are not removed',
-        (tester) async {
+    testWidgets('Unlock Premium button is shown when ads are not removed', (
+      tester,
+    ) async {
       await _pumpGame(tester);
       await _openSettings(tester);
+      await _expandSection(tester, 'PURCHASES');
 
       expect(find.textContaining('Unlock Premium'), findsOneWidget);
     });
 
-    testWidgets('Unlock Premium button includes the product price', (tester) async {
+    testWidgets('Unlock Premium button includes the product price', (
+      tester,
+    ) async {
       await _pumpGame(tester);
       await _openSettings(tester);
+      await _expandSection(tester, 'PURCHASES');
 
-      // The purchase service returns $0.99 as a fallback price when no store
+      // The purchase service returns $2.99 as a fallback price when no store
       // product is loaded (test environment has no App Store connection).
-      expect(find.textContaining('\$0.99'), findsOneWidget);
+      expect(find.textContaining('\$2.99'), findsOneWidget);
     });
 
     testWidgets('Restore Purchases button is always shown', (tester) async {
       await _pumpGame(tester);
       await _openSettings(tester);
+      await _expandSection(tester, 'PURCHASES');
 
       expect(find.text('Restore Purchases'), findsOneWidget);
     });
 
-    testWidgets('shows "Ad-Free" and hides Unlock Premium when ads are removed',
-        (tester) async {
+    testWidgets('shows "Ad-Free" and hides Unlock Premium when ads are removed', (
+      tester,
+    ) async {
       // Simulate ads already removed via prefs (PurchaseService.createForTesting
       // respects SharedPreferences).
       SharedPreferences.setMockInitialValues({'ads_removed': true});
@@ -260,17 +283,16 @@ void main() {
 
       await _pumpGame(tester);
       await _openSettings(tester);
+      await _expandSection(tester, 'PURCHASES');
 
       expect(find.text('Ad-Free'), findsOneWidget);
-      expect(
-        find.text('Enjoy the game without interruptions'),
-        findsOneWidget,
-      );
+      expect(find.text('Enjoy the game without interruptions'), findsOneWidget);
       expect(find.textContaining('Unlock Premium'), findsNothing);
     });
 
-    testWidgets('Restore Purchases button shown even when ads are removed',
-        (tester) async {
+    testWidgets('Restore Purchases button shown even when ads are removed', (
+      tester,
+    ) async {
       SharedPreferences.setMockInitialValues({'ads_removed': true});
 
       await getIt.reset();
@@ -280,6 +302,7 @@ void main() {
 
       await _pumpGame(tester);
       await _openSettings(tester);
+      await _expandSection(tester, 'PURCHASES');
 
       expect(find.text('Restore Purchases'), findsOneWidget);
     });
@@ -291,6 +314,7 @@ void main() {
     testWidgets('Sign Out option is always shown', (tester) async {
       await _pumpGame(tester);
       await _openSettings(tester);
+      await _expandSection(tester, 'ACCOUNT');
 
       expect(find.text('Sign Out'), findsOneWidget);
     });
@@ -298,14 +322,17 @@ void main() {
     testWidgets('Delete Account option is always shown', (tester) async {
       await _pumpGame(tester);
       await _openSettings(tester);
+      await _expandSection(tester, 'ACCOUNT');
 
       expect(find.text('Delete Account'), findsOneWidget);
     });
 
-    testWidgets('tapping Delete Account shows a confirmation dialog',
-        (tester) async {
+    testWidgets('tapping Delete Account shows a confirmation dialog', (
+      tester,
+    ) async {
       await _pumpGame(tester);
       await _openSettings(tester);
+      await _expandSection(tester, 'ACCOUNT');
 
       await tester.tap(find.text('Delete Account'));
       await tester.pumpAndSettle();
@@ -319,21 +346,54 @@ void main() {
     });
 
     testWidgets(
-        'Link Account is not shown when Firebase is uninitialised (treats as non-guest)',
-        (tester) async {
-      // Firebase is not initialized in the test environment; the code catches
-      // the exception and sets isGuest = false, so Link Account stays hidden.
+      'Link Account is not shown when Firebase is uninitialised (treats as non-guest)',
+      (tester) async {
+        // Firebase is not initialized in the test environment; the code catches
+        // the exception and sets isGuest = false, so Link Account stays hidden.
+        await _pumpGame(tester);
+        await _openSettings(tester);
+        await _expandSection(tester, 'ACCOUNT');
+
+        expect(find.text('Link Account'), findsNothing);
+      },
+    );
+
+    testWidgets('dialog does not show legacy Switch Mode action', (
+      tester,
+    ) async {
       await _pumpGame(tester);
       await _openSettings(tester);
-
-      expect(find.text('Link Account'), findsNothing);
-    });
-
-    testWidgets('dialog does not show legacy Switch Mode action', (tester) async {
-      await _pumpGame(tester);
-      await _openSettings(tester);
+      await _expandSection(tester, 'ACCOUNT');
 
       expect(find.text('Switch Mode'), findsNothing);
+    });
+  });
+
+  // ── Settings dialog — Legal & Support section ─────────────────────────────
+
+  group('Settings dialog — Legal & Support section', () {
+    testWidgets('Privacy Policy option is shown', (tester) async {
+      await _pumpGame(tester);
+      await _openSettings(tester);
+      await _expandSection(tester, 'LEGAL & SUPPORT');
+
+      expect(find.text('Privacy Policy'), findsOneWidget);
+    });
+
+    testWidgets('Terms of Service option is shown', (tester) async {
+      await _pumpGame(tester);
+      await _openSettings(tester);
+      await _expandSection(tester, 'LEGAL & SUPPORT');
+
+      expect(find.text('Terms of Service'), findsOneWidget);
+    });
+
+    testWidgets('Support option is shown', (tester) async {
+      await _pumpGame(tester);
+      await _openSettings(tester);
+      await _expandSection(tester, 'LEGAL & SUPPORT');
+
+      expect(find.text('Support'), findsOneWidget);
     });
   });
 
@@ -361,16 +421,6 @@ void main() {
       expect(find.text('Settings'), findsNothing);
     });
 
-    testWidgets('New Run button closes the dialog', (tester) async {
-      await _pumpGame(tester);
-      await _openSettings(tester);
-
-      await tester.tap(find.text('New Run'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Settings'), findsNothing);
-    });
-
     testWidgets('Save persists a Visual Cues toggle change', (tester) async {
       // Start with visual cues ON (default).
       await _pumpGame(tester);
@@ -391,8 +441,9 @@ void main() {
       expect(switchWidget.value, isFalse);
     });
 
-    testWidgets('Cancel does not persist a Visual Cues toggle change',
-        (tester) async {
+    testWidgets('Cancel does not persist a Visual Cues toggle change', (
+      tester,
+    ) async {
       // Start with visual cues ON (default).
       await _pumpGame(tester);
       await _openSettings(tester);
@@ -411,22 +462,64 @@ void main() {
       final switchWidget = tester.widget<Switch>(find.byType(Switch));
       expect(switchWidget.value, isTrue);
     });
+  });
 
-    testWidgets('New Run resets score to 0 and shows Start Game overlay',
-        (tester) async {
-      await _pumpGame(tester);
+  // ── Pause overlay — New Game (with confirmation) ─────────────────────────
 
-      // Start game, let a tick fire so we have a running game.
+  group('Pause overlay — New Game', () {
+    Future<void> pauseGame(WidgetTester tester) async {
       await tester.tap(find.text('Start Game'));
       await tester.pump();
+      await tester.tap(find.byTooltip('Pause'));
+      await tester.pump();
+    }
 
-      // Open settings and tap New Run.
-      await _openSettings(tester);
+    testWidgets('tapping New Game asks for confirmation before resetting', (
+      tester,
+    ) async {
+      await _pumpGame(tester);
+      await pauseGame(tester);
+
+      await tester.tap(find.text('New Game'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Start a new run?'), findsOneWidget);
+      // Nothing reset yet — still on the confirmation dialog.
+      expect(find.text('Start Game'), findsNothing);
+    });
+
+    testWidgets('confirming resets score to 0 and shows Start Game overlay', (
+      tester,
+    ) async {
+      await _pumpGame(tester);
+      await pauseGame(tester);
+
+      await tester.tap(find.text('New Game'));
+      await tester.pumpAndSettle();
+
       await tester.tap(find.text('New Run'));
       await tester.pumpAndSettle();
 
-      // Should be back to pre-game state.
+      expect(find.text('Start a new run?'), findsNothing);
       expect(find.text('Start Game'), findsOneWidget);
+    });
+
+    testWidgets('cancelling the confirmation leaves the run unchanged', (
+      tester,
+    ) async {
+      await _pumpGame(tester);
+      await pauseGame(tester);
+
+      await tester.tap(find.text('New Game'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Start a new run?'), findsNothing);
+      // Still paused mid-run, not back at the pre-game overlay.
+      expect(find.text('Start Game'), findsNothing);
+      expect(find.text('Paused'), findsOneWidget);
     });
   });
 }

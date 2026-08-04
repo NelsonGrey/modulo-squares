@@ -301,7 +301,7 @@ class PurchaseService {
     final product = _products
         .cast<ProductDetails?>()
         .firstWhere((element) => element?.id == productId, orElse: () => null);
-    return product?.price ?? '\$0.99';
+    return product?.price ?? '\$2.99';
   }
 
   /// Check if a product is already purchased

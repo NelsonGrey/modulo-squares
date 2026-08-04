@@ -31,46 +31,11 @@
               "client_type": 3
             },
             {
-              "client_id": "784677197785-1bvq4scskbet0lndg67karbgph2fhrsk.apps.googleusercontent.com",
+              "client_id": "784677197785-u2dqr4i3ntiiel8lpil4ps3vpphekuan.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.modulosquares.app.ios"
-              }
-            }
-          ]
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:784677197785:android:d17a73b27367990061abc8",
-        "android_client_info": {
-          "package_name": "com.nelsongrey.modulosquares.app.android"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "784677197785-phb5rd418ckoo43kt2koh1mfrens2uap.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyDq66LnI1c7jSSRgs7hbdz-9lMkA92MfqA"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "784677197785-phb5rd418ckoo43kt2koh1mfrens2uap.apps.googleusercontent.com",
-              "client_type": 3
-            },
-            {
-              "client_id": "784677197785-1bvq4scskbet0lndg67karbgph2fhrsk.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.modulosquares.app.ios"
+                "bundle_id": "com.modulosquares.app.ios",
+                "app_store_id": "6783995654"
               }
             }
           ]

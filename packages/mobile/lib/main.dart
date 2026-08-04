@@ -11,7 +11,6 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:modulo_squares/features/auth/login_screen.dart';
 import 'package:modulo_squares/features/auth/gamertag_screen.dart';
 import 'package:modulo_squares/features/game/game_screen.dart';
-import 'package:modulo_squares/features/website/website_screen.dart';
 import 'package:modulo_squares/core/services/gamertag_service.dart';
 import 'package:modulo_squares/l10n/app_localizations.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
@@ -68,10 +67,11 @@ void main() async {
   // Pass --dart-define=APP_CHECK_DEBUG=true when building a dev-signed build
   // for device testing. The debug provider generates a UUID on first launch
   // (visible in the device log) — register it in Firebase Console →
-  // App Check → your iOS app → Manage debug tokens.
+  // App Check → your iOS/Android app → Manage debug tokens.
   //
   // App Store / TestFlight builds omit the flag and use App Attest with
-  // DeviceCheck as the fallback for older devices.
+  // DeviceCheck as the fallback for older devices. Play Store / internal
+  // testing builds omit the flag and use Play Integrity.
   const bool appCheckDebug =
       bool.fromEnvironment('APP_CHECK_DEBUG', defaultValue: false);
   const String appCheckDebugToken =
@@ -87,19 +87,26 @@ void main() async {
                     : null,
               )
             : const AppleAppAttestWithDeviceCheckFallbackProvider(),
+        providerAndroid: appCheckDebug
+            ? AndroidDebugProvider(
+                debugToken: appCheckDebugToken.isNotEmpty
+                    ? appCheckDebugToken
+                    : null,
+              )
+            : const AndroidPlayIntegrityProvider(),
       );
 
       if (appCheckDebug) {
         // Immediately verify the debug token is accepted by Firebase.
         // If this throws, the UUID is not registered in Firebase Console
-        // under App Check → your iOS app → Manage debug tokens.
+        // under App Check → your iOS/Android app → Manage debug tokens.
         try {
           await FirebaseAppCheck.instance.getToken(true);
           debugPrint('[AppCheck] Debug token accepted by Firebase ✓');
         } catch (e) {
           debugPrint('[AppCheck] Debug token REJECTED: $e');
           debugPrint('[AppCheck] Register UUID in Firebase Console → '
-              'App Check → iOS app → Manage debug tokens');
+              'App Check → iOS/Android app → Manage debug tokens');
           if (appCheckDebugToken.isNotEmpty) {
             debugPrint('[AppCheck] Token to register: $appCheckDebugToken');
           }
@@ -297,7 +304,13 @@ class _AuthGateState extends State<AuthGate> {
   void _checkGamertagForUser(String uid) {
     if (_checkedUid == uid) return;
     _checkedUid = uid;
-    setState(() => _loadingGamertag = true);
+    // Defer to after this frame: build() is still running here (this is called
+    // from AuthGate's own StreamBuilder), and setState() cannot be called
+    // synchronously on a widget that is currently building itself.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() => _loadingGamertag = true);
+    });
     // Pre-load the interstitial now so it has maximum time to arrive before
     // the user finishes creating their gamertag.
     if (!kIsWeb && getIt.isRegistered<AdService>()) {
@@ -378,7 +391,7 @@ class _AuthGateState extends State<AuthGate> {
           return GamertagScreen(onGamertagSet: _onGamertagSet);
         }
 
-        return kIsWeb ? const WebsiteScreen() : const GameScreen();
+        return const GameScreen();
       },
     );
   }
