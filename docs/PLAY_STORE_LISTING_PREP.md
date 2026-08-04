@@ -72,10 +72,25 @@ cropped to 1080×2120 (under Play's 2:1 max screenshot aspect ratio):
 - `modulo-squares-phone-04-settings.png` — settings dialog showing the $2.99 IAP price
 - `modulo-squares-icon-512.png` — 512×512 app icon (reused from the web favicon asset)
 
-**Still needed, not generated here:**
-- Feature graphic (1024×500, required) — needs actual graphic design; not something a
-  screenshot crop or this session's toolset can produce well. Recommend Canva/Figma using
-  the existing brand colors from the login screen (`#1a1b3a`-ish dark navy background,
-  green accent).
+- `modulo-squares-feature-graphic-1024x500.png` — feature graphic (1024×500, required),
+  generated 2026-07-31 via an HTML/CSS layout rendered through Playwright at exact
+  dimensions (24-bit RGB, no alpha, confirmed). Uses the actual brand palette
+  (`primary`/`secondary` blue-indigo gradient from the web site, `#1A1A2E`/`#4CAF50`
+  navy/green from the mobile app icon) and depicts the real game mechanic — an "18" tile
+  falling toward a highlighted "6" bucket (18 mod 6 = 0) — rather than a generic banner.
+
+**Update (2026-07-31): title, both descriptions, icon, feature graphic, and all 4
+screenshots are now live in Play Console** — pushed via the Android Publisher API
+using `google-play-console-service@modulo-squares-prod.iam.gserviceaccount.com`, not
+manually. See [GO_LIVE_RUNBOOK.md](GO_LIVE_RUNBOOK.md) §2.3c for how and what to watch
+out for if doing this again.
+
+**Still needed:**
+- Content rating questionnaire and data safety form — no API for either, Play Console UI
+  only.
+- `remove_ads` in-app product — the API exists (`monetization.onetimeproducts`) but
+  requires regional pricing/tax structure this session deliberately didn't guess at; do
+  via Play Console's guided pricing UI or a carefully-constructed API call with an
+  explicit base price and target regions confirmed first.
 - Consider capturing 1-2 more gameplay screenshots at a higher level/later game state for
   variety (the ones here are all from an early, mostly-empty board).
