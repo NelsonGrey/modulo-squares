@@ -2,14 +2,16 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router';
 
 const ROUTE_BG: Record<string, string> = {
-  '/':              'bg-primary-600',
-  '/how-it-works':  'bg-secondary-600',
-  '/download':      'bg-gray-900',
-  '/pricing':       'bg-primary-700',
-  '/leaderboard':   'bg-linear-to-r from-primary-600 to-secondary-600',
-  '/privacy':       'bg-gray-600',
-  '/terms':         'bg-gray-600',
-  '/support':       'bg-gray-600',
+  '/':                              'bg-primary-600',
+  '/how-it-works':                  'bg-secondary-600',
+  '/strategy-guide':                'bg-secondary-600',
+  '/modular-arithmetic-explained':  'bg-secondary-600',
+  '/download':                      'bg-gray-900',
+  '/pricing':                       'bg-primary-700',
+  '/leaderboard':                   'bg-linear-to-r from-primary-600 to-secondary-600',
+  '/privacy':                       'bg-gray-600',
+  '/terms':                         'bg-gray-600',
+  '/support':                       'bg-gray-600',
 };
 
 const Navigation: React.FC = () => {
@@ -28,9 +30,15 @@ const Navigation: React.FC = () => {
           </Link>
 
           {/* Desktop nav */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden lg:flex items-center space-x-6 xl:space-x-8">
             <Link to="/how-it-works" className="text-white/80 hover:text-white transition-colors">
               How It Works
+            </Link>
+            <Link to="/strategy-guide" className="text-white/80 hover:text-white transition-colors">
+              Strategy
+            </Link>
+            <Link to="/modular-arithmetic-explained" className="text-white/80 hover:text-white transition-colors">
+              Math
             </Link>
             <Link to="/download" className="text-white/80 hover:text-white transition-colors">
               Download
@@ -45,7 +53,7 @@ const Navigation: React.FC = () => {
 
           {/* Mobile menu toggle */}
           <button
-            className="md:hidden p-2"
+            className="lg:hidden p-2"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label="Toggle menu"
           >
@@ -59,7 +67,7 @@ const Navigation: React.FC = () => {
 
         {/* Mobile menu */}
         {isMenuOpen && (
-          <div className="md:hidden py-4 border-t border-white/20">
+          <div className="lg:hidden py-4 border-t border-white/20">
             <div className="flex flex-col space-y-4">
               <Link
                 to="/how-it-works"
@@ -67,6 +75,20 @@ const Navigation: React.FC = () => {
                 className="text-white/80 hover:text-white transition-colors"
               >
                 How It Works
+              </Link>
+              <Link
+                to="/strategy-guide"
+                onClick={() => setIsMenuOpen(false)}
+                className="text-white/80 hover:text-white transition-colors"
+              >
+                Strategy Guide
+              </Link>
+              <Link
+                to="/modular-arithmetic-explained"
+                onClick={() => setIsMenuOpen(false)}
+                className="text-white/80 hover:text-white transition-colors"
+              >
+                Modular Arithmetic
               </Link>
               <Link
                 to="/download"
