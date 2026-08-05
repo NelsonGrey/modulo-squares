@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route } from 'react-router';
 import Layout from './components/Layout';
 import Hero from './components/Hero';
 import Features from './components/Features';
@@ -10,6 +10,8 @@ import Leaderboard from './pages/Leaderboard';
 import Support from './pages/Support';
 import CookiePolicy from './pages/CookiePolicy';
 import Pricing from './pages/Pricing';
+import StrategyGuide from './pages/StrategyGuide';
+import ModularArithmeticExplained from './pages/ModularArithmeticExplained';
 
 function App() {
   const showComingSoon = import.meta.env.VITE_SHOW_COMING_SOON === 'true';
@@ -24,6 +26,8 @@ function App() {
       <Route path="/how-it-works" element={<Layout><Features /></Layout>} />
       <Route path="/download" element={<Layout><Download /></Layout>} />
       <Route path="/pricing" element={<Layout><Pricing /></Layout>} />
+      <Route path="/strategy-guide" element={<Layout><StrategyGuide /></Layout>} />
+      <Route path="/modular-arithmetic-explained" element={<Layout><ModularArithmeticExplained /></Layout>} />
       <Route path="/leaderboard" element={<Layout><Leaderboard /></Layout>} />
       <Route path="/privacy" element={<Layout><PrivacyPolicy /></Layout>} />
       <Route path="/terms" element={<Layout><TermsOfService /></Layout>} />

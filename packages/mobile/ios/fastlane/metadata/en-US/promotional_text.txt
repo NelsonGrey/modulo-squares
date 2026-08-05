@@ -1,0 +1,1 @@
+Guide falling numbers into divisible buckets, build combos, fill the grid, and chase a new best score in a fast modular-math puzzle.

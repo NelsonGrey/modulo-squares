@@ -12,6 +12,7 @@ import 'package:modulo_squares/core/services/purchase_service.dart';
 import 'package:modulo_squares/features/game/models/falling_modulo_game_engine.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class FallingModuloGameScreen extends StatefulWidget {
   const FallingModuloGameScreen({super.key});
@@ -26,6 +27,11 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
   static const Duration _spawnDelay = Duration(milliseconds: 500);
   static const String _visualCuesPrefKey = 'fallingMode.visualCuesEnabled';
   static const String _highScorePrefKey = 'fallingMode.highScore';
+
+  // Android's play-services-auth SDK throws IllegalArgumentException
+  // ("requestedScopes cannot be null or empty") if this list is empty --
+  // see the matching constant in login_screen.dart.
+  static const List<String> _googleAuthScopes = ['email'];
 
   final FallingModuloGameEngine _engine = FallingModuloGameEngine();
   late FallingModuloGameState _state;
@@ -221,6 +227,30 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
     });
   }
 
+  Future<void> _confirmNewRun(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Start a new run?'),
+            content: const Text(
+              'Your current score and progress will be lost.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('New Run'),
+              ),
+            ],
+          ),
+    );
+    if (confirmed == true) _startNewRun();
+  }
+
   void _toggleRunning() {
     setState(() {
       _isRunning = !_isRunning;
@@ -247,44 +277,52 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
 
   void _showAccountError(BuildContext context, dynamic error) {
     if (!context.mounted) return;
-    final message = error is FirebaseAuthException
-        ? '${error.message ?? error.code}\n\n(code: ${error.code})'
-        : error.toString();
+    final message =
+        error is FirebaseAuthException
+            ? '${error.message ?? error.code}\n\n(code: ${error.code})'
+            : error.toString();
     showDialog<void>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Account error'),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
+      builder:
+          (_) => AlertDialog(
+            title: const Text('Account error'),
+            content: Text(message),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
+  }
+
+  Future<void> _openLegalLink(String path) async {
+    final uri = Uri.parse('https://modulosquares.com/$path');
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
   Future<void> _signOut(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Sign out?'),
-        content: const Text(
-          'You will be returned to the sign-in screen. '
-          'Your progress is saved to your account.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Sign out?'),
+            content: const Text(
+              'You will be returned to the sign-in screen. '
+              'Your progress is saved to your account.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Sign out'),
+              ),
+            ],
           ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Sign out'),
-          ),
-        ],
-      ),
     );
     if (confirmed != true) return;
     if (context.mounted) Navigator.of(context).pop();
@@ -294,24 +332,25 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
   Future<void> _deleteAccount(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete account?'),
-        content: const Text(
-          'This permanently deletes your account, gamertag, saved progress, '
-          'and purchase history. This cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Delete account?'),
+            content: const Text(
+              'This permanently deletes your account, gamertag, saved progress, '
+              'and purchase history. This cannot be undone.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Delete account'),
+              ),
+            ],
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Delete account'),
-          ),
-        ],
-      ),
     );
     if (confirmed != true) return;
     if (context.mounted) Navigator.of(context).pop();
@@ -335,8 +374,12 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
         return;
       }
       final authorization =
-          await googleUser.authorizationClient.authorizationForScopes([]) ??
-          await googleUser.authorizationClient.authorizeScopes([]);
+          await googleUser.authorizationClient.authorizationForScopes(
+            _googleAuthScopes,
+          ) ??
+          await googleUser.authorizationClient.authorizeScopes(
+            _googleAuthScopes,
+          );
       final credential = GoogleAuthProvider.credential(
         accessToken: authorization.accessToken,
         idToken: idToken,
@@ -390,75 +433,79 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
 
     await showDialog<void>(
       context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (localContext, setLocalState) => AlertDialog(
-          title: const Text('Create account with email'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: emailController,
-                keyboardType: TextInputType.emailAddress,
-                autocorrect: false,
-                enableSuggestions: false,
-                decoration: const InputDecoration(labelText: 'Email'),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: passwordController,
-                obscureText: true,
-                autocorrect: false,
-                enableSuggestions: false,
-                decoration: const InputDecoration(labelText: 'Password'),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Password must be 8+ characters with uppercase, '
-                'lowercase, a number, and a special character.',
-                style: TextStyle(fontSize: 11, color: Colors.grey),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () async {
-                final email = emailController.text.trim();
-                final password = passwordController.text;
-                if (email.isEmpty || password.isEmpty) return;
-                try {
-                  final credential = EmailAuthProvider.credential(
-                    email: email,
-                    password: password,
-                  );
-                  await FirebaseAuth.instance.currentUser
-                      ?.linkWithCredential(credential);
-                  if (dialogContext.mounted) {
-                    Navigator.of(dialogContext).pop();
-                  }
-                  if (context.mounted) {
-                    Navigator.of(context).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Account linked with email.'),
+      builder:
+          (dialogContext) => StatefulBuilder(
+            builder:
+                (localContext, setLocalState) => AlertDialog(
+                  title: const Text('Create account with email'),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        autocorrect: false,
+                        enableSuggestions: false,
+                        decoration: const InputDecoration(labelText: 'Email'),
                       ),
-                    );
-                  }
-                } catch (e) {
-                  if (dialogContext.mounted) {
-                    Navigator.of(dialogContext).pop();
-                  }
-                  _showAccountError(context, e);
-                }
-              },
-              child: const Text('Link account'),
-            ),
-          ],
-        ),
-      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: passwordController,
+                        obscureText: true,
+                        autocorrect: false,
+                        enableSuggestions: false,
+                        decoration: const InputDecoration(
+                          labelText: 'Password',
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Password must be 8+ characters with uppercase, '
+                        'lowercase, a number, and a special character.',
+                        style: TextStyle(fontSize: 11, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(),
+                      child: const Text('Cancel'),
+                    ),
+                    FilledButton(
+                      onPressed: () async {
+                        final email = emailController.text.trim();
+                        final password = passwordController.text;
+                        if (email.isEmpty || password.isEmpty) return;
+                        try {
+                          final credential = EmailAuthProvider.credential(
+                            email: email,
+                            password: password,
+                          );
+                          await FirebaseAuth.instance.currentUser
+                              ?.linkWithCredential(credential);
+                          if (dialogContext.mounted) {
+                            Navigator.of(dialogContext).pop();
+                          }
+                          if (context.mounted) {
+                            Navigator.of(context).pop();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Account linked with email.'),
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          if (dialogContext.mounted) {
+                            Navigator.of(dialogContext).pop();
+                          }
+                          _showAccountError(context, e);
+                        }
+                      },
+                      child: const Text('Link account'),
+                    ),
+                  ],
+                ),
+          ),
     );
 
     emailController.dispose();
@@ -468,52 +515,53 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
   Future<void> _openLinkAccountDialog(BuildContext context) async {
     await showDialog<void>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Link your account'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'Choose a sign-in method to link to your guest account. '
-              'Your gamertag and progress will be preserved.',
+      builder:
+          (dialogContext) => AlertDialog(
+            title: const Text('Link your account'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'Choose a sign-in method to link to your guest account. '
+                  'Your gamertag and progress will be preserved.',
+                ),
+                const SizedBox(height: 16),
+                _LinkButton(
+                  label: 'Link with Google',
+                  icon: Icons.g_mobiledata,
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop();
+                    _linkWithGoogle(context);
+                  },
+                ),
+                const SizedBox(height: 8),
+                _LinkButton(
+                  label: 'Link with Apple',
+                  icon: Icons.apple,
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop();
+                    _linkWithApple(context);
+                  },
+                ),
+                const SizedBox(height: 8),
+                _LinkButton(
+                  label: 'Link with Email',
+                  icon: Icons.email_outlined,
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop();
+                    _linkWithEmail(context);
+                  },
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            _LinkButton(
-              label: 'Link with Google',
-              icon: Icons.g_mobiledata,
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-                _linkWithGoogle(context);
-              },
-            ),
-            const SizedBox(height: 8),
-            _LinkButton(
-              label: 'Link with Apple',
-              icon: Icons.apple,
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-                _linkWithApple(context);
-              },
-            ),
-            const SizedBox(height: 8),
-            _LinkButton(
-              label: 'Link with Email',
-              icon: Icons.email_outlined,
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-                _linkWithEmail(context);
-              },
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancel'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('Cancel'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -535,163 +583,201 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
           builder: (context, setLocalState) {
             return AlertDialog(
               title: const Text('Settings'),
+              scrollable: true,
               contentPadding: const EdgeInsets.symmetric(vertical: 12),
-              content: SizedBox(
-                width: double.maxFinite,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // ── Gameplay ──────────────────────────────────────────
-                    const _SettingsHeader('Gameplay'),
-                    SwitchListTile(
-                      value: localVisualCues,
-                      onChanged: (value) =>
-                          setLocalState(() => localVisualCues = value),
-                      title: const Text('Visual Cues'),
-                      subtitle: const Text(
-                        'Highlight buckets that divide the current number evenly',
-                      ),
-                    ),
-                    ListTile(
-                      title: const Text('Best Score'),
-                      trailing: Text(
-                        '$_highScore',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // ── Gameplay ──────────────────────────────────────────
+                  _SettingsSection(
+                    title: 'Gameplay',
+                    initiallyExpanded: true,
+                    children: [
+                      SwitchListTile(
+                        value: localVisualCues,
+                        onChanged:
+                            (value) =>
+                                setLocalState(() => localVisualCues = value),
+                        title: const Text('Visual Cues'),
+                        subtitle: const Text(
+                          'Highlight buckets that divide the current number evenly',
                         ),
                       ),
-                    ),
-
-                    // ── Purchases ─────────────────────────────────────────
-                    if (purchaseService != null) ...[
-                      const Divider(height: 1),
-                      const _SettingsHeader('Purchases'),
                       ListTile(
-                        leading: Icon(
-                          adsRemoved
-                              ? Icons.check_circle_outline
-                              : Icons.tv_off_outlined,
-                          color: adsRemoved ? Colors.green : Colors.orange,
-                        ),
-                        title: Text(adsRemoved ? 'Ad-Free' : 'Ads Enabled'),
-                        subtitle: Text(
-                          adsRemoved
-                              ? 'Enjoy the game without interruptions'
-                              : 'Short ads play between levels',
-                        ),
-                      ),
-                      if (!adsRemoved)
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
-                          child: FilledButton(
-                            onPressed: () async {
-                              try {
-                                await purchaseService.purchaseAdRemoval();
-                                // Payment sheet is handled by the store;
-                                // result arrives via purchaseStream.
-                              } catch (e) {
-                                if (!context.mounted) return;
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      e
-                                          .toString()
-                                          .replaceFirst('Exception: ', ''),
-                                    ),
-                                    duration: const Duration(seconds: 4),
-                                  ),
-                                );
-                              }
-                            },
-                            child: Text(
-                              'Unlock Premium  —  '
-                              '${purchaseService.getProductPrice('remove_ads')}',
-                            ),
+                        title: const Text('Best Score'),
+                        trailing: Text(
+                          '$_highScore',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
-                        ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                        child: OutlinedButton(
-                          onPressed: () async {
-                            await purchaseService.restorePurchases();
-                            setLocalState(
-                              () => adsRemoved = purchaseService.adsRemoved,
-                            );
-                            if (!context.mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Purchases restored successfully.'),
-                              ),
-                            );
-                          },
-                          child: const Text('Restore Purchases'),
                         ),
                       ),
                     ],
+                  ),
 
-                    // ── Account ───────────────────────────────────────────
-                    const Divider(height: 1),
-                    const _SettingsHeader('Account'),
-                    if (isGuest)
-                      ListTile(
-                        leading: const Icon(Icons.link),
-                        title: const Text('Link Account'),
-                        subtitle: const Text(
-                          'Save your progress with Google, Apple, or Email',
+                  // ── Purchases ─────────────────────────────────────────
+                  if (purchaseService != null)
+                    _SettingsSection(
+                      title: 'Purchases',
+                      children: [
+                        ListTile(
+                          leading: Icon(
+                            adsRemoved
+                                ? Icons.check_circle_outline
+                                : Icons.tv_off_outlined,
+                            color: adsRemoved ? Colors.green : Colors.orange,
+                          ),
+                          title: Text(adsRemoved ? 'Ad-Free' : 'Ads Enabled'),
+                          subtitle: Text(
+                            adsRemoved
+                                ? 'Enjoy the game without interruptions'
+                                : 'Short ads play between levels',
+                          ),
                         ),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () {
-                          Navigator.of(dialogContext).pop();
-                          _openLinkAccountDialog(context);
-                        },
-                      ),
-                    ListTile(
-                      leading: const Icon(Icons.logout, color: Colors.red),
-                      title: const Text(
-                        'Sign Out',
-                        style: TextStyle(color: Colors.red),
-                      ),
-                      onTap: () => _signOut(context),
+                        if (!adsRemoved)
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+                            child: FilledButton(
+                              onPressed: () async {
+                                try {
+                                  await purchaseService.purchaseAdRemoval();
+                                  // Payment sheet is handled by the store;
+                                  // result arrives via purchaseStream.
+                                } catch (e) {
+                                  if (!context.mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        e.toString().replaceFirst(
+                                          'Exception: ',
+                                          '',
+                                        ),
+                                      ),
+                                      duration: const Duration(seconds: 4),
+                                    ),
+                                  );
+                                }
+                              },
+                              child: Text(
+                                'Unlock Premium  —  '
+                                '${purchaseService.getProductPrice('remove_ads')}',
+                              ),
+                            ),
+                          ),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                          child: OutlinedButton(
+                            onPressed: () async {
+                              await purchaseService.restorePurchases();
+                              setLocalState(
+                                () => adsRemoved = purchaseService.adsRemoved,
+                              );
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Purchases restored successfully.',
+                                  ),
+                                ),
+                              );
+                            },
+                            child: const Text('Restore Purchases'),
+                          ),
+                        ),
+                      ],
                     ),
-                    ListTile(
-                      leading: const Icon(
-                        Icons.delete_forever,
-                        color: Colors.red,
+
+                  // ── Account ───────────────────────────────────────────
+                  _SettingsSection(
+                    title: 'Account',
+                    children: [
+                      if (isGuest)
+                        ListTile(
+                          leading: const Icon(Icons.link),
+                          title: const Text('Link Account'),
+                          subtitle: const Text(
+                            'Save your progress with Google, Apple, or Email',
+                          ),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () {
+                            Navigator.of(dialogContext).pop();
+                            _openLinkAccountDialog(context);
+                          },
+                        ),
+                      ListTile(
+                        leading: const Icon(Icons.logout, color: Colors.red),
+                        title: const Text(
+                          'Sign Out',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                        onTap: () => _signOut(context),
                       ),
-                      title: const Text(
-                        'Delete Account',
-                        style: TextStyle(color: Colors.red),
+                      ListTile(
+                        leading: const Icon(
+                          Icons.delete_forever,
+                          color: Colors.red,
+                        ),
+                        title: const Text(
+                          'Delete Account',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                        onTap: () => _deleteAccount(context),
                       ),
-                      onTap: () => _deleteAccount(context),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+
+                  // ── Legal & Support ──────────────────────────────────
+                  _SettingsSection(
+                    title: 'Legal & Support',
+                    children: [
+                      ListTile(
+                        leading: const Icon(Icons.privacy_tip_outlined),
+                        title: const Text('Privacy Policy'),
+                        trailing: const Icon(Icons.open_in_new, size: 18),
+                        onTap: () => _openLegalLink('privacy'),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.description_outlined),
+                        title: const Text('Terms of Service'),
+                        trailing: const Icon(Icons.open_in_new, size: 18),
+                        onTap: () => _openLegalLink('terms'),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.help_outline),
+                        title: const Text('Support'),
+                        trailing: const Icon(Icons.open_in_new, size: 18),
+                        onTap: () => _openLegalLink('support'),
+                      ),
+                    ],
+                  ),
+                ],
               ),
               actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: const Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(dialogContext).pop();
-                    _startNewRun();
-                  },
-                  child: const Text('New Run'),
-                ),
-                FilledButton(
-                  onPressed: () {
-                    setState(() {
-                      _state = _state.copyWith(
-                        visualCuesEnabled: localVisualCues,
-                      );
-                    });
-                    _persistVisualCues(localVisualCues);
-                    Navigator.of(dialogContext).pop();
-                  },
-                  child: const Text('Save'),
+                // A plain Row instead of relying on AlertDialog's default
+                // OverflowBar: OverflowBar was stacking these three actions
+                // vertically even though they comfortably fit on one line.
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(),
+                      child: const Text('Cancel'),
+                    ),
+                    FilledButton(
+                      onPressed: () {
+                        setState(() {
+                          _state = _state.copyWith(
+                            visualCuesEnabled: localVisualCues,
+                          );
+                        });
+                        _persistVisualCues(localVisualCues);
+                        Navigator.of(dialogContext).pop();
+                      },
+                      child: const Text('Save'),
+                    ),
+                  ],
                 ),
               ],
             );
@@ -746,81 +832,81 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
                   fit: StackFit.expand,
                   children: [
                     LayoutBuilder(
-                  builder: (context, constraints) {
-                    final laneWidth =
-                        constraints.maxWidth /
-                        FallingModuloGameEngine.laneCount;
-                    final tileSize = laneWidth.clamp(24.0, 40.0);
-                    final bucketTop = constraints.maxHeight - 92;
-                    final fallTop = _dropProgress * (bucketTop - tileSize);
+                      builder: (context, constraints) {
+                        final laneWidth =
+                            constraints.maxWidth /
+                            FallingModuloGameEngine.laneCount;
+                        final tileSize = laneWidth.clamp(24.0, 40.0);
+                        final bucketTop = constraints.maxHeight - 92;
+                        final fallTop = _dropProgress * (bucketTop - tileSize);
 
-                    return Stack(
-                      children: [
-                        Positioned.fill(
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Colors.blueGrey.shade50,
-                                  Colors.blueGrey.shade100,
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          left: 0,
-                          right: 0,
-                          bottom: 96,
-                          child: _buildProgressGridOverlay(
-                            totalWidth: constraints.maxWidth,
-                          ),
-                        ),
-                        Positioned(
-                          left:
-                              (_state.currentLane * laneWidth) +
-                              ((laneWidth - tileSize) / 2),
-                          top: fallTop,
-                          child: _buildFallingTile(tileSize),
-                        ),
-                        if (_resultBurstText != null)
-                          Positioned(
-                            top: 18,
-                            left: 0,
-                            right: 0,
-                            child: Center(
-                              child: _buildAnimatedScoreBurst(
-                                _resultBurstText!,
+                        return Stack(
+                          children: [
+                            Positioned.fill(
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      Colors.blueGrey.shade50,
+                                      Colors.blueGrey.shade100,
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                               ),
                             ),
-                          ),
-                        Positioned(
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          child: Row(
-                            children: List<Widget>.generate(
-                              _state.bucketValues.length,
-                              (index) => SizedBox(
-                                width: laneWidth,
-                                child: _buildBucket(
-                                  index: index,
-                                  value: _state.bucketValues[index],
-                                  selected: index == _state.currentLane,
-                                  divisibleHint: divisibleIndexes.contains(
-                                    index,
+                            Positioned(
+                              left: 0,
+                              right: 0,
+                              bottom: 96,
+                              child: _buildProgressGridOverlay(
+                                totalWidth: constraints.maxWidth,
+                              ),
+                            ),
+                            Positioned(
+                              left:
+                                  (_state.currentLane * laneWidth) +
+                                  ((laneWidth - tileSize) / 2),
+                              top: fallTop,
+                              child: _buildFallingTile(tileSize),
+                            ),
+                            if (_resultBurstText != null)
+                              Positioned(
+                                top: 18,
+                                left: 0,
+                                right: 0,
+                                child: Center(
+                                  child: _buildAnimatedScoreBurst(
+                                    _resultBurstText!,
+                                  ),
+                                ),
+                              ),
+                            Positioned(
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              child: Row(
+                                children: List<Widget>.generate(
+                                  _state.bucketValues.length,
+                                  (index) => SizedBox(
+                                    width: laneWidth,
+                                    child: _buildBucket(
+                                      index: index,
+                                      value: _state.bucketValues[index],
+                                      selected: index == _state.currentLane,
+                                      divisibleHint: divisibleIndexes.contains(
+                                        index,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
+                          ],
+                        );
+                      },
                     ),
                     if (!_isRunning && !_hasStarted) _buildPreGameOverlay(),
                     if (!_isRunning && _hasStarted) _buildPauseOverlay(),
@@ -834,8 +920,12 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
                 children: [
                   Expanded(
                     flex: 5,
-                    child: SizedBox(
-                      height: 72,
+                    child: ConstrainedBox(
+                      // minHeight, not a fixed height: Material 3's .icon
+                      // buttons switch from a Row to a Column layout at
+                      // large accessibility text scales, which needs more
+                      // vertical space than the baseline 72.
+                      constraints: const BoxConstraints(minHeight: 72),
                       child: ElevatedButton.icon(
                         onPressed: _isRunning ? _moveLeft : null,
                         icon: const Icon(Icons.arrow_left, size: 32),
@@ -852,8 +942,8 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     flex: 4,
-                    child: SizedBox(
-                      height: 72,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: 72),
                       child: FilledButton.icon(
                         onPressed:
                             (_isRunning && !_isSpawnDelayActive)
@@ -873,8 +963,8 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     flex: 5,
-                    child: SizedBox(
-                      height: 72,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: 72),
                       child: ElevatedButton.icon(
                         onPressed: _isRunning ? _moveRight : null,
                         icon: const Icon(Icons.arrow_right, size: 32),
@@ -1131,69 +1221,88 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
         color: Colors.black.withValues(alpha: 0.80),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: SingleChildScrollView(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-              const Text(
-                'Modulo Squares',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 26,
+      // SingleChildScrollView gives its child unbounded height in the scroll
+      // direction, so a bare Center would shrink-wrap and render pinned to
+      // the top instead of actually centering. LayoutBuilder + a minHeight
+      // constraint forces the content to be at least as tall as the visible
+      // area (so Center has room to center) while still allowing it to grow
+      // taller and scroll if content ever overflows a small screen.
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 32,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Modulo Squares',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 26,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      _buildOverlayRule(
+                        Icons.arrow_downward,
+                        'A number falls — guide it left or right into a bucket',
+                      ),
+                      const SizedBox(height: 8),
+                      _buildOverlayRule(
+                        Icons.calculate_outlined,
+                        'Land it where the number is divisible by the bucket value',
+                      ),
+                      const SizedBox(height: 8),
+                      _buildOverlayRule(
+                        Icons.grid_on_outlined,
+                        'Fill 100 squares to level up — wrong buckets cost points, the Dead bucket costs your tile value',
+                      ),
+                      const SizedBox(height: 32),
+                      FilledButton.icon(
+                        onPressed: _toggleRunning,
+                        icon: const Icon(Icons.play_arrow, size: 22),
+                        label: const Text(
+                          'Start Game',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size(200, 52),
+                          backgroundColor: Colors.lightBlue.shade400,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextButton.icon(
+                        onPressed: _showHowToPlaySheet,
+                        icon: Icon(
+                          Icons.info_outline,
+                          size: 16,
+                          color: Colors.lightBlue.shade200,
+                        ),
+                        label: Text(
+                          'How to Play',
+                          style: TextStyle(color: Colors.lightBlue.shade200),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 24),
-              _buildOverlayRule(
-                Icons.arrow_downward,
-                'A number falls — guide it left or right into a bucket',
-              ),
-              const SizedBox(height: 8),
-              _buildOverlayRule(
-                Icons.calculate_outlined,
-                'Land it where the number is divisible by the bucket value',
-              ),
-              const SizedBox(height: 8),
-              _buildOverlayRule(
-                Icons.grid_on_outlined,
-                'Fill 100 squares to level up — wrong buckets cost points, the Dead bucket costs your tile value',
-              ),
-              const SizedBox(height: 32),
-              FilledButton.icon(
-                onPressed: _toggleRunning,
-                icon: const Icon(Icons.play_arrow, size: 22),
-                label: const Text(
-                  'Start Game',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
-                ),
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size(200, 52),
-                  backgroundColor: Colors.lightBlue.shade400,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextButton.icon(
-                onPressed: _showHowToPlaySheet,
-                icon: Icon(
-                  Icons.info_outline,
-                  size: 16,
-                  color: Colors.lightBlue.shade200,
-                ),
-                label: Text(
-                  'How to Play',
-                  style: TextStyle(color: Colors.lightBlue.shade200),
-                ),
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
-    ),
-  );
+    );
   }
 
   Widget _buildOverlayRule(IconData icon, String text) {
@@ -1217,64 +1326,81 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
         color: Colors.black.withValues(alpha: 0.72),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.pause_circle_filled_outlined,
-              size: 72,
-              color: Colors.white.withValues(alpha: 0.9),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Paused',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w900,
-                fontSize: 28,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Level ${_state.level}  ·  Score ${_state.score}',
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.6),
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 32),
-            FilledButton.icon(
-              onPressed: () => _showInterstitialTransition(
-                trigger: 'resume_from_pause',
-                onClosed: _toggleRunning,
-              ),
-              icon: const Icon(Icons.play_arrow, size: 22),
-              label: const Text(
-                'Resume',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
-              ),
-              style: FilledButton.styleFrom(
-                minimumSize: const Size(180, 52),
-                backgroundColor: Colors.lightBlue.shade400,
-                foregroundColor: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: _startNewRun,
-              icon: const Icon(Icons.restart_alt, size: 20),
-              label: const Text('New Game'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.white,
-                side: BorderSide(
-                  color: Colors.white.withValues(alpha: 0.4),
+      // Same fix as _buildPreGameOverlay: SingleChildScrollView gives its
+      // child unbounded height, so a bare Center shrink-wraps to the top
+      // instead of actually centering. LayoutBuilder + minHeight keeps it
+      // centered while still allowing scroll if content overflows.
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.pause_circle_filled_outlined,
+                      size: 72,
+                      color: Colors.white.withValues(alpha: 0.9),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Paused',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 28,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Level ${_state.level}  ·  Score ${_state.score}',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.6),
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    FilledButton.icon(
+                      onPressed:
+                          () => _showInterstitialTransition(
+                            trigger: 'resume_from_pause',
+                            onClosed: _toggleRunning,
+                          ),
+                      icon: const Icon(Icons.play_arrow, size: 22),
+                      label: const Text(
+                        'Resume',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(180, 52),
+                        backgroundColor: Colors.lightBlue.shade400,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      onPressed: () => _confirmNewRun(context),
+                      icon: const Icon(Icons.replay, size: 20),
+                      label: const Text('New Game'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: BorderSide(
+                          color: Colors.white.withValues(alpha: 0.4),
+                        ),
+                        minimumSize: const Size(180, 48),
+                      ),
+                    ),
+                  ],
                 ),
-                minimumSize: const Size(180, 48),
               ),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -1284,115 +1410,119 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.65,
-        maxChildSize: 0.92,
-        minChildSize: 0.4,
-        expand: false,
-        builder: (_, controller) => Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            children: [
-              const SizedBox(height: 12),
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Expanded(
-                child: SingleChildScrollView(
-                  controller: controller,
-                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+      builder:
+          (ctx) => DraggableScrollableSheet(
+            initialChildSize: 0.65,
+            maxChildSize: 0.92,
+            minChildSize: 0.4,
+            expand: false,
+            builder:
+                (_, controller) => Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(20),
+                    ),
+                  ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'How to Play',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
+                      const SizedBox(height: 12),
+                      Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(2),
                         ),
                       ),
-                      const SizedBox(height: 24),
-                      _buildHowToSection(
-                        icon: Icons.arrow_downward,
-                        title: 'The Falling Number',
-                        body:
-                            'Each round a number falls from the top. '
-                            'Move it left or right before the timer drops it — '
-                            'or tap Drop to send it down instantly.',
-                      ),
-                      const SizedBox(height: 20),
-                      _buildHowToSection(
-                        icon: Icons.inbox_outlined,
-                        title: 'The Buckets',
-                        body:
-                            'Ten buckets sit at the bottom — nine labelled 1–9 '
-                            'and one red Dead bucket. Their positions are '
-                            'shuffled each level. Land the tile where the number '
-                            'is exactly divisible by the bucket value (remainder = 0).',
-                      ),
-                      const SizedBox(height: 20),
-                      _buildHowToSection(
-                        icon: Icons.calculate_outlined,
-                        title: 'Scoring',
-                        body:
-                            'Success → earn falling number × bucket value points.\n\n'
-                            'Miss → lose falling number × bucket value × remainder points.\n\n'
-                            'Dead bucket → lose the falling number outright.\n\n'
-                            'Tip: bucket 1 always divides any number — but scores 0. '
-                            'Use it to avoid a big penalty when no other bucket fits.',
-                      ),
-                      const SizedBox(height: 20),
-                      _buildHowToSection(
-                        icon: Icons.grid_on_outlined,
-                        title: 'Level Progress',
-                        body:
-                            'Each successful match fills squares in the 10×10 grid. '
-                            'Fill all 100 to complete the level. '
-                            'Missed buckets create a deficit you must clear first.',
-                      ),
-                      const SizedBox(height: 20),
-                      _buildHowToSection(
-                        icon: Icons.bolt,
-                        title: 'Combos & Speed',
-                        body:
-                            'Chain consecutive successful drops to build a combo. '
-                            'At combo 3, 5, and 8 your move speed increases — '
-                            'making it easier to line up the tile quickly.',
-                      ),
-                      const SizedBox(height: 20),
-                      _buildHowToSection(
-                        icon: Icons.visibility,
-                        title: 'Visual Cues',
-                        body:
-                            'Green-highlighted buckets show valid landing spots for '
-                            'the current tile. Toggle the hint via the eye icon in '
-                            'the top bar.',
-                      ),
-                      const SizedBox(height: 20),
-                      _buildHowToSection(
-                        icon: Icons.trending_up,
-                        title: 'Later Levels',
-                        body:
-                            'Each level raises the number range and speeds up the '
-                            'fall timer. Higher numbers mean bigger rewards — and '
-                            'bigger penalties for a miss.',
+                      Expanded(
+                        child: SingleChildScrollView(
+                          controller: controller,
+                          padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'How to Play',
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              _buildHowToSection(
+                                icon: Icons.arrow_downward,
+                                title: 'The Falling Number',
+                                body:
+                                    'Each round a number falls from the top. '
+                                    'Move it left or right before the timer drops it — '
+                                    'or tap Drop to send it down instantly.',
+                              ),
+                              const SizedBox(height: 20),
+                              _buildHowToSection(
+                                icon: Icons.inbox_outlined,
+                                title: 'The Buckets',
+                                body:
+                                    'Ten buckets sit at the bottom — nine labelled 1–9 '
+                                    'and one red Dead bucket. Their positions are '
+                                    'shuffled each level. Land the tile where the number '
+                                    'is exactly divisible by the bucket value (remainder = 0).',
+                              ),
+                              const SizedBox(height: 20),
+                              _buildHowToSection(
+                                icon: Icons.calculate_outlined,
+                                title: 'Scoring',
+                                body:
+                                    'Success → earn falling number × bucket value points.\n\n'
+                                    'Miss → lose falling number × bucket value × remainder points.\n\n'
+                                    'Dead bucket → lose the falling number outright.\n\n'
+                                    'Tip: bucket 1 always divides any number — but scores 0. '
+                                    'Use it to avoid a big penalty when no other bucket fits.',
+                              ),
+                              const SizedBox(height: 20),
+                              _buildHowToSection(
+                                icon: Icons.grid_on_outlined,
+                                title: 'Level Progress',
+                                body:
+                                    'Each successful match fills squares in the 10×10 grid. '
+                                    'Fill all 100 to complete the level. '
+                                    'Missed buckets create a deficit you must clear first.',
+                              ),
+                              const SizedBox(height: 20),
+                              _buildHowToSection(
+                                icon: Icons.bolt,
+                                title: 'Combos & Speed',
+                                body:
+                                    'Chain consecutive successful drops to build a combo. '
+                                    'At combo 3, 5, and 8 your move speed increases — '
+                                    'making it easier to line up the tile quickly.',
+                              ),
+                              const SizedBox(height: 20),
+                              _buildHowToSection(
+                                icon: Icons.visibility,
+                                title: 'Visual Cues',
+                                body:
+                                    'Green-highlighted buckets show valid landing spots for '
+                                    'the current tile. Toggle the hint via the eye icon in '
+                                    'the top bar.',
+                              ),
+                              const SizedBox(height: 20),
+                              _buildHowToSection(
+                                icon: Icons.trending_up,
+                                title: 'Later Levels',
+                                body:
+                                    'Each level raises the number range and speeds up the '
+                                    'fall timer. Higher numbers mean bigger rewards — and '
+                                    'bigger penalties for a miss.',
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ),
-              ),
-            ],
           ),
-        ),
-      ),
     );
   }
 
@@ -1495,23 +1625,43 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
   }
 }
 
-class _SettingsHeader extends StatelessWidget {
-  const _SettingsHeader(this.title);
+/// A collapsible Settings section: a header row that expands to reveal its
+/// content, so every section is visible (even collapsed) without scrolling
+/// to discover it — unlike a flat scrollable list, users can see up front
+/// how many sections exist.
+class _SettingsSection extends StatelessWidget {
+  const _SettingsSection({
+    required this.title,
+    required this.children,
+    this.initiallyExpanded = false,
+  });
+
   final String title;
+  final List<Widget> children;
+  final bool initiallyExpanded;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-      child: Text(
-        title.toUpperCase(),
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.8,
-          color: Theme.of(context).colorScheme.primary,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ExpansionTile(
+          initiallyExpanded: initiallyExpanded,
+          tilePadding: const EdgeInsets.fromLTRB(16, 0, 8, 0),
+          childrenPadding: EdgeInsets.zero,
+          title: Text(
+            title.toUpperCase(),
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.8,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+          children: children,
         ),
-      ),
+        const Divider(height: 1),
+      ],
     );
   }
 }

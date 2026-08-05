@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:modulo_squares/features/auth/login_screen.dart';
@@ -11,6 +12,22 @@ void main() {
     );
   }
 
+  // debugDefaultTargetPlatformOverride must be reset as the last step inside
+  // the test body itself -- Flutter's test binding verifies debug vars are
+  // unset immediately after the test callback returns, before any tearDown()
+  // or addTearDown() callback gets a chance to run.
+  Future<void> withPlatform(
+    TargetPlatform platform,
+    Future<void> Function() body,
+  ) async {
+    debugDefaultTargetPlatformOverride = platform;
+    try {
+      await body();
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
+  }
+
   testWidgets('does not show guest sign-in option', (
     WidgetTester tester,
   ) async {
@@ -20,15 +37,35 @@ void main() {
     expect(find.text('Play as Guest'), findsNothing);
   });
 
-  testWidgets('shows sign-in options with prompt text', (
+  testWidgets('Android shows Google sign-in but not Apple', (
     WidgetTester tester,
   ) async {
-    await pumpLogin(tester);
-    await tester.pumpAndSettle();
+    await withPlatform(TargetPlatform.android, () async {
+      await pumpLogin(tester);
+      await tester.pumpAndSettle();
 
-    expect(find.textContaining('Sign in to save progress'), findsOneWidget);
-    expect(find.text('Sign in with Google'), findsOneWidget);
-    expect(find.text('Sign in with Email'), findsOneWidget);
-    expect(find.text('Sign in with Apple'), findsOneWidget);
+      expect(find.textContaining('Sign in to save progress'), findsOneWidget);
+      expect(find.text('Sign in with Google'), findsOneWidget);
+      expect(find.text('Sign in with Email'), findsOneWidget);
+      expect(find.text('Sign in with Apple'), findsNothing);
+    });
+  });
+
+  testWidgets('iOS shows both Apple and Google sign-in', (
+    WidgetTester tester,
+  ) async {
+    // Google sign-in must stay available on iOS: Sign in with Apple creates
+    // a distinct Firebase auth provider, so an iOS-only Apple option would
+    // lock out anyone who originally created their account via Google on
+    // iOS -- Apple sign-in doesn't link back to that existing account.
+    await withPlatform(TargetPlatform.iOS, () async {
+      await pumpLogin(tester);
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Sign in to save progress'), findsOneWidget);
+      expect(find.text('Sign in with Apple'), findsOneWidget);
+      expect(find.text('Sign in with Google'), findsOneWidget);
+      expect(find.text('Sign in with Email'), findsOneWidget);
+    });
   });
 }
