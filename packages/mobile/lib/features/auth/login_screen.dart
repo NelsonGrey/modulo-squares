@@ -45,8 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void initState() {
     super.initState();
     if (widget.initializeGoogleSignIn &&
-        (defaultTargetPlatform == TargetPlatform.android ||
-            defaultTargetPlatform == TargetPlatform.iOS)) {
+        defaultTargetPlatform == TargetPlatform.android) {
       _initializeGoogleSignIn();
     }
     _loadPasswordPolicy();
@@ -444,15 +443,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: TextStyle(fontSize: 14, color: Colors.white70),
               ),
               const SizedBox(height: 28),
-              // Apple Sign-In is iOS-only (Apple doesn't allow it on Android),
-              // but Google Sign-In is offered on BOTH platforms: Sign in with
-              // Apple creates a distinct Firebase auth provider from Google,
-              // so an iOS-only Apple option would lock out any user who
-              // originally created their account via Google on iOS -- Apple
-              // sign-in doesn't link back to that existing account or its
-              // saved progress/purchases.
-              if (defaultTargetPlatform == TargetPlatform.android ||
-                  defaultTargetPlatform == TargetPlatform.iOS) ...[
+              // Google Sign-In is Android-only and Apple Sign-In is iOS-only --
+              // a deliberate one-provider-per-platform split, not an
+              // oversight. Do not "fix" this to be cross-platform without
+              // checking with the app owner first.
+              if (defaultTargetPlatform == TargetPlatform.android) ...[
                 _AuthButton(
                   label: 'Sign in with Google',
                   icon: Icons.g_mobiledata,
