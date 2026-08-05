@@ -304,13 +304,21 @@ class _AuthGateState extends State<AuthGate> {
   void _checkGamertagForUser(String uid) {
     if (_checkedUid == uid) return;
     _checkedUid = uid;
-    // Defer to after this frame: build() is still running here (this is called
-    // from AuthGate's own StreamBuilder), and setState() cannot be called
-    // synchronously on a widget that is currently building itself.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      setState(() => _loadingGamertag = true);
-    });
+    // Plain field write, not setState -- build() is still running here (this
+    // is called from AuthGate's own StreamBuilder), and setState() cannot be
+    // called synchronously on a widget that is currently building itself.
+    // A plain assignment is safe though: build() reads _loadingGamertag
+    // again right below, in this same build pass, so the waiting screen
+    // still renders immediately without needing a rebuild.
+    //
+    // This used to defer the flip to true via addPostFrameCallback instead,
+    // which raced the fetch below: a fast-resolving getGamertag (e.g. from
+    // cache) could call its setState(loadingGamertag = false) before the
+    // deferred callback ran, and the deferred callback would then set it
+    // straight back to true -- with _checkedUid already set, no further
+    // fetch would ever fire to flip it false again, permanently stranding
+    // the user on "Loading profile...".
+    _loadingGamertag = true;
     // Pre-load the interstitial now so it has maximum time to arrive before
     // the user finishes creating their gamertag.
     if (!kIsWeb && getIt.isRegistered<AdService>()) {
