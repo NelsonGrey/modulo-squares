@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 
 const SOCIAL_LINKS = [
   {
@@ -43,6 +43,8 @@ const Footer: React.FC = () => (
         {/* Main nav */}
         <nav className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-gray-300">
           <Link to="/how-it-works" className="hover:text-white transition-colors">How It Works</Link>
+          <Link to="/strategy-guide" className="hover:text-white transition-colors">Strategy Guide</Link>
+          <Link to="/modular-arithmetic-explained" className="hover:text-white transition-colors">Modular Arithmetic</Link>
           <Link to="/download" className="hover:text-white transition-colors">Download</Link>
           <Link to="/pricing" className="hover:text-white transition-colors">Pricing</Link>
           <Link to="/leaderboard" className="hover:text-white transition-colors">Leaderboard</Link>
@@ -58,7 +60,9 @@ const Footer: React.FC = () => (
       </div>
 
       <div className="mt-3 pt-3 border-t border-gray-700 flex items-center justify-between">
-        <p className="text-xs text-gray-500">© {new Date().getFullYear()} Modulo Squares. All rights reserved.</p>
+        <p className="text-xs text-gray-500">
+          © {new Date().getFullYear()} Modulo Squares, a product of Nelson Grey LLC. All rights reserved.
+        </p>
         <div className="flex items-center gap-3">
           {SOCIAL_LINKS.map(({ label, href, icon }) => (
             <a
