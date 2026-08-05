@@ -49,4 +49,22 @@ else
     exit 1
 fi
 
+# Dart-level Firebase config switching. Firebase.initializeApp(options:
+# DefaultFirebaseOptions.currentPlatform) reads these hardcoded Dart values
+# directly -- it does NOT fall back to reading the native google-services.json
+# / GoogleService-Info.plist swapped above. Without this step, every build
+# (regardless of which native config was just switched in) would keep
+# authenticating and reading/writing against whichever environment this file
+# was last generated for.
+DART_SRC="packages/mobile/lib/core/config/firebase_options.$ENVIRONMENT.dart"
+DART_DEST="packages/mobile/lib/core/config/firebase_options.dart"
+
+if [ -f "$DART_SRC" ]; then
+    cp "$DART_SRC" "$DART_DEST"
+    echo "✅ Dart Firebase options switched to $ENVIRONMENT"
+else
+    echo "❌ Error: Dart Firebase options file not found: $DART_SRC"
+    exit 1
+fi
+
 echo "🎉 Mobile configs successfully switched to $ENVIRONMENT environment!"
