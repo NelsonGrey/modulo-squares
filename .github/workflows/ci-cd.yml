@@ -224,7 +224,24 @@ jobs:
         run: echo "${{ secrets.ANDROID_KEYSTORE }}" | base64 --decode > "$ANDROID_KEYSTORE_PATH"
 
       - name: 🏗️ Build App Bundle
-        run: flutter build appbundle --release
+        # --build-number overrides pubspec.yaml's fixed +N suffix for this
+        # build only. Without it every AAB gets the same Android versionCode,
+        # so a rerun (or any upload without a source edit) is rejected by
+        # Play because version codes must strictly increase. Mirrors the iOS
+        # lane's ci_ios_build_number fallback (Fastfile) -- GITHUB_RUN_NUMBER
+        # is a per-repo monotonically increasing counter Actions provides for
+        # free, so no new secret/state is needed.
+        #
+        # GITHUB_RUN_NUMBER alone isn't enough: it stays fixed across reruns
+        # of the same workflow run (GITHUB_RUN_ATTEMPT increments instead),
+        # so a rerun would still produce a duplicate versionCode and get
+        # rejected by Play the same way. Folding both into
+        # run_number * 1000 + run_attempt keeps ordering monotonic (a later
+        # run always outranks an earlier one, regardless of attempt count)
+        # while giving every rerun its own distinct code. 1000 comfortably
+        # covers any realistic attempt count and keeps the result well under
+        # Android's versionCode ceiling (2^31-1) for a very long time.
+        run: flutter build appbundle --release --build-number="$(( ${{ github.run_number }} * 1000 + ${{ github.run_attempt }} ))"
         working-directory: packages/mobile
 
       - name: 📤 Upload App Bundle Artifact
