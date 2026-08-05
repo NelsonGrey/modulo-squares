@@ -51,21 +51,17 @@ void main() {
     });
   });
 
-  testWidgets('iOS shows both Apple and Google sign-in', (
+  testWidgets('iOS shows Apple sign-in but not Google', (
     WidgetTester tester,
   ) async {
-    // Google sign-in must stay available on iOS: Sign in with Apple creates
-    // a distinct Firebase auth provider, so an iOS-only Apple option would
-    // lock out anyone who originally created their account via Google on
-    // iOS -- Apple sign-in doesn't link back to that existing account.
     await withPlatform(TargetPlatform.iOS, () async {
       await pumpLogin(tester);
       await tester.pumpAndSettle();
 
       expect(find.textContaining('Sign in to save progress'), findsOneWidget);
       expect(find.text('Sign in with Apple'), findsOneWidget);
-      expect(find.text('Sign in with Google'), findsOneWidget);
       expect(find.text('Sign in with Email'), findsOneWidget);
+      expect(find.text('Sign in with Google'), findsNothing);
     });
   });
 }
