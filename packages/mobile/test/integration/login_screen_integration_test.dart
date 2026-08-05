@@ -183,8 +183,12 @@ void main() {
 
           expect(find.textContaining('Sign in to save progress'), findsOneWidget);
           expect(find.text('Sign in with Apple'), findsOneWidget);
+          // Google sign-in must stay available on iOS: Sign in with Apple
+          // creates a distinct Firebase auth provider, so an iOS-only Apple
+          // option would lock out anyone who originally created their
+          // account via Google on iOS.
+          expect(find.text('Sign in with Google'), findsOneWidget);
           expect(find.text('Sign in with Email'), findsOneWidget);
-          expect(find.text('Sign in with Google'), findsNothing);
           expect(find.text('Play as Guest'), findsNothing);
         });
       },
@@ -217,8 +221,8 @@ void main() {
 
         await tester.pumpAndSettle();
 
-        // Apple uses ElevatedButton; Email uses OutlinedButton
-        expect(find.byType(ElevatedButton), findsOneWidget);
+        // Apple and Google both use ElevatedButton; Email uses OutlinedButton
+        expect(find.byType(ElevatedButton), findsNWidgets(2));
         expect(find.byType(OutlinedButton), findsOneWidget);
       });
     });

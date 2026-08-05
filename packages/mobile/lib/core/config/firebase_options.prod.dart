@@ -47,30 +47,30 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyBKRHVb9cigFuu2dxxfL3_0MaeFvypm-3I',
-    appId: '1:784677197785:web:17eec81cc847f1af61abc8',
-    messagingSenderId: '784677197785',
-    projectId: 'modulo-squares-dev',
-    authDomain: 'modulo-squares-dev.firebaseapp.com',
-    storageBucket: 'modulo-squares-dev.firebasestorage.app',
-    measurementId: 'G-RPFZ8V8Q8K',
+    apiKey: 'AIzaSyAPBPlwtutn6Eu3WC2nMKQoQ95yxjYPeSY',
+    appId: '1:253948321735:web:0f7df38ef2e47fe89ec3e2',
+    messagingSenderId: '253948321735',
+    projectId: 'modulo-squares-prod',
+    authDomain: 'modulo-squares-prod.firebaseapp.com',
+    storageBucket: 'modulo-squares-prod.firebasestorage.app',
+    measurementId: 'G-FY0QLHWYJN',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDq66LnI1c7jSSRgs7hbdz-9lMkA92MfqA',
-    appId: '1:784677197785:android:2bf6f5985343359661abc8',
-    messagingSenderId: '784677197785',
-    projectId: 'modulo-squares-dev',
-    storageBucket: 'modulo-squares-dev.firebasestorage.app',
+    apiKey: 'AIzaSyBKKxqXgalzbqf9kFBIrAsq2gyFHHSZXF0',
+    appId: '1:253948321735:android:f58a8b194384a9379ec3e2',
+    messagingSenderId: '253948321735',
+    projectId: 'modulo-squares-prod',
+    storageBucket: 'modulo-squares-prod.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCnmHtmyARvoj5FjgZgIkrj1cs8RHo3nQg',
-    appId: '1:784677197785:ios:fa6f0aac2aa0b54961abc8',
-    messagingSenderId: '784677197785',
-    projectId: 'modulo-squares-dev',
-    storageBucket: 'modulo-squares-dev.firebasestorage.app',
-    iosClientId: '784677197785-u2dqr4i3ntiiel8lpil4ps3vpphekuan.apps.googleusercontent.com',
+    apiKey: 'AIzaSyBGdIM2EJ7bsJgX8xB8yDDtqU9DooXF0w4',
+    appId: '1:253948321735:ios:a56e8f3551eabcd79ec3e2',
+    messagingSenderId: '253948321735',
+    projectId: 'modulo-squares-prod',
+    storageBucket: 'modulo-squares-prod.firebasestorage.app',
+    iosClientId: '253948321735-aosgg8vgj3i7gp0413lbj0jclih2p0qm.apps.googleusercontent.com',
     iosBundleId: 'com.modulosquares.app.ios',
   );
 }
