@@ -168,10 +168,29 @@ def cmd_create_draft(args):
 
 
 def cmd_activate_offer(args):
+    # There is no direct "activate this purchase option" endpoint -- despite
+    # the API's own naming (ActivatePurchaseOptionRequest) suggesting one.
+    # Confirmed against the live discovery doc: activation goes through the
+    # purchaseOptions:batchUpdateStates method (plural, batch-shaped, even
+    # for a single purchase option). A prior version of this function called
+    # a plausible-looking but nonexistent purchaseOptions/{id}:activate URL,
+    # which 404'd -- this had never actually been exercised until fixed here.
     token = get_token()
-    url = f"{API_BASE}/onetimeproducts/{args.product_id}/purchaseOptions/{args.purchase_option_id}:activate"
-    result = api_request("POST", url, token, body={})
-    print(f"Activated. Response: {json.dumps(result, indent=2)}")
+    url = f"{API_BASE}/oneTimeProducts/{args.product_id}/purchaseOptions:batchUpdateStates"
+    body = {
+        "requests": [
+            {
+                "activatePurchaseOptionRequest": {
+                    "packageName": PACKAGE_NAME,
+                    "productId": args.product_id,
+                    "purchaseOptionId": args.purchase_option_id,
+                }
+            }
+        ]
+    }
+    result = api_request("POST", url, token, body=body)
+    state = result["oneTimeProducts"][0]["purchaseOptions"][0]["state"]
+    print(f"Purchase option '{args.purchase_option_id}' state: {state}")
 
 
 parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
