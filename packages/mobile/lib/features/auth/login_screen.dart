@@ -444,9 +444,9 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 28),
               // Google Sign-In is Android-only and Apple Sign-In is iOS-only --
-              // no cross-platform sign-in options (Apple doesn't allow signing
-              // in with Apple on Android, and there's no reason to offer
-              // Google Sign-In to iOS users when Apple's own option covers it).
+              // a deliberate one-provider-per-platform split, not an
+              // oversight. Do not "fix" this to be cross-platform without
+              // checking with the app owner first.
               if (defaultTargetPlatform == TargetPlatform.android) ...[
                 _AuthButton(
                   label: 'Sign in with Google',
