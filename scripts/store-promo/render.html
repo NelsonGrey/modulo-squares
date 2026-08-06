@@ -323,7 +323,22 @@
       assignText('#eyebrow', 'eyebrow', 'MODULO SQUARES');
       assignText('#step', 'step', '1');
 
-      const source = params.get('source');
+      // This page is only ever opened locally (via file://) with query
+      // params supplied by our own render-assets.sh/capture scripts, but
+      // params.get() still returns whatever a URL contains -- reject
+      // anything that isn't a plain relative local path before it reaches
+      // an .src attribute, so a crafted link can't inject a javascript:/
+      // data: URI or redirect the render to an arbitrary external host.
+      const asLocalPath = (value) => {
+        if (!value) return null;
+        if (/^[a-z][a-z0-9+.-]*:/i.test(value) || value.startsWith('//')) {
+          console.error('Rejected non-local path:', value);
+          return null;
+        }
+        return value;
+      };
+
+      const source = asLocalPath(params.get('source'));
       const screen = document.querySelector('#screen');
       if (source) {
         screen.src = source;
@@ -331,7 +346,7 @@
         screen.style.display = 'none';
       }
 
-      const art = params.get('art') || '../../packages/mobile/assets/store/promo-kit-2026-08/sources/key-art-master-generated.png';
+      const art = asLocalPath(params.get('art')) || '../../packages/mobile/assets/store/promo-kit-2026-08/sources/key-art-master-generated.png';
       const keyArt = document.querySelector('#key-art');
       keyArt.src = art;
 
