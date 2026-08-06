@@ -57,6 +57,20 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       });
     } catch (e) {
       if (!mounted) return;
+
+      // 'user-not-found' must render the exact same success state as a real
+      // account (not just a similarly-worded error) -- if Firebase's own
+      // email-enumeration protection is off, showing a *different UI state*
+      // (red failure vs. green sent) for unregistered addresses leaks
+      // whether an account exists just as much as different wording would.
+      if (!kDebugMode && e is FirebaseAuthException && e.code == 'user-not-found') {
+        setState(() {
+          _sent = true;
+          _errorMessage = null;
+        });
+        return;
+      }
+
       String message;
       if (kDebugMode) {
         if (e is FirebaseAuthException) {

@@ -40,6 +40,12 @@ class _LoginScreenState extends State<LoginScreen> {
   // regardless of whether this fetch succeeded.
   final _passwordPolicyService = PasswordPolicyService();
   PasswordPolicyState _passwordPolicy = const PasswordPolicyState();
+  // False until _loadPasswordPolicy resolves. While loading, _passwordPolicy
+  // is only a guess (its hard-coded strict defaults may be stricter than the
+  // real live policy) -- rejecting a submit against a guess risks blocking a
+  // password Firebase would actually accept, so _quickPasswordCheck defers
+  // to the authoritative checkPassword() call until this is true.
+  bool _policyLoaded = false;
 
   @override
   void initState() {
@@ -65,7 +71,10 @@ class _LoginScreenState extends State<LoginScreen> {
     // _authenticateWithEmailPassword() still authoritatively re-checks the
     // real password against the live policy.
     if (!mounted) return;
-    setState(() => _passwordPolicy = policy);
+    setState(() {
+      _passwordPolicy = policy;
+      _policyLoaded = true;
+    });
   }
 
   String _passwordRequirementsHint() =>
@@ -76,8 +85,10 @@ class _LoginScreenState extends State<LoginScreen> {
   // re-validates authoritatively against Firebase itself before submitting,
   // so this never needs to be the last word on whether a password is
   // accepted.
-  String? _quickPasswordCheck(String password) =>
-      _passwordPolicyService.quickCheck(password, _passwordPolicy);
+  String? _quickPasswordCheck(String password) {
+    if (!_policyLoaded) return null;
+    return _passwordPolicyService.quickCheck(password, _passwordPolicy);
+  }
 
   String _describePasswordPolicyFailure(PasswordValidationStatus status) =>
       _passwordPolicyService.describeFailure(status, _passwordPolicy);

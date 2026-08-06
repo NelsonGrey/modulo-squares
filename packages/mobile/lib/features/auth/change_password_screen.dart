@@ -24,6 +24,12 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   PasswordPolicyState _passwordPolicy = const PasswordPolicyState();
+  // False until _loadPasswordPolicy resolves. While loading, _passwordPolicy
+  // is only a guess (its hard-coded strict defaults may be stricter than the
+  // real live policy) -- rejecting a submit against a guess risks blocking a
+  // password Firebase would actually accept, so the quick check defers to
+  // the authoritative checkPassword() call until this is true.
+  bool _policyLoaded = false;
   bool _submitting = false;
   String? _errorMessage;
   bool _success = false;
@@ -37,7 +43,10 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   Future<void> _loadPasswordPolicy() async {
     final policy = await _passwordPolicyService.loadPolicy();
     if (!mounted) return;
-    setState(() => _passwordPolicy = policy);
+    setState(() {
+      _passwordPolicy = policy;
+      _policyLoaded = true;
+    });
   }
 
   @override
@@ -63,10 +72,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       return;
     }
 
-    final quickCheckError = _passwordPolicyService.quickCheck(
-      newPassword,
-      _passwordPolicy,
-    );
+    final quickCheckError = _policyLoaded
+        ? _passwordPolicyService.quickCheck(newPassword, _passwordPolicy)
+        : null;
     if (quickCheckError != null) {
       setState(() {
         _errorMessage = quickCheckError;
