@@ -384,6 +384,7 @@ class _AuthGateState extends State<AuthGate> {
         final user = snapshot.data;
         if (user == null) {
           _checkedUid = null;
+          getIt<AnalyticsService>().setUserIdFromAuth(null);
           return const LoginScreen();
         }
 
