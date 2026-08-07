@@ -11,7 +11,10 @@ import 'package:modulo_squares/core/di/service_locator.dart';
 import 'package:modulo_squares/features/auth/change_password_screen.dart';
 import 'package:modulo_squares/core/services/ad_service.dart';
 import 'package:modulo_squares/core/services/analytics_service.dart';
+import 'package:modulo_squares/core/services/gamertag_service.dart';
+import 'package:modulo_squares/core/services/leaderboard_service.dart';
 import 'package:modulo_squares/core/services/purchase_service.dart';
+import 'package:modulo_squares/features/game/leaderboard_screen.dart';
 import 'package:modulo_squares/features/game/models/falling_modulo_game_engine.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -62,6 +65,7 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
   bool _resultBurstPositive = true;
   bool _isRunning = false;
   bool _hasStarted = false;
+  String? _playerName;
 
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
 
@@ -77,6 +81,7 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
     _engine = widget.engine ?? FallingModuloGameEngine();
     _state = _engine.createInitialState();
     _loadPreferences();
+    _loadPlayerName();
     _startTicker();
 
     if (widget.expertDemo) {
@@ -97,6 +102,18 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
       _highScore = highScore;
       _state = _state.copyWith(visualCuesEnabled: visualCues);
     });
+  }
+
+  Future<void> _loadPlayerName() async {
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null) return;
+      final tag = await GamertagService.getGamertag(uid);
+      if (!mounted) return;
+      setState(() => _playerName = tag);
+    } catch (_) {
+      // Firebase not initialized in test environment.
+    }
   }
 
   @override
@@ -196,6 +213,8 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
     final success = result.resolution.success;
     final burstText = success ? '+$scoreDelta' : '$scoreDelta';
 
+    final isNewHighScore = result.state.score > _highScore;
+
     setState(() {
       _state = result.state;
       _highScore = _state.score > _highScore ? _state.score : _highScore;
@@ -206,6 +225,11 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
     });
 
     _persistHighScore();
+
+    final playerName = _playerName;
+    if (isNewHighScore && playerName != null && playerName.isNotEmpty) {
+      unawaited(LeaderboardService.submitScore(context, playerName, _state.score));
+    }
 
     if (result.state.level > previousLevel) {
       setState(() {
@@ -650,6 +674,14 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
     );
   }
 
+  Future<void> _openLeaderboard() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => LeaderboardScreen(playerName: _playerName ?? ''),
+      ),
+    );
+  }
+
   Future<void> _openSettingsDialog() async {
     var localVisualCues = _state.visualCuesEnabled;
     final purchaseService = _purchaseServiceOrNull;
@@ -929,6 +961,11 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
               onPressed: _toggleRunning,
               icon: const Icon(Icons.pause),
             ),
+          IconButton(
+            tooltip: 'Leaderboard',
+            onPressed: _openLeaderboard,
+            icon: const Icon(Icons.leaderboard),
+          ),
           IconButton(
             tooltip: 'Settings',
             onPressed: _openSettingsDialog,
