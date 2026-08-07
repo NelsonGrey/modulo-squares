@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:modulo_squares/core/auth/apple_sign_in_nonce.dart';
 import 'package:modulo_squares/core/di/service_locator.dart';
+import 'package:modulo_squares/features/auth/change_password_screen.dart';
 import 'package:modulo_squares/core/services/ad_service.dart';
 import 'package:modulo_squares/core/services/purchase_service.dart';
 import 'package:modulo_squares/features/game/models/falling_modulo_game_engine.dart';
@@ -15,20 +16,19 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class FallingModuloGameScreen extends StatefulWidget {
-  const FallingModuloGameScreen({super.key, this.engine, this.expertDemo = false});
+  const FallingModuloGameScreen({
+    super.key,
+    this.engine,
+    this.expertDemo = false,
+  });
 
-  /// Overrides the production game engine. Production callers omit this and
-  /// get a default-constructed [FallingModuloGameEngine]; the local-only
-  /// store capture harness (`lib/main_store_capture.dart`) supplies a
-  /// deterministic subclass so screenshots/video are reproducible.
+  /// Optional deterministic engine used by tests and local store-media capture.
+  /// The release entry point leaves this null and uses normal game randomness.
   final FallingModuloGameEngine? engine;
 
-  /// When true, an automated driver plays the game itself instead of
-  /// waiting for touch input: it starts the run immediately and always
-  /// steers into the highest-scoring bucket the falling value divides
-  /// evenly (bucket value 1 always qualifies, so it never misses). Used by
-  /// the store capture harness to record an uninterrupted no-miss run;
-  /// production callers leave this false.
+  /// Drives real left/right/drop actions toward the highest-scoring valid
+  /// divisor. This is disabled by default and enabled only by the local store
+  /// capture entry point when STORE_CAPTURE_EXPERT_DEMO is defined.
   final bool expertDemo;
 
   @override
@@ -47,13 +47,10 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
   // see the matching constant in login_screen.dart.
   static const List<String> _googleAuthScopes = ['email'];
 
-  // Lazily evaluated: `widget` is only safe to read once the State object is
-  // attached, which is guaranteed by the time this is first accessed in
-  // initState().
-  late final FallingModuloGameEngine _engine =
-      widget.engine ?? FallingModuloGameEngine();
+  late final FallingModuloGameEngine _engine;
   late FallingModuloGameState _state;
   Timer? _timer;
+  Timer? _expertDemoStartTimer;
 
   DateTime? _lastInputAt;
   Duration _elapsed = Duration.zero;
@@ -75,15 +72,17 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
   @override
   void initState() {
     super.initState();
+    _engine = widget.engine ?? FallingModuloGameEngine();
     _state = _engine.createInitialState();
     _loadPreferences();
-    if (widget.expertDemo) {
-      // No touch input drives the store-capture harness, so start the run
-      // immediately instead of waiting for a tap on the pre-game overlay.
-      _isRunning = true;
-      _hasStarted = true;
-    }
     _startTicker();
+
+    if (widget.expertDemo) {
+      _expertDemoStartTimer = Timer(const Duration(milliseconds: 1500), () {
+        if (!mounted || _hasStarted) return;
+        _toggleRunning();
+      });
+    }
   }
 
   Future<void> _loadPreferences() async {
@@ -101,6 +100,7 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    _expertDemoStartTimer?.cancel();
     super.dispose();
   }
 
@@ -108,10 +108,6 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
     _timer?.cancel();
     _timer = Timer.periodic(_tick, (_) {
       if (!mounted || !_isRunning) return;
-
-      if (widget.expertDemo) {
-        _runExpertDemoStep();
-      }
 
       setState(() {
         if (_spawnDelayRemaining > Duration.zero) {
@@ -127,8 +123,51 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
       if (_spawnDelayRemaining == Duration.zero &&
           _elapsed >= Duration(milliseconds: _effectiveDropIntervalMs)) {
         _resolveCurrentTile();
+        return;
       }
+
+      _driveExpertDemo();
     });
+  }
+
+  void _driveExpertDemo() {
+    if (!widget.expertDemo || !_isRunning || _isSpawnDelayActive) return;
+
+    final targetLane = _highestScoringValidLane();
+    if (_state.currentLane < targetLane) {
+      _moveRight();
+      return;
+    }
+    if (_state.currentLane > targetLane) {
+      _moveLeft();
+      return;
+    }
+
+    // Let the falling tile visibly enter the board before making a crisp,
+    // deliberate drop. All scoring and combo changes still flow through the
+    // production engine's normal resolution path.
+    if (_dropProgress >= 0.10) {
+      _resolveCurrentTile();
+    }
+  }
+
+  int _highestScoringValidLane() {
+    var bestLane = _state.currentLane;
+    var bestBucketValue = -1;
+
+    for (var lane = 0; lane < _state.bucketValues.length; lane++) {
+      final bucketValue = _state.bucketValues[lane];
+      if (bucketValue <= 0 ||
+          _state.currentFallingValue % bucketValue != 0 ||
+          bucketValue <= bestBucketValue) {
+        continue;
+      }
+
+      bestLane = lane;
+      bestBucketValue = bucketValue;
+    }
+
+    return bestLane;
   }
 
   int get _effectiveDropIntervalMs => _state.dropIntervalMs;
@@ -221,36 +260,6 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
     setState(() {
       _state = _engine.moveRight(_state);
     });
-  }
-
-  /// Steers the current falling value one lane closer to its expert target,
-  /// reusing the same cooldown-gated moves a human player would make.
-  void _runExpertDemoStep() {
-    final target = _expertTargetLane();
-    if (target == null) return;
-    if (_state.currentLane < target) {
-      _moveRight();
-    } else if (_state.currentLane > target) {
-      _moveLeft();
-    }
-  }
-
-  /// The lane holding the highest-value bucket that evenly divides the
-  /// current falling value, ignoring the dead (0) bucket. Bucket value 1 is
-  /// always present and always divides evenly, so a target always exists.
-  int? _expertTargetLane() {
-    var bestLane = -1;
-    var bestBucketValue = -1;
-    for (var lane = 0; lane < _state.bucketValues.length; lane++) {
-      final bucketValue = _state.bucketValues[lane];
-      if (bucketValue <= 0) continue;
-      if (_state.currentFallingValue % bucketValue != 0) continue;
-      if (bucketValue > bestBucketValue) {
-        bestBucketValue = bucketValue;
-        bestLane = lane;
-      }
-    }
-    return bestLane == -1 ? null : bestLane;
   }
 
   void _toggleVisualCues() {
@@ -633,6 +642,14 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
     } catch (_) {
       // Firebase not initialized in test environment.
     }
+    bool hasPasswordProvider = false;
+    try {
+      hasPasswordProvider = FirebaseAuth.instance.currentUser?.providerData
+              .any((info) => info.providerId == 'password') ??
+          false;
+    } catch (_) {
+      // Firebase not initialized in test environment.
+    }
 
     await showDialog<void>(
       context: context,
@@ -762,6 +779,21 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
                           onTap: () {
                             Navigator.of(dialogContext).pop();
                             _openLinkAccountDialog(context);
+                          },
+                        ),
+                      if (hasPasswordProvider)
+                        ListTile(
+                          leading: const Icon(Icons.password),
+                          title: const Text('Change Password'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () {
+                            Navigator.of(dialogContext).pop();
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const ChangePasswordScreen(),
+                              ),
+                            );
                           },
                         ),
                       ListTile(

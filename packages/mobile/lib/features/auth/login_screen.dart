@@ -6,6 +6,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:modulo_squares/core/auth/apple_sign_in_nonce.dart';
+import 'package:modulo_squares/core/auth/password_policy_service.dart';
+import 'package:modulo_squares/features/auth/forgot_password_screen.dart';
 
 // Dark background matching the app icon's background colour.
 const _kBg = Color(0xFF1A1A2E);
@@ -31,15 +33,19 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _authInProgress = false;
 
   // Populated from the live Firebase password policy (see
-  // _loadPasswordPolicy). These defaults match today's enforced policy so
-  // the signup dialog is still usable if the fetch fails (e.g. offline);
-  // the authoritative check in _authenticateWithEmailPassword() re-verifies
-  // against the real policy regardless of whether this fetch succeeded.
-  int _policyMinLength = 8;
-  bool _policyRequiresUpper = true;
-  bool _policyRequiresLower = true;
-  bool _policyRequiresDigit = true;
-  bool _policyRequiresSymbol = true;
+  // _loadPasswordPolicy). PasswordPolicyState's defaults match today's
+  // enforced policy so the signup dialog is still usable if the fetch fails
+  // (e.g. offline); the authoritative check in
+  // _authenticateWithEmailPassword() re-verifies against the real policy
+  // regardless of whether this fetch succeeded.
+  final _passwordPolicyService = PasswordPolicyService();
+  PasswordPolicyState _passwordPolicy = const PasswordPolicyState();
+  // False until _loadPasswordPolicy resolves. While loading, _passwordPolicy
+  // is only a guess (its hard-coded strict defaults may be stricter than the
+  // real live policy) -- rejecting a submit against a guess risks blocking a
+  // password Firebase would actually accept, so _quickPasswordCheck defers
+  // to the authoritative checkPassword() call until this is true.
+  bool _policyLoaded = false;
 
   @override
   void initState() {
@@ -60,43 +66,19 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _loadPasswordPolicy() async {
-    try {
-      final status = await FirebaseAuth.instance.validatePassword(
-        FirebaseAuth.instance,
-        ' ',
-      );
-      final policy = status.passwordPolicy;
-      if (!mounted) return;
-      setState(() {
-        _policyMinLength = policy.minPasswordLength;
-        // A null field means Firebase doesn't enforce that character class
-        // for this policy -- default to not-required, or the client would
-        // reject passwords the server actually accepts.
-        _policyRequiresUpper = policy.containsUppercaseCharacter ?? false;
-        _policyRequiresLower = policy.containsLowercaseCharacter ?? false;
-        _policyRequiresDigit = policy.containsNumericCharacter ?? false;
-        _policyRequiresSymbol =
-            policy.containsNonAlphanumericCharacter ?? false;
-      });
-    } catch (_) {
-      // Keep the defaults above -- _authenticateWithEmailPassword() still
-      // authoritatively re-checks the real password against the live policy.
-    }
+    final policy = await _passwordPolicyService.loadPolicy();
+    // Keeps the defaults from PasswordPolicyState on failure --
+    // _authenticateWithEmailPassword() still authoritatively re-checks the
+    // real password against the live policy.
+    if (!mounted) return;
+    setState(() {
+      _passwordPolicy = policy;
+      _policyLoaded = true;
+    });
   }
 
-  String _passwordRequirementsHint() {
-    final requirements = <String>[
-      if (_policyRequiresUpper) 'uppercase letter',
-      if (_policyRequiresLower) 'lowercase letter',
-      if (_policyRequiresDigit) 'number',
-      if (_policyRequiresSymbol) 'special character',
-    ];
-    if (requirements.isEmpty) {
-      return 'Password must be $_policyMinLength+ characters.';
-    }
-    return 'Password must be $_policyMinLength+ characters with '
-        '${requirements.join(', ')}.';
-  }
+  String _passwordRequirementsHint() =>
+      _passwordPolicyService.hint(_passwordPolicy);
 
   // Quick pass using the cached live policy, so users get immediate
   // feedback without a network round-trip. _authenticateWithEmailPassword()
@@ -104,38 +86,12 @@ class _LoginScreenState extends State<LoginScreen> {
   // so this never needs to be the last word on whether a password is
   // accepted.
   String? _quickPasswordCheck(String password) {
-    if (password.length < _policyMinLength) {
-      return 'Password must be at least $_policyMinLength characters.';
-    }
-    if (_policyRequiresUpper && !password.contains(RegExp(r'[A-Z]'))) {
-      return 'Password must include an uppercase letter.';
-    }
-    if (_policyRequiresLower && !password.contains(RegExp(r'[a-z]'))) {
-      return 'Password must include a lowercase letter.';
-    }
-    if (_policyRequiresDigit && !password.contains(RegExp(r'[0-9]'))) {
-      return 'Password must include a number.';
-    }
-    if (_policyRequiresSymbol && !password.contains(RegExp(r'[^A-Za-z0-9]'))) {
-      return 'Password must include a special character.';
-    }
-    return null;
+    if (!_policyLoaded) return null;
+    return _passwordPolicyService.quickCheck(password, _passwordPolicy);
   }
 
-  String _describePasswordPolicyFailure(PasswordValidationStatus status) {
-    final missing = <String>[
-      if (!status.meetsMinPasswordLength)
-        'be at least $_policyMinLength characters',
-      if (!status.meetsUppercaseRequirement) 'include an uppercase letter',
-      if (!status.meetsLowercaseRequirement) 'include a lowercase letter',
-      if (!status.meetsDigitsRequirement) 'include a number',
-      if (!status.meetsSymbolsRequirement) 'include a special character',
-    ];
-    if (missing.isEmpty) {
-      return 'Password does not meet the requirements for this account.';
-    }
-    return 'Password must ${missing.join(', ')}.';
-  }
+  String _describePasswordPolicyFailure(PasswordValidationStatus status) =>
+      _passwordPolicyService.describeFailure(status, _passwordPolicy);
 
   void _showAuthError(BuildContext context, dynamic error) {
     if (!context.mounted) return;
@@ -277,10 +233,7 @@ class _LoginScreenState extends State<LoginScreen> {
         // drift between this dialog's cached copy and the real policy
         // (e.g. it changed after this screen loaded, or the initial fetch
         // failed) before spending a round-trip on account creation.
-        final status = await FirebaseAuth.instance.validatePassword(
-          FirebaseAuth.instance,
-          password,
-        );
+        final status = await _passwordPolicyService.checkPassword(password);
         if (!status.isValid) {
           _showAuthError(context, _describePasswordPolicyFailure(status));
           return;
@@ -352,6 +305,22 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: const TextStyle(fontSize: 11, color: Colors.grey),
                     ),
                   ],
+                  if (!createAccount)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.of(dialogContext).pop();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ForgotPasswordScreen(),
+                            ),
+                          );
+                        },
+                        child: const Text('Forgot password?'),
+                      ),
+                    ),
                   const SizedBox(height: 8),
                   TextButton(
                     onPressed: () => setLocalState(() {
