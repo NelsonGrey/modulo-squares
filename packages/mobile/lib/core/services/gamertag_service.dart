@@ -84,6 +84,12 @@ class GamertagService {
   }
 
   /// Saves the gamertag atomically: user record + uniqueness index.
+  ///
+  /// The uniqueness-index document deliberately stores no uid field -- it's
+  /// readable by every authenticated user (for availability checks), and a
+  /// uid field there would let anyone resolve a public gamertag back to its
+  /// owner's uid. Ownership of a user's own gamertag lives on their
+  /// access-restricted /users/{userId} document instead.
   static Future<void> setGamertag(String uid, String tag) async {
     final batch = _db.batch();
     batch.set(
@@ -93,7 +99,7 @@ class GamertagService {
     );
     batch.set(
       _db.collection('gamertags').doc(tag.toLowerCase()),
-      {'uid': uid, 'tag': tag},
+      {'tag': tag},
     );
     await batch.commit();
   }

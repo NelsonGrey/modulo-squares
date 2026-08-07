@@ -15,6 +15,9 @@ class MockAnalyticsService implements AnalyticsService {
   Future<void> setUserIdFromAuth(user) async {}
 
   @override
+  Future<void> clearUserId() async {}
+
+  @override
   Future<void> logAppOpen() async => loggedEvents.add('app_open');
 
   @override
