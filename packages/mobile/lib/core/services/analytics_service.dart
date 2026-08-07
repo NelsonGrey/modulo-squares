@@ -19,9 +19,17 @@ class AnalyticsService {
     }
   }
 
+  /// Syncs the Analytics user ID to [user]. Pass null on sign-out (including
+  /// after account deletion, which signs the user out) to actually clear
+  /// the SDK's cached ID -- otherwise events logged before the next sign-in
+  /// keep attributing to whichever account was previously signed in.
   Future<void> setUserIdFromAuth(User? user) async {
     final a = _analyticsSafe;
-    if (a == null || user == null) return;
+    if (a == null) return;
+    if (user == null) {
+      await a.setUserId(id: null);
+      return;
+    }
     await a.setUserId(id: user.uid);
     await a.setUserProperty(
       name: 'is_anonymous',
