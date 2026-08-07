@@ -331,8 +331,20 @@
       // data: URI or redirect the render to an arbitrary external host.
       const asLocalPath = (value) => {
         if (!value) return null;
+        // Reject anything with a URL scheme ("javascript:", "data:",
+        // "https:", ...) or a protocol-relative host ("//evil.com/x")
+        // before it ever reaches an .src attribute.
         if (/^[a-z][a-z0-9+.-]*:/i.test(value) || value.startsWith('//')) {
           console.error('Rejected non-local path:', value);
+          return null;
+        }
+        // Belt-and-suspenders allowlist: a relative local asset path only
+        // ever needs word characters, dots, slashes, and dashes. Anything
+        // else (spaces, quotes, backslashes, control characters, ...)
+        // can't be part of a legitimate path into this repo's asset tree,
+        // so reject it rather than trust the scheme check alone.
+        if (!/^[\w./-]+$/.test(value)) {
+          console.error('Rejected path with unexpected characters:', value);
           return null;
         }
         return value;
