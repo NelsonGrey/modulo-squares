@@ -34,7 +34,7 @@
     "express": "^5.2.1"
   },
   "devDependencies": {
-    "firebase": "^12.15.0",
+    "firebase": "^12.17.0",
     "firebase-tools": "^15.25.1"
   },
   "overrides": {
