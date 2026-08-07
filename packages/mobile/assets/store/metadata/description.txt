@@ -1,23 +1,25 @@
 Modulo Squares turns divisibility into a fast, strategic arcade puzzle.
 
-Guide each falling numbered square into the right bucket before time runs out. A clean division grows your score and combo. A remainder costs points. One dead bucket can punish a careless move, so read the board, move quickly, and plan ahead.
+A number falls. Ten buckets wait. Guide the tile left or right, then drop it onto a bucket that divides it evenly. A clean match grows your score and combo. A remainder costs points. The red Dead bucket costs the falling number, so every decision matters as the numbers grow and the timer speeds up.
 
 HOW TO PLAY
 • Move the falling number left or right across ten lanes
-• Land on a bucket that divides the number evenly
+• Choose a bucket that divides the number evenly
+• Drop early when you know the answer
 • Build combos to increase your movement speed
-• Fill the progress grid to advance to the next level
-• Adapt as the number range expands and the drop speed increases
+• Fill the 10 × 10 progress grid to reach the next level
+• Adapt as the number range expands and the fall timer accelerates
 
 FEATURES
-• Quick, replayable falling-number gameplay
-• Optional visual cues for learning divisibility patterns
-• Persistent local high score across runs
-• Sign in to save progress and compete on the leaderboard
-• Free, ad-supported play
-• One-time Unlock Premium purchase (removes ads) with purchase restoration
-• Account deletion from in-app Settings
+• Quick, replayable number-puzzle runs
+• Optional visual cues that highlight valid buckets
+• A persistent local high score to improve
+• Clear scoring, combo, speed, range, and progress feedback
+• Play free with short ads between levels
+• Optional one-time Unlock Premium purchase to remove ads
+• Sign in with Google or email, or continue as a guest
+• Account deletion available in Settings
 
-Modulo Squares is designed for puzzle fans, competitive players, and anyone who wants arithmetic practice to feel like a game instead of a worksheet.
+Modulo Squares is made for puzzle fans, number-game players, and anyone who wants arithmetic practice to feel like an arcade challenge instead of a worksheet.
 
-Download free and see how long you can keep the numbers falling.
+How long can you keep the numbers falling?

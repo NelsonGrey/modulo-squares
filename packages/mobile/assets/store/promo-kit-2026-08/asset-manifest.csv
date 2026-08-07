@@ -1,0 +1,32 @@
+platform,asset,path,media_type,width,height,format,colorspace,alpha_channel,codec,pixel_format,fps,duration_seconds,size_bytes,status,details
+Apple,App icon,apple/icon/app-icon-1024x1024.png,image,1024,1024,PNG,sRGB,no,,,,,849825,PASS,meets production rule
+Apple,Unlock Premium promotional image,apple/in-app-purchase/remove-ads-1024x1024.png,image,1024,1024,PNG,sRGB,no,,,,,1050262,PASS,meets production rule
+Apple,iPhone screenshot 1,apple/screenshots/iphone-6.9/01-drop-numbers-1320x2868.png,image,1320,2868,PNG,sRGB,no,,,,,1447079,PASS,meets production rule
+Apple,iPhone screenshot 2,apple/screenshots/iphone-6.9/02-divide-evenly-1320x2868.png,image,1320,2868,PNG,sRGB,no,,,,,1382466,PASS,meets production rule
+Apple,iPhone screenshot 3,apple/screenshots/iphone-6.9/03-build-combos-1320x2868.png,image,1320,2868,PNG,sRGB,no,,,,,1578025,PASS,meets production rule
+Apple,iPhone screenshot 4,apple/screenshots/iphone-6.9/04-chase-your-best-1320x2868.png,image,1320,2868,PNG,sRGB,no,,,,,1345673,PASS,meets production rule
+Apple,iPhone screenshot 5,apple/screenshots/iphone-6.9/05-learn-the-rules-1320x2868.png,image,1320,2868,PNG,sRGB,no,,,,,1292008,PASS,meets production rule
+Apple,iPhone screenshot 6,apple/screenshots/iphone-6.9/06-remove-ads-1320x2868.png,image,1320,2868,PNG,sRGB,no,,,,,1209857,PASS,meets production rule
+Google,Play Store icon,google/icon/play-store-icon-512x512.png,image,512,512,PNG,sRGB,yes,,,,,252003,PASS,meets production rule
+Google,Feature graphic,google/feature-graphic/feature-graphic-1024x500.png,image,1024,500,PNG,sRGB,no,,,,,237298,PASS,meets production rule
+Google,Phone screenshot 1,google/screenshots/phone/01-drop-numbers-1080x1920.png,image,1080,1920,PNG,sRGB,no,,,,,805867,PASS,meets production rule
+Google,Phone screenshot 2,google/screenshots/phone/02-divide-evenly-1080x1920.png,image,1080,1920,PNG,sRGB,no,,,,,865520,PASS,meets production rule
+Google,Phone screenshot 3,google/screenshots/phone/03-build-combos-1080x1920.png,image,1080,1920,PNG,sRGB,no,,,,,819095,PASS,meets production rule
+Google,Phone screenshot 4,google/screenshots/phone/04-keep-the-run-going-1080x1920.png,image,1080,1920,PNG,sRGB,no,,,,,815507,PASS,meets production rule
+Google,Phone screenshot 5,google/screenshots/phone/05-learn-the-rules-1080x1920.png,image,1080,1920,PNG,sRGB,no,,,,,864845,PASS,meets production rule
+Google,Phone screenshot 6,google/screenshots/phone/06-customize-settings-1080x1920.png,image,1080,1920,PNG,sRGB,no,,,,,797210,PASS,meets production rule
+Cross-platform,Key art master,cross-platform/key-art/modulo-squares-key-art-3840x2160.png,image,3840,2160,PNG,sRGB,no,,,,,4243254,PASS,meets production rule
+Cross-platform,YouTube thumbnail,cross-platform/social/youtube-thumbnail-1280x720.png,image,1280,720,PNG,sRGB,no,,,,,833850,PASS,meets production rule
+Cross-platform,YouTube channel banner,cross-platform/social/youtube-channel-banner-2560x1440.png,image,2560,1440,PNG,sRGB,no,,,,,2925153,PASS,meets production rule
+Cross-platform,Social square,cross-platform/social/social-square-1080x1080.png,image,1080,1080,PNG,sRGB,no,,,,,979875,PASS,meets production rule
+Apple,iPhone app preview,apple/app-preview/modulo-squares-app-preview-iphone-portrait-886x1920.mp4,video,886,1920,"mov,mp4,m4a,3gp,3g2,mj2",,,h264,yuv420p,30.000,16.900,1130602,PASS,meets production rule
+Google,YouTube gameplay promo master,google/video/modulo-squares-youtube-promo-1920x1080.mp4,video,1920,1080,"mov,mp4,m4a,3gp,3g2,mj2",,,h264,yuv420p,30.000,16.900,1111052,PASS,meets production rule
+Cross-platform,Social clip 1,cross-platform/video-clips/01-drop-and-decide-1080x1920.mp4,video,1080,1920,"mov,mp4,m4a,3gp,3g2,mj2",,,h264,yuv420p,30.000,5.500,449282,PASS,meets production rule
+Cross-platform,Social clip 2,cross-platform/video-clips/02-combo-and-progress-1080x1920.mp4,video,1080,1920,"mov,mp4,m4a,3gp,3g2,mj2",,,h264,yuv420p,30.000,5.500,436524,PASS,meets production rule
+Cross-platform,Social clip 3,cross-platform/video-clips/03-speed-and-streak-1080x1920.mp4,video,1080,1920,"mov,mp4,m4a,3gp,3g2,mj2",,,h264,yuv420p,30.000,5.500,385672,PASS,meets production rule
+Apple,English (U.S.) listing copy,copy/apple-en-US.md,text,,,Markdown,,,,,,,2849,PASS,present and non-empty
+Google,English (U.S.) listing copy,copy/google-en-US.md,text,,,Markdown,,,,,,,3219,PASS,present and non-empty
+Cross-platform,Campaign copy,copy/campaign-copy.md,text,,,Markdown,,,,,,,2534,PASS,present and non-empty
+Cross-platform,Video production script,copy/video-production-script.md,text,,,Markdown,,,,,,,1902,PASS,present and non-empty
+Cross-platform,Store specifications,specifications.md,text,,,Markdown,,,,,,,5771,PASS,present and non-empty
+Cross-platform,Kit operator guide,README.md,text,,,Markdown,,,,,,,10153,PASS,present and non-empty

@@ -53,12 +53,17 @@ service cloud.firestore {
     }
 
     // Gamertag uniqueness index - readable by all authenticated users (for
-    // availability checks), writable only by the user whose UID matches the
-    // document's uid field.
+    // availability checks: existence alone means the tag is taken).
+    // Deliberately does NOT store an owner uid field -- gamertags are
+    // discoverable strings (shown on leaderboards, etc.), and if this
+    // index carried the owner's uid, any authenticated user could look up
+    // another player's uid from their public gamertag. Uniqueness is
+    // enforced by `allow update: if false` (an existing tag can never be
+    // overwritten, by its owner or anyone else); ownership of the *user's*
+    // own gamertag lives in the access-restricted /users/{userId} document.
     match /gamertags/{tag} {
       allow read: if request.auth != null;
-      allow create: if request.auth != null
-                    && request.resource.data.uid == request.auth.uid;
+      allow create: if request.auth != null;
       allow update: if false;
       allow delete: if false;
     }
