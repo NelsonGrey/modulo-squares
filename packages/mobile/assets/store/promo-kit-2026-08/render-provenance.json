@@ -1,0 +1,83 @@
+{
+  "apple/app-preview/modulo-squares-app-preview-iphone-portrait-886x1920.mp4": {
+    "kit:sources/video/iphone-gameplay-raw.mov": "5ff1e27acb97516224986573f09bda2719d5f3232bd2e86e4e1ceec357b5fd48"
+  },
+  "apple/screenshots/iphone-6.9/01-drop-numbers-1320x2868.png": {
+    "kit:sources/captures/iphone-6.9/01-active-gameplay.png": "c5ed7d3c62ae10bcdba99b4bfad5d5a2c777e5c4cb6493f1fb493c2cac775e62",
+    "repo:scripts/store-promo/render.html": "e29ea8719d16f5ca1f9c2f8bca31ed9ee3811fa04dce76940219c05720c3046f"
+  },
+  "apple/screenshots/iphone-6.9/02-divide-evenly-1320x2868.png": {
+    "kit:sources/captures/iphone-6.9/02-start-rules.png": "793b366de3b9daecbbe48e747b76d0dea550592fd63f5ba8b28aec8410017bb4",
+    "repo:scripts/store-promo/render.html": "e29ea8719d16f5ca1f9c2f8bca31ed9ee3811fa04dce76940219c05720c3046f"
+  },
+  "apple/screenshots/iphone-6.9/03-build-combos-1320x2868.png": {
+    "kit:sources/captures/iphone-6.9/03-score-combo.png": "283aa789208528f062cf78c1cb671f2b9871af441496039bfe1e78f3ac6068e3",
+    "repo:scripts/store-promo/render.html": "e29ea8719d16f5ca1f9c2f8bca31ed9ee3811fa04dce76940219c05720c3046f"
+  },
+  "apple/screenshots/iphone-6.9/04-chase-your-best-1320x2868.png": {
+    "kit:sources/captures/iphone-6.9/04-paused.png": "ebc6f56ae74ca5dc4336ec86317913377770bd2ac8268126aac90642aaab0e4f",
+    "repo:scripts/store-promo/render.html": "e29ea8719d16f5ca1f9c2f8bca31ed9ee3811fa04dce76940219c05720c3046f"
+  },
+  "apple/screenshots/iphone-6.9/05-learn-the-rules-1320x2868.png": {
+    "kit:sources/captures/iphone-6.9/05-how-to-play.png": "e164eb8eb096b13ff93a33c03e0148ee90674f906546af06418a565b0a49c46e",
+    "repo:scripts/store-promo/render.html": "e29ea8719d16f5ca1f9c2f8bca31ed9ee3811fa04dce76940219c05720c3046f"
+  },
+  "apple/screenshots/iphone-6.9/06-remove-ads-1320x2868.png": {
+    "kit:sources/captures/iphone-6.9/07-purchases.png": "9e9901b635b10d233cf2aedc579d15ff435c4c343b23440dab352de63689ba7f",
+    "repo:scripts/store-promo/render.html": "e29ea8719d16f5ca1f9c2f8bca31ed9ee3811fa04dce76940219c05720c3046f"
+  },
+  "cross-platform/social/social-square-1080x1080.png": {
+    "kit:sources/key-art-master-generated.png": "121aa0655141eceda0efa2b1cd6ced83a6c0a653a07c56c624f36c8a87ac44a4",
+    "repo:scripts/store-promo/render.html": "e29ea8719d16f5ca1f9c2f8bca31ed9ee3811fa04dce76940219c05720c3046f"
+  },
+  "cross-platform/social/youtube-channel-banner-2560x1440.png": {
+    "kit:sources/key-art-master-generated.png": "121aa0655141eceda0efa2b1cd6ced83a6c0a653a07c56c624f36c8a87ac44a4",
+    "repo:scripts/store-promo/render.html": "e29ea8719d16f5ca1f9c2f8bca31ed9ee3811fa04dce76940219c05720c3046f"
+  },
+  "cross-platform/social/youtube-thumbnail-1280x720.png": {
+    "kit:sources/key-art-master-generated.png": "121aa0655141eceda0efa2b1cd6ced83a6c0a653a07c56c624f36c8a87ac44a4",
+    "repo:scripts/store-promo/render.html": "e29ea8719d16f5ca1f9c2f8bca31ed9ee3811fa04dce76940219c05720c3046f"
+  },
+  "cross-platform/video-clips/01-drop-and-decide-1080x1920.mp4": {
+    "kit:apple/app-preview/modulo-squares-app-preview-iphone-portrait-886x1920.mp4": "b792862bc75e42cf83a6c0a5e72ef49ff5ece7b52401074e39aba116954f8506"
+  },
+  "cross-platform/video-clips/02-combo-and-progress-1080x1920.mp4": {
+    "kit:apple/app-preview/modulo-squares-app-preview-iphone-portrait-886x1920.mp4": "b792862bc75e42cf83a6c0a5e72ef49ff5ece7b52401074e39aba116954f8506"
+  },
+  "cross-platform/video-clips/03-speed-and-streak-1080x1920.mp4": {
+    "kit:apple/app-preview/modulo-squares-app-preview-iphone-portrait-886x1920.mp4": "b792862bc75e42cf83a6c0a5e72ef49ff5ece7b52401074e39aba116954f8506"
+  },
+  "google/screenshots/phone/01-drop-numbers-1080x1920.png": {
+    "kit:sources/captures/android-phone/01-active-gameplay.png": "b6dc24ffade562b9a1bb0c71c417217f99bf78604c4c141385e0c2d3212b4e01",
+    "repo:scripts/store-promo/render.html": "e29ea8719d16f5ca1f9c2f8bca31ed9ee3811fa04dce76940219c05720c3046f"
+  },
+  "google/screenshots/phone/02-divide-evenly-1080x1920.png": {
+    "kit:sources/captures/android-phone/02-start-rules.png": "ff51347111b57fbe0d0970c7e90a53f0897b1a39234f8331a3ef21a9831bf093",
+    "repo:scripts/store-promo/render.html": "e29ea8719d16f5ca1f9c2f8bca31ed9ee3811fa04dce76940219c05720c3046f"
+  },
+  "google/screenshots/phone/03-build-combos-1080x1920.png": {
+    "kit:sources/captures/android-phone/03-score-combo.png": "f3690dfb32b8030365d44628ac08857296fa9d0ebef2443f4c72985227298324",
+    "repo:scripts/store-promo/render.html": "e29ea8719d16f5ca1f9c2f8bca31ed9ee3811fa04dce76940219c05720c3046f"
+  },
+  "google/screenshots/phone/04-keep-the-run-going-1080x1920.png": {
+    "kit:sources/captures/android-phone/04-paused.png": "9e9f478655974dc8e22e6e819f0a3fd2e154b5606aed7e0d4e70837b12e96fec",
+    "repo:scripts/store-promo/render.html": "e29ea8719d16f5ca1f9c2f8bca31ed9ee3811fa04dce76940219c05720c3046f"
+  },
+  "google/screenshots/phone/05-learn-the-rules-1080x1920.png": {
+    "kit:sources/captures/android-phone/05-how-to-play.png": "108dc1c03163e86036b67e81621ab544ec8d38d51ae6850f822ff53c362bb73e",
+    "repo:scripts/store-promo/render.html": "e29ea8719d16f5ca1f9c2f8bca31ed9ee3811fa04dce76940219c05720c3046f"
+  },
+  "google/screenshots/phone/06-customize-settings-1080x1920.png": {
+    "kit:sources/captures/android-phone/06-settings.png": "c04f36ce9d0e3df492e763ef4b4555856d09c662c578364b2df395ec9a7dcfb2",
+    "repo:scripts/store-promo/render.html": "e29ea8719d16f5ca1f9c2f8bca31ed9ee3811fa04dce76940219c05720c3046f"
+  },
+  "google/video/modulo-squares-youtube-promo-1920x1080.mp4": {
+    "kit:apple/app-preview/modulo-squares-app-preview-iphone-portrait-886x1920.mp4": "b792862bc75e42cf83a6c0a5e72ef49ff5ece7b52401074e39aba116954f8506",
+    "kit:sources/video/plates/01-drop-numbers.png": "926b54153b783cf819221bad0be116ff21a3b15c8dcf2f48cad1cfa422db9d5d",
+    "kit:sources/video/plates/02-think-fast.png": "07d09a6c1175a41764e997e4c5293476278be7a6cf52cf143d5624aa07348720",
+    "kit:sources/video/plates/03-divide-evenly.png": "0db4e978ca3dca67af1752fcb987b27816238295410b0be877d08721c4a168db",
+    "kit:sources/video/plates/04-build-combos.png": "fb381992322494fcca2cef706c3601aaeed4cb91929e0279ff9602681d334867",
+    "kit:sources/video/plates/05-fill-grid.png": "ba8f31d2260f87ec3ed9e489487728ddbed25579b7665437c9ee1e09b7d10059",
+    "kit:sources/video/plates/06-keep-thinking.png": "97e58e0effc9bbd8a3f997dfc91d7319b3384bacd502745a4ffddf69b9de0a50"
+  }
+}
