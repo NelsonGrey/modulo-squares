@@ -8,6 +8,7 @@ import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:modulo_squares/core/auth/apple_sign_in_nonce.dart';
 import 'package:modulo_squares/core/di/service_locator.dart';
+import 'package:modulo_squares/features/auth/change_password_screen.dart';
 import 'package:modulo_squares/core/services/ad_service.dart';
 import 'package:modulo_squares/core/services/analytics_service.dart';
 import 'package:modulo_squares/core/services/purchase_service.dart';
@@ -17,7 +18,20 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class FallingModuloGameScreen extends StatefulWidget {
-  const FallingModuloGameScreen({super.key});
+  const FallingModuloGameScreen({
+    super.key,
+    this.engine,
+    this.expertDemo = false,
+  });
+
+  /// Optional deterministic engine used by tests and local store-media capture.
+  /// The release entry point leaves this null and uses normal game randomness.
+  final FallingModuloGameEngine? engine;
+
+  /// Drives real left/right/drop actions toward the highest-scoring valid
+  /// divisor. This is disabled by default and enabled only by the local store
+  /// capture entry point when STORE_CAPTURE_EXPERT_DEMO is defined.
+  final bool expertDemo;
 
   @override
   State<FallingModuloGameScreen> createState() =>
@@ -35,9 +49,10 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
   // see the matching constant in login_screen.dart.
   static const List<String> _googleAuthScopes = ['email'];
 
-  final FallingModuloGameEngine _engine = FallingModuloGameEngine();
+  late final FallingModuloGameEngine _engine;
   late FallingModuloGameState _state;
   Timer? _timer;
+  Timer? _expertDemoStartTimer;
 
   DateTime? _lastInputAt;
   Duration _elapsed = Duration.zero;
@@ -59,9 +74,17 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
   @override
   void initState() {
     super.initState();
+    _engine = widget.engine ?? FallingModuloGameEngine();
     _state = _engine.createInitialState();
     _loadPreferences();
     _startTicker();
+
+    if (widget.expertDemo) {
+      _expertDemoStartTimer = Timer(const Duration(milliseconds: 1500), () {
+        if (!mounted || _hasStarted) return;
+        _toggleRunning();
+      });
+    }
   }
 
   Future<void> _loadPreferences() async {
@@ -79,6 +102,7 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    _expertDemoStartTimer?.cancel();
     super.dispose();
   }
 
@@ -101,8 +125,51 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
       if (_spawnDelayRemaining == Duration.zero &&
           _elapsed >= Duration(milliseconds: _effectiveDropIntervalMs)) {
         _resolveCurrentTile();
+        return;
       }
+
+      _driveExpertDemo();
     });
+  }
+
+  void _driveExpertDemo() {
+    if (!widget.expertDemo || !_isRunning || _isSpawnDelayActive) return;
+
+    final targetLane = _highestScoringValidLane();
+    if (_state.currentLane < targetLane) {
+      _moveRight();
+      return;
+    }
+    if (_state.currentLane > targetLane) {
+      _moveLeft();
+      return;
+    }
+
+    // Let the falling tile visibly enter the board before making a crisp,
+    // deliberate drop. All scoring and combo changes still flow through the
+    // production engine's normal resolution path.
+    if (_dropProgress >= 0.10) {
+      _resolveCurrentTile();
+    }
+  }
+
+  int _highestScoringValidLane() {
+    var bestLane = _state.currentLane;
+    var bestBucketValue = -1;
+
+    for (var lane = 0; lane < _state.bucketValues.length; lane++) {
+      final bucketValue = _state.bucketValues[lane];
+      if (bucketValue <= 0 ||
+          _state.currentFallingValue % bucketValue != 0 ||
+          bucketValue <= bestBucketValue) {
+        continue;
+      }
+
+      bestLane = lane;
+      bestBucketValue = bucketValue;
+    }
+
+    return bestLane;
   }
 
   int get _effectiveDropIntervalMs => _state.dropIntervalMs;
@@ -593,6 +660,14 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
     } catch (_) {
       // Firebase not initialized in test environment.
     }
+    bool hasPasswordProvider = false;
+    try {
+      hasPasswordProvider = FirebaseAuth.instance.currentUser?.providerData
+              .any((info) => info.providerId == 'password') ??
+          false;
+    } catch (_) {
+      // Firebase not initialized in test environment.
+    }
 
     await showDialog<void>(
       context: context,
@@ -741,6 +816,21 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
                             Clipboard.setData(ClipboardData(text: uid));
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Player ID copied')),
+                            );
+                          },
+                        ),
+                      if (hasPasswordProvider)
+                        ListTile(
+                          leading: const Icon(Icons.password),
+                          title: const Text('Change Password'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () {
+                            Navigator.of(dialogContext).pop();
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const ChangePasswordScreen(),
+                              ),
                             );
                           },
                         ),
