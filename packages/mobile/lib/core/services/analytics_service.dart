@@ -19,14 +19,32 @@ class AnalyticsService {
     }
   }
 
+  /// Syncs the Analytics user ID to [user]. Pass null on sign-out (including
+  /// after account deletion, which signs the user out) to actually clear
+  /// the SDK's cached ID -- otherwise events logged before the next sign-in
+  /// keep attributing to whichever account was previously signed in.
   Future<void> setUserIdFromAuth(User? user) async {
     final a = _analyticsSafe;
-    if (a == null || user == null) return;
+    if (a == null) return;
+    if (user == null) {
+      await a.setUserId(id: null);
+      return;
+    }
     await a.setUserId(id: user.uid);
     await a.setUserProperty(
       name: 'is_anonymous',
       value: user.isAnonymous.toString(),
     );
+  }
+
+  /// Detaches the current user from subsequent Analytics events. Call this on
+  /// sign-out/account deletion — [setUserIdFromAuth] never gets called with a
+  /// null user (AuthGate returns LoginScreen instead), so without this the
+  /// previously-set Firebase UID keeps being attached to events indefinitely.
+  Future<void> clearUserId() async {
+    final a = _analyticsSafe;
+    if (a == null) return;
+    await a.setUserId(id: null);
   }
 
   Future<void> logAppOpen() async {
