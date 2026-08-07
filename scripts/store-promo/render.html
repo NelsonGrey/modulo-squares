@@ -360,14 +360,40 @@
         document.querySelector('#brand-row').style.display = 'none';
       }
 
+      // A broken/missing `source` or `art` path must fail the render rather
+      // than silently producing a correctly-sized but visually-incomplete
+      // screenshot. `image.complete` becomes true after either a load or an
+      // error, so a failed image must be distinguished by `naturalWidth`.
+      const waitForImage = (image) => {
+        if (image.complete) {
+          return image.naturalWidth > 0
+            ? Promise.resolve()
+            : Promise.reject(new Error(`Image failed to load: ${image.src}`));
+        }
+        return new Promise((resolve, reject) => {
+          image.addEventListener('load', () => resolve(), { once: true });
+          image.addEventListener(
+            'error',
+            () => reject(new Error(`Image failed to load: ${image.src}`)),
+            { once: true },
+          );
+        });
+      };
+
       Promise.all(
         [...document.images]
           .filter((image) => image.style.display !== 'none')
-          .map((image) => image.complete ? Promise.resolve() : new Promise((resolve) => {
-            image.addEventListener('load', resolve, { once: true });
-            image.addEventListener('error', resolve, { once: true });
-          })),
-      ).then(() => document.body.dataset.ready = 'true');
+          .map(waitForImage),
+      )
+        .then(() => {
+          document.body.dataset.ready = 'true';
+        })
+        .catch((error) => {
+          document.body.dataset.ready = 'false';
+          document.body.dataset.readyError =
+            error instanceof Error ? error.message : String(error);
+          console.error(error);
+        });
     </script>
   </body>
 </html>

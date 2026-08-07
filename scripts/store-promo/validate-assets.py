@@ -19,6 +19,8 @@ from fractions import Fraction
 from pathlib import Path
 from typing import Iterable
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import render_provenance  # noqa: E402  (path must be extended first)
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_KIT_ROOT = (
@@ -57,6 +59,11 @@ class ImageRule:
     require_srgb: bool = True
     bit_depth: int = 8
     max_bytes: int | None = None
+    # Provenance inputs ("kit:<path>" / "repo:<path>") that render-assets.sh
+    # records a content hash for each time it rebuilds this deliverable. An
+    # empty tuple means this asset has no automated rebuild pipeline to
+    # check freshness against (e.g. hand-authored artwork).
+    sources: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -72,6 +79,13 @@ class VideoRule:
     codec: str = "h264"
     pixel_format: str = "yuv420p"
     max_bytes: int = 500_000_000
+    # Container format_name tokens ffprobe accepts for this deliverable.
+    # ffprobe reports the mp4/mov muxer family as the compound string
+    # "mov,mp4,m4a,3gp,3g2,mj2"; requiring one of these tokens rejects a
+    # renamed .mkv/.ts/etc. that stores-connect would refuse on upload.
+    allowed_containers: tuple[str, ...] = ("mp4", "mov")
+    # See ImageRule.sources.
+    sources: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -98,6 +112,28 @@ GOOGLE_SCREENSHOTS = (
     "06-customize-settings-1080x1920.png",
 )
 
+# Native captures each screenshot is rendered from, in the same order as
+# APPLE_SCREENSHOTS/GOOGLE_SCREENSHOTS -- see render-assets.sh's PROMO_SHOTS.
+APPLE_SCREENSHOT_CAPTURES = (
+    "01-active-gameplay.png",
+    "02-start-rules.png",
+    "03-score-combo.png",
+    "04-paused.png",
+    "05-how-to-play.png",
+    "07-purchases.png",
+)
+GOOGLE_SCREENSHOT_CAPTURES = (
+    "01-active-gameplay.png",
+    "02-start-rules.png",
+    "03-score-combo.png",
+    "04-paused.png",
+    "05-how-to-play.png",
+    "06-settings.png",
+)
+
+RENDER_TEMPLATE_SOURCE = "repo:scripts/store-promo/render.html"
+KEY_ART_GENERATED_SOURCE = "kit:sources/key-art-master-generated.png"
+
 IMAGE_RULES = (
     ImageRule(
         "Apple",
@@ -120,8 +156,14 @@ IMAGE_RULES = (
             f"apple/screenshots/iphone-6.9/{filename}",
             1320,
             2868,
+            sources=(
+                RENDER_TEMPLATE_SOURCE,
+                f"kit:sources/captures/iphone-6.9/{capture}",
+            ),
         )
-        for index, filename in enumerate(APPLE_SCREENSHOTS, start=1)
+        for index, (filename, capture) in enumerate(
+            zip(APPLE_SCREENSHOTS, APPLE_SCREENSHOT_CAPTURES), start=1
+        )
     ),
     ImageRule(
         "Google",
@@ -147,8 +189,14 @@ IMAGE_RULES = (
             f"google/screenshots/phone/{filename}",
             1080,
             1920,
+            sources=(
+                RENDER_TEMPLATE_SOURCE,
+                f"kit:sources/captures/android-phone/{capture}",
+            ),
         )
-        for index, filename in enumerate(GOOGLE_SCREENSHOTS, start=1)
+        for index, (filename, capture) in enumerate(
+            zip(GOOGLE_SCREENSHOTS, GOOGLE_SCREENSHOT_CAPTURES), start=1
+        )
     ),
     ImageRule(
         "Cross-platform",
@@ -163,6 +211,7 @@ IMAGE_RULES = (
         "cross-platform/social/youtube-thumbnail-1280x720.png",
         1280,
         720,
+        sources=(RENDER_TEMPLATE_SOURCE, KEY_ART_GENERATED_SOURCE),
     ),
     ImageRule(
         "Cross-platform",
@@ -170,6 +219,7 @@ IMAGE_RULES = (
         "cross-platform/social/youtube-channel-banner-2560x1440.png",
         2560,
         1440,
+        sources=(RENDER_TEMPLATE_SOURCE, KEY_ART_GENERATED_SOURCE),
     ),
     ImageRule(
         "Cross-platform",
@@ -177,6 +227,7 @@ IMAGE_RULES = (
         "cross-platform/social/social-square-1080x1080.png",
         1080,
         1080,
+        sources=(RENDER_TEMPLATE_SOURCE, KEY_ART_GENERATED_SOURCE),
     ),
 )
 
@@ -189,6 +240,7 @@ VIDEO_RULES = (
         1920,
         15.0,
         30.0,
+        sources=("kit:sources/video/iphone-gameplay-raw.mov",),
     ),
     VideoRule(
         "Google",
@@ -198,6 +250,15 @@ VIDEO_RULES = (
         1080,
         15.0,
         30.0,
+        sources=(
+            "kit:apple/app-preview/modulo-squares-app-preview-iphone-portrait-886x1920.mp4",
+            "kit:sources/video/plates/01-drop-numbers.png",
+            "kit:sources/video/plates/02-think-fast.png",
+            "kit:sources/video/plates/03-divide-evenly.png",
+            "kit:sources/video/plates/04-build-combos.png",
+            "kit:sources/video/plates/05-fill-grid.png",
+            "kit:sources/video/plates/06-keep-thinking.png",
+        ),
     ),
     VideoRule(
         "Cross-platform",
@@ -207,6 +268,7 @@ VIDEO_RULES = (
         1920,
         4.0,
         15.0,
+        sources=("kit:apple/app-preview/modulo-squares-app-preview-iphone-portrait-886x1920.mp4",),
     ),
     VideoRule(
         "Cross-platform",
@@ -216,6 +278,7 @@ VIDEO_RULES = (
         1920,
         4.0,
         15.0,
+        sources=("kit:apple/app-preview/modulo-squares-app-preview-iphone-portrait-886x1920.mp4",),
     ),
     VideoRule(
         "Cross-platform",
@@ -225,6 +288,7 @@ VIDEO_RULES = (
         1920,
         4.0,
         15.0,
+        sources=("kit:apple/app-preview/modulo-squares-app-preview-iphone-portrait-886x1920.mp4",),
     ),
 )
 
@@ -338,6 +402,13 @@ def validate_image(kit_root: Path, rule: ImageRule) -> dict[str, object]:
     except (RuntimeError, ValueError) as error:
         errors.append(f"probe failed: {error}")
 
+    stale = render_provenance.stale_sources(kit_root, rule.path, rule.sources)
+    if stale:
+        errors.append(
+            "stale output: rerun the renderer -- changed since last render: "
+            + ", ".join(stale)
+        )
+
     row.update(
         status="FAIL" if errors else "PASS",
         details="; ".join(errors) if errors else "meets production rule",
@@ -388,15 +459,30 @@ def validate_video(kit_root: Path, rule: VideoRule) -> dict[str, object]:
         fps = parse_fps(stream.get("avg_frame_rate") or stream.get("r_frame_rate", ""))
         codec = stream.get("codec_name", "")
         pixel_format = stream.get("pix_fmt", "")
+        container_format = file_format.get("format_name", "")
         row.update(
             width=width,
             height=height,
-            format=file_format.get("format_name", ""),
+            format=container_format,
             codec=codec,
             pixel_format=pixel_format,
             fps=f"{fps:.3f}",
             duration_seconds=f"{duration:.3f}",
         )
+
+        # ffprobe reports the container as a comma-separated list of muxer
+        # aliases (e.g. "mov,mp4,m4a,3gp,3g2,mj2"); a correctly encoded
+        # H.264/yuv420p stream renamed into an unsupported container (e.g.
+        # Matroska, MPEG-TS) would otherwise pass every other check here but
+        # be rejected by App Store Connect/Play Console on actual upload.
+        container_tokens = {
+            token.strip().lower() for token in container_format.split(",") if token.strip()
+        }
+        if not container_tokens & set(rule.allowed_containers):
+            errors.append(
+                f"container {container_format or '(unknown)'}; expected one of "
+                f"{' or '.join(rule.allowed_containers)}"
+            )
 
         if (width, height) != (rule.width, rule.height):
             errors.append(
@@ -420,6 +506,13 @@ def validate_video(kit_root: Path, rule: VideoRule) -> dict[str, object]:
             )
     except (IndexError, KeyError, RuntimeError, ValueError, json.JSONDecodeError) as error:
         errors.append(f"probe failed: {error}")
+
+    stale = render_provenance.stale_sources(kit_root, rule.path, rule.sources)
+    if stale:
+        errors.append(
+            "stale output: rerun the renderer -- changed since last render: "
+            + ", ".join(stale)
+        )
 
     row.update(
         status="FAIL" if errors else "PASS",
@@ -500,7 +593,28 @@ def main() -> int:
         type=Path,
         help="Manifest destination (defaults to KIT_ROOT/asset-manifest.csv).",
     )
+    parser.add_argument(
+        "--bootstrap-provenance",
+        action="store_true",
+        help=(
+            "Record current source hashes as the baseline for every rule "
+            "with declared sources, without validating anything. Use this "
+            "after confirming the kit's rendered deliverables genuinely "
+            "match their sources (e.g. right after a full re-render, or "
+            "once when adopting this staleness check on an already-current "
+            "kit) -- it does not rebuild or check any asset."
+        ),
+    )
     args = parser.parse_args()
+
+    kit_root = args.kit_root.resolve()
+
+    if args.bootstrap_provenance:
+        for rule in (*IMAGE_RULES, *VIDEO_RULES):
+            if rule.sources:
+                render_provenance.record(kit_root, rule.path, list(rule.sources))
+        print(f"Recorded provenance baseline for {kit_root}")
+        return 0
 
     missing_tools = [tool for tool in ("magick", "ffprobe") if shutil.which(tool) is None]
     if missing_tools:
@@ -510,7 +624,6 @@ def main() -> int:
         )
         return 2
 
-    kit_root = args.kit_root.resolve()
     manifest = (args.manifest or kit_root / "asset-manifest.csv").resolve()
     rows = [validate_image(kit_root, rule) for rule in IMAGE_RULES]
     rows.extend(validate_video(kit_root, rule) for rule in VIDEO_RULES)

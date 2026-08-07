@@ -66,7 +66,14 @@ The final console uploads, YouTube publication, localized URL checks, pricing ve
 
 ## Rebuild and validation
 
-Run from the repository root. ImageMagick, FFmpeg/FFprobe, Flutter, and the repository Playwright wrapper are the production dependencies.
+Run from the repository root. ImageMagick, FFmpeg/FFprobe, Flutter, and Node/Playwright are the production dependencies. Playwright is declared in the repository's root `package.json` (not a private, machine-local install), so a fresh checkout only needs:
+
+```bash
+npm install
+npx playwright install --with-deps chromium
+```
+
+Then rebuild and validate:
 
 ```bash
 ./scripts/store-promo/capture-ios-expert-gameplay.sh
@@ -75,7 +82,9 @@ Run from the repository root. ImageMagick, FFmpeg/FFprobe, Flutter, and the repo
 python3 scripts/store-promo/validate-assets.py
 ```
 
-The asset renderer rebuilds the six Apple screenshots, six Google screenshots, three cross-platform social stills, and six branded video plates from the checked-in native captures. The video renderer then rebuilds the Apple preview, Google/YouTube upload master, and three social clips from those local sources. The validator always rewrites `packages/mobile/assets/store/promo-kit-2026-08/asset-manifest.csv`; it exits non-zero for missing or stale deliverables, wrong dimensions or type, disallowed alpha channels, non-sRGB/incorrect bit-depth images, video codec or pixel-format mismatches, excessive frame rate or size, and invalid duration.
+The asset renderer rebuilds the six Apple screenshots, six Google screenshots, three cross-platform social stills, and six branded video plates from the checked-in native captures, driving Chromium through the repository-managed `scripts/store-promo/capture.mjs` (see `scripts/store-promo/render.html`'s inline script for the load-failure contract that script enforces). It also copies the six Apple screenshots into `packages/mobile/ios/fastlane/screenshots/en-US/`, which is what the `verify_metadata`/`submit_to_app_store` Fastlane lanes actually upload. The video renderer then rebuilds the Apple preview, Google/YouTube upload master, and three social clips from those local sources.
+
+Both renderers record a content hash of each deliverable's source inputs to `packages/mobile/assets/store/promo-kit-2026-08/render-provenance.json` (see `scripts/store-promo/render_provenance.py`). The validator always rewrites `packages/mobile/assets/store/promo-kit-2026-08/asset-manifest.csv`; it exits non-zero for missing or stale deliverables (i.e. a deliverable whose recorded source hashes no longer match `render.html`, the native capture, or the video/plate it was actually built from), wrong dimensions or type, disallowed alpha channels, non-sRGB/incorrect bit-depth images, video codec/pixel-format/container mismatches, excessive frame rate or size, and invalid duration. If you intentionally hand-edit a deliverable outside these scripts (or are adopting the staleness check on an already-current kit), run `python3 scripts/store-promo/validate-assets.py --bootstrap-provenance` to record the current sources as the new baseline -- it does not rebuild or validate anything.
 
 To validate a copied or staged kit, supply its path explicitly:
 

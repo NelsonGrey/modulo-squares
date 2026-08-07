@@ -44,6 +44,19 @@ mkdir -p \
   "$(dirname "${PROMO_GOOGLE_VIDEO}")" \
   "${PROMO_SOCIAL_ROOT}"
 
+# Records which source-file hashes produced a published deliverable, so
+# validate-assets.py can detect deliverables that are stale relative to the
+# raw gameplay capture, the branded plates, or the Apple preview they were
+# built from.
+record_provenance() {
+  local output="$1"
+  shift
+  python3 "${PROMO_REPO_ROOT}/scripts/store-promo/render_provenance.py" \
+    --kit-root "${PROMO_KIT_ROOT}" \
+    --output "${output}" \
+    "$@"
+}
+
 # Apple App Preview: one uninterrupted 16.9-second expert run. The source
 # begins with Simulator launch frames; 7.5 seconds lands on the in-app rules
 # overlay immediately before the capture-only expert driver starts playing.
@@ -62,6 +75,9 @@ ffmpeg -hide_banner -loglevel warning -y \
   -an \
   -movflags +faststart \
   "${PROMO_APPLE_VIDEO}"
+
+record_provenance "apple/app-preview/modulo-squares-app-preview-iphone-portrait-886x1920.mp4" \
+  --source "kit:sources/video/iphone-gameplay-raw.mov"
 
 # Google Play / YouTube master: six equal branded plates behind the Apple preview.
 ffmpeg -hide_banner -loglevel warning -y \
@@ -95,6 +111,15 @@ ffmpeg -hide_banner -loglevel warning -y \
   -movflags +faststart \
   "${PROMO_GOOGLE_VIDEO}"
 
+record_provenance "google/video/modulo-squares-youtube-promo-1920x1080.mp4" \
+  --source "kit:apple/app-preview/modulo-squares-app-preview-iphone-portrait-886x1920.mp4" \
+  --source "kit:sources/video/plates/01-drop-numbers.png" \
+  --source "kit:sources/video/plates/02-think-fast.png" \
+  --source "kit:sources/video/plates/03-divide-evenly.png" \
+  --source "kit:sources/video/plates/04-build-combos.png" \
+  --source "kit:sources/video/plates/05-fill-grid.png" \
+  --source "kit:sources/video/plates/06-keep-thinking.png"
+
 PROMO_SOCIAL_CLIPS=(
   "0.8|01-drop-and-decide-1080x1920.mp4"
   "6.0|02-combo-and-progress-1080x1920.mp4"
@@ -124,6 +149,9 @@ for clip in "${PROMO_SOCIAL_CLIPS[@]}"; do
     -an \
     -movflags +faststart \
     "${PROMO_SOCIAL_ROOT}/${filename}"
+
+  record_provenance "cross-platform/video-clips/${filename}" \
+    --source "kit:apple/app-preview/modulo-squares-app-preview-iphone-portrait-886x1920.mp4"
 done
 
 echo "Rendered promotion videos into ${PROMO_KIT_ROOT}"

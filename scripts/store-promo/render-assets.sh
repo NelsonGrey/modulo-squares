@@ -3,16 +3,24 @@
 set -euo pipefail
 
 PROMO_REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-PROMO_CODEX_ROOT="${CODEX_HOME:-${HOME}/.codex}"
-PROMO_PWCLI="${PROMO_CODEX_ROOT}/skills/playwright/scripts/playwright_cli.sh"
+PROMO_CAPTURE_CLI="${PROMO_REPO_ROOT}/scripts/store-promo/capture.mjs"
+PROMO_PROVENANCE_CLI="${PROMO_REPO_ROOT}/scripts/store-promo/render_provenance.py"
 PROMO_PORT="${PROMO_RENDER_PORT:-4173}"
 PROMO_BASE_URL="http://127.0.0.1:${PROMO_PORT}/scripts/store-promo/render.html"
 PROMO_CAPTURE_ROOT="${PROMO_REPO_ROOT}/output/playwright/store-promo/final"
 PROMO_KIT_ROOT="${PROMO_REPO_ROOT}/packages/mobile/assets/store/promo-kit-2026-08"
+PROMO_FASTLANE_SCREENSHOTS="${PROMO_REPO_ROOT}/packages/mobile/ios/fastlane/screenshots/en-US"
 PROMO_SERVER_PID=""
 
-if [[ ! -x "${PROMO_PWCLI}" ]]; then
-  echo "Playwright CLI wrapper not found: ${PROMO_PWCLI}" >&2
+if ! command -v node >/dev/null 2>&1; then
+  echo "Node.js is required to render store assets." >&2
+  exit 1
+fi
+
+if [[ ! -d "${PROMO_REPO_ROOT}/node_modules/playwright" ]]; then
+  echo "Playwright is not installed. From the repository root, run:" >&2
+  echo "  npm install" >&2
+  echo "  npx playwright install --with-deps chromium" >&2
   exit 1
 fi
 
@@ -24,7 +32,8 @@ mkdir -p \
   "${PROMO_KIT_ROOT}/apple/screenshots/iphone-6.9" \
   "${PROMO_KIT_ROOT}/google/screenshots/phone" \
   "${PROMO_KIT_ROOT}/cross-platform/social" \
-  "${PROMO_KIT_ROOT}/sources/video/plates"
+  "${PROMO_KIT_ROOT}/sources/video/plates" \
+  "${PROMO_FASTLANE_SCREENSHOTS}"
 
 if ! curl --silent --fail "http://127.0.0.1:${PROMO_PORT}/scripts/store-promo/render.html" >/dev/null; then
   (
@@ -46,10 +55,19 @@ capture_page() {
   local url="$3"
   local output="$4"
 
-  "${PROMO_PWCLI}" --session store-promo open "${url}" >/dev/null
-  "${PROMO_PWCLI}" --session store-promo resize "${width}" "${height}" >/dev/null
-  "${PROMO_PWCLI}" --session store-promo snapshot >/dev/null
-  "${PROMO_PWCLI}" --session store-promo screenshot --filename "${output}" >/dev/null
+  node "${PROMO_CAPTURE_CLI}" "${width}" "${height}" "${url}" "${output}"
+}
+
+# Records which source-file hashes produced a published deliverable, so
+# validate-assets.py can detect deliverables that are stale relative to
+# render.html or the native captures/plates they were built from.
+record_provenance() {
+  local output="$1"
+  shift
+  python3 "${PROMO_PROVENANCE_CLI}" \
+    --kit-root "${PROMO_KIT_ROOT}" \
+    --output "${output}" \
+    "$@"
 }
 
 PROMO_SHOTS=(
@@ -73,12 +91,21 @@ for index in "${!PROMO_SHOTS[@]}"; do
     "${PROMO_BASE_URL}?layout=phone&source=${PROMO_APPLE_SOURCE}/${apple_source}&headline=${apple_headline}&step=${step}" \
     "${apple_output}"
   cp "${apple_output}" "${PROMO_KIT_ROOT}/apple/screenshots/iphone-6.9/"
+  # verify_metadata/submit_to_app_store read screenshots from Fastlane's
+  # own screenshots_path, not the promo kit -- keep both in sync.
+  cp "${apple_output}" "${PROMO_FASTLANE_SCREENSHOTS}/"
+  record_provenance "apple/screenshots/iphone-6.9/${apple_slug}-1320x2868.png" \
+    --source "repo:scripts/store-promo/render.html" \
+    --source "kit:sources/captures/iphone-6.9/${apple_source}"
 
   google_output="${PROMO_CAPTURE_ROOT}/google/${google_slug}-1080x1920.png"
   capture_page 1080 1920 \
     "${PROMO_BASE_URL}?layout=phone&source=${PROMO_GOOGLE_SOURCE}/${google_source}&headline=${google_headline}&step=${step}" \
     "${google_output}"
   cp "${google_output}" "${PROMO_KIT_ROOT}/google/screenshots/phone/"
+  record_provenance "google/screenshots/phone/${google_slug}-1080x1920.png" \
+    --source "repo:scripts/store-promo/render.html" \
+    --source "kit:sources/captures/android-phone/${google_source}"
 done
 
 PROMO_VIDEO_PLATES=(
@@ -113,6 +140,11 @@ capture_page 1080 1080 \
   "${PROMO_CAPTURE_ROOT}/social/social-square-1080x1080.png"
 
 cp "${PROMO_CAPTURE_ROOT}/social/"*.png "${PROMO_KIT_ROOT}/cross-platform/social/"
-"${PROMO_PWCLI}" --session store-promo close >/dev/null || true
+
+for social_file in youtube-thumbnail-1280x720.png youtube-channel-banner-2560x1440.png social-square-1080x1080.png; do
+  record_provenance "cross-platform/social/${social_file}" \
+    --source "repo:scripts/store-promo/render.html" \
+    --source "kit:sources/key-art-master-generated.png"
+done
 
 echo "Rendered store assets into ${PROMO_KIT_ROOT}"
