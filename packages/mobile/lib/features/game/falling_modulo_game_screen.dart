@@ -4,18 +4,37 @@ import 'dart:math' as math;
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:modulo_squares/core/auth/apple_sign_in_nonce.dart';
 import 'package:modulo_squares/core/di/service_locator.dart';
+import 'package:modulo_squares/features/auth/change_password_screen.dart';
 import 'package:modulo_squares/core/services/ad_service.dart';
+import 'package:modulo_squares/core/services/analytics_service.dart';
+import 'package:modulo_squares/core/services/gamertag_service.dart';
+import 'package:modulo_squares/core/services/leaderboard_service.dart';
 import 'package:modulo_squares/core/services/purchase_service.dart';
+import 'package:modulo_squares/features/game/leaderboard_screen.dart';
 import 'package:modulo_squares/features/game/models/falling_modulo_game_engine.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class FallingModuloGameScreen extends StatefulWidget {
-  const FallingModuloGameScreen({super.key});
+  const FallingModuloGameScreen({
+    super.key,
+    this.engine,
+    this.expertDemo = false,
+  });
+
+  /// Optional deterministic engine used by tests and local store-media capture.
+  /// The release entry point leaves this null and uses normal game randomness.
+  final FallingModuloGameEngine? engine;
+
+  /// Drives real left/right/drop actions toward the highest-scoring valid
+  /// divisor. This is disabled by default and enabled only by the local store
+  /// capture entry point when STORE_CAPTURE_EXPERT_DEMO is defined.
+  final bool expertDemo;
 
   @override
   State<FallingModuloGameScreen> createState() =>
@@ -33,9 +52,10 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
   // see the matching constant in login_screen.dart.
   static const List<String> _googleAuthScopes = ['email'];
 
-  final FallingModuloGameEngine _engine = FallingModuloGameEngine();
+  late final FallingModuloGameEngine _engine;
   late FallingModuloGameState _state;
   Timer? _timer;
+  Timer? _expertDemoStartTimer;
 
   DateTime? _lastInputAt;
   Duration _elapsed = Duration.zero;
@@ -45,6 +65,7 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
   bool _resultBurstPositive = true;
   bool _isRunning = false;
   bool _hasStarted = false;
+  String? _playerName;
 
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
 
@@ -57,9 +78,18 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
   @override
   void initState() {
     super.initState();
+    _engine = widget.engine ?? FallingModuloGameEngine();
     _state = _engine.createInitialState();
     _loadPreferences();
+    _loadPlayerName();
     _startTicker();
+
+    if (widget.expertDemo) {
+      _expertDemoStartTimer = Timer(const Duration(milliseconds: 1500), () {
+        if (!mounted || _hasStarted) return;
+        _toggleRunning();
+      });
+    }
   }
 
   Future<void> _loadPreferences() async {
@@ -74,9 +104,22 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
     });
   }
 
+  Future<void> _loadPlayerName() async {
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null) return;
+      final tag = await GamertagService.getGamertag(uid);
+      if (!mounted) return;
+      setState(() => _playerName = tag);
+    } catch (_) {
+      // Firebase not initialized in test environment.
+    }
+  }
+
   @override
   void dispose() {
     _timer?.cancel();
+    _expertDemoStartTimer?.cancel();
     super.dispose();
   }
 
@@ -99,8 +142,51 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
       if (_spawnDelayRemaining == Duration.zero &&
           _elapsed >= Duration(milliseconds: _effectiveDropIntervalMs)) {
         _resolveCurrentTile();
+        return;
       }
+
+      _driveExpertDemo();
     });
+  }
+
+  void _driveExpertDemo() {
+    if (!widget.expertDemo || !_isRunning || _isSpawnDelayActive) return;
+
+    final targetLane = _highestScoringValidLane();
+    if (_state.currentLane < targetLane) {
+      _moveRight();
+      return;
+    }
+    if (_state.currentLane > targetLane) {
+      _moveLeft();
+      return;
+    }
+
+    // Let the falling tile visibly enter the board before making a crisp,
+    // deliberate drop. All scoring and combo changes still flow through the
+    // production engine's normal resolution path.
+    if (_dropProgress >= 0.10) {
+      _resolveCurrentTile();
+    }
+  }
+
+  int _highestScoringValidLane() {
+    var bestLane = _state.currentLane;
+    var bestBucketValue = -1;
+
+    for (var lane = 0; lane < _state.bucketValues.length; lane++) {
+      final bucketValue = _state.bucketValues[lane];
+      if (bucketValue <= 0 ||
+          _state.currentFallingValue % bucketValue != 0 ||
+          bucketValue <= bestBucketValue) {
+        continue;
+      }
+
+      bestLane = lane;
+      bestBucketValue = bucketValue;
+    }
+
+    return bestLane;
   }
 
   int get _effectiveDropIntervalMs => _state.dropIntervalMs;
@@ -127,6 +213,8 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
     final success = result.resolution.success;
     final burstText = success ? '+$scoreDelta' : '$scoreDelta';
 
+    final isNewHighScore = result.state.score > _highScore;
+
     setState(() {
       _state = result.state;
       _highScore = _state.score > _highScore ? _state.score : _highScore;
@@ -137,6 +225,11 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
     });
 
     _persistHighScore();
+
+    final playerName = _playerName;
+    if (isNewHighScore && playerName != null && playerName.isNotEmpty) {
+      unawaited(LeaderboardService.submitScore(context, playerName, _state.score));
+    }
 
     if (result.state.level > previousLevel) {
       setState(() {
@@ -326,6 +419,10 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
     );
     if (confirmed != true) return;
     if (context.mounted) Navigator.of(context).pop();
+    // Best-effort cleanup — an Analytics SDK error must never block sign-out.
+    try {
+      await getIt<AnalyticsService>().clearUserId();
+    } catch (_) {}
     await FirebaseAuth.instance.signOut();
   }
 
@@ -357,10 +454,22 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
 
     try {
       await FirebaseFunctions.instance.httpsCallable('deleteAccount').call();
-      await FirebaseAuth.instance.signOut();
     } catch (e) {
       if (context.mounted) _showAccountError(context, e);
+      return;
     }
+
+    // The account is deleted server-side past this point — everything below is
+    // best-effort local cleanup and must never prevent sign-out.
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_highScorePrefKey);
+    } catch (_) {}
+    if (mounted) setState(() => _highScore = 0);
+    try {
+      await getIt<AnalyticsService>().clearUserId();
+    } catch (_) {}
+    await FirebaseAuth.instance.signOut();
   }
 
   Future<void> _linkWithGoogle(BuildContext context) async {
@@ -565,6 +674,14 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
     );
   }
 
+  Future<void> _openLeaderboard() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => LeaderboardScreen(playerName: _playerName ?? ''),
+      ),
+    );
+  }
+
   Future<void> _openSettingsDialog() async {
     var localVisualCues = _state.visualCuesEnabled;
     final purchaseService = _purchaseServiceOrNull;
@@ -572,6 +689,14 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
     bool isGuest = false;
     try {
       isGuest = FirebaseAuth.instance.currentUser?.isAnonymous ?? false;
+    } catch (_) {
+      // Firebase not initialized in test environment.
+    }
+    bool hasPasswordProvider = false;
+    try {
+      hasPasswordProvider = FirebaseAuth.instance.currentUser?.providerData
+              .any((info) => info.providerId == 'password') ??
+          false;
     } catch (_) {
       // Firebase not initialized in test environment.
     }
@@ -706,6 +831,41 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
                             _openLinkAccountDialog(context);
                           },
                         ),
+                      if (isGuest)
+                        ListTile(
+                          leading: const Icon(Icons.badge_outlined),
+                          title: const Text('Player ID'),
+                          subtitle: Text(
+                            'Guest accounts have no email — include this ID in a '
+                            'support request if you need your account deleted and '
+                            "can't reach the app.\n"
+                            '${FirebaseAuth.instance.currentUser?.uid ?? ''}',
+                          ),
+                          trailing: const Icon(Icons.copy, size: 20),
+                          onTap: () {
+                            final uid = FirebaseAuth.instance.currentUser?.uid;
+                            if (uid == null) return;
+                            Clipboard.setData(ClipboardData(text: uid));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Player ID copied')),
+                            );
+                          },
+                        ),
+                      if (hasPasswordProvider)
+                        ListTile(
+                          leading: const Icon(Icons.password),
+                          title: const Text('Change Password'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () {
+                            Navigator.of(dialogContext).pop();
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const ChangePasswordScreen(),
+                              ),
+                            );
+                          },
+                        ),
                       ListTile(
                         leading: const Icon(Icons.logout, color: Colors.red),
                         title: const Text(
@@ -801,6 +961,11 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
               onPressed: _toggleRunning,
               icon: const Icon(Icons.pause),
             ),
+          IconButton(
+            tooltip: 'Leaderboard',
+            onPressed: _openLeaderboard,
+            icon: const Icon(Icons.leaderboard),
+          ),
           IconButton(
             tooltip: 'Settings',
             onPressed: _openSettingsDialog,

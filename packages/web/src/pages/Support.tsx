@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { Link } from 'react-router';
 import SEOHead from '../components/SEOHead';
 
 const TOPICS = [
   'Bug Report',
   'Account / Login',
+  'Delete My Account & Data',
   'Leaderboard Issue',
   'Purchase / In-App',
   'Feature Request',
@@ -53,6 +55,44 @@ const Support: React.FC = () => {
             </a>
             .
           </p>
+
+          <div className="rounded-xl bg-gray-50 border border-gray-200 p-6 mb-10">
+            <h2 className="text-lg font-semibold text-gray-900 mb-2">Delete your account or data</h2>
+            <p className="text-gray-600 mb-2">
+              You can permanently delete your account at any time from inside the app:
+              open <strong>Settings → Delete Account</strong>. This immediately deletes
+              your profile, gamertag, and saved progress, and cannot be undone. Analytics
+              and crash-report data already sent before deletion is retained separately
+              per our standard 60–90 day retention window — see our{' '}
+              <Link to="/privacy" className="text-primary-600 hover:underline">
+                Privacy Policy
+              </Link>{' '}
+              for details.
+            </p>
+            <p className="text-gray-600">
+              If you signed in with email, Google, or Apple and can't access the app,
+              select <strong>"Delete My Account &amp; Data"</strong> as the topic below,
+              or email{' '}
+              <a href="mailto:support@modulosquares.com?subject=Delete%20My%20Account%20%26%20Data" className="text-primary-600 hover:underline">
+                support@modulosquares.com
+              </a>{' '}
+              from the address on your account, and we'll delete it manually within 30
+              days.
+            </p>
+            <p className="text-gray-600 mt-2">
+              Guest accounts (Continue as Guest) have no email or password, so
+              in-app deletion (Settings → Delete Account) is the only way to delete one
+              with certainty — it's tied to your actual signed-in session, so there's
+              nothing to impersonate. If you can't open the app, you can send us the
+              Player ID shown under <strong>Settings → Player ID</strong> using the
+              topic below; because a guest account can't be cryptographically verified
+              from outside the app, we'll delete it on a best-effort basis rather than
+              guarantee it, and may ask for additional details (e.g. roughly when you
+              last played) to reduce the chance of deleting the wrong account.
+              Uninstalling the app on its own only clears locally-stored progress; it
+              doesn't delete the server-side account record.
+            </p>
+          </div>
 
           {status === 'sent' ? (
             <div className="rounded-xl bg-green-50 border border-green-200 p-8 text-center">
