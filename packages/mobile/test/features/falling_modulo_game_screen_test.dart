@@ -1,11 +1,13 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:modulo_squares/core/di/service_locator.dart';
 import 'package:modulo_squares/core/services/purchase_service.dart';
 import 'package:modulo_squares/features/game/falling_modulo_game_screen.dart';
+import 'package:modulo_squares/features/game/models/falling_modulo_game_engine.dart';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -90,6 +92,51 @@ void main() {
       await tester.tap(find.text('Start Game'));
       await tester.pump();
       expect(find.byTooltip('Pause'), findsOneWidget);
+    });
+
+    testWidgets('expert demo builds a clean combo without a deficit', (
+      tester,
+    ) async {
+      tester.view.physicalSize = _phoneSize;
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: FallingModuloGameScreen(
+            engine: FallingModuloGameEngine(random: Random(20260803)),
+            expertDemo: true,
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // Advance in human-scale input increments so the production movement
+      // cooldown and falling-tile timers both participate in the demo.
+      for (var step = 0; step < 180; step++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+
+      // Drain the score-burst label's own 700ms auto-clear timer so it can't
+      // still be pending when the test ends -- how many real-time moves land
+      // within the loop above (and thus the exact tick the last burst timer
+      // was scheduled on) is sensitive to how much CPU work runs per pump,
+      // since move cooldown gating uses wall-clock DateTime.now(), not the
+      // fake test clock.
+      await tester.pump(const Duration(milliseconds: 700));
+
+      final comboLabel = tester
+          .widgetList<Text>(find.byType(Text))
+          .map((widget) => widget.data)
+          .whereType<String>()
+          .firstWhere((text) => text.startsWith('Combo: '));
+      final combo = int.parse(comboLabel.substring('Combo: '.length));
+
+      expect(combo, greaterThanOrEqualTo(1));
+      expect(find.textContaining('Deficit:'), findsNothing);
     });
   });
 
@@ -355,6 +402,20 @@ void main() {
         await _expandSection(tester, 'ACCOUNT');
 
         expect(find.text('Link Account'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'Change Password is not shown when Firebase is uninitialised (treats as no password provider)',
+      (tester) async {
+        // Firebase is not initialized in the test environment; the code catches
+        // the exception and sets hasPasswordProvider = false, so Change
+        // Password stays hidden -- mirrors the Link Account case above.
+        await _pumpGame(tester);
+        await _openSettings(tester);
+        await _expandSection(tester, 'ACCOUNT');
+
+        expect(find.text('Change Password'), findsNothing);
       },
     );
 
