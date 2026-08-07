@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Modulo Squares Store Asset Renderer</title>
+    <style>
+      :root {
+        --navy: #14213d;
+        --blue: #136fb8;
+        --indigo: #4f46e5;
+        --sky: #38bdf8;
+        --green: #4caf50;
+        --orange: #ff8a00;
+        --ink: #0f274e;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: var(--blue);
+        color: white;
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+          "Helvetica Neue", Arial, sans-serif;
+      }
+
+      .canvas {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        isolation: isolate;
+        background:
+          radial-gradient(circle at 80% 22%, rgba(129, 220, 255, 0.45), transparent 34%),
+          linear-gradient(150deg, #087fb4 0%, #176ab8 48%, #5145e7 100%);
+      }
+
+      .canvas::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: -2;
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.065) 2px, transparent 2px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.065) 2px, transparent 2px);
+        background-size: 8.333% 8.333%;
+        mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.65), transparent 78%);
+      }
+
+      .canvas::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        background: linear-gradient(to bottom, rgba(10, 45, 87, 0.05), rgba(9, 25, 66, 0.45));
+        pointer-events: none;
+      }
+
+      .brand-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75em;
+      }
+
+      .icon {
+        width: 1.45em;
+        height: 1.45em;
+        border-radius: 24%;
+        box-shadow: 0 0.25em 0.85em rgba(6, 30, 75, 0.28);
+      }
+
+      .brand-name {
+        font-size: 0.54em;
+        font-weight: 800;
+        letter-spacing: -0.025em;
+      }
+
+      .eyebrow {
+        margin: 0 0 0.35em;
+        color: rgba(255, 255, 255, 0.76);
+        font-size: 0.28em;
+        font-weight: 800;
+        letter-spacing: 0.17em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0;
+        max-width: 12em;
+        font-size: 1em;
+        font-weight: 900;
+        letter-spacing: -0.045em;
+        line-height: 0.98;
+        text-wrap: balance;
+        white-space: pre-line;
+      }
+
+      .subhead {
+        max-width: 26em;
+        margin: 0.7em 0 0;
+        color: rgba(255, 255, 255, 0.82);
+        font-size: 0.34em;
+        font-weight: 600;
+        line-height: 1.28;
+      }
+
+      .screen {
+        display: block;
+        border: 2px solid rgba(255, 255, 255, 0.72);
+        background: #f5f7fb;
+        box-shadow:
+          0 0 0 10px rgba(255, 255, 255, 0.2),
+          0 0.55em 1.4em rgba(4, 21, 58, 0.4);
+        object-fit: contain;
+      }
+
+      .phone .copy {
+        position: absolute;
+        top: 2.3%;
+        left: 7%;
+        right: 7%;
+        height: 15%;
+        font-size: clamp(56px, 6.9vw, 104px);
+      }
+
+      .phone .brand-row {
+        position: absolute;
+        top: 0;
+        right: 0;
+        font-size: 0.54em;
+      }
+
+      .phone .screen {
+        position: absolute;
+        left: 50%;
+        bottom: -2.5%;
+        width: auto;
+        height: 82.5%;
+        max-width: 92%;
+        border-radius: clamp(32px, 4vw, 60px);
+        transform: translateX(-50%);
+      }
+
+      .phone .step {
+        position: absolute;
+        top: 0.03em;
+        left: -0.01em;
+        width: 0.72em;
+        height: 0.72em;
+        display: grid;
+        place-items: center;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        font-size: 0.24em;
+        font-weight: 900;
+      }
+
+      .phone .eyebrow,
+      .phone h1 {
+        margin-left: 1.08em;
+      }
+
+      .phone h1 {
+        max-width: 9.2em;
+        font-size: 0.78em;
+        line-height: 0.96;
+      }
+
+      .landscape {
+        font-size: clamp(58px, 5.2vw, 108px);
+      }
+
+      .landscape .key-art,
+      .keyart .key-art {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        z-index: -3;
+      }
+
+      .landscape .key-art {
+        opacity: 0.28;
+        filter: saturate(1.05) contrast(1.02);
+      }
+
+      .landscape .copy {
+        position: absolute;
+        top: 13%;
+        left: 6%;
+        width: 47%;
+      }
+
+      .landscape .screen {
+        position: absolute;
+        right: 7%;
+        top: 4%;
+        width: auto;
+        height: 92%;
+        max-width: 42%;
+        border-radius: 3.2vh;
+      }
+
+      .landscape h1 {
+        margin-top: 0.52em;
+      }
+
+      .keyart {
+        font-size: clamp(64px, 5.8vw, 116px);
+      }
+
+      .keyart::after {
+        background: linear-gradient(90deg, rgba(12, 47, 94, 0.7) 0%, rgba(12, 47, 94, 0.2) 51%, transparent 72%);
+      }
+
+      .keyart .copy {
+        position: absolute;
+        top: 18%;
+        left: 6%;
+        width: 47%;
+      }
+
+      .keyart .brand-row {
+        margin-bottom: 0.8em;
+      }
+
+      .keyart h1 {
+        max-width: 8em;
+      }
+
+      .keyart .subhead {
+        max-width: 19em;
+      }
+
+      .banner {
+        font-size: clamp(64px, 5vw, 104px);
+      }
+
+      .banner .key-art {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        z-index: -3;
+      }
+
+      .banner::after {
+        background: linear-gradient(90deg, rgba(15, 56, 105, 0.12), rgba(255, 255, 255, 0.1), rgba(33, 50, 145, 0.12));
+      }
+
+      .banner .copy {
+        position: absolute;
+        top: 50%;
+        left: 43%;
+        width: 58%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+      }
+
+      .banner .brand-row {
+        display: none;
+      }
+
+      .banner h1,
+      .banner .subhead {
+        max-width: none;
+      }
+
+      .safe-guide {
+        display: none;
+        position: absolute;
+        inset: 6%;
+        border: 3px dashed rgba(255, 255, 255, 0.35);
+        pointer-events: none;
+      }
+
+      .show-safe .safe-guide {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="canvas phone" id="canvas">
+      <img class="key-art" id="key-art" alt="" />
+      <section class="copy">
+        <div class="step" id="step">1</div>
+        <p class="eyebrow" id="eyebrow">MODULO SQUARES</p>
+        <div class="brand-row" id="brand-row">
+          <img class="icon" src="../../icons/icon-modulo-squares.png" alt="" />
+          <span class="brand-name">Modulo Squares</span>
+        </div>
+        <h1 id="headline">Drop Numbers. Think Fast.</h1>
+        <p class="subhead" id="subhead"></p>
+      </section>
+      <img class="screen" id="screen" alt="" />
+      <div class="safe-guide"></div>
+    </main>
+
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const canvas = document.querySelector('#canvas');
+      const layout = params.get('layout') || 'phone';
+      canvas.className = `canvas ${layout}${params.get('safe') === '1' ? ' show-safe' : ''}`;
+
+      const assignText = (id, key, fallback = '') => {
+        const el = document.querySelector(id);
+        el.textContent = params.get(key) || fallback;
+        if (!el.textContent) el.style.display = 'none';
+      };
+
+      assignText('#headline', 'headline', 'Drop Numbers. Think Fast.');
+      assignText('#subhead', 'subhead');
+      assignText('#eyebrow', 'eyebrow', 'MODULO SQUARES');
+      assignText('#step', 'step', '1');
+
+      // This page is only ever opened locally (via file://) with query
+      // params supplied by our own render-assets.sh/capture scripts, but
+      // params.get() still returns whatever a URL contains -- reject
+      // anything that isn't a plain relative local path before it reaches
+      // an .src attribute, so a crafted link can't inject a javascript:/
+      // data: URI or redirect the render to an arbitrary external host.
+      const asLocalPath = (value) => {
+        if (!value) return null;
+        // Reject anything with a URL scheme ("javascript:", "data:",
+        // "https:", ...) or a protocol-relative host ("//evil.com/x")
+        // before it ever reaches an .src attribute.
+        if (/^[a-z][a-z0-9+.-]*:/i.test(value) || value.startsWith('//')) {
+          console.error('Rejected non-local path:', value);
+          return null;
+        }
+        // Belt-and-suspenders allowlist: a relative local asset path only
+        // ever needs word characters, dots, slashes, and dashes. Anything
+        // else (spaces, quotes, backslashes, control characters, ...)
+        // can't be part of a legitimate path into this repo's asset tree,
+        // so reject it rather than trust the scheme check alone.
+        if (!/^[\w./-]+$/.test(value)) {
+          console.error('Rejected path with unexpected characters:', value);
+          return null;
+        }
+        return value;
+      };
+
+      const source = asLocalPath(params.get('source'));
+      const screen = document.querySelector('#screen');
+      if (source) {
+        screen.src = source;
+      } else {
+        screen.style.display = 'none';
+      }
+
+      const art = asLocalPath(params.get('art')) || '../../packages/mobile/assets/store/promo-kit-2026-08/sources/key-art-master-generated.png';
+      const keyArt = document.querySelector('#key-art');
+      keyArt.src = art;
+
+      if (layout === 'phone') {
+        document.querySelector('#brand-row').style.display = 'none';
+      } else {
+        document.querySelector('#step').style.display = 'none';
+      }
+
+      if (layout === 'banner') {
+        document.querySelector('#brand-row').style.display = 'none';
+      }
+
+      // A broken/missing `source` or `art` path must fail the render rather
+      // than silently producing a correctly-sized but visually-incomplete
+      // screenshot. `image.complete` becomes true after either a load or an
+      // error, so a failed image must be distinguished by `naturalWidth`.
+      const waitForImage = (image) => {
+        if (image.complete) {
+          return image.naturalWidth > 0
+            ? Promise.resolve()
+            : Promise.reject(new Error(`Image failed to load: ${image.src}`));
+        }
+        return new Promise((resolve, reject) => {
+          image.addEventListener('load', () => resolve(), { once: true });
+          image.addEventListener(
+            'error',
+            () => reject(new Error(`Image failed to load: ${image.src}`)),
+            { once: true },
+          );
+        });
+      };
+
+      Promise.all(
+        [...document.images]
+          .filter((image) => image.style.display !== 'none')
+          .map(waitForImage),
+      )
+        .then(() => {
+          document.body.dataset.ready = 'true';
+        })
+        .catch((error) => {
+          document.body.dataset.ready = 'false';
+          document.body.dataset.readyError =
+            error instanceof Error ? error.message : String(error);
+          console.error(error);
+        });
+    </script>
+  </body>
+</html>

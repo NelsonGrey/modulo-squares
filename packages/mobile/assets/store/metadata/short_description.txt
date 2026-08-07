@@ -1,1 +1,1 @@
-Guide falling numbers into the right divisor buckets and build your high score.
+Guide falling numbers into divisor buckets and build clever combos.
