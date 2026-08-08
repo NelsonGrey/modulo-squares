@@ -10,7 +10,9 @@ The active workflow references these secrets directly:
 | `APP_STORE_CONNECT_ISSUER_ID` | `build-ios`, `submit-app-store` | App Store Connect issuer ID |
 | `APP_STORE_CONNECT_KEY` | `build-ios`, `submit-app-store` | `.p8` private key content or supported base64 form |
 | `FASTLANE_TEAM_ID` | `build-ios` | Apple Developer Team ID for automatic signing |
-| `FIREBASE_TOKEN` | `deploy-web`, `deploy-functions` | Firebase CLI authentication |
+| `FIREBASE_SERVICE_ACCOUNT_KEY_DEVELOPMENT` | `deploy-web`, `deploy-functions` (development) | Firebase service account JSON key for `modulo-squares-dev` |
+| `FIREBASE_SERVICE_ACCOUNT_KEY_STAGING` | `deploy-web`, `deploy-functions` (staging) | Firebase service account JSON key for `modulo-squares-staging` |
+| `FIREBASE_SERVICE_ACCOUNT_KEY_PRODUCTION` | `deploy-web`, `deploy-functions` (production) | Firebase service account JSON key for `modulo-squares-prod` |
 | `FUNCTIONS_REPO_PAT` | `deploy-functions` | Read access to private companion Functions repo |
 
 Secrets may be stored per GitHub Environment (`development`, `staging`, `production`) or at repository scope as appropriate. Environment protection and least privilege are recommended for production.
@@ -21,9 +23,9 @@ Use a fine-grained token limited to read-only Contents access for `NelsonGrey/mo
 
 ## Firebase authentication
 
-The current workflow uses one secret name, `FIREBASE_TOKEN`, and selects the project from branch/environment logic. It does not reference older environment-specific token names.
+`deploy-web` and `deploy-functions` authenticate via `GOOGLE_APPLICATION_CREDENTIALS`, pointed at a service account JSON key written to a runner-temp file. Each of the three GitHub Environments (`development`/`staging`/`production`) must have its own `FIREBASE_SERVICE_ACCOUNT_KEY_<ENV>` secret containing that environment's key — the workflow selects between them by environment, since GitHub Actions can't construct a `secrets.*` name dynamically. All three must be populated; a missing one writes an empty/invalid credentials file and fails that environment's deploy.
 
-Firebase CLI login tokens are legacy-style credentials; migrate to workload identity/service-account federation when the delivery design supports it.
+Previously used `firebase deploy --token "$FIREBASE_TOKEN"` (a `firebase login:ci` OAuth refresh token) — deprecated by the Firebase CLI, and prone to expiring or being silently revoked with no advance warning (this broke both deploy jobs in production on 2026-08-07). Service account keys don't share that failure mode. `FIREBASE_TOKEN` is no longer referenced by any active job and can be removed once confirmed unused elsewhere.
 
 ## iOS key format
 

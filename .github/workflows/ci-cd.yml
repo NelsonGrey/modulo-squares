@@ -338,8 +338,21 @@ jobs:
           CONFIG_ENV="${{ needs.determine-environment.outputs.environment == 'development' && 'dev' || needs.determine-environment.outputs.environment == 'staging' && 'staging' || 'prod' }}"
           cp firebase.$CONFIG_ENV.json firebase.json
           PROJECT_ID="${{ needs.determine-environment.outputs.environment == 'production' && 'modulo-squares-prod' || needs.determine-environment.outputs.environment == 'staging' && 'modulo-squares-staging' || 'modulo-squares-dev' }}"
-          firebase use $PROJECT_ID --token "${{ secrets.FIREBASE_TOKEN }}"
-          firebase deploy --only hosting --token "${{ secrets.FIREBASE_TOKEN }}"
+          echo "$SERVICE_ACCOUNT_KEY" > "$RUNNER_TEMP/firebase-sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-sa.json"
+          firebase use $PROJECT_ID
+          firebase deploy --only hosting
+        env:
+          # google-github-actions style service-account-key auth, replacing
+          # the deprecated `firebase deploy --token` flow -- that flow uses an
+          # OAuth refresh token tied to a personal Google account, which can
+          # silently expire/get revoked (see 2026-08-07 production outage).
+          # A service account key doesn't expire the same way. Each GitHub
+          # Environment (DEVELOPMENT/STAGING/PRODUCTION) holds its own
+          # FIREBASE_SERVICE_ACCOUNT_KEY_<ENV> secret, hence the three-way
+          # selection here rather than one generic secret name -- GitHub
+          # Actions can't dynamically construct a secrets.* name.
+          SERVICE_ACCOUNT_KEY: ${{ needs.determine-environment.outputs.environment == 'production' && secrets.FIREBASE_SERVICE_ACCOUNT_KEY_PRODUCTION || needs.determine-environment.outputs.environment == 'staging' && secrets.FIREBASE_SERVICE_ACCOUNT_KEY_STAGING || secrets.FIREBASE_SERVICE_ACCOUNT_KEY_DEVELOPMENT }}
 
   # 🔥 Deploy Cloud Functions
   deploy-functions:
@@ -381,8 +394,14 @@ jobs:
           CONFIG_ENV="${{ needs.determine-environment.outputs.environment == 'development' && 'dev' || needs.determine-environment.outputs.environment == 'staging' && 'staging' || 'prod' }}"
           cp firebase.$CONFIG_ENV.json firebase.json
           PROJECT_ID="${{ needs.determine-environment.outputs.environment == 'production' && 'modulo-squares-prod' || needs.determine-environment.outputs.environment == 'staging' && 'modulo-squares-staging' || 'modulo-squares-dev' }}"
-          firebase use $PROJECT_ID --token "${{ secrets.FIREBASE_TOKEN }}"
-          firebase deploy --only functions --token "${{ secrets.FIREBASE_TOKEN }}"
+          echo "$SERVICE_ACCOUNT_KEY" > "$RUNNER_TEMP/firebase-sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-sa.json"
+          firebase use $PROJECT_ID
+          firebase deploy --only functions
+        env:
+          # See deploy-web's identical comment: service-account-key auth
+          # replacing the deprecated --token flow.
+          SERVICE_ACCOUNT_KEY: ${{ needs.determine-environment.outputs.environment == 'production' && secrets.FIREBASE_SERVICE_ACCOUNT_KEY_PRODUCTION || needs.determine-environment.outputs.environment == 'staging' && secrets.FIREBASE_SERVICE_ACCOUNT_KEY_STAGING || secrets.FIREBASE_SERVICE_ACCOUNT_KEY_DEVELOPMENT }}
 
   # 📊 Deployment Summary
   deployment-summary:
