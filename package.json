@@ -35,7 +35,7 @@
   },
   "devDependencies": {
     "firebase": "^12.17.0",
-    "firebase-tools": "^15.25.1",
+    "firebase-tools": "^15.26.0",
     "playwright": "^1.55.0"
   },
   "overrides": {
