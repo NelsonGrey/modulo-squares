@@ -35,7 +35,7 @@ const Download: React.FC = () => {
                 For iPhone. Requires iOS 16 or later.
               </p>
               <a
-                href="https://apps.apple.com/app/id6753350832"
+                href="https://apps.apple.com/app/id6783995654"
                 className="block w-full bg-black text-white font-semibold py-4 px-6 rounded-xl hover:bg-gray-800 transition-colors text-center"
                 aria-label="Download on the App Store"
               >
