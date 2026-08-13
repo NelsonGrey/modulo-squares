@@ -5,9 +5,9 @@
 **Version**: 1.1
 **Date**: 2026-06-22 (accounts/URL section updated 2026-07-31)
 **Owner**: Mark Nelson
-**Launch state**: iOS resubmitted 2026-07-22 after prior rejections, still in App Store Review as of 2026-07-31. Android CI/publishing pipeline is now wired (see [GO_LIVE_RUNBOOK.md](GO_LIVE_RUNBOOK.md) §2.3b) but the Play Console app record itself doesn't exist yet — still Phase 2, not live.
+**Launch state**: iOS APPROVED 2026-08-13, live on the App Store. Android CI/publishing pipeline is now wired (see [GO_LIVE_RUNBOOK.md](GO_LIVE_RUNBOOK.md) §2.3b) but the Play Console app record itself doesn't exist yet — still Phase 2, not live.
 
-**Known App Store URL (do not post publicly until approval — see Ground Rules)**: `https://apps.apple.com/app/id6753350832`. Use this to fill `TODO_APP_STORE_URL` in the copy bank below the moment approval lands — no need to go find it again.
+**App Store URL**: `https://apps.apple.com/app/id6783995654`. Use this to fill `TODO_APP_STORE_URL` in the copy bank below — corrected 2026-08-13, the previously recorded ID (`...6753350832`) was wrong/never resolved.
 
 ---
 
