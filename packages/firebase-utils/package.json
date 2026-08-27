@@ -36,7 +36,7 @@
     "globals": "^17.11.0",
     "prettier": "^3.9.6",
     "typescript": "^7.0.2",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   },
   "peerDependencies": {
     "firebase": "^12.17.1"
