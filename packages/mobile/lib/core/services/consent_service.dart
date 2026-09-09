@@ -47,8 +47,8 @@ class ConsentService {
     await MobileAds.instance.updateRequestConfiguration(
       RequestConfiguration(
         testDeviceIds: const <String>[],
-        // Tag for Child Directed Treatment or Users under the Age of Consent as needed.
-        // tagForChildDirectedTreatment: TagForChildDirectedTreatment.unspecified,
+        // Age-restricted treatment for Users under the Age of Consent as needed.
+        // ageRestrictedTreatment: AgeRestrictedTreatment.unspecified,
         // maxAdContentRating: MaxAdContentRating.pg,
       ),
     );
@@ -174,7 +174,7 @@ class ConsentService {
       RequestConfiguration(
         testDeviceIds: const <String>[],
         // Respect ATT authorization for personalized ads
-        tagForChildDirectedTreatment: TagForChildDirectedTreatment.unspecified,
+        ageRestrictedTreatment: AgeRestrictedTreatment.unspecified,
         maxAdContentRating: MaxAdContentRating.pg,
       ),
     );
