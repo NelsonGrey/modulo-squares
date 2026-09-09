@@ -116,6 +116,103 @@ jobs:
         run: npm install
         working-directory: packages/web
 
+      # The one per-run web build is baked for a single environment. Regenerate
+      # packages/web/.env.production with that environment's (public) Firebase
+      # web config + VITE_ENVIRONMENT, plus the EnvironmentGate allowlist from
+      # the per-environment repo secrets. The committed .env.production stays a
+      # valid prod fallback for local builds.
+      - name: 🔐 Prepare Web Environment (${{ needs.determine-environment.outputs.environment }})
+        working-directory: packages/web
+        env:
+          TARGET_ENV: ${{ needs.determine-environment.outputs.environment }}
+          VITE_ALLOWED_EMAILS_DEVELOPMENT: ${{ secrets.VITE_ALLOWED_EMAILS_DEVELOPMENT }}
+          VITE_ALLOWED_EMAILS_STAGING: ${{ secrets.VITE_ALLOWED_EMAILS_STAGING }}
+          VITE_ALLOWED_EMAIL_DOMAINS_DEVELOPMENT: ${{ secrets.VITE_ALLOWED_EMAIL_DOMAINS_DEVELOPMENT }}
+          VITE_ALLOWED_EMAIL_DOMAINS_STAGING: ${{ secrets.VITE_ALLOWED_EMAIL_DOMAINS_STAGING }}
+        run: |
+          set -euo pipefail
+          case "$TARGET_ENV" in
+            production)
+              API_KEY="AIzaSyAPBPlwtutn6Eu3WC2nMKQoQ95yxjYPeSY"
+              AUTH_DOMAIN="modulo-squares-prod.firebaseapp.com"
+              PROJECT_ID="modulo-squares-prod"
+              STORAGE_BUCKET="modulo-squares-prod.firebasestorage.app"
+              MESSAGING_SENDER_ID="253948321735"
+              APP_ID="1:253948321735:web:0f7df38ef2e47fe89ec3e2"
+              ;;
+            staging)
+              API_KEY="AIzaSyDlK3Pm3X5e9Nw31V8SPfm8o1CvPlisoEU"
+              AUTH_DOMAIN="modulo-squares-staging.firebaseapp.com"
+              PROJECT_ID="modulo-squares-staging"
+              STORAGE_BUCKET="modulo-squares-staging.firebasestorage.app"
+              MESSAGING_SENDER_ID="838061114925"
+              APP_ID="1:838061114925:web:4489f878453573b9229aa4"
+              ;;
+            *)
+              API_KEY="AIzaSyBKRHVb9cigFuu2dxxfL3_0MaeFvypm-3I"
+              AUTH_DOMAIN="modulo-squares-dev.firebaseapp.com"
+              PROJECT_ID="modulo-squares-dev"
+              STORAGE_BUCKET="modulo-squares-dev.firebasestorage.app"
+              MESSAGING_SENDER_ID="784677197785"
+              APP_ID="1:784677197785:web:17eec81cc847f1af61abc8"
+              ;;
+          esac
+
+          # Trust the resolved projectId over the raw trigger label.
+          VITE_ENVIRONMENT="$TARGET_ENV"
+          case "$PROJECT_ID" in
+            *-dev) VITE_ENVIRONMENT="development" ;;
+            *-staging) VITE_ENVIRONMENT="staging" ;;
+            *-prod) VITE_ENVIRONMENT="production" ;;
+          esac
+
+          # EnvironmentGate allowlist for this environment (dev/staging only;
+          # prod is never gated). Repo-level secrets, env-suffixed.
+          case "$VITE_ENVIRONMENT" in
+            development)
+              ALLOWED_EMAILS="${VITE_ALLOWED_EMAILS_DEVELOPMENT:-}"
+              ALLOWED_EMAIL_DOMAINS="${VITE_ALLOWED_EMAIL_DOMAINS_DEVELOPMENT:-}"
+              ;;
+            staging)
+              ALLOWED_EMAILS="${VITE_ALLOWED_EMAILS_STAGING:-}"
+              ALLOWED_EMAIL_DOMAINS="${VITE_ALLOWED_EMAIL_DOMAINS_STAGING:-}"
+              ;;
+            *)
+              ALLOWED_EMAILS=""
+              ALLOWED_EMAIL_DOMAINS=""
+              ;;
+          esac
+
+          {
+            printf 'VITE_ENVIRONMENT=%s\n' "$VITE_ENVIRONMENT"
+            printf 'VITE_FIREBASE_API_KEY=%s\n' "$API_KEY"
+            printf 'VITE_FIREBASE_AUTH_DOMAIN=%s\n' "$AUTH_DOMAIN"
+            printf 'VITE_FIREBASE_PROJECT_ID=%s\n' "$PROJECT_ID"
+            printf 'VITE_FIREBASE_STORAGE_BUCKET=%s\n' "$STORAGE_BUCKET"
+            printf 'VITE_FIREBASE_MESSAGING_SENDER_ID=%s\n' "$MESSAGING_SENDER_ID"
+            printf 'VITE_FIREBASE_APP_ID=%s\n' "$APP_ID"
+            printf 'VITE_ADSENSE_PUBLISHER_ID=%s\n' "ca-pub-5198775482699756"
+            printf 'VITE_ADSENSE_SLOT_BELOW_HEADER=%s\n' "4715412267"
+            printf 'VITE_ADSENSE_SLOT_ABOVE_FOOTER=%s\n' "4417809035"
+            # EnvironmentGate allowlist — dev/staging only; prod is never gated.
+            if [ "$VITE_ENVIRONMENT" != "production" ]; then
+              if [ -n "$ALLOWED_EMAILS" ]; then
+                printf 'VITE_ALLOWED_EMAILS=%s\n' "$ALLOWED_EMAILS"
+              fi
+              if [ -n "$ALLOWED_EMAIL_DOMAINS" ]; then
+                printf 'VITE_ALLOWED_EMAIL_DOMAINS=%s\n' "$ALLOWED_EMAIL_DOMAINS"
+              fi
+            fi
+          } > .env.production
+
+          if [ "$VITE_ENVIRONMENT" != "production" ] \
+             && [ -z "$ALLOWED_EMAILS" ] \
+             && [ -z "$ALLOWED_EMAIL_DOMAINS" ]; then
+            echo "::warning::No VITE_ALLOWED_EMAILS_${VITE_ENVIRONMENT^^} / VITE_ALLOWED_EMAIL_DOMAINS_${VITE_ENVIRONMENT^^} repo secret — EnvironmentGate will fail closed (no one can reach the $VITE_ENVIRONMENT web app)."
+          fi
+
+          echo "✅ Wrote packages/web/.env.production for $VITE_ENVIRONMENT (project: $PROJECT_ID)"
+
       - name: 🏗️ Build Web App
         run: npm run build
         working-directory: packages/web
