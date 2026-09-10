@@ -26,8 +26,6 @@ echo ""
 # Try common repository combinations
 POSSIBLE_REPOS=(
     "mnelson3/modulo-squares"
-    "nelsongrey/vehicle-vitals"
-    "nelsongrey/wishlist-wizard"
 )
 
 REPOS=()

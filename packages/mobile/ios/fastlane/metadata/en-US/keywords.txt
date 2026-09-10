@@ -1,1 +1,1 @@
-divisibility,math,puzzle,numbers,arcade,logic,brain,strategy,falling,mental arithmetic
+brain teaser,mental math,number game,arcade,logic,iq,factors,quick,offline,concentration,division

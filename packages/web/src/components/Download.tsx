@@ -1,5 +1,6 @@
 import SEOHead from './SEOHead';
 import SocialShare from './SocialShare';
+import { trackEvent } from '../utils/analytics';
 
 const Download: React.FC = () => {
   return (
@@ -36,6 +37,14 @@ const Download: React.FC = () => {
               </p>
               <a
                 href="https://apps.apple.com/app/id6783995654"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() =>
+                  trackEvent('app_store_click', {
+                    store: 'ios',
+                    location: 'download_page',
+                  })
+                }
                 className="block w-full bg-black text-white font-semibold py-4 px-6 rounded-xl hover:bg-gray-800 transition-colors text-center"
                 aria-label="Download on the App Store"
               >

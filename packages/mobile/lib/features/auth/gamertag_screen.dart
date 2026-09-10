@@ -8,9 +8,23 @@ const _kSurface = Color(0xFF16213E);
 const _kAccent = Color(0xFF4CAF50);
 
 class GamertagScreen extends StatefulWidget {
-  const GamertagScreen({super.key, required this.onGamertagSet});
+  const GamertagScreen({
+    super.key,
+    required this.onGamertagSet,
+    this.isAvailableOverride,
+    this.saveGamertagOverride,
+    this.isGuestOverride,
+    this.initialGamertag,
+  });
 
   final VoidCallback onGamertagSet;
+
+  /// Local media/test hooks. Production entry points leave these null and use
+  /// Firebase Auth plus [GamertagService].
+  final Future<bool> Function(String gamertag)? isAvailableOverride;
+  final Future<void> Function(String gamertag)? saveGamertagOverride;
+  final bool? isGuestOverride;
+  final String? initialGamertag;
 
   @override
   State<GamertagScreen> createState() => _GamertagScreenState();
@@ -25,6 +39,27 @@ class _GamertagScreenState extends State<GamertagScreen> {
   bool _checkingAvailability = false;
   bool _saving = false;
   Timer? _debounce;
+
+  @override
+  void initState() {
+    super.initState();
+    final initialGamertag = widget.initialGamertag;
+    if (initialGamertag == null || initialGamertag.isEmpty) return;
+    _controller.text = initialGamertag;
+    _validationError = GamertagService.validate(initialGamertag);
+    if (_validationError == null && widget.isAvailableOverride != null) {
+      // Local capture/test overrides can provide a deterministic initial
+      // result without waiting for a production Firestore lookup.
+      _checkingAvailability = true;
+      widget.isAvailableOverride!(initialGamertag).then((available) {
+        if (!mounted) return;
+        setState(() {
+          _isAvailable = available;
+          _checkingAvailability = false;
+        });
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -45,7 +80,9 @@ class _GamertagScreenState extends State<GamertagScreen> {
 
     setState(() => _checkingAvailability = true);
     _debounce = Timer(const Duration(milliseconds: 500), () async {
-      final available = await GamertagService.isAvailable(value);
+      final available =
+          await (widget.isAvailableOverride?.call(value) ??
+              GamertagService.isAvailable(value));
       if (mounted) {
         setState(() {
           _isAvailable = available;
@@ -66,14 +103,21 @@ class _GamertagScreenState extends State<GamertagScreen> {
 
     setState(() => _saving = true);
     try {
-      final uid = FirebaseAuth.instance.currentUser?.uid;
-      if (uid == null) return;
-      await GamertagService.setGamertag(uid, tag);
+      final saveOverride = widget.saveGamertagOverride;
+      if (saveOverride != null) {
+        await saveOverride(tag);
+      } else {
+        final uid = FirebaseAuth.instance.currentUser?.uid;
+        if (uid == null) return;
+        await GamertagService.setGamertag(uid, tag);
+      }
       widget.onGamertagSet();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to save gamertag. Please try again.')),
+          const SnackBar(
+            content: Text('Failed to save gamertag. Please try again.'),
+          ),
         );
       }
     } finally {
@@ -108,7 +152,10 @@ class _GamertagScreenState extends State<GamertagScreen> {
         children: [
           Icon(Icons.cancel, color: Colors.redAccent, size: 16),
           SizedBox(width: 4),
-          Text('Already taken', style: TextStyle(color: Colors.redAccent, fontSize: 12)),
+          Text(
+            'Already taken',
+            style: TextStyle(color: Colors.redAccent, fontSize: 12),
+          ),
         ],
       );
     }
@@ -125,7 +172,9 @@ class _GamertagScreenState extends State<GamertagScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isGuest = FirebaseAuth.instance.currentUser?.isAnonymous ?? false;
+    final isGuest =
+        widget.isGuestOverride ??
+        (FirebaseAuth.instance.currentUser?.isAnonymous ?? false);
 
     return Scaffold(
       backgroundColor: _kBg,
@@ -207,8 +256,10 @@ class _GamertagScreenState extends State<GamertagScreen> {
                     ),
                     focusedErrorBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide:
-                          const BorderSide(color: Colors.redAccent, width: 2),
+                      borderSide: const BorderSide(
+                        color: Colors.redAccent,
+                        width: 2,
+                      ),
                     ),
                     suffixIcon: Padding(
                       padding: const EdgeInsets.all(12),
@@ -236,8 +287,11 @@ class _GamertagScreenState extends State<GamertagScreen> {
                 child: const Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.warning_amber_rounded,
-                        color: Colors.orange, size: 20),
+                    Icon(
+                      Icons.warning_amber_rounded,
+                      color: Colors.orange,
+                      size: 20,
+                    ),
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -265,16 +319,20 @@ class _GamertagScreenState extends State<GamertagScreen> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: _saving
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
+                  child:
+                      _saving
+                          ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                          : const Text(
+                            'Continue',
+                            style: TextStyle(fontSize: 16),
                           ),
-                        )
-                      : const Text('Continue', style: TextStyle(fontSize: 16)),
                 ),
               ),
               if (isGuest) ...[

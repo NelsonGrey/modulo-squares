@@ -1,7 +1,7 @@
 {
   "name": "Modulo Squares",
   "short_name": "ModuloSquares",
-  "description": "Guide falling numbers into the right divisor buckets. Score, level up, and climb the global leaderboard.",
+  "description": "Guide falling numbers into the right divisor buckets. Score, build combos, and climb the global leaderboard.",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
