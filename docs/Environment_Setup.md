@@ -58,6 +58,51 @@ Switch native mobile config:
 
 The script updates the active Android/iOS Google service files. Confirm the selected project before building or deploying.
 
+## Non-prod web access gate (EnvironmentGate)
+
+`https://modulo-squares-dev.web.app` and `https://modulo-squares-staging.web.app`
+are public URLs, so they sit behind `packages/web/src/components/EnvironmentGate.tsx`:
+a Google sign-in wall that only lets through an allowlisted email. Production
+(`modulo-squares-prod.web.app` / `modulo-squares.com`) and `localhost` are never
+gated. It's a low-friction fence to keep the public off the non-prod sites, not
+a hard auth boundary — the allowlist is a `VITE_*` value and is therefore
+readable in the deployed bundle.
+
+- **Which env** is decided by `packages/web/src/shared/environment.ts` from
+  `VITE_ENVIRONMENT` (baked in at build time), falling back to Firebase project id
+  / hostname.
+- **Allowlist**: exact addresses (comma-separated) and/or domains. Empty allowlist
+  ⇒ the gate fails closed (nobody gets in). Don't commit real addresses (keeps
+  them out of the public repo/history) — the `build-web` job in
+  `.github/workflows/ci-cd.yml` reads the per-environment repo secrets below and
+  writes `VITE_ALLOWED_EMAILS` / `VITE_ALLOWED_EMAIL_DOMAINS` into
+  `packages/web/.env.production` before `vite build`:
+  - `VITE_ALLOWED_EMAILS_DEVELOPMENT`, `VITE_ALLOWED_EMAIL_DOMAINS_DEVELOPMENT`
+  - `VITE_ALLOWED_EMAILS_STAGING`, `VITE_ALLOWED_EMAIL_DOMAINS_STAGING`
+
+  (production has no such secret — the gate is inert there.)
+
+### Grant someone access
+
+Add their address to `VITE_ALLOWED_EMAILS_DEVELOPMENT` and/or
+`VITE_ALLOWED_EMAILS_STAGING` (**Settings → Secrets and variables → Actions →
+Repository secrets**), then re-run the pipeline for that branch.
+
+### One-time setup per Firebase project (`modulo-squares-dev`, `modulo-squares-staging`)
+
+1. Authentication → Sign-in method → enable **Google**.
+2. Authentication → Settings → Authorized domains → add
+   `modulo-squares-dev.web.app` and `modulo-squares-staging.web.app`
+   (`localhost` is preset).
+3. Make sure the OAuth consent screen is published (or the tester is listed) so
+   sign-in isn't blocked.
+
+### Local staging-mode build
+
+`packages/web/.env` (development) and `.env.staging` are git-ignored like all
+`.env*`. To exercise a staging build locally, fill `.env.staging` from
+`.env.example` and run `npm run build -- --mode staging`.
+
 ## Run locally
 
 ### Flutter native
