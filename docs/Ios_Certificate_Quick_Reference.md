@@ -174,5 +174,4 @@ See [macOS Runner Setup](./Macos_Runner_Setup.md) for details.
 
 ---
 
-**📖 Full Guide**: [iOS Certificate Setup](./Ios_Certificate_Setup.md)</content>
-<parameter name="filePath">/Users/marknelson/Circus/Repositories/wishlist-wizard/docs/Ios_Certificate_Quick_Reference.md
+**📖 Full Guide**: [iOS Certificate Setup](./Ios_Certificate_Setup.md)

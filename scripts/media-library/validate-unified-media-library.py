@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the common cross-project media-library contract."""
+"""Validate the Modulo Squares media-library contract."""
 
 from __future__ import annotations
 

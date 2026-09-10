@@ -76,11 +76,8 @@ These are retained for decision history. Commands, filenames, statuses, and arch
 |---|---|
 | [Quick Reference](Quick_Reference.md) | Companion to the earlier quality audit |
 | [Test Cleanup Guide](Test_Cleanup_Guide.md) | Earlier test-remediation guidance |
-| [Automation README](Automation_Readme.md) | Legacy broad automation system |
 | [Zero-Touch README](Zero_Touch_Readme.md) | Legacy zero-touch design |
 | [Zero-Touch Setup](Zero_Touch_Setup.md) | Legacy setup workflow |
-| [Zero-Touch Implementation Guide](Zero_Touch_Devops_Implementation_Guide.md) | Legacy templates |
-| [Zero-Touch Quick Reference](Zero_Touch_Devops_Quick_Reference.md) | Legacy commands |
 | [Zero-Touch Migration Summary](Zero_Touch_Migration_Summary.md) | Migration history |
 | [Self-Hosted Runners](Self_Hosted_Runners.md) | Historical normal-CI runner model; HADES remains optional |
 | [macOS Runner Setup](Macos_Runner_Setup.md) | Optional HADES/local runner reference |

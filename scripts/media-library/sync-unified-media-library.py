@@ -32,7 +32,7 @@ PLATFORMS = {
     "x": ("profile", "header", "feed", "video"),
     "youtube": ("profile", "header", "thumbnails", "long-form", "shorts"),
 }
-PROJECT_PREFIX = {"modulo-squares": "MS", "vehicle-vitals": "VV", "wishlist-wizard": "WW"}
+PROJECT_PREFIX = {"modulo-squares": "MS"}
 
 
 def ensure(relative: str) -> Path:
@@ -287,161 +287,6 @@ def migrate_modulo() -> None:
     write("_hold/quarantine/README.md", "# Quarantine\n\nSuperseded and unapproved icon families remain outside the unified publishing path. Do not upload them.")
 
 
-def migrate_vehicle() -> None:
-    copy("media-library/READINESS.md", "00-control/READINESS.md")
-    copy("media-library/_GAP_BRIEF.md", "00-control/GAP_REGISTER.md")
-    kit = ROOT / "docs/SOCIAL_MEDIA_KIT.md"
-    kit_text = kit.read_text(encoding="utf-8") if kit.is_file() else ""
-    accounts = kit_text.split("## 2.", 1)[0] if "## 2." in kit_text else kit_text
-    write("00-control/OWNED_PROPERTIES.md", accounts or "# Owned properties\n\nNo roster was found; verify before publishing.")
-    copy("media-library/TARGET_REQUIREMENTS.md", "00-control/PLATFORM_SPECS.md")
-    write("00-control/PUBLISHING_CHECKLIST.md", """# Publishing checklist
-
-- [ ] Confirm the active signed-in account and permanent property URL.
-- [ ] Select only from `03-platform-ready` and confirm its manifest status.
-- [ ] Verify the live destination and current product/store availability.
-- [ ] Review screenshots for VINs, addresses, account data, notification contents, credentials, and documents.
-- [ ] Preview profile/header crops and vertical-video safe zones in the destination app.
-- [ ] Add approved alt text and captions; confirm rights for every external element.
-- [ ] Record the published URL, date, asset ID, copy ID, and result.
-""")
-    copy_tree("media-library/shared-brand/masters", "01-brand/masters", MEDIA_EXTENSIONS)
-    copy_tree("media-library/shared-brand/guidelines", "01-brand/guidelines", MEDIA_EXTENSIONS)
-    copy_tree("media-library/shared-brand/fonts", "01-brand/fonts", MEDIA_EXTENSIONS)
-    profile = ROOT / "media-library/shared-brand/current-social-profile/profile-current-complex-alpha-512.png"
-    copy(profile, LIB / "01-brand/profiles/vehicle-vitals-profile-512x512.png")
-    copy_profile_to_platforms(profile)
-    header_sources = {
-        "facebook": "media-library/facebook/cover/vehicle-vitals-cover-master-1640x624.png",
-        "reddit": "media-library/reddit/banner/vehicle-vitals-community-banner-1080x128.png",
-        "x": "media-library/x/header/vehicle-vitals-header-1500x500.png",
-        "youtube": "media-library/youtube/banner/candidate-2560x1440-safe-area-unverified.png",
-    }
-    for platform, source in header_sources.items():
-        item = ROOT / source
-        copy(item, LIB / f"01-brand/headers/{platform}/{item.name}")
-        copy(item, LIB / f"03-platform-ready/{platform}/header/{item.name}")
-    specs = [
-        ("C001", "maintenance-planning", "Maintenance planning", "Explain maintenance planning and reminders."),
-        ("C002", "vin-lookup", "VIN lookup", "Show the VIN lookup workflow."),
-        ("C003", "ownership-history", "Ownership history", "Explain organized service and ownership records."),
-        ("C004", "cross-platform-access", "Cross-platform access", "Show web and mobile continuity."),
-        ("C005", "help-center", "Help center", "Show product help and guidance."),
-    ]
-    verticals: list[Path] = []
-    for cid, slug, title, objective in specs:
-        base = campaign(cid, slug, title, objective, "These are short feature previews, not complete tutorials. Verify current UI and claims.")
-        for item in sorted((ROOT / "media-library/shared-content/video/vertical-feature-clips").glob(f"{slug}*")):
-            copy_campaign_file(item, base)
-            if item.suffix.lower() == ".mp4":
-                verticals.append(item)
-    distribute_vertical_videos(verticals)
-    write("04-copy/PROFILE_COPY.md", "# Profile copy\n\n" + (kit_text.split("## 3.", 1)[1].split("## 4.", 1)[0] if "## 3." in kit_text and "## 4." in kit_text else "Verify profile copy in `docs/SOCIAL_MEDIA_KIT.md`."))
-    post_text = kit_text
-    for number in range(1, 7):
-        post_text = post_text.replace(f"### Pillar {number} —", f"### VV-P{number:02d} —")
-    write("04-copy/POST_LIBRARY.md", "# Post library\n\nAll entries remain drafts. Stable copy IDs VV-P01 through VV-P06 correspond to the six starter-post pillars.\n\n" + post_text)
-    write("04-copy/CONTENT_CALENDAR.md", "# Content calendar\n\nThe current starter cadence is documented in `POST_LIBRARY.md` under Cadence. Assign dates only after account, link, readiness, and preview checks pass.")
-    source_alt = ROOT / "media-library/shared-content/copy/alt-text-and-captions.csv"
-    if source_alt.is_file():
-        with source_alt.open(newline="", encoding="utf-8") as source_handle, (LIB / "04-copy/ALT_TEXT.csv").open("w", newline="", encoding="utf-8") as target_handle:
-            reader = csv.DictReader(source_handle)
-            writer = csv.DictWriter(target_handle, fieldnames=("asset_id", "alt_text"))
-            writer.writeheader()
-            for row in reader:
-                writer.writerow({"asset_id": row.get("asset_id", ""), "alt_text": row.get("alt_text", "")})
-    write("04-copy/VIDEO_METADATA.md", "# Video metadata\n\nThe five current 1080x1920 files are short feature previews with SRT sidecars, not tutorials. Titles, captions, and destination copy require final approval before upload.")
-    copy_tree("media-library/ios-app/app-store", "05-store-listings/apple/screenshots", MEDIA_EXTENSIONS)
-    copy("media-library/ios-app/runtime/app-icons/Icon-App-1024x1024@1x.png", "05-store-listings/apple/icon/Icon-App-1024x1024@1x.png")
-    copy_tree("media-library/android-app/google-play", "05-store-listings/google-play", MEDIA_EXTENSIONS)
-    write("_source/captures/README.md", "# Capture sources\n\nNative iOS and responsive website captures remain at the legacy `media-library/ios-app/captures/` and `media-library/website/captures/` paths and are listed in `SOURCE_MANIFEST.csv`. Android phone screenshots remain blocked. These captures are composition sources, not routine uploads.")
-    copy_tree("media-library/shared-content/templates", "_source/editable", MEDIA_EXTENSIONS)
-    copy("media-library/_inventory/source-media.csv", "_inventory/LEGACY_SOURCE_MEDIA.csv")
-    write("_inventory/PROVENANCE.md", "# Provenance\n\nThe unified library is a copy-first derivative of the existing Vehicle Vitals media library. Canonical brand, capture, store, template, and video origins remain documented in `LEGACY_SOURCE_MEDIA.csv`, `00-control/READINESS.md`, and `00-control/GAP_REGISTER.md`.")
-    write("_hold/review-evidence/README.md", "# Review evidence\n\nApp Review recordings, raw captures, and working outputs are not marketing. They remain outside the platform-ready tree and must be privacy-reviewed before any derivative use.")
-    copy("media-library/shared-brand/masters/simplified-mark-opaque-512.png", "_hold/quarantine/simplified-mark-retired-512.png")
-    write("_hold/quarantine/README.md", "# Quarantine\n\nThe simplified mark is retired as the primary identity. Unsafe, sensitive, invalid, or unapproved media must remain outside the publishing path.")
-
-
-def migrate_wishlist() -> None:
-    copy("media-library/READINESS.md", "00-control/READINESS.md")
-    write("00-control/GAP_REGISTER.md", """# Gap register
-
-| Gap | Status | Next action |
-|---|---|---|
-| Native-resolution iPhone captures | BLOCKED | Fix documented clipping/subscription states, then recapture without mirroring residue. |
-| Android phone and tablet captures | BLOCKED | Capture and review representative native states. |
-| Responsive web and extension captures | BLOCKED | Capture desktop, tablet, and phone flows plus browser-extension quick add. |
-| Vertical video | BLOCKED | Repair and approve one naturally narrated pilot with continuous product motion before batching. |
-| YouTube/Facebook/X header crops | NEEDS_PLATFORM_PREVIEW | Preview in each native destination and record the review date. |
-| Public storefront and creator-program claims | BLOCKED | Live-verify availability, eligibility, and approved disclosure copy. |
-""")
-    copy("media-library/ACCOUNTS.md", "00-control/OWNED_PROPERTIES.md")
-    copy("media-library/PLATFORM_SPECS.md", "00-control/PLATFORM_SPECS.md")
-    write("00-control/PUBLISHING_CHECKLIST.md", """# Publishing checklist
-
-- [ ] Confirm the active account and permanent brand identity.
-- [ ] Select only from `03-platform-ready` and check its status in the publishing index.
-- [ ] Verify the destination URL and current product/store/creator-program state.
-- [ ] Do not use TestFlight-derived campaigns 01-04 as polished launch or paid media until native captures replace them.
-- [ ] Inspect final crops for personal data, retailer marks, TestFlight labels, clipping, placeholders, and errors.
-- [ ] Preview header, story, Reel, TikTok, and Shorts safe zones in the destination app.
-- [ ] Add current alt text and use only claims supported by the product today.
-- [ ] Record the published URL, date, asset ID, copy ID, and result.
-""")
-    # `_source/brand` here is the legacy `media-library/_source/brand` tree
-    # itself, so it already holds the brand masters -- do not copy the whole
-    # `_source` tree onto it (that pulls in `review-derived-captures`, labels
-    # them production-source, and re-nests `_source/brand/brand/...` on every
-    # rebuild). The two canonical masters are promoted explicitly below.
-    copy("media-library/_source/app-icon-master-1024.png", "01-brand/masters/app-icon-master-1024.png")
-    copy("media-library/_source/logo-master.svg", "01-brand/masters/logo-master.svg")
-    copy_tree("media-library/generated/profiles", "01-brand/profiles", MEDIA_EXTENSIONS)
-    profile = ROOT / "media-library/generated/profiles/profile-1024x1024.png"
-    copy_profile_to_platforms(profile)
-    for item in sorted((ROOT / "media-library/generated/headers").glob("*.png")):
-        platform = "facebook" if "facebook" in item.name else "x" if "x-header" in item.name else "youtube"
-        copy(item, LIB / f"01-brand/headers/{platform}/{item.name}")
-        copy(item, LIB / f"03-platform-ready/{platform}/header/{item.name}")
-    campaign_dirs = sorted((ROOT / "media-library/generated/campaigns").glob("[0-9][0-9]-*"))
-    feed_files: list[Path] = []
-    titles = {
-        "01-every-occasion": ("Every occasion", "Introduce organized wishlists for different occasions."),
-        "02-spot-it-save-it": ("Spot it, save it", "Explain how product ideas can be captured and organized."),
-        "03-make-a-list": ("Make a list", "Show occasion-based list organization."),
-        "04-share-the-hint": ("Share the hint", "Explain thoughtful list sharing."),
-        "05-watch-the-price": ("Watch the price", "Explain cautious price-tracking behavior without guarantees."),
-        "06-community-question": ("Community question", "Invite useful platform-native conversation."),
-    }
-    for directory in campaign_dirs:
-        number = int(directory.name[:2])
-        cid = f"C{number:03d}"
-        title, objective = titles[directory.name]
-        limits = "Campaigns 01-04 use low-resolution TestFlight review captures and remain DRAFT for polished launch or paid promotion." if number <= 4 else "Do not imply guaranteed price drops, savings, availability, or creator income."
-        base = campaign(cid, directory.name[3:], title, objective, limits)
-        for item in sorted(directory.glob("*.png")):
-            copy_campaign_file(item, base)
-            feed_files.append(item)
-        copy_tree(directory, f"_source/editable/{directory.name}", {".svg"})
-    distribute_feed(feed_files, PROJECT)
-    copy_tree("media-library/generated/thumbnails", "03-platform-ready/youtube/thumbnails", {".png"})
-    for source, destination in (
-        ("media-library/copy/brand-and-profile-copy.md", "04-copy/PROFILE_COPY.md"),
-        ("media-library/copy/post-bank.md", "04-copy/POST_LIBRARY.md"),
-        ("media-library/CONTENT_CALENDAR.md", "04-copy/CONTENT_CALENDAR.md"),
-    ):
-        copy(source, destination)
-    markdown_alt_text_to_csv(ROOT / "media-library/copy/alt-text.md", LIB / "04-copy/ALT_TEXT.csv")
-    write("04-copy/VIDEO_METADATA.md", "# Video metadata\n\nNo video is publication-ready. Existing TikTok/Shorts entries are script outlines. The Marcus renders remain held because visible motion and script quality did not pass review.")
-    copy_tree("media-library/_source/review-derived-captures", "_hold/review-evidence/testflight-build-13", MEDIA_EXTENSIONS)
-    write("_source/captures/README.md", "# Capture sources\n\nClean native iOS, Android, web, and browser-extension capture sets are pending. Review-derived TestFlight crops have been copied to `_hold/review-evidence`, not promoted as clean sources.")
-    write("05-store-listings/README.md", "# Store listing media\n\nNo current store-listing asset set was promoted into the unified library. Public storefront availability must be live-verified before creating or using download claims.")
-    copy("media-library/_inventory/source-index.csv", "_inventory/LEGACY_SOURCE_INDEX.csv")
-    copy("media-library/_inventory/PROVENANCE.md", "_inventory/PROVENANCE.md")
-    write("_hold/review-evidence/README.md", "# Review evidence\n\nTestFlight-derived captures and unapproved video renders are review evidence. They must not be presented as clean production or paid-launch media.")
-    write("_hold/quarantine/README.md", "# Quarantine\n\nInvalid strips, defective captures, review renders, and other do-not-publish files remain excluded and listed in the source manifest.")
-
-
 def probe(path: Path) -> dict[str, str]:
     values = {"width": "", "height": "", "duration_seconds": "", "codec": "", "pixel_format": "", "audio": "", "alpha": ""}
     if path.suffix.lower() in {".mp4", ".mov", ".m4v"} and shutil.which("ffprobe"):
@@ -479,20 +324,10 @@ def sha256(path: Path) -> str:
 
 def status_for(path: Path) -> str:
     name = str(path.relative_to(LIB)).lower()
-    suffix = path.suffix.lower()
     if "candidate" in name or "unverified" in name:
         return "NEEDS_PLATFORM_PREVIEW"
     if "/headers/" in f"/{name}" or (name.startswith("03-platform-ready/") and "/header/" in f"/{name}"):
         return "NEEDS_PLATFORM_PREVIEW"
-    # `name` is lower-cased above, so the campaign-id branch must match lower
-    # case too (campaign dirs are `C001-...` on disk).
-    if PROJECT == "wishlist-wizard" and re.search(r"(?:/c00[1-4]-|/(?:feed|reels-stories)/0[1-4]-)", "/" + name):
-        return "DRAFT"
-    # Vehicle Vitals' feature-preview videos need final approval before upload
-    # (see migrate_vehicle's VIDEO_METADATA.md) -- keep them DRAFT until that is
-    # recorded rather than defaulting them to READY_LOCAL.
-    if PROJECT == "vehicle-vitals" and suffix in {".mp4", ".mov", ".m4v"}:
-        return "DRAFT"
     return "READY_LOCAL"
 
 
@@ -517,38 +352,18 @@ def copy_id_for(path: Path, platform: str) -> str:
     name = path.name.lower()
     number_match = re.match(r"(\d{2})-", name)
     number = int(number_match.group(1)) if number_match else 1
-    if PROJECT == "modulo-squares":
-        if platform == "youtube":
-            if "official-gameplay" in name or "youtube-promo" in name:
-                return "YT01"
-            tutorial_map = {1: "YT02", 2: "YT03", 3: "YT04", 4: "YT05"}
-            return tutorial_map.get(number, "YT01")
-        mappings = {
-            "facebook": {1: "FB01", 2: "FB02", 3: "FB02", 4: "FB03", 5: "FB03", 6: "FB02"},
-            "instagram": {1: "IG02", 2: "IG02", 3: "IG03", 4: "IG03", 5: "IG04", 6: "IG05"},
-            "reddit": {1: "R03", 2: "R03", 3: "R02", 4: "R02", 5: "R03", 6: "R02"},
-            "threads": {1: "T01", 2: "T02", 3: "T02", 4: "T04", 5: "T03", 6: "T05"},
-            "tiktok": {1: "TK01", 2: "TK04", 3: "TK02", 4: "TK03", 5: "TK04", 6: "TK05"},
-            "x": {1: "X01", 2: "X03", 3: "X05", 4: "X02", 5: "X04", 6: "X06"},
-        }
-        return mappings[platform].get(number, next(iter(mappings[platform].values())))
-    if PROJECT == "vehicle-vitals":
-        if "maintenance-planning" in name:
-            return "VV-P02"
-        if "ownership-history" in name:
-            return "VV-P01"
-        if "cross-platform" in name:
-            return "VV-P04"
-        return "VV-P06"
     if platform == "youtube":
-        return {1: "YT-01", 2: "YT-02", 3: "YT-03"}.get(number, "YT-04")
+        if "official-gameplay" in name or "youtube-promo" in name:
+            return "YT01"
+        tutorial_map = {1: "YT02", 2: "YT03", 3: "YT04", 4: "YT05"}
+        return tutorial_map.get(number, "YT01")
     mappings = {
-        "facebook": {1: "FB-01", 2: "FB-01", 3: "FB-04", 4: "FB-03", 5: "FB-01", 6: "FB-02"},
-        "instagram": {1: "IG-01", 2: "IG-02", 3: "IG-03", 4: "IG-04", 5: "IG-02", 6: "IG-01"},
-        "reddit": {1: "RD-01", 2: "RD-03", 3: "RD-03", 4: "RD-02", 5: "RD-03", 6: "RD-04"},
-        "threads": {1: "TH-02", 2: "TH-04", 3: "TH-02", 4: "TH-03", 5: "TH-04", 6: "TH-01"},
-        "tiktok": {1: "TT-01", 2: "TT-01", 3: "TT-03", 4: "TT-02", 5: "TT-02", 6: "TT-04"},
-        "x": {1: "X-06", 2: "X-01", 3: "X-04", 4: "X-03", 5: "X-01", 6: "X-05"},
+        "facebook": {1: "FB01", 2: "FB02", 3: "FB02", 4: "FB03", 5: "FB03", 6: "FB02"},
+        "instagram": {1: "IG02", 2: "IG02", 3: "IG03", 4: "IG03", 5: "IG04", 6: "IG05"},
+        "reddit": {1: "R03", 2: "R03", 3: "R02", 4: "R02", 5: "R03", 6: "R02"},
+        "threads": {1: "T01", 2: "T02", 3: "T02", 4: "T04", 5: "T03", 6: "T05"},
+        "tiktok": {1: "TK01", 2: "TK04", 3: "TK02", 4: "TK03", 5: "TK04", 6: "TK05"},
+        "x": {1: "X01", 2: "X03", 3: "X05", 4: "X02", 5: "X04", 6: "X06"},
     }
     return mappings[platform].get(number, next(iter(mappings[platform].values())))
 
@@ -644,7 +459,7 @@ def write_root_readme() -> None:
     display = PROJECT.replace("-", " ").title()
     write("README.md", f"""# {display} media library
 
-This library implements the shared publishing-first structure used by Modulo Squares, Vehicle Vitals, and Wishlist Wizard.
+This library implements the Modulo Squares publishing-first media structure.
 
 ## Start here
 
@@ -712,12 +527,7 @@ def main() -> int:
         raise SystemExit(f"Unsupported repository: {PROJECT}")
     common_skeleton()
     preserve_legacy_guide()
-    if PROJECT == "modulo-squares":
-        migrate_modulo()
-    elif PROJECT == "vehicle-vitals":
-        migrate_vehicle()
-    else:
-        migrate_wishlist()
+    migrate_modulo()
     add_gap_readmes()
     write_root_readme()
     for residue in LIB.rglob(".DS_Store"):

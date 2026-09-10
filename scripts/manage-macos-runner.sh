@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# macOS GitHub Actions Runner Management Script for Wishlist Wizard
+# macOS GitHub Actions Runner Management Script for Modulo Squares
 # This script manages self-hosted macOS runners
 
 set -e
@@ -349,7 +349,7 @@ cleanup() {
 
 # Show usage
 usage() {
-    echo "macOS GitHub Actions Runner Management Script for Wishlist Wizard"
+    echo "macOS GitHub Actions Runner Management Script for Modulo Squares"
     echo ""
     echo "Usage: $0 [COMMAND]"
     echo ""
