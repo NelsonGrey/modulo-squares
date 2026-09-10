@@ -48,9 +48,9 @@ post_install do |installer|
 
       # Allow non-modular includes only for specific targets to fix absl/gRPC headers issues
       # Scoped to avoid AST Deserialization issues in other pods.
-      # google_mobile_ads 9.1.0's FLTAd_Internal.h / FLTAdPreloader.h #include
-      # GoogleMobileAds_Beta.h non-modularly, which fails the archive under -Werror.
-      if target.name.include?('gRPC') || target.name.include?('abseil') || target.name.include?('BoringSSL') || target.name.include?('Firebase') || target.name.include?('leveldb') || target.name.include?('nanopb') || target.name.include?('google_mobile_ads') || target.name.include?('Google-Mobile-Ads-SDK')
+      # (google_mobile_ads is pinned to 9.0.0 in pubspec.yaml — 9.1.0's
+      # non-modular GoogleMobileAds_Beta.h include is not suppressible here.)
+      if target.name.include?('gRPC') || target.name.include?('abseil') || target.name.include?('BoringSSL') || target.name.include?('Firebase') || target.name.include?('leveldb') || target.name.include?('nanopb')
         config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
       end
     end

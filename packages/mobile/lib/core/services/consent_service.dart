@@ -47,8 +47,8 @@ class ConsentService {
     await MobileAds.instance.updateRequestConfiguration(
       RequestConfiguration(
         testDeviceIds: const <String>[],
-        // Age-restricted treatment for Users under the Age of Consent as needed.
-        // ageRestrictedTreatment: AgeRestrictedTreatment.unspecified,
+        // Tag for Child Directed Treatment or Users under the Age of Consent as needed.
+        // tagForChildDirectedTreatment: TagForChildDirectedTreatment.unspecified,
         // maxAdContentRating: MaxAdContentRating.pg,
       ),
     );
@@ -173,8 +173,11 @@ class ConsentService {
     await MobileAds.instance.updateRequestConfiguration(
       RequestConfiguration(
         testDeviceIds: const <String>[],
-        // Respect ATT authorization for personalized ads
-        ageRestrictedTreatment: AgeRestrictedTreatment.unspecified,
+        // Respect ATT authorization for personalized ads.
+        // NOTE: google_mobile_ads is pinned to 9.0.0 (see pubspec.yaml), which
+        // still uses tagForChildDirectedTreatment; 9.1.0's ageRestrictedTreatment
+        // replacement rides in with the archive-breaking _Beta.h include.
+        tagForChildDirectedTreatment: TagForChildDirectedTreatment.unspecified,
         maxAdContentRating: MaxAdContentRating.pg,
       ),
     );
