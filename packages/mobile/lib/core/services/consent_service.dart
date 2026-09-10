@@ -47,7 +47,7 @@ class ConsentService {
     await MobileAds.instance.updateRequestConfiguration(
       RequestConfiguration(
         testDeviceIds: const <String>[],
-        // Tag for Child Directed Treatment or Users under the Age of Consent as needed.
+        // Set child-directed (COPPA) treatment here if the app ever targets children.
         // tagForChildDirectedTreatment: TagForChildDirectedTreatment.unspecified,
         // maxAdContentRating: MaxAdContentRating.pg,
       ),
