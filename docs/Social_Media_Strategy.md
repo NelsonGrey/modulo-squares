@@ -72,7 +72,7 @@ Platforms and signup URLs:
 
 ### Step 2: Link In Your Footer (already built)
 
-The website footer social icons component is ready at `packages/web/src/components/Footer.tsx`. Once you have account URLs, update the `SOCIAL_LINKS` array in that file with your handles. The icons and share widget are already implemented.
+The account URLs live in one place: the `SOCIAL_LINKS` array in `packages/web/src/shared/socialLinks.tsx`. Update the handles there and both the site footer (`packages/web/src/components/Footer.tsx`) and the `/download` "Follow Modulo Squares" row (`packages/web/src/components/SocialLinks.tsx`) pick them up.
 
 ---
 
@@ -352,4 +352,4 @@ Collect emails via: `modulosquares.com` footer signup + in-app prompt after leve
 - Business requirements social targets: [Business_Requirements.md](./Business_Requirements.md) §3.2
 - Website SEO / OG tags: `packages/web/index.html`, `packages/web/src/components/SEOHead.tsx`
 - App download page: `packages/web/src/components/Download.tsx`
-- Social share widget: `packages/web/src/components/SocialShare.tsx`
+- Social profile links (footer + /download): `packages/web/src/components/SocialLinks.tsx`, data in `packages/web/src/shared/socialLinks.tsx`
