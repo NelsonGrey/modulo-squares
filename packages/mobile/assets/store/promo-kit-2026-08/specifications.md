@@ -18,7 +18,7 @@ Verified against the linked official documentation on 2026-08-03. Store-console 
 | iPad screenshots | Conditional | 1–10 at 2064 × 2752 or 2048 × 2732 when the app runs on iPad | Not produced; current target is iPhone-only |
 | iPhone app preview | Optional | 0–3; 15–30 sec; 886 × 1920 portrait or 1920 × 886 landscape; ≤500 MB; ≤30 fps | 886 × 1920 H.264 MP4 |
 | App name | Required | 2–30 characters | 14 characters |
-| Subtitle | Optional | ≤30 characters | 25 characters |
+| Subtitle | Optional | ≤30 characters | 26 characters |
 | Promotional text | Optional | ≤170 characters | 132 characters |
 | Description | Required | ≤4,000 characters, plain text | 1,301 characters |
 | Keywords | Required | ≤100 bytes | 86 bytes |

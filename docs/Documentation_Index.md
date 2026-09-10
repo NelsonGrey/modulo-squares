@@ -28,6 +28,7 @@ This index separates current implementation documentation from operational refer
 | [Environment Setup](Environment_Setup.md) | Toolchain and local configuration |
 | [Security](Security.md) | Security principles and operational checks |
 | [Analytics](Analytics.md) | Mobile event taxonomy and measurement plan |
+| [SEO / SEM Audit](SEO_SEM_Audit.md) | Google tools, website SEO/SEM, and iOS ASO — findings and punch list |
 | [AdMob Setup](Admob_Setup.md) | Mobile ad configuration and consent |
 | [Mobile Config Setup](Mobile_Config_Setup.md) | Environment-specific native Firebase switching |
 | [Public Repo Hardening](PUBLIC_REPO_HARDENING.md) | Public/private source boundary and abuse controls |
@@ -76,11 +77,8 @@ These are retained for decision history. Commands, filenames, statuses, and arch
 |---|---|
 | [Quick Reference](Quick_Reference.md) | Companion to the earlier quality audit |
 | [Test Cleanup Guide](Test_Cleanup_Guide.md) | Earlier test-remediation guidance |
-| [Automation README](Automation_Readme.md) | Legacy broad automation system |
 | [Zero-Touch README](Zero_Touch_Readme.md) | Legacy zero-touch design |
 | [Zero-Touch Setup](Zero_Touch_Setup.md) | Legacy setup workflow |
-| [Zero-Touch Implementation Guide](Zero_Touch_Devops_Implementation_Guide.md) | Legacy templates |
-| [Zero-Touch Quick Reference](Zero_Touch_Devops_Quick_Reference.md) | Legacy commands |
 | [Zero-Touch Migration Summary](Zero_Touch_Migration_Summary.md) | Migration history |
 | [Self-Hosted Runners](Self_Hosted_Runners.md) | Historical normal-CI runner model; HADES remains optional |
 | [macOS Runner Setup](Macos_Runner_Setup.md) | Optional HADES/local runner reference |

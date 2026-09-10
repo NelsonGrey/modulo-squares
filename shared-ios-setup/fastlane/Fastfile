@@ -1,4 +1,4 @@
-# Fastfile for Wishlist Wizard iOS App
+# Fastfile for Modulo Squares iOS App
 # This file contains the lanes for building, testing, and distributing the app
 
 # Import required plugins
@@ -703,7 +703,7 @@ platform :ios do
         export_compliance_encryption_updated: false
       },
       release_notes: {
-        "en-US" => ENV["RELEASE_NOTES"] || "New version of Wishlist Wizard"
+        "en-US" => ENV["RELEASE_NOTES"] || "New version of Modulo Squares"
       }
     )
   end

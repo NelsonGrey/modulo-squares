@@ -18,8 +18,7 @@ export const db = getFirestore(app);
 // EnvironmentGate's team-access check on the dev/staging web deployments. It
 // shares the same project config but keeps its own Auth instance and session,
 // so the gate's Google Sign-In never touches the default `app` above (which
-// this promo site otherwise uses only for anonymous Firestore reads). This
-// mirrors the isolation Vehicle Vitals settled on for the same gate.
+// this promo site otherwise uses only for anonymous Firestore reads).
 const GATE_APP_NAME = 'modulo-squares-gate';
 const gateApp = (() => {
   try {

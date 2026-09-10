@@ -50,7 +50,6 @@ packages/*/package.json.backup
 packages/browser-extension/dist/
 packages/browser-extension/build/
 chrome-extension-package/
-wishlist-wizard-extension.zip
 
 # Build outputs
 dist/
@@ -378,3 +377,14 @@ packages/functions/
 
 # Claude Code local tool settings/permissions (per-machine, not project config)
 .claude/
+
+# Generated local social-media library
+/media-library/
+
+# Local render output (rendered store/marketing assets live under packages/…/store)
+/output/
+
+# Raw tutorial capture working files (multi-MB .mov recordings + .partial temp
+# files); the rendered 1920x1080 masters under google/video/tutorials/ are the
+# tracked deliverables
+packages/mobile/assets/store/promo-kit-*/sources/video/tutorials/

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # iOS Setup Implementation Script
-# This script helps implement the shared iOS configuration from wishlist-wizard
+# This script helps implement the shared iOS configuration
 
 set -e
 
@@ -9,7 +9,7 @@ PROJECT_NAME="$1"
 
 if [ -z "$PROJECT_NAME" ]; then
     echo "Usage: $0 <project-name>"
-    echo "Available projects: modulo-squares, vehicle-vitals"
+    echo "Available projects: modulo-squares"
     exit 1
 fi
 

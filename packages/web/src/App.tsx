@@ -5,6 +5,7 @@ import Features from './components/Features';
 import Download from './components/Download';
 import ComingSoon from './components/ComingSoon';
 import EnvironmentGate from './components/EnvironmentGate';
+import RouteAnalytics from './components/RouteAnalytics';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import Leaderboard from './pages/Leaderboard';
@@ -37,7 +38,10 @@ function App() {
   );
 
   return (
-    <EnvironmentGate environment={appEnvironment}>{content}</EnvironmentGate>
+    <EnvironmentGate environment={appEnvironment}>
+      <RouteAnalytics />
+      {content}
+    </EnvironmentGate>
   );
 }
 
