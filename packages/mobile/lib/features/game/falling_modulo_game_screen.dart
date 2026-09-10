@@ -25,6 +25,8 @@ class FallingModuloGameScreen extends StatefulWidget {
     super.key,
     this.engine,
     this.expertDemo = false,
+    this.playerNameOverride,
+    this.leaderboardBuilder,
   });
 
   /// Optional deterministic engine used by tests and local store-media capture.
@@ -35,6 +37,11 @@ class FallingModuloGameScreen extends StatefulWidget {
   /// divisor. This is disabled by default and enabled only by the local store
   /// capture entry point when STORE_CAPTURE_EXPERT_DEMO is defined.
   final bool expertDemo;
+
+  /// Local media/test hooks. Production entry points leave these null and use
+  /// the authenticated player's gamertag plus the live leaderboard screen.
+  final String? playerNameOverride;
+  final WidgetBuilder? leaderboardBuilder;
 
   @override
   State<FallingModuloGameScreen> createState() =>
@@ -105,6 +112,10 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
   }
 
   Future<void> _loadPlayerName() async {
+    if (widget.playerNameOverride != null) {
+      setState(() => _playerName = widget.playerNameOverride);
+      return;
+    }
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid == null) return;
@@ -227,8 +238,16 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
     _persistHighScore();
 
     final playerName = _playerName;
-    if (isNewHighScore && playerName != null && playerName.isNotEmpty) {
-      unawaited(LeaderboardService.submitScore(context, playerName, _state.score));
+    // Never write to the live leaderboard from the local media-capture / test
+    // entry point: playerNameOverride is set only there, and production always
+    // leaves it null and uses the authenticated player's gamertag.
+    if (widget.playerNameOverride == null &&
+        isNewHighScore &&
+        playerName != null &&
+        playerName.isNotEmpty) {
+      unawaited(
+        LeaderboardService.submitScore(context, playerName, _state.score),
+      );
     }
 
     if (result.state.level > previousLevel) {
@@ -677,7 +696,9 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
   Future<void> _openLeaderboard() async {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => LeaderboardScreen(playerName: _playerName ?? ''),
+        builder:
+            widget.leaderboardBuilder ??
+            (_) => LeaderboardScreen(playerName: _playerName ?? ''),
       ),
     );
   }
@@ -694,8 +715,10 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
     }
     bool hasPasswordProvider = false;
     try {
-      hasPasswordProvider = FirebaseAuth.instance.currentUser?.providerData
-              .any((info) => info.providerId == 'password') ??
+      hasPasswordProvider =
+          FirebaseAuth.instance.currentUser?.providerData.any(
+            (info) => info.providerId == 'password',
+          ) ??
           false;
     } catch (_) {
       // Firebase not initialized in test environment.
