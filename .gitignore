@@ -384,3 +384,8 @@ packages/functions/
 
 # Local render output (rendered store/marketing assets live under packages/…/store)
 /output/
+
+# Raw tutorial capture working files (multi-MB .mov recordings + .partial temp
+# files); the rendered 1920x1080 masters under google/video/tutorials/ are the
+# tracked deliverables
+packages/mobile/assets/store/promo-kit-*/sources/video/tutorials/
