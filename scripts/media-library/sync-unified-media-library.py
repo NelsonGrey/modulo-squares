@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import csv
 import hashlib
+import os
 import re
 import shutil
 import subprocess
@@ -17,7 +18,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 LIB = ROOT / "media-library"
-PROJECT = ROOT.name
+# The repo is normally identified by its checkout directory name, but a named
+# git worktree or a `git clone ... modulo-squares-review` breaks that. Allow an
+# explicit override so those checkouts can still rebuild.
+PROJECT = os.environ.get("MEDIA_LIBRARY_PROJECT", "").strip() or ROOT.name
 MEDIA_EXTENSIONS = {".png", ".jpg", ".jpeg", ".svg", ".mp4", ".mov", ".m4v", ".srt", ".pdf", ".ttf", ".ico"}
 PLATFORMS = {
     "facebook": ("profile", "header", "feed", "reels-stories"),
@@ -385,7 +389,11 @@ def migrate_wishlist() -> None:
 - [ ] Add current alt text and use only claims supported by the product today.
 - [ ] Record the published URL, date, asset ID, copy ID, and result.
 """)
-    copy_tree("media-library/_source", "_source/brand", MEDIA_EXTENSIONS)
+    # `_source/brand` here is the legacy `media-library/_source/brand` tree
+    # itself, so it already holds the brand masters -- do not copy the whole
+    # `_source` tree onto it (that pulls in `review-derived-captures`, labels
+    # them production-source, and re-nests `_source/brand/brand/...` on every
+    # rebuild). The two canonical masters are promoted explicitly below.
     copy("media-library/_source/app-icon-master-1024.png", "01-brand/masters/app-icon-master-1024.png")
     copy("media-library/_source/logo-master.svg", "01-brand/masters/logo-master.svg")
     copy_tree("media-library/generated/profiles", "01-brand/profiles", MEDIA_EXTENSIONS)
@@ -471,11 +479,19 @@ def sha256(path: Path) -> str:
 
 def status_for(path: Path) -> str:
     name = str(path.relative_to(LIB)).lower()
+    suffix = path.suffix.lower()
     if "candidate" in name or "unverified" in name:
         return "NEEDS_PLATFORM_PREVIEW"
     if "/headers/" in f"/{name}" or (name.startswith("03-platform-ready/") and "/header/" in f"/{name}"):
         return "NEEDS_PLATFORM_PREVIEW"
-    if PROJECT == "wishlist-wizard" and re.search(r"(?:/C00[1-4]-|/(?:feed|reels-stories)/0[1-4]-)", "/" + name):
+    # `name` is lower-cased above, so the campaign-id branch must match lower
+    # case too (campaign dirs are `C001-...` on disk).
+    if PROJECT == "wishlist-wizard" and re.search(r"(?:/c00[1-4]-|/(?:feed|reels-stories)/0[1-4]-)", "/" + name):
+        return "DRAFT"
+    # Vehicle Vitals' feature-preview videos need final approval before upload
+    # (see migrate_vehicle's VIDEO_METADATA.md) -- keep them DRAFT until that is
+    # recorded rather than defaulting them to READY_LOCAL.
+    if PROJECT == "vehicle-vitals" and suffix in {".mp4", ".mov", ".m4v"}:
         return "DRAFT"
     return "READY_LOCAL"
 
@@ -550,6 +566,24 @@ def make_indexes_and_manifests() -> None:
                 if row.get("asset_id") and row.get("sha256") and row.get("path"):
                     key = (str(Path(row["path"]).parent), row["sha256"])
                     previous_by_parent_sha.setdefault(key, row["asset_id"])
+    # Build the source manifest first so every upload asset that is a byte-for-
+    # byte copy of a source can carry that source's stable id (provenance /
+    # replacement / restricted-source checks depend on the link).
+    source_rows = []
+    source_id_by_sha: dict[str, str] = {}
+    source_candidates = sorted(path for root in (LIB / "_source", LIB / "_hold") for path in root.rglob("*") if path.is_file() and path.name != ".DS_Store")
+    for path in source_candidates:
+        rel = str(path.relative_to(LIB))
+        classification = "review-evidence" if "review-evidence" in rel else "quarantine" if "quarantine" in rel else "production-source"
+        source_id = f"{prefix}-S-{hashlib.sha1(rel.encode()).hexdigest()[:10].upper()}"
+        source_sha = sha256(path)
+        source_id_by_sha.setdefault(source_sha, source_id)
+        source_rows.append((source_id, rel, path.suffix.lower().lstrip("."), classification, "See PROVENANCE.md", "Repository-owned or separately documented", "unknown", "2026-09-04", "Not a routine upload source", source_sha))
+    with (LIB / "_inventory/SOURCE_MANIFEST.csv").open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(("source_asset_id", "source_path", "source_type", "classification", "capture_context", "rights", "contains_personal_data", "reviewed_on", "notes", "sha256"))
+        writer.writerows(source_rows)
+
     managed_roots = [LIB / name for name in ("01-brand", "02-campaigns", "03-platform-ready", "05-store-listings")]
     assets = sorted(path for root in managed_roots for path in root.rglob("*") if path.is_file() and path.suffix.lower() in MEDIA_EXTENSIONS and path.name != ".DS_Store")
     rows = []
@@ -568,23 +602,13 @@ def make_indexes_and_manifests() -> None:
             "campaign_id": campaign_for(path), "platform": platform_for(path), "width": meta["width"], "height": meta["height"],
             "duration_seconds": meta["duration_seconds"], "format": path.suffix.lower().lstrip("."), "alpha": meta["alpha"],
             "codec": meta["codec"], "pixel_format": meta["pixel_format"], "audio": meta["audio"], "status": status_for(path),
-            "source_asset_id": "", "version": "01", "reviewed_on": "2026-09-04", "sha256": file_sha,
+            "source_asset_id": source_id_by_sha.get(file_sha, ""), "version": "01", "reviewed_on": "2026-09-04", "sha256": file_sha,
         })
     fields = ["asset_id", "path", "media_type", "purpose", "campaign_id", "platform", "width", "height", "duration_seconds", "format", "alpha", "codec", "pixel_format", "audio", "status", "source_asset_id", "version", "reviewed_on", "sha256"]
     with (LIB / "_inventory/ASSET_MANIFEST.csv").open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=fields)
         writer.writeheader()
         writer.writerows(rows)
-    source_rows = []
-    source_candidates = sorted(path for root in (LIB / "_source", LIB / "_hold") for path in root.rglob("*") if path.is_file() and path.name != ".DS_Store")
-    for path in source_candidates:
-        rel = str(path.relative_to(LIB))
-        classification = "review-evidence" if "review-evidence" in rel else "quarantine" if "quarantine" in rel else "production-source"
-        source_rows.append((f"{prefix}-S-{hashlib.sha1(rel.encode()).hexdigest()[:10].upper()}", rel, path.suffix.lower().lstrip("."), classification, "See PROVENANCE.md", "Repository-owned or separately documented", "unknown", "2026-09-04", "Not a routine upload source", sha256(path)))
-    with (LIB / "_inventory/SOURCE_MANIFEST.csv").open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.writer(handle)
-        writer.writerow(("source_asset_id", "source_path", "source_type", "classification", "capture_context", "rights", "contains_personal_data", "reviewed_on", "notes", "sha256"))
-        writer.writerows(source_rows)
     publishing_rows = []
     for platform in PLATFORMS:
         base = LIB / f"03-platform-ready/{platform}"
@@ -656,15 +680,31 @@ Local validation does not prove account ownership, public availability, link hea
 """)
 
 
+GAP_README_TEXT = "# No current asset\n\nThis required contract location has no current approved asset. See `00-control/GAP_REGISTER.md` before producing or publishing a replacement.\n"
+
+
 def add_gap_readmes() -> None:
     for directory in sorted(path for path in LIB.rglob("*") if path.is_dir()):
         if directory == LIB or any(part.startswith(".") for part in directory.relative_to(LIB).parts):
             continue
-        if any(child.is_file() for child in directory.iterdir()):
+        placeholder = directory / "README.md"
+        # Look at the whole subtree, not just immediate children: a directory
+        # like `03-platform-ready/youtube` or `05-store-listings/apple` holds
+        # its assets in placement subdirectories and would otherwise be
+        # mislabelled as an empty gap.
+        has_real_asset = any(
+            child.is_file() and child.name != "README.md"
+            for child in directory.rglob("*")
+        )
+        if has_real_asset:
+            # A descendant now carries a real asset -- clear any stale gap note
+            # this function previously wrote here.
+            if placeholder.is_file() and placeholder.read_text(encoding="utf-8") == GAP_README_TEXT:
+                placeholder.unlink()
             continue
         if directory.name in {"square", "portrait", "landscape", "vertical", "captions"} and "02-campaigns" in directory.parts:
             continue
-        (directory / "README.md").write_text("# No current asset\n\nThis required contract location has no current approved asset. See `00-control/GAP_REGISTER.md` before producing or publishing a replacement.\n", encoding="utf-8")
+        placeholder.write_text(GAP_README_TEXT, encoding="utf-8")
 
 
 def main() -> int:

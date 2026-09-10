@@ -157,6 +157,10 @@ def validate() -> int:
         if path.is_file() and path.suffix.lower() in MEDIA_EXTENSIONS
         and "quarantine-do-not-upload" not in path.parts
         and "review-evidence-not-marketing" not in path.parts
+        # The unified sync also lands held / quarantined media under `_hold/`;
+        # that is deliberately non-publication material and must not be
+        # publication-format validated here.
+        and "_hold" not in path.parts
     )
     for path in library_media:
         rel = str(path.relative_to(LIB))

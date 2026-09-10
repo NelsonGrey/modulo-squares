@@ -15,6 +15,26 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 LIB = ROOT / "media-library"
 PLATFORMS = ("facebook", "instagram", "reddit", "threads", "tiktok", "x", "youtube")
+PLATFORM_PLACEMENTS = {
+    "facebook": ("profile", "header", "feed", "reels-stories"),
+    "instagram": ("profile", "feed", "reels-stories"),
+    "reddit": ("profile", "header", "feed", "video"),
+    "threads": ("profile", "feed", "video"),
+    "tiktok": ("profile", "video"),
+    "x": ("profile", "header", "feed", "video"),
+    "youtube": ("profile", "header", "thumbnails", "long-form", "shorts"),
+}
+MEDIA_EXTENSIONS = {".png", ".jpg", ".jpeg", ".svg", ".mp4", ".mov", ".m4v", ".srt", ".pdf", ".ttf", ".ico"}
+MANAGED_ROOTS = ("01-brand", "02-campaigns", "03-platform-ready", "05-store-listings")
+REQUIRED_DIRS = (
+    "00-control", "01-brand/masters", "01-brand/profiles", "01-brand/guidelines",
+    "01-brand/fonts", "02-campaigns", "04-copy", "05-store-listings",
+    "_source", "_inventory", "_hold/review-evidence", "_hold/quarantine",
+) + tuple(
+    f"03-platform-ready/{platform}/{placement}"
+    for platform, placements in PLATFORM_PLACEMENTS.items()
+    for placement in placements
+)
 REQUIRED_FILES = (
     "README.md",
     "00-control/READINESS.md",
@@ -57,6 +77,9 @@ def main() -> int:
     for platform in PLATFORMS:
         if not (LIB / f"03-platform-ready/{platform}/INDEX.md").is_file():
             failures.append(f"missing platform index: {platform}")
+    for relative in REQUIRED_DIRS:
+        if not (LIB / relative).is_dir():
+            failures.append(f"missing required directory: {relative}")
     # Finder can recreate .DS_Store concurrently on a live macOS checkout.
     # The synchronizer removes it and managed manifests/checksums exclude it.
 
@@ -104,6 +127,19 @@ def main() -> int:
                 cells = result.stdout.strip().split(",")
                 if len(cells) >= 2 and (cells[0] != "h264" or cells[1] != "yuv420p"):
                     failures.append(f"platform video is not H.264/yuv420p: {relative}")
+
+    # Every media file physically present under a managed root must be declared
+    # in ASSET_MANIFEST.csv; otherwise an unindexed (possibly stale or
+    # unreviewed) file could sit in the upload tree and still pass validation.
+    for root in MANAGED_ROOTS:
+        for path in sorted((LIB / root).rglob("*")):
+            if not path.is_file() or path.name in {".DS_Store", "README.md", "INDEX.md"}:
+                continue
+            if path.suffix.lower() not in MEDIA_EXTENSIONS:
+                continue
+            rel = str(path.relative_to(LIB))
+            if rel not in paths:
+                failures.append(f"managed file missing from ASSET_MANIFEST.csv: {rel}")
 
     source_manifest = LIB / "_inventory/SOURCE_MANIFEST.csv"
     if source_manifest.is_file():
