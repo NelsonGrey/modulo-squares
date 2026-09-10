@@ -85,6 +85,16 @@ using `google-play-console-service@modulo-squares-prod.iam.gserviceaccount.com`,
 manually. See [GO_LIVE_RUNBOOK.md](GO_LIVE_RUNBOOK.md) §2.3c for how and what to watch
 out for if doing this again.
 
+**Update (2026-08-13): YouTube promotional/tutorial video package complete.** The
+publication masters are in
+`packages/mobile/assets/store/promo-kit-2026-08/google/video/`: the concise official
+gameplay trailer remains the Play Console promo-video choice, and four additional
+1080p tutorials cover account/gamertag setup, Android sign-in, app navigation, and
+gameplay. Upload metadata and playlist order are in
+`packages/mobile/assets/store/promo-kit-2026-08/copy/youtube-tutorials.md`. Captures
+use production UI with local-only deterministic callbacks; they create no account and
+send no credentials, gamertags, or scores to Firebase.
+
 **Update (2026-07-31): Data Safety declaration submitted, live.** Correction to the
 "no API" note below — there is an API:
 `androidpublisher.applications.dataSafety` (POST, body `{"safetyLabels": "<csv>"}`,
