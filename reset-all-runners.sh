@@ -61,7 +61,7 @@ reset_macos_runners() {
 echo "🧽 PHASE 1: CLEANUP"
 echo "==================="
 
-for repo in modulo-squares vehicle-vitals wishlist-wizard; do
+for repo in modulo-squares; do
     echo -e "\n🔧 Processing $repo..."
 
     # Clean up stale GitHub registrations

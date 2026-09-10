@@ -61,13 +61,13 @@ This will:
 
 ```bash
 # Start Docker runners
-for repo in modulo-squares vehicle-vitals wishlist-wizard; do
+for repo in modulo-squares; do
   cd "/Users/marknelson/Circus/Repositories/${repo}-actions-runner"
   ./manage-docker-runner.sh start
 done
 
 # Start macOS runners
-for repo in modulo-squares vehicle-vitals wishlist-wizard; do
+for repo in modulo-squares; do
   cd "/Users/marknelson/Circus/Repositories/${repo}-actions-runner/actions-runner"
   ./run.sh &
 done
@@ -77,18 +77,16 @@ done
 
 Check that runners appear online in GitHub:
 - https://github.com/mnelson3/modulo-squares/settings/actions/runners
-- https://github.com/nelsongrey/vehicle-vitals/settings/actions/runners
-- https://github.com/nelsongrey/wishlist-wizard/settings/actions/runners
 
 ```bash
 # Start Docker runners
-for repo in modulo-squares vehicle-vitals wishlist-wizard; do
+for repo in modulo-squares; do
   cd "/Users/marknelson/Circus/Repositories/${repo}-actions-runner"
   ./manage-docker-runner.sh start
 done
 
 # Start macOS runners
-for repo in modulo-squares vehicle-vitals wishlist-wizard; do
+for repo in modulo-squares; do
   cd "/Users/marknelson/Circus/Repositories/${repo}-actions-runner/actions-runner"
   ./run.sh &
 done
@@ -98,8 +96,6 @@ done
 
 Check that runners appear online in GitHub:
 - https://github.com/nelsongrey/modulo-squares/settings/actions/runners
-- https://github.com/nelsongrey/vehicle-vitals/settings/actions/runners
-- https://github.com/nelsongrey/wishlist-wizard/settings/actions/runners
 
 ## 🔧 Troubleshooting
 
@@ -125,8 +121,6 @@ Ensure you have admin access to repositories:
 ```bash
 # Check your access
 gh repo view mnelson3/modulo-squares
-gh repo view nelsongrey/vehicle-vitals
-gh repo view nelsongrey/wishlist-wizard
 ```
 
 ### Runner Offline Issues
