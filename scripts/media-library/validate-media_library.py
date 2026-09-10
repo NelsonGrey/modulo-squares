@@ -129,6 +129,7 @@ def sha256(path: Path) -> str:
 
 def write_source_inventory() -> None:
     output = LIB / "_inventory/source-media.csv"
+    output.parent.mkdir(parents=True, exist_ok=True)
     with output.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
         writer.writerow(("source_path", "size_bytes", "classification", "reason", "sha256"))
@@ -172,6 +173,7 @@ def validate() -> int:
         rows.append({"path": rel, "size_bytes": path.stat().st_size, "sha256": sha256(path), **metadata})
 
     manifest_path = LIB / "_inventory/library-manifest.csv"
+    manifest_path.parent.mkdir(parents=True, exist_ok=True)
     fieldnames = ["path", "media_type", "width", "height", "format", "alpha", "codec", "pixel_format", "fps", "duration_seconds", "size_bytes", "sha256"]
     with manifest_path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames)

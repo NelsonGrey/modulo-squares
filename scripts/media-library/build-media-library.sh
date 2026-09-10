@@ -4,10 +4,11 @@ set -eu
 REPO_ROOT=$(CDPATH= cd -- "$(dirname "$0")/../.." && pwd)
 LIB="$REPO_ROOT/media-library"
 KIT="$REPO_ROOT/packages/mobile/assets/store/promo-kit-2026-08"
-FONT_REGULAR="/System/Library/Fonts/Supplemental/Arial.ttf"
-FONT_BOLD="/System/Library/Fonts/Supplemental/Arial Bold.ttf"
+# Overridable for non-macOS / non-Arial environments.
+FONT_REGULAR="${MEDIA_LIBRARY_FONT_REGULAR:-/System/Library/Fonts/Supplemental/Arial.ttf}"
+FONT_BOLD="${MEDIA_LIBRARY_FONT_BOLD:-/System/Library/Fonts/Supplemental/Arial Bold.ttf}"
 
-for command_name in magick ffmpeg python3 shasum; do
+for command_name in magick ffmpeg python3; do
   command -v "$command_name" >/dev/null 2>&1 || {
     echo "Missing required command: $command_name" >&2
     exit 1

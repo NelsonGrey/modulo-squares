@@ -74,10 +74,12 @@ def main() -> int:
         asset_id, relative, status = row.get("asset_id", ""), row.get("path", ""), row.get("status", "")
         if not asset_id or asset_id in asset_ids:
             failures.append(f"missing or duplicate asset_id: {asset_id or '[blank]'}")
-        asset_ids.add(asset_id)
+        else:
+            asset_ids.add(asset_id)
         if not relative or relative in paths:
             failures.append(f"missing or duplicate asset path: {relative or '[blank]'}")
-        paths.add(relative)
+        else:
+            paths.add(relative)
         path = LIB / relative
         if not path.is_file():
             failures.append(f"manifest path does not exist: {relative}")
@@ -149,7 +151,11 @@ def main() -> int:
         for line in checksum_path.read_text(encoding="utf-8").splitlines():
             if not line.strip():
                 continue
-            expected, relative = line.split("  ", 1)
+            parts = line.split("  ", 1)
+            if len(parts) != 2:
+                failures.append(f"malformed checksum line: {line!r}")
+                continue
+            expected, relative = parts
             path = LIB / relative
             if not path.is_file():
                 failures.append(f"checksum path does not exist: {relative}")
