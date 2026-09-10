@@ -79,5 +79,26 @@
     "kit:sources/video/plates/04-build-combos.png": "fb381992322494fcca2cef706c3601aaeed4cb91929e0279ff9602681d334867",
     "kit:sources/video/plates/05-fill-grid.png": "ba8f31d2260f87ec3ed9e489487728ddbed25579b7665437c9ee1e09b7d10059",
     "kit:sources/video/plates/06-keep-thinking.png": "97e58e0effc9bbd8a3f997dfc91d7319b3384bacd502745a4ffddf69b9de0a50"
+  },
+  "google/video/tutorials/01-create-account-and-gamertag-1920x1080.mp4": {
+    "kit:cross-platform/key-art/modulo-squares-key-art-3840x2160.png": "606d36978d349c6c498995aa5d59cbbeb62cc6f0c7533c03b9436a988c06297d",
+    "kit:sources/video/tutorials/account-raw.mov": "e021860ca04218e59a2074dd6fcec576915f274ced3775994b4119730054f40d",
+    "kit:sources/video/tutorials/gamertag-raw.mov": "4912ee7887e16f4c75b3c6b3eafb5b63fff1f4f37a7edd8d7d3d2fd615f2cb31",
+    "repo:scripts/store-promo/render-youtube-tutorials.sh": "63a5e4d52f5552de32c76155b72888da11ea88ec0f9ed260afb5d3aedee5ea2f"
+  },
+  "google/video/tutorials/02-sign-in-1920x1080.mp4": {
+    "kit:cross-platform/key-art/modulo-squares-key-art-3840x2160.png": "606d36978d349c6c498995aa5d59cbbeb62cc6f0c7533c03b9436a988c06297d",
+    "kit:sources/video/tutorials/sign-in-raw.mov": "903a79eb9710f9d61fe05ad691da8e112c1653c8316065d38ddb7badbf66e537",
+    "repo:scripts/store-promo/render-youtube-tutorials.sh": "63a5e4d52f5552de32c76155b72888da11ea88ec0f9ed260afb5d3aedee5ea2f"
+  },
+  "google/video/tutorials/03-navigate-the-app-1920x1080.mp4": {
+    "kit:cross-platform/key-art/modulo-squares-key-art-3840x2160.png": "606d36978d349c6c498995aa5d59cbbeb62cc6f0c7533c03b9436a988c06297d",
+    "kit:sources/video/tutorials/navigation-raw.mov": "b87e6cbde1fb9d9ac0f8ed3dc1cf2fac0186258e36e034c33aebc71fd6a47ecd",
+    "repo:scripts/store-promo/render-youtube-tutorials.sh": "63a5e4d52f5552de32c76155b72888da11ea88ec0f9ed260afb5d3aedee5ea2f"
+  },
+  "google/video/tutorials/04-how-to-play-1920x1080.mp4": {
+    "kit:cross-platform/key-art/modulo-squares-key-art-3840x2160.png": "606d36978d349c6c498995aa5d59cbbeb62cc6f0c7533c03b9436a988c06297d",
+    "kit:sources/video/tutorials/gameplay-raw.mov": "a0b6900411d47ea31349b847810970fcda2f26abc947f35aa57095bdcdd4a97d",
+    "repo:scripts/store-promo/render-youtube-tutorials.sh": "63a5e4d52f5552de32c76155b72888da11ea88ec0f9ed260afb5d3aedee5ea2f"
   }
 }

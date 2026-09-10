@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# 🚀 Wishlist Wizard - Manual Deployment Script
+# 🚀 Modulo Squares - Manual Deployment Script
 # This script allows for manual deployment of all components
 
 set -e
