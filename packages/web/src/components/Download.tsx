@@ -1,5 +1,5 @@
 import SEOHead from './SEOHead';
-import SocialShare from './SocialShare';
+import SocialLinks from './SocialLinks';
 import { trackEvent } from '../utils/analytics';
 
 const Download: React.FC = () => {
@@ -87,7 +87,7 @@ const Download: React.FC = () => {
               <p className="text-sm text-gray-600">Factors and remainders become pattern recognition through play.</p>
             </div>
           </div>
-          <SocialShare label="Know someone who'd enjoy this? Share the game:" />
+          <SocialLinks label="Follow Modulo Squares for tips, new challenges, and updates:" />
         </div>
       </div>
     </section>
