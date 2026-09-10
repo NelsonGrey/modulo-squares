@@ -1,17 +1,21 @@
 import { Link } from 'react-router';
 import SEOHead from './SEOHead';
+import { trackEvent } from '../utils/analytics';
 
 const APP_JSON_LD = {
   '@context': 'https://schema.org',
   '@type': 'MobileApplication',
   name: 'Modulo Squares',
   description:
-    'A falling-squares math puzzle where players guide numbered tiles into divisor buckets, score clean divisions, and climb leaderboards.',
+    'A falling-number math puzzle where players guide numbered tiles into divisor buckets, build combos, and climb the global leaderboard.',
   applicationCategory: 'GameApplication',
   genre: 'Puzzle',
   operatingSystem: 'iOS',
   offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-  url: 'https://modulosquares.com',
+  url: 'https://modulosquares.com/',
+  installUrl: 'https://apps.apple.com/app/id6783995654',
+  author: { '@type': 'Organization', name: 'Nelson Grey LLC' },
+  publisher: { '@type': 'Organization', name: 'Nelson Grey LLC' },
 };
 
 const BUCKETS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0];
@@ -123,8 +127,8 @@ const Hero: React.FC = () => {
   return (
     <>
       <SEOHead
-        title="Modulo Squares - Falling Squares Math Puzzle"
-        description="Guide falling numbered squares into divisor buckets. Score clean divisions, avoid the Dead bucket, and climb leaderboards. Free on iPhone."
+        title="Modulo Squares — Falling Number Puzzle Game"
+        description="Guide falling numbers into the right divisor buckets. Score, build combos, and climb the global leaderboard. Free on the App Store."
         path=""
         jsonLd={APP_JSON_LD}
       />
@@ -153,7 +157,13 @@ const Hero: React.FC = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start lg:col-start-1 lg:row-start-2">
-              <Link to="/download" className="btn-primary text-lg px-8 py-4 text-center">
+              <Link
+                to="/download"
+                onClick={() =>
+                  trackEvent('cta_click', { cta: 'download_free', location: 'hero' })
+                }
+                className="btn-primary text-lg px-8 py-4 text-center"
+              >
                 Download Free
               </Link>
               <Link to="/pricing" className="btn-secondary text-lg px-8 py-4 text-center">
