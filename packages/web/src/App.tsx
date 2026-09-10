@@ -4,6 +4,7 @@ import Hero from './components/Hero';
 import Features from './components/Features';
 import Download from './components/Download';
 import ComingSoon from './components/ComingSoon';
+import EnvironmentGate from './components/EnvironmentGate';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import Leaderboard from './pages/Leaderboard';
@@ -12,15 +13,14 @@ import CookiePolicy from './pages/CookiePolicy';
 import Pricing from './pages/Pricing';
 import StrategyGuide from './pages/StrategyGuide';
 import ModularArithmeticExplained from './pages/ModularArithmeticExplained';
+import { appEnvironment } from './shared/environment';
 
 function App() {
   const showComingSoon = import.meta.env.VITE_SHOW_COMING_SOON === 'true';
 
-  if (showComingSoon) {
-    return <ComingSoon />;
-  }
-
-  return (
+  const content = showComingSoon ? (
+    <ComingSoon />
+  ) : (
     <Routes>
       <Route path="/" element={<Layout><Hero /></Layout>} />
       <Route path="/how-it-works" element={<Layout><Features /></Layout>} />
@@ -34,6 +34,10 @@ function App() {
       <Route path="/cookies" element={<Layout><CookiePolicy /></Layout>} />
       <Route path="/support" element={<Layout><Support /></Layout>} />
     </Routes>
+  );
+
+  return (
+    <EnvironmentGate environment={appEnvironment}>{content}</EnvironmentGate>
   );
 }
 

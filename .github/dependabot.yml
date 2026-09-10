@@ -53,3 +53,14 @@ updates:
     labels:
       - "dependencies"
       - "security"
+    ignore:
+      # All three are constrained by what Flutter 3.44.2's pinned SDK packages
+      # (flutter_localizations, flutter_test) allow. Bumping past these ranges
+      # breaks `flutter pub get` version solving — see packages/mobile/pubspec.yaml.
+      # Revisit when the Flutter SDK is upgraded.
+      - dependency-name: "intl" # SDK pins intl 0.20.2 exactly (was PR #263)
+        versions: [">=0.20.3"]
+      - dependency-name: "mockito" # 5.8.0+ needs meta ^1.18.3 (was PR #262)
+        versions: [">=5.8.0"]
+      - dependency-name: "build_runner" # 2.15.2+ needs meta ^1.18.3 (was PR #261)
+        versions: [">=2.15.2"]
