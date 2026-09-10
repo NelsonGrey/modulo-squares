@@ -57,7 +57,7 @@ jobs:
           # Run tests inside the emulator context so the rules-unit-testing code can auto-discover it
           # Using firebase emulators:exec ensures emulator host/port are provided to tests.
           echo "Starting emulators and running tests..."
-          npx firebase emulators:exec --only firestore --project vehicle-vitals-dev "npm run test"
+          npx firebase emulators:exec --only firestore --project modulo-squares-dev "npm run test"
 
       - name: Clean up service account key
         if: always()
