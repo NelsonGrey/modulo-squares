@@ -364,6 +364,7 @@ The validator must fail when:
 - a managed asset is absent from `ASSET_MANIFEST.csv`;
 - a platform-ready asset has `HOLD`, `BLOCKED`, or `RETIRED` status;
 - a review-evidence/quarantine source is copied into a platform-ready directory;
+- a platform-ready video is not H.264 / yuv420p, or `ffprobe` cannot inspect it;
 - a checksum differs;
 - an asset or copy ID is duplicated;
 - a publishing-index row points to a missing asset or copy ID;

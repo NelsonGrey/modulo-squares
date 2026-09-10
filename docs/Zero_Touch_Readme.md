@@ -95,7 +95,7 @@ done
 ### 3. Verify Status
 
 Check that runners appear online in GitHub:
-- https://github.com/nelsongrey/modulo-squares/settings/actions/runners
+- https://github.com/mnelson3/modulo-squares/settings/actions/runners
 
 ## 🔧 Troubleshooting
 
