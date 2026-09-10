@@ -1,10 +1,10 @@
 # Modulo Squares — Go Live Document
 
-**Version**: 2.0
-**Last Updated**: 2026-07-20
+**Version**: 2.1
+**Last Updated**: 2026-08-13
 **App Version**: 1.0.0+2
 **Owner**: Mark Nelson
-**Status**: All four issues from the 2026-07-01 rejection were fixed and a corrected production build reached TestFlight. App Store resubmission/approval/public availability has not been reconfirmed from App Store Connect during this repository audit and remains the release gate.
+**Status**: Apple approved Modulo Squares for App Store distribution (owner-confirmed 2026-08-13). Public storefront availability remains a separate release check. Google Play content, console questionnaires, billing, and production rollout are the active gates.
 
 ---
 
@@ -25,17 +25,17 @@
 | Guest → player account linking | ✅ Complete | — |
 | Settings screen redesign | ✅ Complete (2026-06-21) | — |
 | iOS Store screenshots (6.5") | ⚠️ Six files in repository; App Store Connect upload last confirmed 2026-07-01 | — |
-| App Store Connect app record | ⚠️ Last confirmed 2026-07-01; current state unverified | — |
+| App Store Connect app record | ✅ Review approved for distribution (owner-confirmed 2026-08-13) | — |
 | IAP "remove_ads" in ASC | ⚠️ Last confirmed 2026-07-01; current state unverified | — |
-| **iOS App Store Review** | ⚠️ Last confirmed: build 164 rejection issues resolved and corrected build on TestFlight; current ASC state unverified | BLOCKING |
+| **iOS App Store Review** | ✅ Approved for distribution (owner-confirmed 2026-08-13) | — |
 | **TestFlight beta** | ⚠️ Corrected build uploaded; structured beta status unverified | No (post-approval) |
 | **Firebase App Check enforcement** | ❌ Not enabled | No (post-launch) |
 | **Google API key restrictions** | ❌ Not applied | No (post-launch) |
 | **Android build** | ❌ Disabled in CI | Phase 2 |
-| **Google Play Console app record** | ❌ Not created | Phase 2 |
+| **Google Play Console app record** | ✅ Created; listing populated via API | — |
 | **Marketing website domain live** | ✅ `https://modulosquares.com` reachable during 2026-07-20 audit | No |
 
-**iOS Launch is the primary gate.** Android can follow in Phase 2.
+**Google Play launch is now the primary gate.** App Store public availability still needs a post-release storefront check.
 
 ---
 
@@ -165,11 +165,11 @@ Go to: **App Store Connect → your app → Monetization → In-App Purchases**
 
 ### 1.3 Leaderboard Scope
 
-The repository uses Firestore/callable Functions for leaderboard infrastructure; it does not integrate Apple Game Center. The current falling gameplay screen does not submit scores or expose leaderboard navigation even though legacy/native leaderboard code and the public web leaderboard exist.
+The repository uses Firestore/callable Functions for leaderboard infrastructure; it does not integrate Apple Game Center. Falling gameplay now resolves the player's gamertag, exposes leaderboard navigation, and submits completed scores through the active leaderboard service.
 
-- [ ] Decide whether falling-mode leaderboards are part of this release.
-- [ ] If yes, wire authenticated falling-run submission and leaderboard navigation, then test server validation and public display.
-- [ ] If no, remove leaderboard promises from store and marketing surfaces for this release.
+- [x] Include falling-mode leaderboards in this release.
+- [x] Wire authenticated falling-run submission and leaderboard navigation.
+- [ ] Verify server validation, global/weekly reads, and public display end to end on a signed release build.
 
 **Validate**: Release copy and the shipped player path agree; no Game Center configuration is required unless a future implementation adds it.
 
@@ -213,7 +213,7 @@ Screenshots are the **highest-impact** missing item. No screenshots = no submiss
 4. **Divisor decision** — Falling number with a valid bucket highlighted by the player's action
 5. **Progression** — Later-level speed and the 10×10 progress grid
 
-Do not feature a leaderboard in release screenshots unless navigation and score submission are first connected to the active falling-mode screen and verified end to end.
+Leaderboard navigation and score submission are connected. Feature the leaderboard only after the remaining signed-release end-to-end verification succeeds.
 
 #### Screenshot Procedure
 
@@ -881,7 +881,7 @@ Complete this checklist the morning of launch. **All blocking items must be ✅ 
 
 | Check | Status | Blocking? |
 |-------|--------|-----------|
-| iOS app approved in App Store | ☐ | BLOCKING |
+| iOS app approved in App Store | ✅ Owner-confirmed 2026-08-13 | — |
 | Privacy Policy URL live | ☐ | BLOCKING |
 | Terms of Service URL live | ☐ | BLOCKING |
 | Production Firebase config active | ☐ | BLOCKING |
@@ -1070,6 +1070,7 @@ These secrets must be set in **GitHub → Repository → Settings → Secrets �
 | 1.8 | 2026-07-01 | Mark Nelson | Promoted develop → staging; `ci-cd.yml` build-ios failed first attempt because adding the Sign in with Apple entitlement forced a provisioning profile regen, and the Apple Developer account had hit its certificate cap. Cleared old certificates in the Apple Developer portal, re-ran the failed job, and it succeeded (33m32s) — new build uploaded to TestFlight from `staging`. All 4 App Review rejection issues (2.1a, 2.1b, 5.1.1v, 4.3a) are now fixed in a build that's actually reached TestFlight. Next: promote to `main` and submit for App Store review. |
 | 1.9 | 2026-07-01 | Mark Nelson | Promoted staging → main (with explicit "Approved" per branch protection convention). Production `ci-cd.yml` run on main completed fully green in 26m33s — quality-check, build-web, build-ios (production TestFlight upload), and Firebase production deploy all succeeded. All 4 App Review rejection issues are fixed in a real production build now on TestFlight. Only remaining step: select this build in App Store Connect and submit for review. |
 | 2.0 | 2026-07-20 | Codex | Reconciled toolchain, private Functions deployment, explicit Firestore rules deployment, current falling-mode metadata, live marketing domain, and externally unverified App Store state after a full repository/documentation audit. |
+| 2.1 | 2026-08-13 | Codex | Recorded owner-confirmed App Store approval, made Google Play the active release gate, synchronized the now-wired leaderboard path, and added the validated YouTube tutorial package. |
 
 ---
 
