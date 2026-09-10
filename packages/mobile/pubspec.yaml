@@ -1,5 +1,5 @@
 name: modulo_squares
-version: 1.0.0+3
+version: 1.0.1+4
 description: Modulo Squares - A puzzle game with leaderboard.
 publish_to: "none"
 
@@ -25,7 +25,13 @@ dependencies:
   intl: ^0.20.2
   firebase_analytics: ^12.5.0
   firebase_crashlytics: ^5.3.0
-  google_mobile_ads: ^9.1.0
+  # Capped below 9.1.0: 9.1.0 added FLTAdPreloader.h + a non-modular
+  # `#import <GoogleMobileAds/GoogleMobileAds_Beta.h>` in FLTAd_Internal.h, which
+  # fails the iOS Release archive under -Werror,-Wnon-modular-include-in-framework-module
+  # (the Podfile CLANG_ALLOW_NON_MODULAR_INCLUDES override does not suppress it in
+  # the archive build). 9.0.0 has neither; the ad-preloader feature is unused.
+  # Dependabot is told to leave this alone in .github/dependabot.yml.
+  google_mobile_ads: ">=9.0.0 <9.1.0"
   get_it: ^9.2.1
   provider: ^6.1.2
   app_tracking_transparency: ^2.0.7
