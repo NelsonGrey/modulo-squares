@@ -3,7 +3,7 @@
 ## Product page
 
 - App name: `Modulo Squares`
-- Subtitle: `Drop Numbers. Think Fast.`
+- Subtitle: `Divisibility Number Puzzle` (ASO/keyword field — kept ≤30 chars; the on-screenshot headline is still `Drop Numbers. Think Fast.`)
 - Promotional text: `Guide falling numbers into divisible buckets, build combos, fill the grid, and chase a new best score in a fast modular-math puzzle.`
 - Marketing URL: `https://modulosquares.com`
 - Support URL: `https://modulosquares.com/support`
