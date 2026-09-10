@@ -1,6 +1,6 @@
 # Modulo Squares Current State
 
-**Audited**: 2026-07-20  
+**Audited**: 2026-08-13  
 **Scope**: tracked repository, active configuration, workflows, source, tests, store metadata, and documentation  
 **Authority**: code and active workflow take precedence over planning documents
 
@@ -56,7 +56,7 @@ The mobile client currently calls these server functions:
 - `getEntitlements`
 - `deleteAccount`
 
-These calls exist across the mobile codebase, but the current `FallingModuloGameScreen` does not invoke the leaderboard service. Its implementation must be reviewed in `NelsonGrey/modulo-squares-functions`; this repository documents only the client contract and deployment integration.
+The active `FallingModuloGameScreen` now resolves the authenticated player's gamertag, exposes leaderboard navigation, and submits completed scores through `LeaderboardService`. Server-side validation still belongs to `NelsonGrey/modulo-squares-functions`; this repository documents only the client contract and deployment integration.
 
 ## Website truth
 
@@ -76,14 +76,14 @@ Deployable runs build the web app, deploy Hosting, and check out/deploy the priv
 
 ## Release state
 
-Repository history confirms that all four issues from the 2026-07-01 App Review rejection were addressed and a production build reached TestFlight. The last documented next step was to select the corrected build and resubmit it in App Store Connect. No indexed App Store listing was found during this audit, so the runbook treats App Store approval/public availability as externally unverified.
+Apple approved Modulo Squares for App Store distribution, confirmed by the owner on 2026-08-13. Public storefront availability remains distinct from approval and should be verified after release. Google Play listing and tutorial-media completion are the active release workstream.
 
 ## Known documentation and code risks
 
 - The private Functions source is unavailable in a normal public checkout, so API internals cannot be verified here.
 - Root scripts that target `packages/functions` fail until the companion repo is cloned.
 - The active app and several legacy game classes coexist; imports, not filenames alone, determine live behavior.
-- Leaderboard services/screens and public web reads exist, but falling gameplay does not currently submit scores or expose leaderboard navigation; product/store claims must not imply otherwise until wired.
+- Falling gameplay now submits completed scores and exposes leaderboard navigation. End-to-end production backend behavior should still be checked on a signed release build before publication claims are expanded further.
 - Flutter's older `WebsiteScreen` contains placeholder links and form behavior, but Firebase Hosting serves the React site instead.
 - Android delivery is represented in source and signing docs but is not built by the active CI workflow.
 - `packages/firebase-utils` has a configured Vitest command but no test files; the command currently exits nonzero.

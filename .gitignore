@@ -378,3 +378,9 @@ packages/functions/
 
 # Claude Code local tool settings/permissions (per-machine, not project config)
 .claude/
+
+# Generated local social-media library
+/media-library/
+
+# Local render output (rendered store/marketing assets live under packages/…/store)
+/output/
