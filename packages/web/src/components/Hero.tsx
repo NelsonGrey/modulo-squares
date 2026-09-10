@@ -2,21 +2,9 @@ import { Link } from 'react-router';
 import SEOHead from './SEOHead';
 import { trackEvent } from '../utils/analytics';
 
-const APP_JSON_LD = {
-  '@context': 'https://schema.org',
-  '@type': 'MobileApplication',
-  name: 'Modulo Squares',
-  description:
-    'A falling-number math puzzle where players guide numbered tiles into divisor buckets, build combos, and climb the global leaderboard.',
-  applicationCategory: 'GameApplication',
-  genre: 'Puzzle',
-  operatingSystem: 'iOS',
-  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-  url: 'https://modulosquares.com/',
-  installUrl: 'https://apps.apple.com/app/id6783995654',
-  author: { '@type': 'Organization', name: 'Nelson Grey LLC' },
-  publisher: { '@type': 'Organization', name: 'Nelson Grey LLC' },
-};
+// The home page's structured data (Organization + WebSite + MobileApplication)
+// lives in the static index.html @graph so social/non-JS crawlers see it too.
+// Don't duplicate a MobileApplication node here.
 
 const BUCKETS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0];
 const FALLING_VALUE = 18;
@@ -130,7 +118,6 @@ const Hero: React.FC = () => {
         title="Modulo Squares — Falling Number Puzzle Game"
         description="Guide falling numbers into the right divisor buckets. Score, build combos, and climb the global leaderboard. Free on the App Store."
         path=""
-        jsonLd={APP_JSON_LD}
       />
       <section className="bg-white">
         <div className="container-max px-4 sm:px-6 lg:px-8 py-14 lg:py-20">

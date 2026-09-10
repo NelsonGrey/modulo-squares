@@ -19,7 +19,8 @@ export function trackEvent(event: string, params: EventParams = {}): void {
   try {
     const w = window as DataLayerWindow;
     w.dataLayer = w.dataLayer || [];
-    w.dataLayer.push({ event, ...params });
+    // `event` last so a stray `event` key in params can't rename the event.
+    w.dataLayer.push({ ...params, event });
   } catch {
     // dataLayer unavailable (SSR/prerender, blocked storage) — no-op.
   }

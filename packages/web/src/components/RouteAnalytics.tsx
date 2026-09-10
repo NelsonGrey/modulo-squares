@@ -1,25 +1,23 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useLocation } from 'react-router';
 import { trackEvent } from '../utils/analytics';
 
 /**
- * Emits a `page_view` dataLayer event on every client-side route change.
+ * Emits a `page_view` dataLayer event for every view, including the initial
+ * one — deferred one frame so react-helmet-async has flushed the route's
+ * <title> first (a direct landing on /download would otherwise report the
+ * generic index.html title).
  *
- * The GA4 config tag in GTM already sends the page_view for the initial HTML
- * load, so the first render here is skipped to avoid a duplicate. GTM needs a
- * trigger on the `page_view` custom event (or History Change) wired to a GA4
- * event tag for these to reach GA4.
+ * GTM must:
+ *  - have a trigger on the `page_view` custom event (or History Change) wired
+ *    to a GA4 event tag, and
+ *  - have the GA4 config tag's automatic page_view DISABLED, so this component
+ *    is the single source of page_view events (no double counting).
  */
 const RouteAnalytics: React.FC = () => {
   const location = useLocation();
-  const isFirst = useRef(true);
 
   useEffect(() => {
-    if (isFirst.current) {
-      isFirst.current = false;
-      return;
-    }
-    // Defer one frame so react-helmet-async has flushed the new <title>.
     const id = requestAnimationFrame(() => {
       trackEvent('page_view', {
         page_path: location.pathname + location.search,

@@ -64,7 +64,7 @@ Items marked **[verify]** need a console check (GTM / GA4 / Search Console / AdS
 - `index.html`: Smart App Banner meta; `preconnect`/`dns-prefetch` for GTM/AdSense/GA; OG/Twitter → 1280×720 image + `summary_large_image`; standardized description; JSON-LD `@graph` with `Organization` + `WebSite` + a corrected `MobileApplication` (`operatingSystem: iOS`, `installUrl`, `author`/`publisher`).
 - `public/og-image-1280x720.png` — from the promo kit.
 - `SEOHead.tsx`: default image → 1280×720, `summary_large_image`, home canonical gets a trailing slash.
-- `utils/analytics.ts` + `components/RouteAnalytics.tsx`: `trackEvent()` dataLayer helper; `page_view` pushed on every client route change (first render skipped — the GA4 config tag covers the initial load).
+- `utils/analytics.ts` + `components/RouteAnalytics.tsx`: `trackEvent()` dataLayer helper; `page_view` pushed for every view including the initial one (deferred one frame so the route `<title>` has flushed). Requires the GA4 config tag's automatic page_view to be **disabled** so this is the single source.
 - `Download.tsx` / `Hero.tsx`: `app_store_click` and `cta_click` events on the primary CTAs; App Store link opens in a new tab.
 - `Hero.tsx` `APP_JSON_LD`: aligned copy, `operatingSystem: iOS`, `installUrl`, `author`/`publisher`.
 - iOS `subtitle.txt` / `keywords.txt`.
@@ -72,7 +72,7 @@ Items marked **[verify]** need a console check (GTM / GA4 / Search Console / AdS
 ## Remaining punch list
 
 **Needs a console action ([verify] / configure)**
-- GTM: add a trigger on the `page_view` custom event (or History Change) → GA4 event tag; mark `app_store_click` / `cta_click` as conversions; confirm the GA4 tag has a consent check.
+- GTM: add a trigger on the `page_view` custom event (or History Change) → GA4 event tag, **and disable the GA4 config tag's automatic page_view** (RouteAnalytics now owns all of them, initial included); mark `app_store_click` / `cta_click` as conversions; confirm the GA4 tag has a consent check.
 - Search Console: confirm ownership, submit the sitemap, review Coverage.
 - AdSense: confirm re-approval.
 
