@@ -15,7 +15,7 @@ resign                                      # Manually signs - requires keychain
 This pattern works for local development but not in CI/CD where user input is impossible.
 
 ## Solution Implemented
-Refactored the Fastfile to use the proven **vehicle-vitals/wishlist-wizard zero-touch pattern**:
+Refactored the Fastfile to use the proven zero-touch signing pattern:
 
 ### Key Changes
 
@@ -41,7 +41,7 @@ build_app(
 - IPA emerges fully signed and ready for TestFlight
 
 #### 2. **Simplified `certificates_appstore` lane**
-Removed ~250 lines of complex retry logic and revoked certificate detection. Now follows the vehicle-vitals pattern:
+Removed ~250 lines of complex retry logic and revoked certificate detection. Now follows the zero-touch pattern:
 - Setup keychain unlock/partition-list
 - Simple try-readonly → create-new flow
 - Explicit error handling without unnecessary complexity
@@ -147,7 +147,7 @@ The simplest way to test is to run the Master CI/CD Pipeline:
 - [x] Environment variables properly detected
 - [x] beta lane calls certificates_appstore correctly
 - [x] build_app used instead of flutter build --no-codesign
-- [x] Aligned with vehicle-vitals proven pattern
+- [x] Aligned with the proven zero-touch pattern
 - [x] Changes committed to git
 - [ ] Full CI/CD pipeline execution successful
 - [ ] TestFlight build appears without user prompts
@@ -167,9 +167,6 @@ git revert 2e0c1370b35
 
 The old implementation is still preserved in git history if needed.
 
-## Related Projects
-This migration aligns modulo-squares with the proven approach in:
-- **vehicle-vitals** - Uses build_app, signed in 2024
-- **wishlist-wizard** - Uses build_app, working zero-touch
-
-Both projects successfully use the same pattern and have no keychain issues.
+## Notes
+This migration moved modulo-squares to the standard `build_app` + zero-touch
+signing approach, which resolved the keychain-interaction failures.

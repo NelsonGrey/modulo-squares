@@ -20,9 +20,36 @@ const _kAccent = Color(0xFF4CAF50);
 const _kGoogleAuthScopes = ['email'];
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key, this.initializeGoogleSignIn = true});
+  const LoginScreen({
+    super.key,
+    this.initializeGoogleSignIn = true,
+    this.emailAuthenticationOverride,
+    this.onAuthenticationComplete,
+    this.initialEmail,
+    this.initialPassword,
+    this.startWithCreateAccount = false,
+    this.openEmailDialogOnStart = false,
+  });
 
   final bool initializeGoogleSignIn;
+
+  /// Local media/test hook that replaces the Firebase email operation while
+  /// preserving the production dialog, validation copy, and controls.
+  /// Release entry points never set this callback.
+  final Future<void> Function({
+    required String email,
+    required String password,
+    required bool createAccount,
+  })?
+  emailAuthenticationOverride;
+
+  /// Called after an injected authentication operation succeeds. The normal
+  /// app relies on Firebase's auth-state stream instead.
+  final VoidCallback? onAuthenticationComplete;
+  final String? initialEmail;
+  final String? initialPassword;
+  final bool startWithCreateAccount;
+  final bool openEmailDialogOnStart;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -55,6 +82,11 @@ class _LoginScreenState extends State<LoginScreen> {
       _initializeGoogleSignIn();
     }
     _loadPasswordPolicy();
+    if (widget.openEmailDialogOnStart) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _openEmailSignInDialog(context);
+      });
+    }
   }
 
   Future<void> _initializeGoogleSignIn() async {
@@ -113,7 +145,8 @@ class _LoginScreenState extends State<LoginScreen> {
           case 'too-many-requests':
             message = 'Too many attempts. Please wait a moment and try again.';
           case 'network-request-failed':
-            message = 'No internet connection. Please check your network and try again.';
+            message =
+                'No internet connection. Please check your network and try again.';
           default:
             message = 'Sign in failed. Please try again.';
         }
@@ -123,16 +156,17 @@ class _LoginScreenState extends State<LoginScreen> {
     }
     showDialog<void>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Sign-in failed'),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
+      builder:
+          (_) => AlertDialog(
+            title: const Text('Sign-in failed'),
+            content: Text(message),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -154,20 +188,27 @@ class _LoginScreenState extends State<LoginScreen> {
           .authorizationForScopes(_kGoogleAuthScopes);
 
       if (authorization == null) {
-        final authorized = await googleUser.authorizationClient
-            .authorizeScopes(_kGoogleAuthScopes);
+        final authorized = await googleUser.authorizationClient.authorizeScopes(
+          _kGoogleAuthScopes,
+        );
         await FirebaseAuth.instance.signInWithCredential(
           GoogleAuthProvider.credential(
-              accessToken: authorized.accessToken, idToken: idToken),
+            accessToken: authorized.accessToken,
+            idToken: idToken,
+          ),
         );
       } else {
         await FirebaseAuth.instance.signInWithCredential(
           GoogleAuthProvider.credential(
-              accessToken: authorization.accessToken, idToken: idToken),
+            accessToken: authorization.accessToken,
+            idToken: idToken,
+          ),
         );
       }
     } catch (e) {
-      if (e is PlatformException && e.code == 'sign_in_canceled') { return; }
+      if (e is PlatformException && e.code == 'sign_in_canceled') {
+        return;
+      }
       _showAuthError(context, e);
     } finally {
       if (mounted) setState(() => _authInProgress = false);
@@ -199,7 +240,9 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     } catch (e) {
       if (e is SignInWithAppleAuthorizationException &&
-          e.code == AuthorizationErrorCode.canceled) { return; }
+          e.code == AuthorizationErrorCode.canceled) {
+        return;
+      }
       _showAuthError(context, e);
     } finally {
       if (mounted) setState(() => _authInProgress = false);
@@ -222,6 +265,21 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _authInProgress = true);
     try {
+      final authenticationOverride = widget.emailAuthenticationOverride;
+      if (authenticationOverride != null) {
+        await authenticationOverride(
+          email: normalizedEmail,
+          password: password,
+          createAccount: createAccount,
+        );
+        if (context.mounted) Navigator.of(context).pop();
+        // Let the dialog route finish releasing inherited dependencies before
+        // a local capture/test host replaces the screen beneath it.
+        await Future<void>.delayed(const Duration(milliseconds: 800));
+        widget.onAuthenticationComplete?.call();
+        return;
+      }
+
       if (createAccount) {
         final quickCheckError = _quickPasswordCheck(password);
         if (quickCheckError != null) {
@@ -258,9 +316,11 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _openEmailSignInDialog(BuildContext context) async {
-    final emailController = TextEditingController();
-    final passwordController = TextEditingController();
-    var createAccount = false;
+    final emailController = TextEditingController(text: widget.initialEmail);
+    final passwordController = TextEditingController(
+      text: widget.initialPassword,
+    );
+    var createAccount = widget.startWithCreateAccount;
 
     await showDialog<void>(
       context: context,
@@ -323,9 +383,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   const SizedBox(height: 8),
                   TextButton(
-                    onPressed: () => setLocalState(() {
-                      createAccount = !createAccount;
-                    }),
+                    onPressed:
+                        () => setLocalState(() {
+                          createAccount = !createAccount;
+                        }),
                     child: Text(
                       createAccount
                           ? 'Already have an account? Sign in'
@@ -340,9 +401,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: const Text('Cancel'),
                 ),
                 ElevatedButton(
-                  onPressed: _authInProgress
-                      ? null
-                      : () => _authenticateWithEmailPassword(
+                  onPressed:
+                      _authInProgress
+                          ? null
+                          : () => _authenticateWithEmailPassword(
                             dialogContext,
                             email: emailController.text,
                             password: passwordController.text,
@@ -357,6 +419,11 @@ class _LoginScreenState extends State<LoginScreen> {
       },
     );
 
+    // AlertDialog's exit animation can retain the text fields for a few more
+    // frames after showDialog completes. Disposing immediately can make those
+    // outgoing fields read an already-disposed controller in debug/profile
+    // builds (and in local media capture).
+    await Future<void>.delayed(const Duration(milliseconds: 400));
     emailController.dispose();
     passwordController.dispose();
   }
@@ -420,9 +487,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 _AuthButton(
                   label: 'Sign in with Google',
                   icon: Icons.g_mobiledata,
-                  onPressed: _authInProgress
-                      ? null
-                      : () => _signInWithGoogle(context),
+                  onPressed:
+                      _authInProgress ? null : () => _signInWithGoogle(context),
                 ),
                 const SizedBox(height: 12),
               ],
@@ -430,9 +496,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 _AuthButton(
                   label: 'Sign in with Apple',
                   icon: Icons.apple,
-                  onPressed: _authInProgress
-                      ? null
-                      : () => _signInWithApple(context),
+                  onPressed:
+                      _authInProgress ? null : () => _signInWithApple(context),
                 ),
                 const SizedBox(height: 12),
               ],
@@ -440,9 +505,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 label: 'Sign in with Email',
                 icon: Icons.email_outlined,
                 outlined: true,
-                onPressed: _authInProgress
-                    ? null
-                    : () => _openEmailSignInDialog(context),
+                onPressed:
+                    _authInProgress
+                        ? null
+                        : () => _openEmailSignInDialog(context),
               ),
               const SizedBox(height: 28),
               Row(
@@ -450,8 +516,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   Expanded(child: Divider(color: Colors.white24)),
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 12),
-                    child: Text('or',
-                        style: TextStyle(color: Colors.white38, fontSize: 12)),
+                    child: Text(
+                      'or',
+                      style: TextStyle(color: Colors.white38, fontSize: 12),
+                    ),
                   ),
                   Expanded(child: Divider(color: Colors.white24)),
                 ],
@@ -460,12 +528,9 @@ class _LoginScreenState extends State<LoginScreen> {
               SizedBox(
                 width: double.infinity,
                 child: TextButton(
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.white60,
-                  ),
-                  onPressed: _authInProgress
-                      ? null
-                      : () => _signInAsGuest(context),
+                  style: TextButton.styleFrom(foregroundColor: Colors.white60),
+                  onPressed:
+                      _authInProgress ? null : () => _signInAsGuest(context),
                   child: const Text('Continue as Guest'),
                 ),
               ),
@@ -506,39 +571,45 @@ class _AuthButton extends StatelessWidget {
         Icon(icon, size: 22, color: outlined ? Colors.white70 : Colors.white),
         const SizedBox(width: 10),
         Flexible(
-          child: Text(label,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                  color: outlined ? Colors.white70 : Colors.white,
-                  fontSize: 15)),
+          child: Text(
+            label,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: outlined ? Colors.white70 : Colors.white,
+              fontSize: 15,
+            ),
+          ),
         ),
       ],
     );
 
     return SizedBox(
       width: double.infinity,
-      child: outlined
-          ? OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Colors.white30),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
+      child:
+          outlined
+              ? OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Colors.white30),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                onPressed: onPressed,
+                child: content,
+              )
+              : ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _kAccent,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                onPressed: onPressed,
+                child: content,
               ),
-              onPressed: onPressed,
-              child: content,
-            )
-          : ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _kAccent,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
-              ),
-              onPressed: onPressed,
-              child: content,
-            ),
     );
   }
 }

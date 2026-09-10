@@ -218,5 +218,4 @@ With these guides, you can:
 - ✅ Scale to multiple iOS projects
 - ✅ Save costs with optimized infrastructure
 
-**Start with the [iOS Certificate Setup](./Ios_Certificate_Setup.md)** for your first project!</content>
-<parameter name="filePath">/Users/marknelson/Circus/Repositories/wishlist-wizard/docs/IOS_DOCUMENTATION_INDEX.md
+**Start with the [iOS Certificate Setup](./Ios_Certificate_Setup.md)** for your first project!

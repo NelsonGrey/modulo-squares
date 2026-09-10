@@ -13,7 +13,7 @@ TOKEN="$1"
 
 echo "🔄 Updating runner tokens..."
 
-for repo in modulo-squares vehicle-vitals wishlist-wizard; do
+for repo in modulo-squares; do
     echo "📝 Updating $repo..."
     sed -i.bak "s/RUNNER_TOKEN=.*/RUNNER_TOKEN=$TOKEN/" "/Users/marknelson/Circus/Repositories/$repo/.env.runner"
 
@@ -25,5 +25,3 @@ echo ""
 echo "✅ Token update complete!"
 echo "Check GitHub Actions settings to verify runners are online:"
 echo "• https://github.com/nelsongrey/modulo-squares/settings/actions/runners"
-echo "• https://github.com/nelsongrey/vehicle-vitals/settings/actions/runners"
-echo "• https://github.com/nelsongrey/wishlist-wizard/settings/actions/runners"

@@ -1,6 +1,6 @@
 # Modulo Squares store promotion kit
 
-Ready-to-upload Apple App Store, Google Play, YouTube, and social media materials for Modulo Squares. The content reflects the current falling-number divisor-bucket game and deliberately makes no leaderboard, daily-challenge, Game Center, or retired board-clearing claims.
+Ready-to-upload Apple App Store, Google Play, YouTube, and social media materials for Modulo Squares. The content reflects the current falling-number divisor-bucket game, account/gamertag onboarding, settings, and the wired global/weekly leaderboard. It deliberately makes no daily-challenge, Game Center, or retired board-clearing claims.
 
 The production rules were verified on 2026-08-03. Review [`specifications.md`](specifications.md) and recheck the linked official sources if this kit is submitted substantially later.
 
@@ -16,6 +16,7 @@ The production rules were verified on 2026-08-03. Review [`specifications.md`](s
 | Google Play | 1024 × 500 flattened RGB feature graphic | `google/feature-graphic/` |
 | Google Play | Six 1080 × 1920 phone screenshots | `google/screenshots/phone/` |
 | Google Play / YouTube | 1920 × 1080 H.264 gameplay promo upload master | `google/video/` |
+| YouTube tutorials | Four silent, caption-led 1920 × 1080 H.264 guides for account/gamertag setup, sign-in, navigation, and gameplay | `google/video/tutorials/` |
 | Cross-platform | 3840 × 2160 key-art master | `cross-platform/key-art/` |
 | YouTube / social | 1280 × 720 thumbnail, 2560 × 1440 channel banner, and 1080 × 1080 square | `cross-platform/social/` |
 | Social video | Three 1080 × 1920 H.264 vertical clips | `cross-platform/video-clips/` |
@@ -42,6 +43,7 @@ There is no general Apple feature-graphic or banner upload. The app currently ta
 3. Apply the app name, short description, full description, website, support, and privacy-policy fields from `copy/google-en-US.md`.
 4. Upload `google/video/modulo-squares-youtube-promo-1920x1080.mp4` to the official YouTube channel as public or unlisted. Allow embedding, turn monetization/ads off for the listing video, and use the title, description, and tags in the copy file.
 5. Paste the final direct YouTube watch URL into Play Console with no timecode, playlist, or tracking parameters. Confirm the first frame and feature-graphic treatment in the listing preview.
+6. Upload the four support tutorials from `google/video/tutorials/` using the titles, descriptions, tags, playlist order, and publishing notes in `copy/youtube-tutorials.md`. Keep the concise gameplay master as the Play Console promo-video URL.
 
 The final console uploads, YouTube publication, localized URL checks, pricing verification, rights confirmation, and store-review submission require an authorized account owner and are not performed by this repository workflow.
 
@@ -62,6 +64,8 @@ The final console uploads, YouTube publication, localized URL checks, pricing ve
 - Final screenshots, social stills, and six 1920 × 1080 video plates are deterministic HTML/CSS compositions from `scripts/store-promo/render.html`, using the native captures and generated key art rather than synthetic UI. The plate sources are retained in `sources/video/plates/`.
 - `scripts/store-promo/capture-ios-expert-gameplay.sh` builds and installs the capture target, records a deterministic expert run from a booted iOS Simulator, and replaces the raw source only after the recording completes successfully.
 - `scripts/store-promo/render-videos.sh` creates the silent 16.9-second Apple preview from one continuous section of that expert run. It then places the preview at a 1000-pixel height over six equal-duration branded plates for the Google/YouTube master and derives three 5.5-second vertical clips with blurred edge fill.
+- `scripts/store-promo/capture-youtube-tutorials.sh` builds a separate local-only capture entry point for each tutorial scene, waits for a fully painted Simulator frame, and records production UI with deterministic local data. It does not create accounts, write gamertags or scores, or invoke Firebase authentication.
+- `scripts/store-promo/render-youtube-tutorials.sh` removes Simulator launch frames and composes the four tutorial captures over the established 16:9 key art. It also records source hashes for staleness validation.
 - Editorial intent, scene order, and on-screen copy are documented in `copy/video-production-script.md`.
 
 ## Rebuild and validation
@@ -77,8 +81,10 @@ Then rebuild and validate:
 
 ```bash
 ./scripts/store-promo/capture-ios-expert-gameplay.sh
+./scripts/store-promo/capture-youtube-tutorials.sh
 ./scripts/store-promo/render-assets.sh
 ./scripts/store-promo/render-videos.sh
+./scripts/store-promo/render-youtube-tutorials.sh
 python3 scripts/store-promo/validate-assets.py
 ```
 
