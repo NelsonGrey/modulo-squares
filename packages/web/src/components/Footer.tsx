@@ -47,8 +47,8 @@ const SOCIAL_LINKS = [
     ),
   },
   {
-    label: 'X',
-    href: 'https://x.com/@modulosquares',
+    label: 'X (Twitter)',
+    href: 'https://x.com/modulosquares',
     icon: (
       <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current">
         <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.259 5.629 5.905-5.629zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
@@ -105,11 +105,11 @@ const Footer: React.FC = () => (
         </nav>
       </div>
 
-      <div className="mt-3 pt-3 border-t border-gray-700 flex items-center justify-between">
+      <div className="mt-3 pt-3 border-t border-gray-700 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <p className="text-xs text-gray-500">
           © {new Date().getFullYear()} Modulo Squares, a product of Nelson Grey LLC. All rights reserved.
         </p>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {SOCIAL_LINKS.map(({ label, href, icon }) => {
             const isMail = href.startsWith('mailto:');
             return (
