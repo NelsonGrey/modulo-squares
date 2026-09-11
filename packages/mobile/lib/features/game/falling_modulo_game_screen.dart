@@ -18,6 +18,8 @@ import 'package:modulo_squares/features/game/leaderboard_screen.dart';
 import 'package:modulo_squares/features/game/models/falling_modulo_game_engine.dart';
 import 'package:modulo_squares/features/game/widgets/game_hud.dart';
 import 'package:modulo_squares/features/game/widgets/pause_overlay.dart';
+import 'package:modulo_squares/features/game/widgets/purchase_section.dart';
+import 'package:modulo_squares/features/game/widgets/settings_section.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -740,7 +742,7 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // ── Gameplay ──────────────────────────────────────────
-                  _SettingsSection(
+                  SettingsSection(
                     title: 'Gameplay',
                     initiallyExpanded: true,
                     children: [
@@ -769,78 +771,15 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
 
                   // ── Purchases ─────────────────────────────────────────
                   if (purchaseService != null)
-                    _SettingsSection(
-                      title: 'Purchases',
-                      children: [
-                        ListTile(
-                          leading: Icon(
-                            adsRemoved
-                                ? Icons.check_circle_outline
-                                : Icons.tv_off_outlined,
-                            color: adsRemoved ? Colors.green : Colors.orange,
-                          ),
-                          title: Text(adsRemoved ? 'Ad-Free' : 'Ads Enabled'),
-                          subtitle: Text(
-                            adsRemoved
-                                ? 'Enjoy the game without interruptions'
-                                : 'Short ads play between levels',
-                          ),
-                        ),
-                        if (!adsRemoved)
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
-                            child: FilledButton(
-                              onPressed: () async {
-                                try {
-                                  await purchaseService.purchaseAdRemoval();
-                                  // Payment sheet is handled by the store;
-                                  // result arrives via purchaseStream.
-                                } catch (e) {
-                                  if (!context.mounted) return;
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        e.toString().replaceFirst(
-                                          'Exception: ',
-                                          '',
-                                        ),
-                                      ),
-                                      duration: const Duration(seconds: 4),
-                                    ),
-                                  );
-                                }
-                              },
-                              child: Text(
-                                'Unlock Premium  —  '
-                                '${purchaseService.getProductPrice('remove_ads')}',
-                              ),
-                            ),
-                          ),
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                          child: OutlinedButton(
-                            onPressed: () async {
-                              await purchaseService.restorePurchases();
-                              setLocalState(
-                                () => adsRemoved = purchaseService.adsRemoved,
-                              );
-                              if (!context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Purchases restored successfully.',
-                                  ),
-                                ),
-                              );
-                            },
-                            child: const Text('Restore Purchases'),
-                          ),
-                        ),
-                      ],
+                    PurchaseSection(
+                      purchaseService: purchaseService,
+                      adsRemoved: adsRemoved,
+                      onAdsRemovedChanged:
+                          (value) => setLocalState(() => adsRemoved = value),
                     ),
 
                   // ── Account ───────────────────────────────────────────
-                  _SettingsSection(
+                  SettingsSection(
                     title: 'Account',
                     children: [
                       if (isGuest)
@@ -914,7 +853,7 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
                   ),
 
                   // ── Legal & Support ──────────────────────────────────
-                  _SettingsSection(
+                  SettingsSection(
                     title: 'Legal & Support',
                     children: [
                       ListTile(
@@ -1698,47 +1637,6 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
           ],
         ],
       ),
-    );
-  }
-}
-
-/// A collapsible Settings section: a header row that expands to reveal its
-/// content, so every section is visible (even collapsed) without scrolling
-/// to discover it — unlike a flat scrollable list, users can see up front
-/// how many sections exist.
-class _SettingsSection extends StatelessWidget {
-  const _SettingsSection({
-    required this.title,
-    required this.children,
-    this.initiallyExpanded = false,
-  });
-
-  final String title;
-  final List<Widget> children;
-  final bool initiallyExpanded;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        ExpansionTile(
-          initiallyExpanded: initiallyExpanded,
-          tilePadding: const EdgeInsets.fromLTRB(16, 0, 8, 0),
-          childrenPadding: EdgeInsets.zero,
-          title: Text(
-            title.toUpperCase(),
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.8,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-          ),
-          children: children,
-        ),
-        const Divider(height: 1),
-      ],
     );
   }
 }
