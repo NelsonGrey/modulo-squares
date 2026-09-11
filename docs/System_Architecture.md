@@ -60,10 +60,10 @@ Startup in `packages/mobile/lib/main.dart`:
 - `core/di`: service registration.
 - `core/services`: ads, analytics, cache, consent, error handling, gamertags, leaderboard, and purchases.
 - `features/auth`: login/gamertag/profile UI and profile data/domain code.
-- `features/game`: active falling mode plus retained legacy board mode.
+- `features/game`: active falling mode. The legacy board-clearing mode was confirmed dead and removed (2026-09-11).
 - `features/leaderboard`: leaderboard UI.
 - `features/website`: legacy Flutter web surface; not Firebase Hosting's current site.
-- `shared`: legacy/reusable models and widgets.
+- `shared`: reusable models and widgets.
 
 ## Web runtime
 
