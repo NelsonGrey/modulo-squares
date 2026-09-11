@@ -54,7 +54,7 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
   Timer? _timer;
   Timer? _expertDemoStartTimer;
 
-  DateTime? _lastInputAt;
+  Duration? _lastInputAtElapsed;
   Duration _elapsed = Duration.zero;
   Duration _spawnDelayRemaining = _spawnDelay;
   int _highScore = 0;
@@ -267,15 +267,24 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
   }
 
   bool _canMoveNow() {
-    final now = DateTime.now();
-    final last = _lastInputAt;
+    // Gated on the simulated game clock (_elapsed) rather than wall-clock
+    // DateTime.now() so this is deterministic under flutter_test's fake
+    // clock: Timer.periodic callbacks (and thus _elapsed) are faked by
+    // tester.pump(), but DateTime.now() is not. As a side effect, the
+    // cooldown now only counts down while the game is actually running --
+    // _elapsed is frozen while paused (see _startTicker's `!_isRunning`
+    // guard) -- which is the more correct behavior anyway: input the player
+    // makes is already blocked while paused (the move buttons are disabled),
+    // and a resumed game shouldn't have its very first input suppressed by a
+    // cooldown that silently kept ticking in the background.
+    final last = _lastInputAtElapsed;
     if (last == null) {
-      _lastInputAt = now;
+      _lastInputAtElapsed = _elapsed;
       return true;
     }
 
-    if (now.difference(last) >= _moveCooldown()) {
-      _lastInputAt = now;
+    if (_elapsed - last >= _moveCooldown()) {
+      _lastInputAtElapsed = _elapsed;
       return true;
     }
     return false;
@@ -322,7 +331,7 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
       _hasStarted = false;
       _elapsed = Duration.zero;
       _spawnDelayRemaining = _spawnDelay;
-      _lastInputAt = null;
+      _lastInputAtElapsed = null;
       _resultBurstText = null;
     });
   }

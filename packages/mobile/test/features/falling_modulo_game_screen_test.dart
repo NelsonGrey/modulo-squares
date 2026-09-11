@@ -121,11 +121,7 @@ void main() {
       }
 
       // Drain the score-burst label's own 700ms auto-clear timer so it can't
-      // still be pending when the test ends -- how many real-time moves land
-      // within the loop above (and thus the exact tick the last burst timer
-      // was scheduled on) is sensitive to how much CPU work runs per pump,
-      // since move cooldown gating uses wall-clock DateTime.now(), not the
-      // fake test clock.
+      // still be pending when the test ends.
       await tester.pump(const Duration(milliseconds: 700));
 
       final comboLabel = tester
