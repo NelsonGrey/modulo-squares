@@ -1,4 +1,4 @@
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { assertFails, assertSucceeds, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
 import { collection, deleteDoc, doc, getDoc, getDocs, setDoc } from 'firebase/firestore';
 import { getTestEnv } from './setup.js';
@@ -91,7 +91,11 @@ describe('leaderboards are public-read, server-write-only', () => {
 });
 
 describe('purchases and entitlements are owner-read, server-write-only', () => {
-  beforeAll(async () => {
+  // The suite's top-level `afterEach` clears the whole emulator after every
+  // test, so this fixture must be re-seeded in `beforeEach` -- a `beforeAll`
+  // here would only survive for the first test in this block and every
+  // later test would silently run against documents that no longer exist.
+  beforeEach(async () => {
     await testEnv.withSecurityRulesDisabled(async (context) => {
       const db = context.firestore();
       await setDoc(doc(db, 'purchases', OWNER_UID), { verified: true });
@@ -108,6 +112,15 @@ describe('purchases and entitlements are owner-read, server-write-only', () => {
   it('lets the owner read their own purchase transaction subdocument', async () => {
     const db = testEnv.authenticatedContext(OWNER_UID).firestore();
     await assertSucceeds(getDoc(doc(db, 'purchases', OWNER_UID, 'transactions', 'txn1')));
+  });
+
+  it("denies another authenticated user reading someone else's purchase transaction subdocument", async () => {
+    // The transactions subcollection has its own security-rule match
+    // separate from the parent purchases document -- exercise it directly
+    // rather than only the parent doc, since a regression scoped to just
+    // this nested match wouldn't otherwise be caught.
+    const db = testEnv.authenticatedContext(OTHER_UID).firestore();
+    await assertFails(getDoc(doc(db, 'purchases', OWNER_UID, 'transactions', 'txn1')));
   });
 
   it("denies another authenticated user reading someone else's purchases", async () => {
@@ -135,6 +148,11 @@ describe('purchases and entitlements are owner-read, server-write-only', () => {
     await assertFails(getDoc(doc(db, 'entitlements', OWNER_UID)));
   });
 
+  it('denies an unauthenticated read of entitlements', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertFails(getDoc(doc(db, 'entitlements', OWNER_UID)));
+  });
+
   it('denies the owner writing to their own entitlements document (server-only)', async () => {
     const db = testEnv.authenticatedContext(OWNER_UID).firestore();
     await assertFails(setDoc(doc(db, 'entitlements', OWNER_UID), { premium: false }));
@@ -149,6 +167,21 @@ describe('owned user documents (profiles, stats, users)', () => {
       const db = testEnv.authenticatedContext(OWNER_UID).firestore();
       await assertSucceeds(setDoc(doc(db, collectionName, OWNER_UID), { updatedAt: 1 }));
       await assertSucceeds(getDoc(doc(db, collectionName, OWNER_UID)));
+    });
+
+    it(`lets the owner update their own already-existing ${collectionName} document`, async () => {
+      // The test above only ever writes to a previously-absent document,
+      // which the rules evaluate as a `create`. Seed an existing doc here
+      // and write to it again so the `update` path is exercised too -- a
+      // regression that allows create but denies update wouldn't be caught
+      // otherwise.
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        await setDoc(doc(context.firestore(), collectionName, OWNER_UID), { updatedAt: 1 });
+      });
+      const db = testEnv.authenticatedContext(OWNER_UID).firestore();
+      await assertSucceeds(setDoc(doc(db, collectionName, OWNER_UID), { updatedAt: 2 }));
+      const snap = await getDoc(doc(db, collectionName, OWNER_UID));
+      expect(snap.data()).toEqual({ updatedAt: 2 });
     });
 
     it(`denies another authenticated user reading someone else's ${collectionName} document`, async () => {
