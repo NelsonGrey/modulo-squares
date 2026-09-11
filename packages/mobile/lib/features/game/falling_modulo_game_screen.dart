@@ -17,6 +17,7 @@ import 'package:modulo_squares/core/services/purchase_service.dart';
 import 'package:modulo_squares/features/game/leaderboard_screen.dart';
 import 'package:modulo_squares/features/game/models/falling_modulo_game_engine.dart';
 import 'package:modulo_squares/features/game/widgets/game_hud.dart';
+import 'package:modulo_squares/features/game/widgets/pause_overlay.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -1104,7 +1105,17 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
                       },
                     ),
                     if (!_isRunning && !_hasStarted) _buildPreGameOverlay(),
-                    if (!_isRunning && _hasStarted) _buildPauseOverlay(),
+                    if (!_isRunning && _hasStarted)
+                      PauseOverlay(
+                        level: _state.level,
+                        score: _state.score,
+                        onResume:
+                            () => _showInterstitialTransition(
+                              trigger: 'resume_from_pause',
+                              onClosed: _toggleRunning,
+                            ),
+                        onNewGame: () => _confirmNewRun(context),
+                      ),
                   ],
                 ),
               ),
@@ -1468,91 +1479,6 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildPauseOverlay() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.72),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      // Same fix as _buildPreGameOverlay: SingleChildScrollView gives its
-      // child unbounded height, so a bare Center shrink-wraps to the top
-      // instead of actually centering. LayoutBuilder + minHeight keeps it
-      // centered while still allowing scroll if content overflows.
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          return SingleChildScrollView(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.pause_circle_filled_outlined,
-                      size: 72,
-                      color: Colors.white.withValues(alpha: 0.9),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Paused',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 28,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Level ${_state.level}  ·  Score ${_state.score}',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.6),
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    FilledButton.icon(
-                      onPressed:
-                          () => _showInterstitialTransition(
-                            trigger: 'resume_from_pause',
-                            onClosed: _toggleRunning,
-                          ),
-                      icon: const Icon(Icons.play_arrow, size: 22),
-                      label: const Text(
-                        'Resume',
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size(180, 52),
-                        backgroundColor: Colors.lightBlue.shade400,
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    OutlinedButton.icon(
-                      onPressed: () => _confirmNewRun(context),
-                      icon: const Icon(Icons.replay, size: 20),
-                      label: const Text('New Game'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        side: BorderSide(
-                          color: Colors.white.withValues(alpha: 0.4),
-                        ),
-                        minimumSize: const Size(180, 48),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      ),
     );
   }
 
