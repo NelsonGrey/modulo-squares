@@ -1,10 +1,44 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb, debugPrint;
+import 'package:flutter/foundation.dart'
+    show kDebugMode, kIsWeb, kReleaseMode, debugPrint;
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:modulo_squares/l10n/app_localizations.dart';
+
+/// Thin seam over [FirebaseCrashlytics] so [ErrorHandler.logError] can be
+/// unit tested (operation/error/stackTrace/fatal forwarding, plus the
+/// Firebase-unavailable guard) without a real Firebase app being
+/// initialized in the test binary.
+abstract class CrashlyticsReporter {
+  Future<void> recordError(
+    dynamic error,
+    StackTrace? stackTrace, {
+    required String reason,
+    required bool fatal,
+  });
+}
+
+class _FirebaseCrashlyticsReporter implements CrashlyticsReporter {
+  const _FirebaseCrashlyticsReporter();
+
+  @override
+  Future<void> recordError(
+    dynamic error,
+    StackTrace? stackTrace, {
+    required String reason,
+    required bool fatal,
+  }) {
+    return FirebaseCrashlytics.instance.recordError(
+      error,
+      stackTrace,
+      reason: reason,
+      fatal: fatal,
+    );
+  }
+}
 
 /// Centralized error handling service for Firebase and network operations
 class ErrorHandler {
@@ -12,6 +46,26 @@ class ErrorHandler {
   static final ErrorHandler instance = ErrorHandler._();
 
   factory ErrorHandler() => instance;
+
+  /// The Crashlytics reporter used by [logError]. Overridable in tests via
+  /// [debugCrashlyticsReporter] to verify forwarding without a real
+  /// Firebase app.
+  static CrashlyticsReporter _crashlyticsReporter =
+      const _FirebaseCrashlyticsReporter();
+
+  /// Swaps the Crashlytics reporter for tests. Call
+  /// [resetCrashlyticsReporter] in `tearDown` to restore the default.
+  @visibleForTesting
+  static set debugCrashlyticsReporter(CrashlyticsReporter reporter) {
+    _crashlyticsReporter = reporter;
+  }
+
+  /// Restores the default (real Crashlytics) reporter after a test that
+  /// used [debugCrashlyticsReporter].
+  @visibleForTesting
+  static void resetCrashlyticsReporter() {
+    _crashlyticsReporter = const _FirebaseCrashlyticsReporter();
+  }
 
   /// Handle Firebase initialization errors
   void handleFirebaseInitError(dynamic error, StackTrace stackTrace) {
@@ -328,14 +382,36 @@ class ErrorHandler {
       if (stackTrace != null) {
         debugPrint('[$operation] Stack trace: $stackTrace');
       }
-    } else if (!kIsWeb) {
-      // Report to Crashlytics in release builds (unsupported on web).
-      FirebaseCrashlytics.instance.recordError(
-        error,
-        stackTrace,
-        reason: operation,
-        fatal: false,
-      );
+    } else if (kReleaseMode && !kIsWeb) {
+      // Report to Crashlytics in release builds only (unsupported on web;
+      // deliberately excludes profile builds, which are also !kDebugMode,
+      // so perf-testing/profiling sessions don't pollute production
+      // Crashlytics issue counts).
+      recordCrashlyticsError(operation, error, stackTrace);
     }
+  }
+
+  /// Forwards [error] to Crashlytics, guarding against the
+  /// `[core/no-app]` exception that `FirebaseCrashlytics.instance` throws
+  /// when no default Firebase app was ever initialized (e.g. when
+  /// `initializeFirebaseApp()` returned false in `main()` and startup is
+  /// proceeding through the Firebase-recovery path). Exposed so tests can
+  /// verify the forwarded operation/error/stackTrace/fatal values and the
+  /// guard without needing [kReleaseMode] to be true in the test binary.
+  @visibleForTesting
+  void recordCrashlyticsError(
+    String operation,
+    dynamic error, [
+    StackTrace? stackTrace,
+  ]) {
+    if (Firebase.apps.isEmpty) {
+      return;
+    }
+    _crashlyticsReporter.recordError(
+      error,
+      stackTrace,
+      reason: operation,
+      fatal: false,
+    );
   }
 }
