@@ -12,6 +12,7 @@
     }
   },
   "scripts": {
+    "prepare": "npm run build",
     "build": "tsc",
     "dev": "tsc --watch",
     "check": "tsc --noEmit",

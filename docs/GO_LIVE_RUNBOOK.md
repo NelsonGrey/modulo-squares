@@ -1016,7 +1016,7 @@ Based on D7 retention data:
 | iOS signing guide | `docs/Ios_Signing.md` |
 | Security guide | `docs/Security.md` |
 | Analytics events | `docs/Analytics.md` |
-| Hardening matrix | `docs/SOLUTION_HARDENING_MATRIX.md` |
+| Hardening guide | `docs/PUBLIC_REPO_HARDENING.md` |
 
 ---
 

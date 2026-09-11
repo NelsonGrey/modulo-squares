@@ -1,6 +1,6 @@
 # ZERO-TOUCH GitHub Actions Runner Management
 
-> **Historical runner design (reviewed 2026-07-20):** Normal Modulo Squares CI no longer uses these self-hosted runner/token-refresh systems.
+> **Historical runner design (reviewed 2026-09-11):** Normal Modulo Squares CI no longer uses these self-hosted runner/token-refresh systems. The root `token-refresh.sh` script referenced below was removed as dead code (superseded by `scripts/token-rotation.sh`); the `./token-refresh.sh ...` commands in this guide are retained only as historical context and will not run as-is.
 
 This system provides fully automated, zero-maintenance GitHub Actions self-hosted runners using GitHub CLI authentication for token generation.
 
