@@ -16,6 +16,7 @@ import 'package:modulo_squares/core/services/leaderboard_service.dart';
 import 'package:modulo_squares/core/services/purchase_service.dart';
 import 'package:modulo_squares/features/game/leaderboard_screen.dart';
 import 'package:modulo_squares/features/game/models/falling_modulo_game_engine.dart';
+import 'package:modulo_squares/features/game/widgets/game_hud.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -1013,7 +1014,13 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              _buildHud(),
+              GameHud(
+                state: _state,
+                highScore: _highScore,
+                isRunning: _isRunning,
+                isSpawnDelayActive: _isSpawnDelayActive,
+                effectiveDropIntervalMs: _effectiveDropIntervalMs,
+              ),
               const SizedBox(height: 12),
               Expanded(
                 child: Stack(
@@ -1172,38 +1179,6 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildHud() {
-    return Wrap(
-      spacing: 12,
-      runSpacing: 8,
-      children: [
-        _pill('Level', '${_state.level}'),
-        _pill('Score', '${_state.score}'),
-        _pill('Best', '$_highScore'),
-        _pill('Combo', '${_state.combo}'),
-        _pill(
-          'Move Speed',
-          '${_state.horizontalMoveSpeedMultiplier.toStringAsFixed(2)}x',
-        ),
-        _pill(
-          'Fall',
-          !_isRunning
-              ? 'Paused'
-              : _isSpawnDelayActive
-              ? 'Ready...'
-              : '${(_effectiveDropIntervalMs / 1000).toStringAsFixed(2)}s',
-        ),
-        _pill('Range', '${_state.numberRangeMin}-${_state.numberRangeMax}'),
-        _pill(
-          'Fill',
-          '${_state.filledSquares}/${_state.progressGridCellCount}',
-        ),
-        if (_state.deficitSquares > 0)
-          _pill('Deficit', '-${_state.deficitSquares}'),
-      ],
     );
   }
 
@@ -1369,18 +1344,6 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
         );
       },
       child: _buildScoreBurst(text),
-    );
-  }
-
-  Widget _pill(String label, String value) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.black12),
-      ),
-      child: Text('$label: $value'),
     );
   }
 
