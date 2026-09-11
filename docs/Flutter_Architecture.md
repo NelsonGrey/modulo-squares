@@ -17,11 +17,10 @@ main()
         -> FallingModuloGameScreen
 ```
 
-The app uses several architectural styles because current falling gameplay was added after the original board mode:
+The app uses several architectural styles because current falling gameplay was added after the original board mode (the board mode's Provider/ChangeNotifier code was confirmed dead and removed, 2026-09-11):
 
 - GetIt singletons for cross-cutting services.
 - StatefulWidget-local state for falling gameplay.
-- Provider/ChangeNotifier for the retained legacy board game.
 - data/domain/presentation layers for profile features.
 
 Do not describe the entire package as one uniform Clean Architecture implementation.
@@ -37,11 +36,11 @@ lib/
 │   └── services/      # ads, analytics, cache, consent, errors, tags, scores, IAP
 ├── features/
 │   ├── auth/          # login, gamertag, profile UI/data/domain code
-│   ├── game/          # active falling mode and legacy board mode
+│   ├── game/          # active falling mode
 │   ├── leaderboard/   # native global leaderboard UI
 │   └── website/       # legacy Flutter web surface
 ├── l10n/              # generated English localization
-├── shared/            # legacy models and reusable widgets
+├── shared/            # reusable models and widgets
 └── main.dart
 ```
 
@@ -100,7 +99,7 @@ Keep deterministic game rules in the engine. Keep plugin/UI effects in the scree
 
 ## Legacy code
 
-The original `GameBoard`, `GameState`, `GameProvider`, grid widgets, dialogs, and `InstructionsScreen` remain in source and tests. They are not reachable from the current native gameplay entry point. Changes to them should be labeled legacy unless the product deliberately reintroduces that mode.
+The original `GameBoard`, `GameState`, `GameProvider`, grid widgets, dialogs, and `InstructionsScreen` were confirmed unreachable from the current native gameplay entry point and removed as dead code (2026-09-11), along with their dedicated tests. If that mode is ever deliberately reintroduced, rebuild it rather than reverting this removal.
 
 ## Testing boundaries
 
