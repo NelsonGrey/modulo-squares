@@ -53,7 +53,7 @@ The native app requires Firebase initialization and authentication. Players sign
 - global, daily, and weekly leaderboard infrastructure backed by callable Functions (the public React leaderboard reads it, but current falling gameplay does not submit or open it);
 - sign-out, account linking, purchase restoration, and permanent account deletion.
 
-Older board-clearing classes and tests remain in the tree as legacy/reference code. They are not the app's current gameplay entry point.
+The older board-clearing implementation (`GameBoard`, `GameProvider`, `InstructionsScreen`, grid widgets, and their dedicated tests) was confirmed unreachable from `GameScreen` and removed as dead code (2026-09-11).
 
 ## Web application
 

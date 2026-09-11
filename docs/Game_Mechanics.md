@@ -81,7 +81,7 @@ Weekly badges are assigned by rank:
 
 ## Legacy board-clearing mode
 
-`GameBoard`, `GameProvider`, old grid widgets, and `InstructionsScreen` implement an earlier tile-moving mode with obstacles, bonus tiles, daily boards, moves, and mercy spawns. Those classes still have extensive tests, but `GameScreen` no longer routes players to that mode. Do not use legacy rules for store copy or current gameplay documentation.
+`GameBoard`, `GameProvider`, old grid widgets, and `InstructionsScreen` implemented an earlier tile-moving mode with obstacles, bonus tiles, daily boards, moves, and mercy spawns. `GameScreen` never routed players to that mode, and the confirmed-dead classes and their tests were removed (2026-09-11). Do not use legacy rules for store copy or current gameplay documentation.
 
 ## Verification
 
