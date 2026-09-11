@@ -1,6 +1,6 @@
 # Modulo Squares Documentation Index
 
-**Updated**: 2026-07-20
+**Updated**: 2026-09-11
 
 This index separates current implementation documentation from operational references, product plans, and historical records. The distinction matters because the repository retains older game-mode code and several pre-launch automation proposals.
 
@@ -31,8 +31,7 @@ This index separates current implementation documentation from operational refer
 | [SEO / SEM Audit](SEO_SEM_Audit.md) | Google tools, website SEO/SEM, and iOS ASO — findings and punch list |
 | [AdMob Setup](Admob_Setup.md) | Mobile ad configuration and consent |
 | [Mobile Config Setup](Mobile_Config_Setup.md) | Environment-specific native Firebase switching |
-| [Public Repo Hardening](PUBLIC_REPO_HARDENING.md) | Public/private source boundary and abuse controls |
-| [Solution Hardening Matrix](SOLUTION_HARDENING_MATRIX.md) | Current hardening snapshot |
+| [Public Repo Hardening](PUBLIC_REPO_HARDENING.md) | Public/private source boundary, abuse controls, and current hardening status snapshot |
 | [Code Quality Analysis](Code_Quality_Analysis.md) | Current audit findings and validation results |
 | [Implementation Summary](Implementation_Summary.md) | Current implementation and risk summary |
 
