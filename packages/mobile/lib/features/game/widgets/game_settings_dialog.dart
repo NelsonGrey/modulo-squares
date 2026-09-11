@@ -27,12 +27,14 @@ const List<String> _googleAuthScopes = ['email'];
 /// side effects it triggers (sign-out, delete-account, linking a guest
 /// account to Google/Apple/Email). It does not own the game-loop timer or
 /// core game state — those stay on [FallingModuloGameScreen] — so the
-/// caller passes in the current visual-cues/high-score values plus a couple
-/// of callbacks to report changes back up.
+/// caller passes in the current visual-cues value, a live getter for the
+/// high score (read fresh on every rebuild, since the score can keep
+/// climbing in the game loop behind this dialog), plus a couple of
+/// callbacks to report changes back up.
 Future<void> showGameSettingsDialog({
   required BuildContext context,
   required bool visualCuesEnabled,
-  required int highScore,
+  required int Function() getHighScore,
   required PurchaseService? purchaseService,
   required ValueChanged<bool> onSaveVisualCues,
   required VoidCallback onHighScoreReset,
@@ -88,7 +90,7 @@ Future<void> showGameSettingsDialog({
                     ListTile(
                       title: const Text('Best Score'),
                       trailing: Text(
-                        '$highScore',
+                        '${getHighScore()}',
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,

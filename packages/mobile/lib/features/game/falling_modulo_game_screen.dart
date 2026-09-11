@@ -398,7 +398,7 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
     await showGameSettingsDialog(
       context: context,
       visualCuesEnabled: _state.visualCuesEnabled,
-      highScore: _highScore,
+      getHighScore: () => _highScore,
       purchaseService: _purchaseServiceOrNull,
       onSaveVisualCues: (enabled) {
         setState(() {

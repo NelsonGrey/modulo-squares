@@ -252,6 +252,65 @@ void main() {
       final switchAfter = tester.widget<Switch>(switchFinder).value;
       expect(switchAfter, isNot(switchBefore));
     });
+
+    testWidgets(
+      'Best Score stays live if it climbs while the dialog is already open',
+      (tester) async {
+        // Regression test: showGameSettingsDialog used to take a plain `int
+        // highScore` captured once when the dialog opened, so a score raised
+        // by the game loop running behind the dialog wouldn't show up even
+        // after a later in-dialog rebuild (e.g. toggling Visual Cues). It
+        // now takes a `getHighScore` getter that's read fresh on every
+        // rebuild.
+        tester.view.physicalSize = _phoneSize;
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: FallingModuloGameScreen(
+              engine: FallingModuloGameEngine(random: Random(20260803)),
+              expertDemo: true,
+            ),
+          ),
+        );
+        await tester.pump();
+
+        // Open Settings before the demo has scored anything -- Best Score
+        // should read 0 at this point.
+        await _openSettings(tester);
+        expect(
+          find.descendant(
+            of: find.widgetWithText(ListTile, 'Best Score'),
+            matching: find.text('0'),
+          ),
+          findsOneWidget,
+        );
+
+        // Let the expert demo play behind the still-open dialog long enough
+        // to land at least one scoring success, raising the live high score
+        // above 0.
+        for (var step = 0; step < 120; step++) {
+          await tester.pump(const Duration(milliseconds: 50));
+        }
+
+        // Force the dialog's StatefulBuilder to rebuild via an in-dialog
+        // interaction, the same trigger the original bug report used.
+        await tester.tap(find.byType(Switch));
+        await tester.pump();
+
+        expect(
+          find.descendant(
+            of: find.widgetWithText(ListTile, 'Best Score'),
+            matching: find.text('0'),
+          ),
+          findsNothing,
+        );
+      },
+    );
   });
 
   // ── Settings dialog — Purchases section ──────────────────────────────────
