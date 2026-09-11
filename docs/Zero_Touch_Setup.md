@@ -1,6 +1,6 @@
 # ZERO-TOUCH CI/CD Setup Guide
 
-> **Historical setup guide (reviewed 2026-07-20):** The active pipeline is `.github/workflows/ci-cd.yml`; normal builds use GitHub-hosted runners. Do not use this as the production setup checklist.
+> **Historical setup guide (reviewed 2026-09-11):** The active pipeline is `.github/workflows/ci-cd.yml`; normal builds use GitHub-hosted runners. Do not use this as the production setup checklist. The root `token-refresh.sh` script referenced below was removed as dead code (superseded by `scripts/token-rotation.sh`); the `./token-refresh.sh ...` commands in this guide are retained only as historical context and will not run as-is.
 
 This guide covers the complete ZERO-TOUCH DevOps pipeline for the Modulo Squares project, including automated certificate management, token refresh, and self-hosted runner maintenance.
 
