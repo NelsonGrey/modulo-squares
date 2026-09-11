@@ -23,6 +23,6 @@ flutter build appbundle --release
 
 Run `../../scripts/switch-mobile-configs.sh dev|staging|prod` before an environment-specific native build.
 
-`lib/features/game/game_screen.dart` is the gameplay entry point and delegates to `FallingModuloGameScreen`. The older `GameBoard`/`GameProvider` implementation remains as legacy/reference code and tests.
+`lib/features/game/game_screen.dart` is the gameplay entry point and delegates to `FallingModuloGameScreen`. The older `GameBoard`/`GameProvider` implementation was confirmed unreachable from it and removed as dead code (2026-09-11), along with its dedicated tests.
 
 See [the root README](../../README.md), [Game Mechanics](../../docs/Game_Mechanics.md), and [Testing](../../docs/Testing.md).

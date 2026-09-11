@@ -18,7 +18,6 @@
 
 ## Retained but not live
 
-- The board-clearing `GameBoard`/`GameProvider` mode and its tests.
 - Flutter `WebsiteScreen`, which is not the hosted React site.
 - archived workflows and broad zero-touch/self-hosted-runner automation documents.
 - Android delivery assets without an active Android CI job.
@@ -35,11 +34,10 @@
 
 ## Primary risks
 
-1. Legacy and live gameplay coexist and can cause documentation or implementation confusion.
-2. Functions root scripts fail without the private checkout.
-3. Firestore rules require a separate explicit deploy when changed.
-4. Android is not covered by the active pipeline.
-5. Web has no dedicated automated browser/accessibility tests.
-6. External release/compliance controls require regular dated verification.
+1. Functions root scripts fail without the private checkout.
+2. Firestore rules require a separate explicit deploy when changed.
+3. Android is not covered by the active pipeline.
+4. Web has no dedicated automated browser/accessibility tests.
+5. External release/compliance controls require regular dated verification.
 
 See [Current State](Current_State.md) and [Code Quality Analysis](Code_Quality_Analysis.md).
