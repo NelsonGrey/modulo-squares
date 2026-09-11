@@ -221,12 +221,27 @@ describe('gamertag uniqueness index', () => {
 
   it('lets an authenticated user claim a brand-new gamertag', async () => {
     const db = testEnv.authenticatedContext(OWNER_UID).firestore();
-    await assertSucceeds(setDoc(doc(db, 'gamertags', 'FreshTag'), {}));
+    await assertSucceeds(setDoc(doc(db, 'gamertags', 'FreshTag'), { tag: 'FreshTag' }));
   });
 
   it('denies an unauthenticated user claiming a gamertag', async () => {
     const db = testEnv.unauthenticatedContext().firestore();
-    await assertFails(setDoc(doc(db, 'gamertags', 'FreshTag'), {}));
+    await assertFails(setDoc(doc(db, 'gamertags', 'FreshTag'), { tag: 'FreshTag' }));
+  });
+
+  it('denies claiming a gamertag whose write includes an owner uid field', async () => {
+    // The rule enforces the shape directly (hasOnly(['tag'])) -- this is
+    // what actually guarantees the privacy invariant described above,
+    // rather than relying on client code never writing an owner field.
+    const db = testEnv.authenticatedContext(OWNER_UID).firestore();
+    await assertFails(
+      setDoc(doc(db, 'gamertags', 'FreshTag'), { tag: 'FreshTag', ownerUid: OWNER_UID })
+    );
+  });
+
+  it('denies claiming a gamertag with a non-string tag field', async () => {
+    const db = testEnv.authenticatedContext(OWNER_UID).firestore();
+    await assertFails(setDoc(doc(db, 'gamertags', 'FreshTag'), { tag: 12345 }));
   });
 
   it('denies overwriting an already-claimed gamertag, even by an authenticated user', async () => {
@@ -248,8 +263,12 @@ describe('gamertag uniqueness index', () => {
     await assertFails(deleteDoc(doc(db, 'gamertags', 'TakenTag')));
   });
 
-  it('documents that an owner uid field is readable if application code writes one', async () => {
-    // Rules do not strip fields; avoiding owner fields is an application-level contract.
+  it('documents that reads are not field-filtered, for a doc seeded outside the rules', async () => {
+    // The create rule now blocks any write containing an owner field (see
+    // above), so this can no longer happen through the app's normal write
+    // path. This test just documents that IF such a document existed
+    // (e.g. legacy data from before the shape restriction), reads still
+    // wouldn't strip it -- Firestore rules don't do field-level filtering.
     await testEnv.withSecurityRulesDisabled(async (context) => {
       await setDoc(doc(context.firestore(), 'gamertags', 'NoOwnerField'), { ownerUid: OWNER_UID });
     });
