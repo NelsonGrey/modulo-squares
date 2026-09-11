@@ -153,3 +153,5 @@ Start at [docs/Documentation_Index.md](docs/Documentation_Index.md). It labels e
 ## License
 
 See [LICENSE](LICENSE).
+
+<!-- AI_REVIEWER_PAT rotation verification, safe to ignore/delete -->
