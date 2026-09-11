@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb, debugPrint;
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:modulo_squares/l10n/app_localizations.dart';
@@ -321,14 +322,20 @@ class ErrorHandler {
 
   /// Log error for debugging/monitoring
   void logError(String operation, dynamic error, [StackTrace? stackTrace]) {
-    // Only log to console in debug mode
     if (kDebugMode) {
+      // Only log to console in debug mode
       debugPrint('[$operation] Error: $error');
       if (stackTrace != null) {
         debugPrint('[$operation] Stack trace: $stackTrace');
       }
+    } else if (!kIsWeb) {
+      // Report to Crashlytics in release builds (unsupported on web).
+      FirebaseCrashlytics.instance.recordError(
+        error,
+        stackTrace,
+        reason: operation,
+        fatal: false,
+      );
     }
-    // TODO: In production, send to Crashlytics or error tracking service
-    // FirebaseCrashlytics.instance.recordError(error, stackTrace);
   }
 }
