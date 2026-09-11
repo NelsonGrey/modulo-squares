@@ -72,10 +72,22 @@ describe('leaderboards are public-read, server-write-only', () => {
     });
   }
 
-  it('allows an unauthenticated list query of the global leaderboard collection', async () => {
-    const db = testEnv.unauthenticatedContext().firestore();
-    await assertSucceeds(getDocs(collection(db, 'modulo_leaderboard')));
-  });
+  for (const { name, path } of [
+    { name: 'global leaderboard', path: 'modulo_leaderboard' },
+    {
+      name: 'daily leaderboard scores',
+      path: 'modulo_daily_leaderboard/challenge-2026-09-11/scores',
+    },
+    {
+      name: 'weekly leaderboard scores',
+      path: 'modulo_weekly_leaderboard/week-2026-37/scores',
+    },
+  ]) {
+    it(`allows an unauthenticated list query of the ${name} collection`, async () => {
+      const db = testEnv.unauthenticatedContext().firestore();
+      await assertSucceeds(getDocs(collection(db, path)));
+    });
+  }
 });
 
 describe('purchases and entitlements are owner-read, server-write-only', () => {
