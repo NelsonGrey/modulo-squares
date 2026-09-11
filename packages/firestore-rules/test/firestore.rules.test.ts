@@ -203,18 +203,13 @@ describe('gamertag uniqueness index', () => {
     await assertFails(deleteDoc(doc(db, 'gamertags', 'TakenTag')));
   });
 
-  it('does not let a gamertag document carry an owner uid field readable by other users', async () => {
-    // The rules intentionally omit any owner-uid check on this collection
-    // (see the comment in firestore.rules): the index only proves a tag is
-    // taken, it must never let readers reverse a gamertag into a uid.
+  it('documents that an owner uid field is readable if application code writes one', async () => {
+    // Rules do not strip fields; avoiding owner fields is an application-level contract.
     await testEnv.withSecurityRulesDisabled(async (context) => {
       await setDoc(doc(context.firestore(), 'gamertags', 'NoOwnerField'), { ownerUid: OWNER_UID });
     });
     const db = testEnv.authenticatedContext(OTHER_UID).firestore();
     const snap = await assertSucceeds(getDoc(doc(db, 'gamertags', 'NoOwnerField')));
-    // The rules don't strip fields themselves -- this documents that it's
-    // an application-level contract (never write an owner field here),
-    // not something the rules enforce structurally.
-    expect(snap.exists()).toBe(true);
+    expect(snap.data()).toEqual({ ownerUid: OWNER_UID });
   });
 });
