@@ -44,6 +44,7 @@ import 'package:modulo_squares/core/di/service_locator.dart';
 import 'package:modulo_squares/core/services/purchase_service.dart';
 import 'package:modulo_squares/features/game/falling_modulo_game_screen.dart';
 import 'package:modulo_squares/features/game/models/falling_modulo_game_engine.dart';
+import 'package:modulo_squares/features/game/models/game_theme.dart';
 
 import '../services/purchase_service_test.mocks.dart';
 
@@ -62,7 +63,7 @@ class _ScriptedEngine extends FallingModuloGameEngine {
   @override
   FallingModuloGameState createInitialState({
     int startingLevel = 1,
-    bool visualCuesEnabled = true,
+    GameDifficulty difficulty = GameDifficulty.normal,
   }) => _initial;
 }
 
@@ -88,7 +89,6 @@ FallingModuloGameState _scriptedState({
     numberRangeMin: range.min,
     numberRangeMax: range.max,
     dropIntervalMs: FallingModuloGameEngine.dropIntervalForLevel(level),
-    visualCuesEnabled: true,
     fillBalance: fillBalance,
     progressGridCellCount: 100,
   );
@@ -159,6 +159,14 @@ Future<void> _expandSection(WidgetTester tester, String header) async {
   await tester.pumpAndSettle();
 }
 
+/// Reads the text of a keyed HUD value (see game_hud.dart's `Key`s) --
+/// the HUD renders bare values inside icon chips/labels rather than
+/// "Label: value" pills, so plain `find.text` would collide with other
+/// on-screen numbers.
+String _hudValue(WidgetTester tester, String key) {
+  return tester.widget<Text>(find.byKey(Key(key))).data!;
+}
+
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
@@ -176,29 +184,31 @@ void main() {
       'state, and shows a positive score burst',
       (tester) async {
         // Lane 5 (center, the default) holds bucket value 9; falling value 18
-        // is evenly divisible by it -> success, scoreDelta = 18 * 9 = 162.
+        // is evenly divisible by it -> success, base scoreDelta = 18 * 9 =
+        // 162. Bucket 9 is also 18's highest divisor, so the highest-bucket
+        // bonus doubles it to 324 and fill progress is +2 instead of +1.
         final state = _scriptedState(
           bucketValues: const [2, 5, 0, 8, 3, 9, 1, 4, 6, 7],
           fallingValue: 18,
         );
         await _pumpScripted(tester, state);
 
-        expect(find.text('Score: 0'), findsOneWidget);
-        expect(find.text('Fall: Paused'), findsOneWidget);
+        expect(_hudValue(tester, 'hud-score-value'), '0');
+        expect(_hudValue(tester, 'hud-fall-value'), 'Paused');
 
         await _startAndClearSpawnDelay(tester);
 
         // Spawn delay has cleared: the configured drop interval for level 1
         // (6000ms) is now shown instead of "Ready..." or "Paused".
-        expect(find.text('Fall: 6.00s'), findsOneWidget);
+        expect(_hudValue(tester, 'hud-fall-value'), '6.00s');
 
         await _drop(tester);
 
-        expect(find.text('Score: 162'), findsOneWidget);
-        expect(find.text('Best: 162'), findsOneWidget);
-        expect(find.text('Combo: 1'), findsOneWidget);
-        expect(find.text('Fill: 1/100'), findsOneWidget);
-        expect(find.text('+162'), findsOneWidget);
+        expect(_hudValue(tester, 'hud-score-value'), '324');
+        expect(_hudValue(tester, 'hud-best-value'), '324');
+        expect(_hudValue(tester, 'hud-combo-value'), '1');
+        expect(_hudValue(tester, 'hud-fill-value'), '2 / 100');
+        expect(find.text('★ +324 BONUS!'), findsOneWidget);
 
         await _settleBurstTimer(tester);
       },
@@ -218,7 +228,7 @@ void main() {
         await _pumpScripted(tester, state);
         await _startAndClearSpawnDelay(tester);
 
-        expect(find.text('Move Speed: 1.00x'), findsOneWidget);
+        expect(_hudValue(tester, 'hud-move-speed-value'), '1.00x');
 
         for (var i = 0; i < 3; i++) {
           await _drop(tester);
@@ -228,8 +238,8 @@ void main() {
           }
         }
 
-        expect(find.text('Combo: 3'), findsOneWidget);
-        expect(find.text('Move Speed: 1.10x'), findsOneWidget);
+        expect(_hudValue(tester, 'hud-combo-value'), '3');
+        expect(_hudValue(tester, 'hud-move-speed-value'), '1.10x');
 
         await _settleBurstTimer(tester);
       },
@@ -254,14 +264,14 @@ void main() {
         await _pumpScripted(tester, state);
         await _startAndClearSpawnDelay(tester);
 
-        expect(find.text('Combo: 4'), findsOneWidget);
+        expect(_hudValue(tester, 'hud-combo-value'), '4');
 
         await _drop(tester);
 
-        expect(find.text('Score: 0'), findsOneWidget);
-        expect(find.text('Best: 0'), findsOneWidget);
-        expect(find.text('Combo: 0'), findsOneWidget);
-        expect(find.text('Deficit: -1'), findsOneWidget);
+        expect(_hudValue(tester, 'hud-score-value'), '0');
+        expect(_hudValue(tester, 'hud-best-value'), '0');
+        expect(_hudValue(tester, 'hud-combo-value'), '0');
+        expect(_hudValue(tester, 'hud-deficit-value'), '-1');
         expect(find.text('-90'), findsOneWidget);
 
         await _settleBurstTimer(tester);
@@ -282,9 +292,9 @@ void main() {
 
         await _drop(tester);
 
-        expect(find.text('Score: 0'), findsOneWidget);
-        expect(find.text('Combo: 0'), findsOneWidget);
-        expect(find.text('Deficit: -1'), findsOneWidget);
+        expect(_hudValue(tester, 'hud-score-value'), '0');
+        expect(_hudValue(tester, 'hud-combo-value'), '0');
+        expect(_hudValue(tester, 'hud-deficit-value'), '-1');
         // Dead-bucket burst text is the raw negative delta, distinct from a
         // wrong-bucket miss's remainder-scaled penalty.
         expect(find.text('-15'), findsOneWidget);
@@ -311,18 +321,22 @@ void main() {
         await _pumpScripted(tester, state);
         await _startAndClearSpawnDelay(tester);
 
-        expect(find.text('Level: 1'), findsOneWidget);
+        expect(_hudValue(tester, 'hud-level-value'), 'Level 1');
         expect(find.byTooltip('Pause'), findsOneWidget);
 
         await _drop(tester);
 
-        expect(find.text('Level: 2'), findsOneWidget);
+        expect(_hudValue(tester, 'hud-level-value'), 'Level 2');
         expect(find.text('Level 1 complete!'), findsOneWidget);
         // Levelling up auto-pauses the run: the Pause button is replaced by
         // the paused overlay, and the fill balance reset for the new level.
         expect(find.byTooltip('Pause'), findsNothing);
-        expect(find.text('Paused'), findsOneWidget);
-        expect(find.text('Fill: 0/100'), findsOneWidget);
+        // "Resume" only appears on the pause overlay itself -- disambiguates
+        // from the HUD's own Fall chip, which also reads "Paused" once the
+        // run stops.
+        expect(find.text('Resume'), findsOneWidget);
+        expect(_hudValue(tester, 'hud-fall-value'), 'Paused');
+        expect(_hudValue(tester, 'hud-fill-value'), '0 / 100');
 
         await _settleBurstTimer(tester);
       },
@@ -336,14 +350,6 @@ void main() {
       'pausing freezes score, lane, and drop progress; resuming restores '
       'the run without losing any of it',
       (tester) async {
-        // Visual cues off so a bucket's "selected" highlight color is
-        // unambiguous (with cues on, a divisible-hint match could also turn
-        // the selected bucket green, depending on the next random falling
-        // value once one exists).
-        SharedPreferences.setMockInitialValues({
-          'fallingMode.visualCuesEnabled': false,
-        });
-
         // Lane 4 (one moveLeft from the default center lane 5) holds bucket
         // value 3; falling value 9 divides evenly -> success, scoreDelta =
         // 9 * 3 = 27.
@@ -352,7 +358,6 @@ void main() {
           fallingValue: 9,
         );
         await _pumpScripted(tester, state);
-        await tester.pump(); // let the visualCuesEnabled=false prefs load land
 
         await _startAndClearSpawnDelay(tester);
         // First move of a fresh widget is never cooldown-throttled.
@@ -360,14 +365,23 @@ void main() {
         await tester.pump();
         await _drop(tester);
 
-        expect(find.text('Score: 27'), findsOneWidget);
+        expect(_hudValue(tester, 'hud-score-value'), '27');
 
-        String selectedLaneLabel() {
+        // The lane-index label was removed from _buildBucket, so lane
+        // selection is fingerprinted here by the selected bucket's value
+        // label instead -- fine since bucketValues is fixed for this test
+        // (no level-up occurs) and its values are unique, so a value
+        // uniquely identifies which lane is selected. Lane 4 holds value 3.
+        String selectedBucketValueLabel() {
+          // Default theme is Deep Ocean (no fallingMode.theme pref set in
+          // this test) -- its selected, non-dead bucket fill color.
+          final selectedBucketColor =
+              gameThemePalettes[GameThemeId.deepOcean]!.bucketSelectedBg;
           final selected = find.byWidgetPredicate(
             (w) =>
                 w is Container &&
                 w.decoration is BoxDecoration &&
-                (w.decoration as BoxDecoration).color == Colors.orange.shade200,
+                (w.decoration as BoxDecoration).color == selectedBucketColor,
           );
           expect(selected, findsOneWidget);
           final labels =
@@ -378,39 +392,41 @@ void main() {
                   .map((t) => t.data)
                   .whereType<String>()
                   .toList();
-          // _buildBucket renders the value label then the index label.
-          return labels.last;
+          return labels.single;
         }
 
-        expect(selectedLaneLabel(), '4');
+        expect(selectedBucketValueLabel(), '3');
 
         final progressBefore =
             tester
                 .widget<LinearProgressIndicator>(
-                  find.byType(LinearProgressIndicator),
+                  find.byKey(const Key('drop-progress-indicator')),
                 )
                 .value;
 
         await tester.tap(find.byTooltip('Pause'));
         await tester.pump();
 
-        expect(find.text('Paused'), findsOneWidget);
+        // "Resume" only appears on the pause overlay -- disambiguates from
+        // the HUD's own Fall chip, which also reads "Paused" once stopped.
+        expect(find.text('Resume'), findsOneWidget);
+        expect(_hudValue(tester, 'hud-fall-value'), 'Paused');
         expect(find.text('Level 1  ·  Score 27'), findsOneWidget);
         // HUD score stays visible and unchanged behind the pause overlay.
-        expect(find.text('Score: 27'), findsOneWidget);
+        expect(_hudValue(tester, 'hud-score-value'), '27');
 
         expect(
           tester
-              .widget<ElevatedButton>(
-                find.widgetWithText(ElevatedButton, 'Left'),
+              .widget<FilledButton>(
+                find.widgetWithText(FilledButton, 'Left'),
               )
               .onPressed,
           isNull,
         );
         expect(
           tester
-              .widget<ElevatedButton>(
-                find.widgetWithText(ElevatedButton, 'Right'),
+              .widget<FilledButton>(
+                find.widgetWithText(FilledButton, 'Right'),
               )
               .onPressed,
           isNull,
@@ -428,7 +444,7 @@ void main() {
         final progressWhilePaused =
             tester
                 .widget<LinearProgressIndicator>(
-                  find.byType(LinearProgressIndicator),
+                  find.byKey(const Key('drop-progress-indicator')),
                 )
                 .value;
         expect(progressWhilePaused, progressBefore);
@@ -436,13 +452,13 @@ void main() {
         await tester.tap(find.text('Resume'));
         await tester.pump();
 
-        expect(find.text('Paused'), findsNothing);
-        expect(find.text('Score: 27'), findsOneWidget);
-        expect(selectedLaneLabel(), '4');
+        expect(find.text('Resume'), findsNothing);
+        expect(_hudValue(tester, 'hud-score-value'), '27');
+        expect(selectedBucketValueLabel(), '3');
         expect(
           tester
-              .widget<ElevatedButton>(
-                find.widgetWithText(ElevatedButton, 'Left'),
+              .widget<FilledButton>(
+                find.widgetWithText(FilledButton, 'Left'),
               )
               .onPressed,
           isNotNull,
@@ -451,38 +467,157 @@ void main() {
     );
   });
 
-  // ── Settings — a change taking live effect on the board ─────────────────
+  // ── Movement cooldown across drop cycles ────────────────────────────────
 
-  group('Settings dialog changes the live board, not just the dialog', () {
+  group('Movement cooldown resets with each new tile', () {
     testWidgets(
-      'turning off Visual Cues in Settings removes the divisible-bucket '
-      'highlight from the game board itself',
+      'a move right after a tile resolves succeeds immediately, not just '
+      'the very first move of the whole run',
+      (tester) async {
+        // Regression test: _resetDropClock() zeroed _elapsed on every
+        // resolve (success, miss, or manual Drop) but never cleared
+        // _lastInputAtElapsed, so _canMoveNow()'s `_elapsed - last` went
+        // negative the moment a new tile spawned -- silently blocking
+        // movement until _elapsed climbed back past whatever (now stale)
+        // value _lastInputAtElapsed held from the previous tile's cycle.
+        // In practice this made Left/Right feel like they worked "only
+        // sometimes".
+        final state = _scriptedState(
+          bucketValues: const [1, 2, 4, 5, 3, 6, 7, 8, 9, 0],
+          fallingValue: 9,
+        );
+        await _pumpScripted(tester, state);
+        await _startAndClearSpawnDelay(tester);
+
+        String selectedBucketValueLabel() {
+          final selectedBucketColor =
+              gameThemePalettes[GameThemeId.deepOcean]!.bucketSelectedBg;
+          final selected = find.byWidgetPredicate(
+            (w) =>
+                w is Container &&
+                w.decoration is BoxDecoration &&
+                (w.decoration as BoxDecoration).color == selectedBucketColor,
+          );
+          expect(selected, findsOneWidget);
+          return tester
+              .widgetList<Text>(
+                find.descendant(of: selected, matching: find.byType(Text)),
+              )
+              .map((t) => t.data)
+              .whereType<String>()
+              .single;
+        }
+
+        // First move of a fresh widget is never cooldown-throttled: lane 5
+        // (value 6) -> lane 6 (value 7).
+        await tester.tap(find.text('Right'));
+        await tester.pump();
+        expect(selectedBucketValueLabel(), '7');
+
+        // Resolving the current tile starts a brand-new drop cycle
+        // (_resetDropClock). bucketValues don't reshuffle mid-level, so
+        // lane 6 still reads '7' right after.
+        await _drop(tester);
+        expect(selectedBucketValueLabel(), '7');
+
+        // The bug: this move landed well within the *old* cooldown window
+        // relative to the stale _lastInputAtElapsed from the move above,
+        // so it used to be silently dropped. Lane 6 (value 7) -> lane 7
+        // (value 8).
+        await tester.tap(find.text('Right'));
+        await tester.pump();
+        expect(selectedBucketValueLabel(), '8');
+
+        await _settleBurstTimer(tester);
+      },
+    );
+  });
+
+  // ── Opening Settings/Leaderboard pauses the game ────────────────────────
+
+  group('Opening Settings or Leaderboard pauses the game', () {
+    // Regression: neither icon flipped _isRunning, so the drop timer,
+    // deficit, and score kept advancing behind either screen while it was
+    // open -- unlike the dedicated Pause button.
+    testWidgets('opening Settings pauses a running game', (tester) async {
+      final state = _scriptedState(
+        bucketValues: const [1, 2, 4, 5, 3, 6, 7, 8, 9, 0],
+        fallingValue: 9,
+      );
+      await _pumpScripted(tester, state);
+      await _startAndClearSpawnDelay(tester);
+
+      expect(_hudValue(tester, 'hud-fall-value'), isNot('Paused'));
+
+      await _openSettings(tester);
+
+      expect(_hudValue(tester, 'hud-fall-value'), 'Paused');
+    });
+
+    testWidgets('opening Leaderboard pauses a running game', (tester) async {
+      tester.view.physicalSize = _phoneSize;
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+      final state = _scriptedState(
+        bucketValues: const [1, 2, 4, 5, 3, 6, 7, 8, 9, 0],
+        fallingValue: 9,
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: FallingModuloGameScreen(
+            engine: _ScriptedEngine(state),
+            // Stubbed out: the real LeaderboardScreen reaches Firestore in
+            // a static field initializer with no guard, which is fine in
+            // the real app (main.dart always initializes Firebase first)
+            // but not in this Firebase-less widget test.
+            leaderboardBuilder: (_) => const SizedBox.shrink(),
+          ),
+        ),
+      );
+      await tester.pump();
+      await _startAndClearSpawnDelay(tester);
+
+      expect(_hudValue(tester, 'hud-fall-value'), isNot('Paused'));
+
+      // A single pump, not pumpAndSettle: _pauseForOverlay() runs
+      // synchronously before the push's own transition even starts, but
+      // once MaterialPageRoute's push transition fully settles the covered
+      // game screen is no longer reachable by key -- check right after the
+      // tap while it still is.
+      await tester.tap(find.byTooltip('Leaderboard'));
+      await tester.pump();
+
+      expect(_hudValue(tester, 'hud-fall-value'), 'Paused');
+    });
+  });
+
+  // ── Buckets never pre-hint the answer ────────────────────────────────────
+
+  group('Buckets carry no pre-drop hint', () {
+    testWidgets(
+      'no bucket is highlighted for divisibility before a drop, even when '
+      'only one bucket evenly divides the falling value',
       (tester) async {
         // Falling value 17 is prime and greater than every 1-9 bucket value,
-        // so bucket value 1 (which divides everything) is the *only*
-        // divisible-hint lane -- exactly one green-highlighted bucket.
+        // so bucket value 1 (which divides everything) is the only bucket
+        // that would divide it evenly -- the case most likely to leak a hint
+        // if one existed. There must be no color or icon revealing that.
         final state = _scriptedState(
           bucketValues: const [2, 5, 0, 8, 3, 9, 1, 4, 6, 7],
           fallingValue: 17,
         );
         await _pumpScripted(tester, state);
 
-        Finder greenBuckets() => find.byWidgetPredicate(
+        final greenBuckets = find.byWidgetPredicate(
           (w) =>
               w is Container &&
               w.decoration is BoxDecoration &&
               (w.decoration as BoxDecoration).color == Colors.green.shade100,
         );
-
-        expect(greenBuckets(), findsOneWidget);
-
-        await _openSettings(tester);
-        await tester.tap(find.byType(Switch)); // Visual Cues switch, ON -> OFF
-        await tester.pump();
-        await tester.tap(find.text('Save'));
-        await tester.pumpAndSettle();
-
-        expect(greenBuckets(), findsNothing);
+        expect(greenBuckets, findsNothing);
       },
     );
   });

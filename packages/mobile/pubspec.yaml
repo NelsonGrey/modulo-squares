@@ -43,6 +43,10 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  # Drives Timer-based code (FallingGameLoopController's drop/spawn-delay
+  # timers) deterministically in plain `test()` unit tests, the same fake
+  # clock flutter_test uses internally for testWidgets/tester.pump.
+  fake_async: ^1.3.3
   # mockito and build_runner are capped for the same reason: their newer
   # releases require analyzer >=13.3.0 -> meta ^1.18.3, but flutter_test
   # (Flutter 3.44.2) pins meta 1.18.0, which breaks `flutter pub get` version

@@ -17,7 +17,6 @@ Future<void> main() async {
 
   final preferences = await SharedPreferences.getInstance();
   await preferences.setInt('fallingMode.highScore', 401);
-  await preferences.setBool('fallingMode.visualCuesEnabled', true);
 
   if (!getIt.isRegistered<PurchaseService>()) {
     getIt.registerLazySingleton<PurchaseService>(
@@ -41,6 +40,34 @@ class StoreCaptureApp extends StatelessWidget {
       home: FallingModuloGameScreen(
         engine: StoreCaptureGameEngine(),
         expertDemo: expertDemo,
+        leaderboardBuilder: (context) => const _StoreCaptureLeaderboardStub(),
+      ),
+    );
+  }
+}
+
+/// Stands in for the real [LeaderboardScreen] in this Firebase-less entry
+/// point. The real screen touches Firestore in a static field initializer
+/// with no guard (LeaderboardService._firestore), which throws the moment
+/// anything references it -- fine in the real app (main.dart always
+/// initializes Firebase first) but a crash here, since this entry point
+/// deliberately skips that.
+class _StoreCaptureLeaderboardStub extends StatelessWidget {
+  const _StoreCaptureLeaderboardStub();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Leaderboards')),
+      body: const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Text(
+            'Leaderboards need a signed-in Firebase session and aren\'t '
+            'available from this local capture build.',
+            textAlign: TextAlign.center,
+          ),
+        ),
       ),
     );
   }
@@ -82,14 +109,11 @@ class StoreCaptureGameEngine extends FallingModuloGameEngine {
   @override
   FallingModuloGameState createInitialState({
     int startingLevel = 1,
-    bool visualCuesEnabled = true,
+    GameDifficulty difficulty = GameDifficulty.normal,
   }) {
     _promoValueIndex = 0;
     return super
-        .createInitialState(
-          startingLevel: startingLevel,
-          visualCuesEnabled: visualCuesEnabled,
-        )
+        .createInitialState(startingLevel: startingLevel, difficulty: difficulty)
         .copyWith(currentFallingValue: _nextPromoValue());
   }
 

@@ -28,7 +28,6 @@ Future<void> main() async {
 
   final preferences = await SharedPreferences.getInstance();
   await preferences.setInt('fallingMode.highScore', 401);
-  await preferences.setBool('fallingMode.visualCuesEnabled', true);
   await preferences.remove('leaderboardTabIndex');
 
   if (!getIt.isRegistered<PurchaseService>()) {
@@ -250,14 +249,11 @@ class YouTubeCaptureGameEngine extends FallingModuloGameEngine {
   @override
   FallingModuloGameState createInitialState({
     int startingLevel = 1,
-    bool visualCuesEnabled = true,
+    GameDifficulty difficulty = GameDifficulty.normal,
   }) {
     _index = 0;
     return super
-        .createInitialState(
-          startingLevel: startingLevel,
-          visualCuesEnabled: visualCuesEnabled,
-        )
+        .createInitialState(startingLevel: startingLevel, difficulty: difficulty)
         .copyWith(currentFallingValue: _nextValue());
   }
 
