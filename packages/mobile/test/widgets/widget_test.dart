@@ -49,7 +49,7 @@ void main() {
     expect(l10n, isNotNull);
 
     expect(find.text('Modulo Squares'), findsWidgets);
-    expect(find.textContaining('Score:'), findsWidgets);
+    expect(find.byKey(const Key('hud-score-value')), findsOneWidget);
     expect(find.text('Left'), findsOneWidget);
     expect(find.text('Drop'), findsOneWidget);
     expect(find.text('Right'), findsOneWidget);

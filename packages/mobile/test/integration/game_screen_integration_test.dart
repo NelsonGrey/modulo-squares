@@ -9,10 +9,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() {
-    SharedPreferences.setMockInitialValues({
-      'fallingMode.highScore': 77,
-      'fallingMode.visualCuesEnabled': true,
-    });
+    SharedPreferences.setMockInitialValues({'fallingMode.highScore': 77});
   });
 
   testWidgets('GameScreen launches falling gameplay by default', (
@@ -49,8 +46,8 @@ void main() {
     expect(find.text('Drop'), findsOneWidget);
     expect(find.text('Right'), findsOneWidget);
     expect(find.text('Start Game'), findsOneWidget);
-    expect(find.textContaining('Level:'), findsWidgets);
-    expect(find.textContaining('Score:'), findsWidgets);
-    expect(find.textContaining('Best:'), findsWidgets);
+    expect(find.byKey(const Key('hud-level-value')), findsOneWidget);
+    expect(find.byKey(const Key('hud-score-value')), findsOneWidget);
+    expect(find.byKey(const Key('hud-best-value')), findsOneWidget);
   });
 }
