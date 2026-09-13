@@ -47,7 +47,7 @@ Score never falls below zero. Negative progress is tracked as deficit and must b
 ## Level scaling
 
 - Progress target: 100 filled squares for every level (a highest-divisor bonus landing counts as 2 toward this).
-- Number range at level `L`: minimum `max(10, 5 + L)`, maximum `15 + 3L`. Floored at 10 so the falling number is always a genuine multi-step division problem, never a single digit (the unfloored `5 + L` only matters again from level 5 on, where it already exceeds 10).
+- Number range at level `L`: minimum `max(10, 5 + L)`, maximum `15 + 3L`. Floored at 10 so the falling number is always a genuine multi-step division problem, never a single digit (the unfloored `5 + L` only matters again from level 5 on, where it first meets and then exceeds 10).
 - Drop interval: `floor(base * 0.96^(L-1))`, floored at a per-difficulty minimum — see Difficulty below.
 - The engine also reports a legacy target-tile value `12 + 2*(L-1)`, but level completion is currently driven by the 100-square fill balance.
 

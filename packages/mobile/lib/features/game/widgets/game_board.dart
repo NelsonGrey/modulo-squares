@@ -222,7 +222,19 @@ class _ProgressGrid extends StatelessWidget {
                       '-$deficit',
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF221B37),
+                        // Filled cells are always bright green regardless of
+                        // theme, so a fixed dark color reads fine there --
+                        // but an unfilled deficit cell (no fills yet this
+                        // level) is theme.gridUnfilledBg, which on a dark
+                        // board (Arcade Neon) is a faint white-on-dark tint
+                        // that the same fixed dark text would nearly
+                        // disappear into. theme.textPrimary is already
+                        // chosen to contrast against that theme's own
+                        // surfaces.
+                        color:
+                            filledCell
+                                ? const Color(0xFF221B37)
+                                : theme.textPrimary,
                         fontSize: math.min(columnWidth, rowHeight) < 14 ? 7 : 9,
                       ),
                     )

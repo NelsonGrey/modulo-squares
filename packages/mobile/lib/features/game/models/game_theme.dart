@@ -114,7 +114,9 @@ const Map<GameThemeId, GameThemePalette> gameThemePalettes = {
     appBarFg: Color(0xFF0B6B77),
     pageBg: Color(0xFFFFFFFF),
     textPrimary: Color(0xFF10262E),
-    textMuted: Color(0xFF6E8B93),
+    // Darkened from the original #6E8B93 (~3.6:1 on white, below WCAG AA's
+    // 4.5:1 for this size text) to a value that actually clears it.
+    textMuted: Color(0xFF4A6B73),
     progressTrack: Color(0xFFDCEEF1),
     progressFill: Color(0xFF0FA3B1),
     chipCombo: GameChipColors(bg: Color(0xFFE1F5F6), fg: Color(0xFF0FA3B1)),
@@ -142,7 +144,9 @@ const Map<GameThemeId, GameThemePalette> gameThemePalettes = {
     buttonTonalBg: Color(0xFFDCEEF1),
     buttonTonalFg: Color(0xFF0B6B77),
     buttonPrimaryBg: Color(0xFF0FA3B1),
-    buttonPrimaryFg: Color(0xFFFFFFFF),
+    // Dark, not white: white-on-#0FA3B1 is only ~2.8:1, below WCAG AA for
+    // the 17px Start/Drop labels this colors.
+    buttonPrimaryFg: Color(0xFF0A2A2F),
   ),
   GameThemeId.arcadeNeon: GameThemePalette(
     name: 'Arcade Neon',
@@ -186,7 +190,9 @@ const Map<GameThemeId, GameThemePalette> gameThemePalettes = {
     appBarFg: Color(0xFF7A3B1E),
     pageBg: Color(0xFFFFFCF7),
     textPrimary: Color(0xFF3A2418),
-    textMuted: Color(0xFFA9876F),
+    // Darkened from the original #A9876F (~3.4:1 on this palette's cream
+    // page, below WCAG AA's 4.5:1 for this size text).
+    textMuted: Color(0xFF8A6A4E),
     progressTrack: Color(0xFFF3E3D6),
     progressFill: Color(0xFFE8734A),
     chipCombo: GameChipColors(bg: Color(0xFFFDECC8), fg: Color(0xFFB5651D)),
@@ -210,11 +216,15 @@ const Map<GameThemeId, GameThemePalette> gameThemePalettes = {
     deadBg: Color(0xFFC0392B),
     deadBorder: Color(0xFF8E2A20),
     fallingTileBg: Color(0xFFE8734A),
-    fallingTileFg: Color(0xFFFFFFFF),
+    // Dark, not white: white-on-#E8734A is only ~2.9:1, below WCAG AA for
+    // the falling number this colors.
+    fallingTileFg: Color(0xFF3A1A0E),
     buttonTonalBg: Color(0xFFFBD9B8),
     buttonTonalFg: Color(0xFF7A3B1E),
     buttonPrimaryBg: Color(0xFFE8734A),
-    buttonPrimaryFg: Color(0xFFFFFFFF),
+    // Same contrast issue as fallingTileFg above -- white on this
+    // background is only ~2.9:1 for the 17px Start/Drop labels.
+    buttonPrimaryFg: Color(0xFF3A1A0E),
   ),
   GameThemeId.candyPop: GameThemePalette(
     name: 'Candy Pop',
@@ -222,7 +232,9 @@ const Map<GameThemeId, GameThemePalette> gameThemePalettes = {
     appBarFg: Color(0xFF4A1663),
     pageBg: Color(0xFFFFFFFF),
     textPrimary: Color(0xFF3B0A56),
-    textMuted: Color(0xFF9B7BAE),
+    // Darkened from the original #9B7BAE (~3.5:1 on white, below WCAG AA's
+    // 4.5:1 for this size text).
+    textMuted: Color(0xFF6E4E82),
     progressTrack: Color(0xFFF1DFF7),
     progressFill: Color(0xFFFF3D9A),
     chipCombo: GameChipColors(bg: Color(0xFFFDE1F3), fg: Color(0xFFD6006B)),

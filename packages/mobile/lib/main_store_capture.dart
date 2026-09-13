@@ -79,23 +79,26 @@ class _StoreCaptureLeaderboardStub extends StatelessWidget {
 class StoreCaptureGameEngine extends FallingModuloGameEngine {
   StoreCaptureGameEngine() : super(random: Random(20260803));
 
+  // Every value stays >= 10 to match the real game's floor on the falling
+  // number's range (FallingModuloGameEngine.numberRangeForLevel) -- captured
+  // media should never show a value gameplay itself can no longer produce.
   static const _promoValues = <int>[
     18,
     16,
     15,
     14,
     12,
-    9,
-    8,
+    19,
+    28,
     18,
     10,
     16,
     15,
     12,
     14,
-    9,
+    19,
     18,
-    8,
+    28,
   ];
 
   var _promoValueIndex = 0;

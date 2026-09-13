@@ -75,8 +75,11 @@ void showHowToPlaySheet(BuildContext context) {
                                   'Success → earn falling number × bucket value points.\n\n'
                                   'Miss → lose falling number × bucket value × remainder points.\n\n'
                                   'Dead bucket → lose the falling number outright.\n\n'
-                                  'Tip: bucket 1 always divides any number — but scores 0. '
-                                  'Use it to avoid a big penalty when no other bucket fits.',
+                                  'Tip: bucket 1 always divides any number, but normally scores 0 — '
+                                  'use it to avoid a big penalty when no other bucket fits. The '
+                                  'exception: if no bucket 2–9 divides evenly either (like 11, 13, '
+                                  'or 17), bucket 1 becomes the highest divisor and pays out the '
+                                  'falling number itself instead of 0.',
                             ),
                             const SizedBox(height: 20),
                             const _HowToSection(

@@ -83,7 +83,7 @@ class PreGameOverlay extends StatelessWidget {
                       _OverlayRule(
                         icon: Icons.star,
                         text:
-                            'Find the bucket with the biggest number that still divides evenly for a Bonus — double score and fill',
+                            'Find the bucket with the biggest number that still divides evenly for a Bonus — extra score and double fill',
                         accent: theme.buttonPrimaryBg,
                       ),
                       const SizedBox(height: 20),

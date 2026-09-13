@@ -30,9 +30,10 @@ const List<String> _googleAuthScopes = ['email'];
 /// account to Google/Apple/Email). It does not own the game-loop timer or
 /// core game state — those stay on [FallingModuloGameScreen] — so the
 /// caller passes in the current difficulty, a live getter for the high
-/// score (read fresh on every rebuild, since the score can keep climbing
-/// in the game loop behind this dialog), plus a couple of callbacks to
-/// report changes back up.
+/// score (read fresh on every rebuild rather than captured once at open --
+/// the game loop is paused behind this dialog, but the getter still needs
+/// to reflect an in-dialog change like Delete Account resetting it), plus a
+/// couple of callbacks to report changes back up.
 Future<void> showGameSettingsDialog({
   required BuildContext context,
   required GameDifficulty difficulty,

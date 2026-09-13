@@ -59,6 +59,7 @@ class GameHud extends StatelessWidget {
       _HudChipData(
         key: const Key('hud-combo-value'),
         icon: Icons.local_fire_department,
+        label: 'Combo',
         value: '${state.combo}',
         bg: theme.chipCombo.bg,
         fg: theme.chipCombo.fg,
@@ -66,6 +67,7 @@ class GameHud extends StatelessWidget {
       _HudChipData(
         key: const Key('hud-difficulty-value'),
         icon: Icons.speed,
+        label: 'Difficulty',
         value: _difficultyLabel(state.difficulty),
         bg: theme.chipDifficulty.bg,
         fg: theme.chipDifficulty.fg,
@@ -73,6 +75,7 @@ class GameHud extends StatelessWidget {
       _HudChipData(
         key: const Key('hud-fall-value'),
         icon: Icons.bolt,
+        label: 'Fall speed',
         value: _fallLabel,
         bg: theme.chipFall.bg,
         fg: theme.chipFall.fg,
@@ -80,6 +83,7 @@ class GameHud extends StatelessWidget {
       _HudChipData(
         key: const Key('hud-move-speed-value'),
         icon: Icons.swap_horiz,
+        label: 'Move speed',
         value: '${state.horizontalMoveSpeedMultiplier.toStringAsFixed(2)}x',
         bg: theme.chipMove.bg,
         fg: theme.chipMove.fg,
@@ -87,6 +91,7 @@ class GameHud extends StatelessWidget {
       _HudChipData(
         key: const Key('hud-range-value'),
         icon: Icons.straighten,
+        label: 'Number range',
         value: '${state.numberRangeMin}-${state.numberRangeMax}',
         bg: theme.chipRange.bg,
         fg: theme.chipRange.fg,
@@ -94,6 +99,7 @@ class GameHud extends StatelessWidget {
       _HudChipData(
         key: const Key('hud-deficit-value'),
         icon: Icons.warning_amber_rounded,
+        label: 'Deficit',
         value:
             state.deficitSquares > 0 ? '-${state.deficitSquares}' : '0',
         bg: theme.chipDeficit.bg,
@@ -233,6 +239,7 @@ class _HudChipData {
   const _HudChipData({
     this.key,
     required this.icon,
+    required this.label,
     required this.value,
     required this.bg,
     required this.fg,
@@ -240,6 +247,12 @@ class _HudChipData {
 
   final Key? key;
   final IconData icon;
+
+  /// What this chip's value means (Combo, Difficulty, ...) -- announced by
+  /// assistive tech via [Semantics] in [_HudChip], since the bare on-screen
+  /// value next to a decorative icon (e.g. "1", "6.00s") doesn't say what
+  /// it's a value *of*.
+  final String label;
   final String value;
   final Color bg;
   final Color fg;
@@ -252,32 +265,41 @@ class _HudChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 38,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      decoration: BoxDecoration(
-        color: data.bg,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(data.icon, size: 19, color: data.fg),
-          const SizedBox(width: 6),
-          Flexible(
-            child: Text(
-              data.value,
-              key: data.key,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: data.fg,
+    return Semantics(
+      label: '${data.label}: ${data.value}',
+      child: Container(
+        height: 38,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        decoration: BoxDecoration(
+          color: data.bg,
+          borderRadius: BorderRadius.circular(999),
+        ),
+        // The wrapping Semantics above already announces "<label>: <value>"
+        // as one unit -- without this, the icon (if it ever gains an
+        // implicit label) and the bare value Text would also be exposed
+        // individually, announcing the value twice.
+        child: ExcludeSemantics(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(data.icon, size: 19, color: data.fg),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  data.value,
+                  key: data.key,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: data.fg,
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

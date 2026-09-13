@@ -394,6 +394,7 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
                         PauseOverlay(
                           level: state.level,
                           score: state.score,
+                          theme: _theme,
                           onResume:
                               () => _showInterstitialTransition(
                                 trigger: 'resume_from_pause',

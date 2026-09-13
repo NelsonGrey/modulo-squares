@@ -241,7 +241,10 @@ class _CaptureButton extends StatelessWidget {
 class YouTubeCaptureGameEngine extends FallingModuloGameEngine {
   YouTubeCaptureGameEngine() : super(random: Random(20260813));
 
-  static const _values = <int>[18, 16, 15, 14, 12, 9, 8, 10];
+  // Every value stays >= 10 to match the real game's floor on the falling
+  // number's range (FallingModuloGameEngine.numberRangeForLevel) -- captured
+  // media should never show a value gameplay itself can no longer produce.
+  static const _values = <int>[18, 16, 15, 14, 12, 19, 28, 10];
   var _index = 0;
 
   int _nextValue() => _values[_index++ % _values.length];
