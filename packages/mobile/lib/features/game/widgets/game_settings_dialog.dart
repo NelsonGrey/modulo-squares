@@ -8,6 +8,8 @@ import 'package:modulo_squares/core/di/service_locator.dart';
 import 'package:modulo_squares/core/services/analytics_service.dart';
 import 'package:modulo_squares/core/services/purchase_service.dart';
 import 'package:modulo_squares/features/auth/change_password_screen.dart';
+import 'package:modulo_squares/features/game/models/falling_modulo_game_engine.dart';
+import 'package:modulo_squares/features/game/models/game_theme.dart';
 import 'package:modulo_squares/features/game/widgets/purchase_section.dart';
 import 'package:modulo_squares/features/game/widgets/settings_section.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -27,20 +29,24 @@ const List<String> _googleAuthScopes = ['email'];
 /// side effects it triggers (sign-out, delete-account, linking a guest
 /// account to Google/Apple/Email). It does not own the game-loop timer or
 /// core game state — those stay on [FallingModuloGameScreen] — so the
-/// caller passes in the current visual-cues value, a live getter for the
-/// high score (read fresh on every rebuild, since the score can keep
-/// climbing in the game loop behind this dialog), plus a couple of
-/// callbacks to report changes back up.
+/// caller passes in the current difficulty, a live getter for the high
+/// score (read fresh on every rebuild rather than captured once at open --
+/// the game loop is paused behind this dialog, but the getter still needs
+/// to reflect an in-dialog change like Delete Account resetting it), plus a
+/// couple of callbacks to report changes back up.
 Future<void> showGameSettingsDialog({
   required BuildContext context,
-  required bool visualCuesEnabled,
+  required GameDifficulty difficulty,
   required int Function() getHighScore,
   required PurchaseService? purchaseService,
-  required ValueChanged<bool> onSaveVisualCues,
+  required ValueChanged<GameDifficulty> onSaveDifficulty,
   required VoidCallback onHighScoreReset,
   required String highScorePrefKey,
+  required GameThemeId themeId,
+  required ValueChanged<GameThemeId> onSaveTheme,
 }) async {
-  var localVisualCues = visualCuesEnabled;
+  var localDifficulty = difficulty;
+  var localThemeId = themeId;
   var adsRemoved = purchaseService?.adsRemoved ?? false;
   bool isGuest = false;
   try {
@@ -77,14 +83,72 @@ Future<void> showGameSettingsDialog({
                   title: 'Gameplay',
                   initiallyExpanded: true,
                   children: [
-                    SwitchListTile(
-                      value: localVisualCues,
-                      onChanged:
-                          (value) =>
-                              setLocalState(() => localVisualCues = value),
-                      title: const Text('Visual Cues'),
-                      subtitle: const Text(
-                        'Highlight buckets that divide the current number evenly',
+                    // A 3-segment SegmentedButton doesn't fit as a ListTile
+                    // `trailing` widget at an AlertDialog's actual on-device
+                    // width -- ListTile requires trailing to fit the space
+                    // left over after title/subtitle, and it doesn't here,
+                    // which throws a layout assertion ("Trailing widget
+                    // consumes the entire tile width") that a widget-test's
+                    // wider default surface never surfaces. Giving the
+                    // control its own full-width row below the ListTile
+                    // avoids that squeeze entirely.
+                    const ListTile(
+                      title: Text('Difficulty'),
+                      subtitle: Text(
+                        'Controls how fast the falling number speeds up',
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                      child: SegmentedButton<GameDifficulty>(
+                        // No selected-icon: all three segments size to the
+                        // widest one, and "Normal" plus a checkmark was
+                        // exactly what didn't fit at an AlertDialog's
+                        // on-device width, wrapping mid-word ("Norma"/"l").
+                        // Each label is also scale-down-fitted rather than
+                        // left to wrap, so this stays robust at larger
+                        // accessibility text sizes too, not just today's
+                        // default.
+                        showSelectedIcon: false,
+                        // Material 3's default selected-segment tint is a
+                        // pale tonal tint barely different from an
+                        // unselected segment -- especially now there's no
+                        // selected-icon alongside it. A solid fill makes the
+                        // active difficulty unmistakable at a glance.
+                        style: SegmentedButton.styleFrom(
+                          selectedBackgroundColor:
+                              Theme.of(context).colorScheme.primary,
+                          selectedForegroundColor:
+                              Theme.of(context).colorScheme.onPrimary,
+                        ),
+                        segments: const [
+                          ButtonSegment(
+                            value: GameDifficulty.easy,
+                            label: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text('Easy'),
+                            ),
+                          ),
+                          ButtonSegment(
+                            value: GameDifficulty.normal,
+                            label: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text('Normal'),
+                            ),
+                          ),
+                          ButtonSegment(
+                            value: GameDifficulty.hard,
+                            label: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text('Hard'),
+                            ),
+                          ),
+                        ],
+                        selected: {localDifficulty},
+                        onSelectionChanged:
+                            (selection) => setLocalState(
+                              () => localDifficulty = selection.first,
+                            ),
                       ),
                     ),
                     ListTile(
@@ -95,6 +159,21 @@ Future<void> showGameSettingsDialog({
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                // ── Appearance ────────────────────────────────────────
+                SettingsSection(
+                  title: 'Appearance',
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                      child: _ThemePicker(
+                        selected: localThemeId,
+                        onSelected:
+                            (id) => setLocalState(() => localThemeId = id),
                       ),
                     ),
                   ],
@@ -227,7 +306,8 @@ Future<void> showGameSettingsDialog({
                   ),
                   FilledButton(
                     onPressed: () {
-                      onSaveVisualCues(localVisualCues);
+                      onSaveDifficulty(localDifficulty);
+                      onSaveTheme(localThemeId);
                       Navigator.of(dialogContext).pop();
                     },
                     child: const Text('Save'),
@@ -365,9 +445,7 @@ Future<void> _linkWithGoogle(BuildContext context) async {
         await googleUser.authorizationClient.authorizationForScopes(
           _googleAuthScopes,
         ) ??
-        await googleUser.authorizationClient.authorizeScopes(
-          _googleAuthScopes,
-        );
+        await googleUser.authorizationClient.authorizeScopes(_googleAuthScopes);
     final credential = GoogleAuthProvider.credential(
       accessToken: authorization.accessToken,
       idToken: idToken,
@@ -549,6 +627,150 @@ Future<void> _openLinkAccountDialog(BuildContext context) async {
           ],
         ),
   );
+}
+
+/// A row of tappable swatches for picking the falling-mode color theme,
+/// shown in the Settings dialog's Appearance section. Each swatch previews
+/// its palette's board gradient so the choice is visual, not just a name.
+class _ThemePicker extends StatelessWidget {
+  const _ThemePicker({required this.selected, required this.onSelected});
+
+  final GameThemeId selected;
+  final ValueChanged<GameThemeId> onSelected;
+
+  // Chunked Rows instead of a Wrap: a Wrap containing a swatch that
+  // Align-centers its checkmark (see _ThemeSwatch) hits a real Flutter
+  // rendering bug when it sits inside an AlertDialog's route transition
+  // (flutter/flutter#169214) -- the dialog's barrier shows but its content
+  // never paints. Rows/Columns use RenderFlex, which isn't affected.
+  static const int _perRow = 4;
+
+  @override
+  Widget build(BuildContext context) {
+    final swatches = [
+      for (final id in gameThemeOrder)
+        _ThemeSwatch(
+          id: id,
+          palette: gameThemePalettes[id]!,
+          selected: id == selected,
+          onTap: () => onSelected(id),
+        ),
+    ];
+
+    final rows = <Widget>[];
+    for (var i = 0; i < swatches.length; i += _perRow) {
+      final rowSwatches = swatches.skip(i).take(_perRow).toList();
+      rows.add(
+        Padding(
+          padding: EdgeInsets.only(top: i == 0 ? 0 : 12),
+          child: Row(
+            // Top-aligned: a one-line name (Deep Ocean, Candy Pop) and a
+            // two-line one (Arcade Neon, Warm Sunset) give their columns
+            // different total heights, and Row's default center alignment
+            // was centering each column in the row -- sinking the one-line
+            // swatches' color boxes below the two-line ones'. Top alignment
+            // keeps every color box flush on the same line regardless of
+            // how its name wraps.
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (var j = 0; j < rowSwatches.length; j++) ...[
+                if (j > 0) const SizedBox(width: 12),
+                // Expanded, not a fixed width: four swatches at a fixed
+                // width risked overflowing a narrower AlertDialog than this
+                // was tuned against -- sharing the row equally always fits.
+                Expanded(child: rowSwatches[j]),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: rows);
+  }
+}
+
+class _ThemeSwatch extends StatelessWidget {
+  const _ThemeSwatch({
+    required this.id,
+    required this.palette,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final GameThemeId id;
+  final GameThemePalette palette;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      key: Key('theme-swatch-${id.name}'),
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [palette.boardGradientFrom, palette.boardGradientTo],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color:
+                    selected
+                        ? Theme.of(context).colorScheme.primary
+                        : Colors.black12,
+                width: selected ? 3 : 1,
+              ),
+            ),
+            // Centered via Column/Row flex, not Container's `alignment`
+            // (Align/RenderPositionedBox) -- see the note on _ThemePicker
+            // above for why that matters inside this dialog.
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                if (selected)
+                  Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.35),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.check,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            palette.name,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              color:
+                  selected
+                      ? Theme.of(context).colorScheme.primary
+                      : Colors.grey.shade700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _LinkButton extends StatelessWidget {

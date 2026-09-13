@@ -1,23 +1,31 @@
 import 'package:flutter/material.dart';
 
+import 'package:modulo_squares/features/game/models/game_theme.dart';
+
 /// The full-screen "Paused" overlay shown over the board while the game
 /// loop is stopped mid-run (as opposed to the pre-game "Start Game"
 /// overlay, which is a separate state).
 ///
 /// Pure presentation: the parent screen owns the actual game-loop timer and
 /// passes in the values to display plus the two actions this overlay can
-/// trigger.
+/// trigger. The dark scrim itself stays theme-neutral (it's a modal dimming
+/// treatment, not a themed surface -- same call as the pre-game overlay's
+/// black backdrop), but the Resume button now matches the active palette's
+/// primary action color instead of a fixed light blue, so it doesn't clash
+/// with -- or blend into -- palettes that use a different accent.
 class PauseOverlay extends StatelessWidget {
   const PauseOverlay({
     super.key,
     required this.level,
     required this.score,
+    required this.theme,
     required this.onResume,
     required this.onNewGame,
   });
 
   final int level;
   final int score;
+  final GameThemePalette theme;
   final VoidCallback onResume;
   final VoidCallback onNewGame;
 
@@ -78,8 +86,8 @@ class PauseOverlay extends StatelessWidget {
                       ),
                       style: FilledButton.styleFrom(
                         minimumSize: const Size(180, 52),
-                        backgroundColor: Colors.lightBlue.shade400,
-                        foregroundColor: Colors.white,
+                        backgroundColor: theme.buttonPrimaryBg,
+                        foregroundColor: theme.buttonPrimaryFg,
                       ),
                     ),
                     const SizedBox(height: 12),
