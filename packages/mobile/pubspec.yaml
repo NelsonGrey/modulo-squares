@@ -16,7 +16,7 @@ dependencies:
   cloud_functions: ^6.4.0
   firebase_core: ^4.15.0
   flutter_lints: ^6.0.0
-  firebase_auth: ^6.6.1
+  firebase_auth: ^6.7.0
   google_sign_in: ^7.2.0
   sign_in_with_apple: ^8.2.0
   # Pinned to ^0.20.2: flutter_localizations (Flutter 3.44.2) depends on
