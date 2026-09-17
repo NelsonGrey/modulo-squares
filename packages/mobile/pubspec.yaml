@@ -24,7 +24,7 @@ dependencies:
   # Dependabot is told to leave this alone in .github/dependabot.yml.
   intl: ^0.20.2
   firebase_analytics: ^12.6.0
-  firebase_crashlytics: ^5.3.0
+  firebase_crashlytics: ^5.4.0
   # Capped below 9.1.0: 9.1.0 added FLTAdPreloader.h + a non-modular
   # `#import <GoogleMobileAds/GoogleMobileAds_Beta.h>` in FLTAd_Internal.h, which
   # fails the iOS Release archive under -Werror,-Wnon-modular-include-in-framework-module
