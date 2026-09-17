@@ -24,13 +24,13 @@
     "clean": "rm -rf node_modules dist"
   },
   "dependencies": {
-    "firebase": "^12.18.0",
-    "firebase-admin": "^14.3.0",
+    "firebase": "^12.19.0",
+    "firebase-admin": "^14.4.0",
     "protobufjs": "^8.8.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/node": "^26.5.0",
+    "@types/node": "^26.5.1",
     "@typescript-eslint/eslint-plugin": "^8.70.0",
     "@typescript-eslint/parser": "^8.68.0",
     "eslint": "^10.10.0",
@@ -40,7 +40,7 @@
     "vitest": "^5.0.0"
   },
   "peerDependencies": {
-    "firebase": "^12.18.0"
+    "firebase": "^12.19.0"
   },
   "overrides": {
     "uuid": "^11.1.1",
