@@ -15,7 +15,7 @@ This repository holds the Modulo Squares web and mobile client. Only the code cu
 This repository doesn't have a public issue tracker, so please don't report security concerns that way. Use one of:
 
 - GitHub's [private vulnerability reporting](https://github.com/NelsonGrey/modulo-squares/security/advisories/new) (enabled on this repo), or
-- Email **security@modulosquares.com** (or **support@modulosquares.com**)
+- Email **support@modulosquares.com**
 
 Either way, include:
 
