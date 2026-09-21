@@ -21,10 +21,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // These tutorials support the Google Play launch, so the local capture
-  // target deliberately renders Android's Google/email sign-in choices even
-  // when an iOS Simulator is used as the recording device.
-  debugDefaultTargetPlatformOverride = TargetPlatform.android;
+  // These tutorials support the Google Play launch by default, so the local
+  // capture target renders Android's Google/email sign-in choices even when
+  // an iOS Simulator is used as the recording device. Set
+  // YOUTUBE_CAPTURE_PLATFORM=ios to render iOS/Apple sign-in choices instead
+  // for an iOS-targeted capture pass.
+  const requestedPlatform = String.fromEnvironment('YOUTUBE_CAPTURE_PLATFORM');
+  debugDefaultTargetPlatformOverride =
+      requestedPlatform == 'ios' ? TargetPlatform.iOS : TargetPlatform.android;
 
   final preferences = await SharedPreferences.getInstance();
   await preferences.setInt('fallingMode.highScore', 401);
