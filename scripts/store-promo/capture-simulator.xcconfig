@@ -1,0 +1,3 @@
+// Capture-only override: Xcode 27 rejects old deployment targets in cached Pods.
+// Does not alter release project settings or the shipping minimum OS version.
+IPHONEOS_DEPLOYMENT_TARGET = 15.0

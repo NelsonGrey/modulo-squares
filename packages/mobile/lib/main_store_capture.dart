@@ -18,6 +18,11 @@ Future<void> main() async {
   final preferences = await SharedPreferences.getInstance();
   await preferences.setInt('fallingMode.highScore', 401);
 
+  const requestedTheme = String.fromEnvironment('STORE_CAPTURE_THEME');
+  if (requestedTheme.isNotEmpty) {
+    await preferences.setString('fallingMode.theme', requestedTheme);
+  }
+
   if (!getIt.isRegistered<PurchaseService>()) {
     getIt.registerLazySingleton<PurchaseService>(
       PurchaseService.createForTesting,
