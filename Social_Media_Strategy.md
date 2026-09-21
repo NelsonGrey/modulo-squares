@@ -53,7 +53,9 @@ Create accounts on all platforms using the same handle: **@modulosquares** or **
 Use the same profile image on every platform: the app icon (1024x1024 PNG from the iOS asset set).
 
 **Bio text (copy/paste for each platform)**:
-> Math puzzle game for iOS & Android. Guide falling numbers to their modulo buckets. Free to play. 📲 modulo-squares.com
+> Math puzzle game for iOS. Guide falling numbers to their modulo buckets. Free to play. 📲 modulo-squares.com
+>
+> (Android is not yet available — the web download page still shows it as "Coming Soon" and there's no Android CI build. Add "& Android" back to this bio once the Play Store listing goes live.)
 
 **Link**: `https://modulosquares.com/download`
 
@@ -66,7 +68,7 @@ Platforms and signup URLs:
 
 ### Step 2: Link In Your Footer (already built)
 
-The website footer social icons component is ready at `packages/web/src/components/Footer.tsx`. Once you have account URLs, update the `SOCIAL_LINKS` array in that file with your handles. The icons and share widget are already implemented.
+The website footer (`packages/web/src/components/Footer.tsx`) and the download page both render from a shared `SOCIAL_LINKS` array in `packages/web/src/shared/socialLinks.tsx`. Once you have account URLs, update that file — not `Footer.tsx` directly — so both surfaces stay in sync. The icons and share widget are already implemented.
 
 ---
 
@@ -343,7 +345,7 @@ Collect emails via: `modulosquares.com` footer signup + in-app prompt after leve
 ---
 
 ## References
-- Business requirements social targets: [Business_Requirements.md](./Business_Requirements.md) §3.2
+- Business requirements social targets: [Business_Requirements.md](docs/Business_Requirements.md) §3.2
 - Website SEO / OG tags: `packages/web/index.html`, `packages/web/src/components/SEOHead.tsx`
 - App download page: `packages/web/src/components/Download.tsx`
 - Social share widget: `packages/web/src/components/SocialShare.tsx`
