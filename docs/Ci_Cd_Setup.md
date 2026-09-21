@@ -14,7 +14,7 @@ Pull requests run validation/build work but do not deploy. Push/manual runs on m
 ## Toolchain
 
 - Flutter `3.44.2`
-- Node.js `20`
+- Node.js `24`
 - `ubuntu-latest` for quality, web, Hosting, and Functions jobs
 - `macos-latest` for iOS/TestFlight/App Store jobs
 
