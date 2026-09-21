@@ -65,7 +65,7 @@ bundle exec fastlane --version  # From packages/mobile
 ```
 
 - [ ] Flutter 3.44.2 confirmed (match active CI)
-- [ ] Node 20+ confirmed
+- [ ] Node 24 confirmed (`.nvmrc`, matches CI)
 - [ ] Firebase CLI authenticated (`firebase login` → verify correct Google account)
 - [ ] Fastlane available in `packages/mobile` (`bundle install` run if not)
 

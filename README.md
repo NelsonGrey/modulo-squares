@@ -10,7 +10,7 @@ The repository contains the mobile app, the public React website, shared Firebas
 - Primary mobile platforms: iOS and Android; iOS is the current release focus
 - Public website: [modulosquares.com](https://modulosquares.com)
 - Active branch workflow: `.github/workflows/ci-cd.yml`
-- Toolchain used by CI: Flutter `3.44.2`, Dart `>=3.7.0`, Node.js `20`
+- Toolchain used by CI: Flutter `3.44.2`, Dart `>=3.7.0`, Node.js `24`
 - Current gameplay entry point: `GameScreen` -> `FallingModuloGameScreen`
 - App Store state: the last repository-confirmed state is a corrected production build on TestFlight awaiting manual App Store resubmission; verify App Store Connect before treating that status as current
 
@@ -72,7 +72,7 @@ The Flutter web target still exists for compatibility, but Firebase Hosting depl
 Prerequisites:
 
 - Flutter `3.44.2` recommended; Dart SDK `>=3.7.0 <4.0.0`
-- Node.js `20` (`.nvmrc` currently pins `20.3.2`)
+- Node.js `24` (`.nvmrc` pins `24`, matching CI)
 - Firebase CLI
 - Xcode and CocoaPods for iOS work
 - Android Studio/JDK for Android work
