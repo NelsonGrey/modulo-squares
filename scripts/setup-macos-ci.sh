@@ -11,7 +11,7 @@ echo "🏠 Home directory: $HOME"
 # Configure git to avoid interactive prompts
 echo "🔧 Configuring git..."
 git config --global user.name "Modulo Squares CI"
-git config --global user.email "ci@modulo-squares.com"
+git config --global user.email "ci@modulosquares.com"
 git config --global core.askpass ""
 git config --global credential.helper ""
 

@@ -76,7 +76,7 @@ export const SOCIAL_LINKS: SocialLink[] = [
   },
   {
     label: 'Email',
-    href: 'mailto:social@modulosquares.com',
+    href: 'mailto:support@modulosquares.com',
     icon: (
       <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current">
         <path d="M1.5 8.67v8.58a3 3 0 0 0 3 3h15a3 3 0 0 0 3-3V8.67l-8.928 5.493a3 3 0 0 1-3.144 0L1.5 8.67Z" />
