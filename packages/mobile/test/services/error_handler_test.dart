@@ -1,9 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_core_platform_interface/firebase_core_platform_interface.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:modulo_squares/core/services/error_handler.dart';
+
+/// Records calls made through [CrashlyticsReporter] so tests can assert on
+/// what [ErrorHandler] forwards, without needing a real Firebase app or the
+/// firebase_crashlytics plugin's platform channel.
+class _FakeCrashlyticsReporter implements CrashlyticsReporter {
+  final List<({dynamic error, StackTrace? stackTrace, String reason, bool fatal})>
+      calls = [];
+
+  @override
+  Future<void> recordError(
+    dynamic error,
+    StackTrace? stackTrace, {
+    required String reason,
+    required bool fatal,
+  }) async {
+    calls.add((
+      error: error,
+      stackTrace: stackTrace,
+      reason: reason,
+      fatal: fatal,
+    ));
+  }
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -12,6 +37,13 @@ void main() {
 
   setUp(() {
     errorHandler = ErrorHandler();
+  });
+
+  tearDown(() {
+    // Undo any Firebase app / reporter faking done by individual tests so
+    // state doesn't leak between tests.
+    MethodChannelFirebase.appInstances.clear();
+    ErrorHandler.resetCrashlyticsReporter();
   });
 
   group('ErrorHandler', () {
@@ -153,6 +185,91 @@ void main() {
         ),
         returnsNormally,
       );
+    });
+
+    group('recordCrashlyticsError (Crashlytics reporting path)', () {
+      test(
+        'does not report when no Firebase app is initialized (unavailable-'
+        'Firebase guard, prevents the [core/no-app] crash)',
+        () {
+          expect(Firebase.apps, isEmpty);
+
+          final fakeReporter = _FakeCrashlyticsReporter();
+          ErrorHandler.debugCrashlyticsReporter = fakeReporter;
+
+          expect(
+            () => errorHandler.recordCrashlyticsError(
+              'test operation',
+              'test error',
+              StackTrace.current,
+            ),
+            returnsNormally,
+          );
+
+          expect(fakeReporter.calls, isEmpty);
+        },
+      );
+
+      test(
+        'forwards operation, error, stack trace, and fatal: false to the '
+        'reporter once a Firebase app is available',
+        () {
+          MethodChannelFirebase.appInstances[defaultFirebaseAppName] =
+              MethodChannelFirebaseApp(
+            defaultFirebaseAppName,
+            const FirebaseOptions(
+              apiKey: 'test-api-key',
+              appId: 'test-app-id',
+              messagingSenderId: 'test-sender-id',
+              projectId: 'test-project-id',
+            ),
+          );
+          expect(Firebase.apps, isNotEmpty);
+
+          final fakeReporter = _FakeCrashlyticsReporter();
+          ErrorHandler.debugCrashlyticsReporter = fakeReporter;
+
+          final error = StateError('boom');
+          final stackTrace = StackTrace.current;
+
+          errorHandler.recordCrashlyticsError(
+            'submit score',
+            error,
+            stackTrace,
+          );
+
+          expect(fakeReporter.calls, hasLength(1));
+          final call = fakeReporter.calls.single;
+          expect(call.reason, 'submit score');
+          expect(call.error, same(error));
+          expect(call.stackTrace, same(stackTrace));
+          expect(call.fatal, isFalse);
+        },
+      );
+
+      test('logError does not reach Crashlytics while kDebugMode is true', () {
+        // flutter test always runs with kDebugMode true, so logError should
+        // stay on the console-only branch even with a Firebase app present
+        // and a reporter installed -- this pins that behavior so a future
+        // change to the kDebugMode/kReleaseMode gate is caught.
+        MethodChannelFirebase.appInstances[defaultFirebaseAppName] =
+            MethodChannelFirebaseApp(
+          defaultFirebaseAppName,
+          const FirebaseOptions(
+            apiKey: 'test-api-key',
+            appId: 'test-app-id',
+            messagingSenderId: 'test-sender-id',
+            projectId: 'test-project-id',
+          ),
+        );
+
+        final fakeReporter = _FakeCrashlyticsReporter();
+        ErrorHandler.debugCrashlyticsReporter = fakeReporter;
+
+        errorHandler.logError('test operation', 'test error');
+
+        expect(fakeReporter.calls, isEmpty);
+      });
     });
 
     test('error messages handle non-specific exceptions gracefully', () {

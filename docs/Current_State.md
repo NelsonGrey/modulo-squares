@@ -6,7 +6,7 @@
 
 ## Executive summary
 
-Modulo Squares is a public monorepo with a Flutter mobile game, a React marketing/leaderboard site, Firebase security rules, shared TypeScript Firebase helpers, and extensive release automation. The shipping gameplay is the falling-number mode. A substantial legacy board-clearing implementation remains compiled and tested but is not reachable through `GameScreen`.
+Modulo Squares is a public monorepo with a Flutter mobile game, a React marketing/leaderboard site, Firebase security rules, shared TypeScript Firebase helpers, and extensive release automation. The shipping gameplay is the falling-number mode. The legacy board-clearing implementation (`GameBoard`, `GameProvider`, `InstructionsScreen`, and related tile-grid code) was unreachable through `GameScreen` and has since been removed as confirmed dead code (2026-09-11).
 
 The project is on `develop`, synchronized with `origin/develop` at the time of this audit. Local `main` and `staging` branches are stale relative to their remotes; documentation and work should use the remote branches or refresh local refs before branch comparisons.
 
@@ -39,8 +39,6 @@ The active engine uses ten lanes. Each level shuffles buckets `1` through `9` an
 - Level-up: fill balance reaches 100
 - Number range: `6..18` at level 1, expanding by level
 - Drop interval: 6000 ms at level 1, multiplied by `0.96` per level, with a 1200 ms floor
-
-`GameBoard`, `GameProvider`, `InstructionsScreen`, and related tile-grid code describe the prior board-clearing mode. They remain useful test/reference assets but do not define the current player experience.
 
 ## Data and API boundaries
 
@@ -82,7 +80,6 @@ Apple approved Modulo Squares for App Store distribution, confirmed by the owner
 
 - The private Functions source is unavailable in a normal public checkout, so API internals cannot be verified here.
 - Root scripts that target `packages/functions` fail until the companion repo is cloned.
-- The active app and several legacy game classes coexist; imports, not filenames alone, determine live behavior.
 - Falling gameplay now submits completed scores and exposes leaderboard navigation. End-to-end production backend behavior should still be checked on a signed release build before publication claims are expanded further.
 - Flutter's older `WebsiteScreen` contains placeholder links and form behavior, but Firebase Hosting serves the React site instead.
 - Android delivery is represented in source and signing docs but is not built by the active CI workflow.

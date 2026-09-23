@@ -17,7 +17,11 @@ Future<void> main() async {
 
   final preferences = await SharedPreferences.getInstance();
   await preferences.setInt('fallingMode.highScore', 401);
-  await preferences.setBool('fallingMode.visualCuesEnabled', true);
+
+  const requestedTheme = String.fromEnvironment('STORE_CAPTURE_THEME');
+  if (requestedTheme.isNotEmpty) {
+    await preferences.setString('fallingMode.theme', requestedTheme);
+  }
 
   if (!getIt.isRegistered<PurchaseService>()) {
     getIt.registerLazySingleton<PurchaseService>(
@@ -41,6 +45,34 @@ class StoreCaptureApp extends StatelessWidget {
       home: FallingModuloGameScreen(
         engine: StoreCaptureGameEngine(),
         expertDemo: expertDemo,
+        leaderboardBuilder: (context) => const _StoreCaptureLeaderboardStub(),
+      ),
+    );
+  }
+}
+
+/// Stands in for the real [LeaderboardScreen] in this Firebase-less entry
+/// point. The real screen touches Firestore in a static field initializer
+/// with no guard (LeaderboardService._firestore), which throws the moment
+/// anything references it -- fine in the real app (main.dart always
+/// initializes Firebase first) but a crash here, since this entry point
+/// deliberately skips that.
+class _StoreCaptureLeaderboardStub extends StatelessWidget {
+  const _StoreCaptureLeaderboardStub();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Leaderboards')),
+      body: const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Text(
+            'Leaderboards need a signed-in Firebase session and aren\'t '
+            'available from this local capture build.',
+            textAlign: TextAlign.center,
+          ),
+        ),
       ),
     );
   }
@@ -52,23 +84,26 @@ class StoreCaptureApp extends StatelessWidget {
 class StoreCaptureGameEngine extends FallingModuloGameEngine {
   StoreCaptureGameEngine() : super(random: Random(20260803));
 
+  // Every value stays >= 10 to match the real game's floor on the falling
+  // number's range (FallingModuloGameEngine.numberRangeForLevel) -- captured
+  // media should never show a value gameplay itself can no longer produce.
   static const _promoValues = <int>[
     18,
     16,
     15,
     14,
     12,
-    9,
-    8,
+    19,
+    28,
     18,
     10,
     16,
     15,
     12,
     14,
-    9,
+    19,
     18,
-    8,
+    28,
   ];
 
   var _promoValueIndex = 0;
@@ -82,14 +117,11 @@ class StoreCaptureGameEngine extends FallingModuloGameEngine {
   @override
   FallingModuloGameState createInitialState({
     int startingLevel = 1,
-    bool visualCuesEnabled = true,
+    GameDifficulty difficulty = GameDifficulty.normal,
   }) {
     _promoValueIndex = 0;
     return super
-        .createInitialState(
-          startingLevel: startingLevel,
-          visualCuesEnabled: visualCuesEnabled,
-        )
+        .createInitialState(startingLevel: startingLevel, difficulty: difficulty)
         .copyWith(currentFallingValue: _nextPromoValue());
   }
 

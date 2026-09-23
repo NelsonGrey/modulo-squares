@@ -25,7 +25,6 @@ The web job installs dependencies with `npm ci` and runs `npm run build`, which 
 | Authentication UI | `test/features/login_screen_test.dart`, integration tests | Provider controls and auth behavior |
 | Website surface | `test/features/website` | Legacy Flutter web UI |
 | Core services | `test/services` | ads, consent, purchases, analytics, cache, leaderboard |
-| Legacy board mode | `test/models/game_board_test.dart`, provider tests | Retained non-live engine coverage |
 | Guardrails | `test/guardrails/no_legacy_strings_test.dart` | Prevents selected retired copy from returning |
 
 Some mocks are generated with Mockito/build_runner and are tracked beside their tests.
