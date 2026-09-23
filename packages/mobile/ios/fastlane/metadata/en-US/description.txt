@@ -13,6 +13,7 @@ HOW TO PLAY
 FEATURES
 • Quick, replayable number-puzzle runs
 • Optional visual cues that highlight valid buckets
+• Four color themes to choose from in Settings
 • A persistent local best score to chase
 • Clear scoring, combo, speed, range, and progress feedback
 • Play free with short ads between levels
