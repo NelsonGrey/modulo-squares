@@ -10,7 +10,7 @@ The repository contains the mobile app, the public React website, shared Firebas
 - Primary mobile platforms: iOS and Android; iOS is the current release focus
 - Public website: [modulosquares.com](https://modulosquares.com)
 - Active branch workflow: `.github/workflows/ci-cd.yml`
-- Toolchain used by CI: Flutter `3.44.2`, Dart `>=3.7.0`, Node.js `20`
+- Toolchain used by CI: Flutter `3.44.2`, Dart `>=3.7.0`, Node.js `24`
 - Current gameplay entry point: `GameScreen` -> `FallingModuloGameScreen`
 - App Store state: the last repository-confirmed state is a corrected production build on TestFlight awaiting manual App Store resubmission; verify App Store Connect before treating that status as current
 
@@ -53,7 +53,7 @@ The native app requires Firebase initialization and authentication. Players sign
 - global, daily, and weekly leaderboard infrastructure backed by callable Functions (the public React leaderboard reads it, but current falling gameplay does not submit or open it);
 - sign-out, account linking, purchase restoration, and permanent account deletion.
 
-Older board-clearing classes and tests remain in the tree as legacy/reference code. They are not the app's current gameplay entry point.
+The older board-clearing implementation (`GameBoard`, `GameProvider`, `InstructionsScreen`, grid widgets, and their dedicated tests) was confirmed unreachable from `GameScreen` and removed as dead code (2026-09-11).
 
 ## Web application
 
@@ -72,7 +72,7 @@ The Flutter web target still exists for compatibility, but Firebase Hosting depl
 Prerequisites:
 
 - Flutter `3.44.2` recommended; Dart SDK `>=3.7.0 <4.0.0`
-- Node.js `20` (`.nvmrc` currently pins `20.3.2`)
+- Node.js `24` (`.nvmrc` pins `24`, matching CI)
 - Firebase CLI
 - Xcode and CocoaPods for iOS work
 - Android Studio/JDK for Android work

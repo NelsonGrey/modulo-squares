@@ -12,9 +12,9 @@ void main() {
         final state = engine.createInitialState();
 
         expect(state.level, 1);
-        expect(state.numberRangeMin, 6);
+        expect(state.numberRangeMin, 10);
         expect(state.numberRangeMax, 18);
-        expect(state.currentFallingValue, inInclusiveRange(6, 18));
+        expect(state.currentFallingValue, inInclusiveRange(10, 18));
         expect(
           state.bucketValues,
           unorderedEquals([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
@@ -37,7 +37,6 @@ void main() {
         numberRangeMin: 6,
         numberRangeMax: 18,
         dropIntervalMs: FallingModuloGameEngine.dropIntervalForLevel(1),
-        visualCuesEnabled: true,
       );
 
       final result = engine.resolveCurrentTile(state);
@@ -63,7 +62,6 @@ void main() {
         numberRangeMin: 6,
         numberRangeMax: 18,
         dropIntervalMs: FallingModuloGameEngine.dropIntervalForLevel(1),
-        visualCuesEnabled: true,
       );
 
       final result = engine.resolveCurrentTile(state);
@@ -89,7 +87,6 @@ void main() {
           numberRangeMin: 6,
           numberRangeMax: 18,
           dropIntervalMs: FallingModuloGameEngine.dropIntervalForLevel(1),
-          visualCuesEnabled: true,
         );
 
         // remainder = 10 % 8 = 2, penalty = 10 * 8 * 2 = 160
@@ -117,37 +114,12 @@ void main() {
         numberRangeMin: 6,
         numberRangeMax: 18,
         dropIntervalMs: FallingModuloGameEngine.dropIntervalForLevel(1),
-        visualCuesEnabled: true,
       );
 
       expect(baseState.horizontalMoveSpeedMultiplier, 1.0);
       expect(baseState.copyWith(combo: 3).horizontalMoveSpeedMultiplier, 1.10);
       expect(baseState.copyWith(combo: 5).horizontalMoveSpeedMultiplier, 1.20);
       expect(baseState.copyWith(combo: 8).horizontalMoveSpeedMultiplier, 1.30);
-    });
-
-    test('visual cues can be toggled off', () {
-      final engine = FallingModuloGameEngine(random: Random(5));
-      final state = FallingModuloGameState(
-        level: 1,
-        score: 0,
-        combo: 0,
-        bucketValues: const [2, 3, 4, 5, 6, 7, 8, 9, 1],
-        currentFallingValue: 12,
-        currentLane: 4,
-        tilesResolvedInLevel: 0,
-        targetTilesPerLevel: FallingModuloGameEngine.targetTilesForLevel(1),
-        numberRangeMin: 6,
-        numberRangeMax: 18,
-        dropIntervalMs: FallingModuloGameEngine.dropIntervalForLevel(1),
-        visualCuesEnabled: true,
-      );
-
-      expect(engine.divisibleBucketIndexes(state), isNotEmpty);
-      expect(
-        engine.divisibleBucketIndexes(state.copyWith(visualCuesEnabled: false)),
-        isEmpty,
-      );
     });
 
     test(
@@ -168,7 +140,7 @@ void main() {
         expect(result.state.level, 2);
         expect(result.state.fillBalance, 0);
         expect(result.state.filledSquares, 0);
-        expect(result.state.numberRangeMin, 7);
+        expect(result.state.numberRangeMin, 10);
         expect(result.state.numberRangeMax, 21);
         expect(
           result.state.dropIntervalMs,
@@ -196,7 +168,6 @@ void main() {
         numberRangeMin: 6,
         numberRangeMax: 18,
         dropIntervalMs: FallingModuloGameEngine.dropIntervalForLevel(1),
-        visualCuesEnabled: true,
         fillBalance: 2,
       );
 
@@ -247,6 +218,181 @@ void main() {
           equals(FallingModuloGameEngine.dropIntervalForLevel(1)),
         );
       });
+
+      test('normal difficulty is identical to the default (no argument)', () {
+        for (final level in [1, 2, 10, 20, 40, 41, 80]) {
+          expect(
+            FallingModuloGameEngine.dropIntervalForLevel(
+              level,
+              difficulty: GameDifficulty.normal,
+            ),
+            FallingModuloGameEngine.dropIntervalForLevel(level),
+          );
+        }
+      });
+
+      test('easy shares Normal\'s level-1 start but floors higher', () {
+        expect(
+          FallingModuloGameEngine.dropIntervalForLevel(
+            1,
+            difficulty: GameDifficulty.easy,
+          ),
+          6000,
+        );
+        expect(
+          FallingModuloGameEngine.dropIntervalForLevel(
+            80,
+            difficulty: GameDifficulty.easy,
+          ),
+          2600,
+        );
+      });
+
+      test('hard starts faster than Normal but shares its 1200ms floor', () {
+        expect(
+          FallingModuloGameEngine.dropIntervalForLevel(
+            1,
+            difficulty: GameDifficulty.hard,
+          ),
+          4200,
+        );
+        expect(
+          FallingModuloGameEngine.dropIntervalForLevel(
+            1,
+            difficulty: GameDifficulty.hard,
+          ),
+          lessThan(FallingModuloGameEngine.dropIntervalForLevel(1)),
+        );
+        expect(
+          FallingModuloGameEngine.dropIntervalForLevel(
+            80,
+            difficulty: GameDifficulty.hard,
+          ),
+          1200,
+        );
+        expect(
+          FallingModuloGameEngine.dropIntervalForLevel(
+            80,
+            difficulty: GameDifficulty.hard,
+          ),
+          FallingModuloGameEngine.dropIntervalForLevel(80),
+        );
+      });
+
+      test('Hard reaches its floor at an earlier level than Normal', () {
+        int firstLevelAtFloor(GameDifficulty difficulty, int floor) {
+          var level = 1;
+          while (FallingModuloGameEngine.dropIntervalForLevel(
+                level,
+                difficulty: difficulty,
+              ) >
+              floor) {
+            level++;
+          }
+          return level;
+        }
+
+        final hardFloorLevel = firstLevelAtFloor(GameDifficulty.hard, 1200);
+        final normalFloorLevel = firstLevelAtFloor(GameDifficulty.normal, 1200);
+        expect(hardFloorLevel, lessThan(normalFloorLevel));
+      });
+    });
+
+    group('highest-divisor bonus', () {
+      FallingModuloGameState stateFor({
+        required List<int> bucketValues,
+        required int currentLane,
+        required int currentFallingValue,
+        int fillBalance = 0,
+      }) {
+        return FallingModuloGameState(
+          level: 1,
+          score: 0,
+          combo: 0,
+          bucketValues: bucketValues,
+          currentFallingValue: currentFallingValue,
+          currentLane: currentLane,
+          tilesResolvedInLevel: 0,
+          targetTilesPerLevel: FallingModuloGameEngine.targetTilesForLevel(1),
+          numberRangeMin: 6,
+          numberRangeMax: 18,
+          dropIntervalMs: FallingModuloGameEngine.dropIntervalForLevel(1),
+          fillBalance: fillBalance,
+        );
+      }
+
+      test('highestDivisorFor returns the largest divisor in 1-9', () {
+        final engine = FallingModuloGameEngine();
+        expect(engine.highestDivisorFor(9), 9);
+        expect(engine.highestDivisorFor(10), 5);
+        expect(engine.highestDivisorFor(97), 1); // prime, coprime to 2-9
+      });
+
+      test('landing on the unique highest divisor doubles score and adds +2 fill', () {
+        final engine = FallingModuloGameEngine();
+        // Falling value 10: divisors present are 1, 2, 5 -> highest is 5.
+        final state = stateFor(
+          bucketValues: const [1, 2, 5, 3, 4, 6, 7, 8, 9, 0],
+          currentLane: 2, // bucket value 5
+          currentFallingValue: 10,
+        );
+
+        final result = engine.resolveCurrentTile(state);
+        expect(result.resolution.success, isTrue);
+        expect(result.resolution.isHighestBucket, isTrue);
+        // Base delta 10 * 5 = 50, bonus doubles it to 100.
+        expect(result.resolution.bonusScoreDelta, 50);
+        expect(result.resolution.scoreDelta, 100);
+        expect(result.state.fillBalance, 2);
+      });
+
+      test('landing on a lower valid divisor is unchanged from today: no bonus, +1 fill', () {
+        final engine = FallingModuloGameEngine();
+        final state = stateFor(
+          bucketValues: const [1, 2, 5, 3, 4, 6, 7, 8, 9, 0],
+          currentLane: 1, // bucket value 2, not the highest (5)
+          currentFallingValue: 10,
+        );
+
+        final result = engine.resolveCurrentTile(state);
+        expect(result.resolution.success, isTrue);
+        expect(result.resolution.isHighestBucket, isFalse);
+        expect(result.resolution.bonusScoreDelta, 0);
+        expect(result.resolution.scoreDelta, 20); // 10 * 2, unchanged
+        expect(result.state.fillBalance, 1);
+      });
+
+      test(
+        'when the highest divisor is 1 itself, landing on it awards a flat '
+        'bonus (not double of zero) plus +2 fill',
+        () {
+          final engine = FallingModuloGameEngine();
+          // 97 is prime and > 9, so no bucket 2-9 divides it -- only bucket 1
+          // is a valid, and thus the highest, divisor.
+          final state = stateFor(
+            bucketValues: const [1, 2, 3, 4, 5, 6, 7, 8, 9, 0],
+            currentLane: 0, // bucket value 1
+            currentFallingValue: 97,
+          );
+
+          final result = engine.resolveCurrentTile(state);
+          expect(result.resolution.success, isTrue);
+          expect(result.resolution.isHighestBucket, isTrue);
+          expect(result.resolution.bonusScoreDelta, 97);
+          expect(result.resolution.scoreDelta, 97);
+          expect(result.state.fillBalance, 2);
+        },
+      );
+
+      test('highestDivisorBucketIndex finds the lane holding the best bucket', () {
+        final engine = FallingModuloGameEngine();
+        final state = stateFor(
+          bucketValues: const [1, 2, 5, 3, 4, 6, 7, 8, 9, 0],
+          currentLane: 0,
+          currentFallingValue: 10,
+        );
+        expect(engine.highestDivisorBucketIndex(state), 2);
+      });
     });
 
     group('score burst text format', () {
@@ -266,7 +412,6 @@ void main() {
           numberRangeMin: 6,
           numberRangeMax: 18,
           dropIntervalMs: FallingModuloGameEngine.dropIntervalForLevel(1),
-          visualCuesEnabled: true,
         );
         final result = engine.resolveCurrentTile(state);
         expect(result.resolution.success, isTrue);
@@ -289,7 +434,6 @@ void main() {
           numberRangeMin: 6,
           numberRangeMax: 18,
           dropIntervalMs: FallingModuloGameEngine.dropIntervalForLevel(1),
-          visualCuesEnabled: true,
         );
         final result = engine.resolveCurrentTile(state);
         expect(result.resolution.success, isFalse);
@@ -312,7 +456,6 @@ void main() {
           numberRangeMin: 6,
           numberRangeMax: 18,
           dropIntervalMs: FallingModuloGameEngine.dropIntervalForLevel(1),
-          visualCuesEnabled: true,
         );
         final result = engine.resolveCurrentTile(state);
         expect(result.resolution.success, isTrue);

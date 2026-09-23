@@ -4,7 +4,7 @@
 
 ## First-day setup
 
-1. Install Node.js 20, Flutter 3.44.2, Firebase CLI, and platform tooling.
+1. Install Node.js 24 (`.nvmrc`, matches CI), Flutter 3.44.2, Firebase CLI, and platform tooling.
 2. Run `npm install` at the root.
 3. Run `npm install` in `packages/firebase-utils` if workspace installation did not populate it.
 4. Run `flutter pub get` in `packages/mobile`.

@@ -84,9 +84,15 @@ flutter {
     source = "../.."
 }
 
-// Apply Google Services only if a matching google-services.json is present.
-// This prevents Gradle sync/build failures when the Firebase Android app package
-// doesn’t match the appId during local development.
+// Apply Google Services / Crashlytics only if a matching google-services.json
+// is present. This prevents Gradle sync/build failures when the Firebase
+// Android app package doesn’t match the appId during local development.
+//
+// The Crashlytics Gradle plugin is required (alongside the Dart-level
+// firebase_crashlytics SDK call) for native crash reporting to work on
+// Android release builds -- without it, no Crashlytics build ID is
+// generated and the Android SDK can reject initialization.
 if (file("google-services.json").exists()) {
     apply(plugin = "com.google.gms.google-services")
+    apply(plugin = "com.google.firebase.crashlytics")
 }

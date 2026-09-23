@@ -232,16 +232,13 @@ platform :ios do
     end
   end
 
-  def get_version_number_from_plist(plist_path:)
-    require "plist"
-    plist = Plist.parse_xml(plist_path)
-    plist["CFBundleShortVersionString"]
-  end
-
-  def get_build_number_from_plist(plist_path:)
-    require "plist"
-    plist = Plist.parse_xml(plist_path)
-    plist["CFBundleVersion"]
+  # Info.plist only holds $(FLUTTER_BUILD_NAME) placeholders; pubspec.yaml is
+  # the source of truth for the marketing version (the part before "+").
+  def pubspec_app_version
+    pubspec = File.read(File.expand_path("../../pubspec.yaml", __dir__))
+    version = pubspec[/^version:\s*([0-9.]+)/, 1]
+    UI.user_error!("Could not read version from pubspec.yaml") if version.to_s.empty?
+    version
   end
 
   desc "Push metadata/screenshots to App Store Connect without submitting for review"
@@ -250,6 +247,7 @@ platform :ios do
 
     deliver(
       api_key: api_key,
+      app_version: pubspec_app_version,
       submit_for_review: false,
       skip_binary_upload: true,
       skip_metadata: false,
@@ -265,9 +263,20 @@ platform :ios do
   desc "Submit app to App Store Review"
   lane :submit_to_app_store do |options|
     api_key = app_store_api_key
+    version = pubspec_app_version
+    # Without an explicit build number deliver picks the newest processed
+    # build for this version.
+    build_number = options[:build_number] || ENV["IOS_SUBMIT_BUILD_NUMBER"]
+    build_number = nil if build_number.to_s.strip.empty?
+
+    # Only override metadata/en-US/release_notes.txt when notes are passed in.
+    release_notes_override = options[:release_notes].to_s.strip
+    release_notes_override = nil if release_notes_override.empty?
 
     deliver(
       api_key: api_key,
+      app_version: version,
+      build_number: build_number,
       submit_for_review: true,
       automatic_release: false,
       force: true,
@@ -286,20 +295,15 @@ platform :ios do
         export_compliance_encryption_updated: false,
         export_compliance_uses_encryption: false
       },
-      release_notes: {
-        "en-US" => options[:release_notes] || "Bug fixes and performance improvements"
-      }
+      release_notes: release_notes_override ? { "en-US" => release_notes_override } : nil
     )
 
-    version = get_version_number_from_plist(plist_path: "../../ios/Runner/Info.plist")
-    build = get_build_number_from_plist(plist_path: "../../ios/Runner/Info.plist")
-    UI.success("✅ Submitted version #{version} (#{build}) to App Store review")
+    UI.success("✅ Submitted version #{version} (build #{build_number || 'latest'}) to App Store review")
   end
 
   desc "Promote TestFlight build to App Store"
   lane :promote_to_app_store do |options|
-    release_notes = options[:release_notes] || "Ready for App Store release"
-    submit_to_app_store(release_notes: release_notes)
+    submit_to_app_store(release_notes: options[:release_notes], build_number: options[:build_number])
   end
 
   desc "Manage TestFlight beta groups"
