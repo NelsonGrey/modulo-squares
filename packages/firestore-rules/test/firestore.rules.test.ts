@@ -239,6 +239,26 @@ describe('gamertag uniqueness index', () => {
     );
   });
 
+  it('lets a legacy App Store 1.0 client claim a gamertag with its own uid', async () => {
+    // Transitional: build 338 writes {uid, tag}. Remove with the rule branch.
+    const db = testEnv.authenticatedContext(OWNER_UID).firestore();
+    await assertSucceeds(
+      setDoc(doc(db, 'gamertags', 'FreshTag'), { uid: OWNER_UID, tag: 'FreshTag' })
+    );
+  });
+
+  it("denies claiming a gamertag with someone else's uid", async () => {
+    const db = testEnv.authenticatedContext(OWNER_UID).firestore();
+    await assertFails(
+      setDoc(doc(db, 'gamertags', 'FreshTag'), { uid: OTHER_UID, tag: 'FreshTag' })
+    );
+  });
+
+  it('denies a legacy-shaped claim whose tag is not a string', async () => {
+    const db = testEnv.authenticatedContext(OWNER_UID).firestore();
+    await assertFails(setDoc(doc(db, 'gamertags', 'FreshTag'), { uid: OWNER_UID, tag: 1 }));
+  });
+
   it('denies claiming a gamertag with a non-string tag field', async () => {
     const db = testEnv.authenticatedContext(OWNER_UID).firestore();
     await assertFails(setDoc(doc(db, 'gamertags', 'FreshTag'), { tag: 12345 }));

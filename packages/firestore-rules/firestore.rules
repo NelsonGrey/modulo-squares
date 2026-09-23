@@ -61,11 +61,18 @@ service cloud.firestore {
     // enforced by `allow update: if false` (an existing tag can never be
     // overwritten, by its owner or anyone else); ownership of the *user's*
     // own gamertag lives in the access-restricted /users/{userId} document.
+    //
+    // TRANSITIONAL: App Store 1.0 (build 338, uploaded before the uid field
+    // was dropped on 2026-08-07) still writes {uid, tag}. Accept that shape
+    // only when uid is the caller's own, so 1.0 users can still pick a
+    // gamertag; remove the second branch once 1.0 adoption is negligible.
     match /gamertags/{tag} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
-        && request.resource.data.keys().hasOnly(['tag'])
-        && request.resource.data.tag is string;
+        && request.resource.data.tag is string
+        && (request.resource.data.keys().hasOnly(['tag'])
+          || (request.resource.data.keys().hasOnly(['tag', 'uid'])
+            && request.resource.data.uid == request.auth.uid));
       allow update: if false;
       allow delete: if false;
     }
