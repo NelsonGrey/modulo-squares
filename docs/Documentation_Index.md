@@ -1,8 +1,8 @@
 # Modulo Squares Documentation Index
 
-**Updated**: 2026-07-20
+**Updated**: 2026-09-11
 
-This index separates current implementation documentation from operational references, product plans, and historical records. The distinction matters because the repository retains older game-mode code and several pre-launch automation proposals.
+This index separates current implementation documentation from operational references, product plans, and historical records. The distinction matters because the repository retains several pre-launch automation proposals; the older board-clearing game mode was confirmed dead and removed (2026-09-11).
 
 ## Start here
 
@@ -11,7 +11,7 @@ This index separates current implementation documentation from operational refer
 | [Project README](../README.md) | Setup, repository layout, commands, and delivery overview | Current |
 | [Current State](Current_State.md) | Audited implementation and release snapshot | Current |
 | [Go-Live Runbook](GO_LIVE_RUNBOOK.md) | App Store/Firebase release gates and review history | Current; external items require console verification |
-| [Game Mechanics](Game_Mechanics.md) | Active falling-mode rules and legacy-mode boundary | Current |
+| [Game Mechanics](Game_Mechanics.md) | Active falling-mode rules; notes the removed legacy mode | Current |
 | [System Architecture](System_Architecture.md) | Runtime components and trust boundaries | Current |
 | [Developer Guide](Developer_Guide.md) | Day-to-day engineering workflow | Current |
 | [Testing](Testing.md) | Test layout and validation commands | Current |
@@ -22,7 +22,7 @@ This index separates current implementation documentation from operational refer
 |---|---|
 | [API Documentation](Api_Documentation.md) | Callable Function contracts used by the public client |
 | [Database Schema](Database_Schema.md) | Firestore collections, ownership, and indexes |
-| [Flutter Architecture](Flutter_Architecture.md) | Mobile package structure; includes legacy implementation details |
+| [Flutter Architecture](Flutter_Architecture.md) | Mobile package structure; notes the removed legacy implementation |
 | [Web Frontend Architecture](Web_Frontend_Architecture.md) | React routes, Firebase reads, consent, SEO, and hosting |
 | [CI/CD Setup](Ci_Cd_Setup.md) | Active GitHub Actions workflow |
 | [Environment Setup](Environment_Setup.md) | Toolchain and local configuration |
@@ -31,8 +31,7 @@ This index separates current implementation documentation from operational refer
 | [SEO / SEM Audit](SEO_SEM_Audit.md) | Google tools, website SEO/SEM, and iOS ASO — findings and punch list |
 | [AdMob Setup](Admob_Setup.md) | Mobile ad configuration and consent |
 | [Mobile Config Setup](Mobile_Config_Setup.md) | Environment-specific native Firebase switching |
-| [Public Repo Hardening](PUBLIC_REPO_HARDENING.md) | Public/private source boundary and abuse controls |
-| [Solution Hardening Matrix](SOLUTION_HARDENING_MATRIX.md) | Current hardening snapshot |
+| [Public Repo Hardening](PUBLIC_REPO_HARDENING.md) | Public/private source boundary, abuse controls, and current hardening status snapshot |
 | [Code Quality Analysis](Code_Quality_Analysis.md) | Current audit findings and validation results |
 | [Implementation Summary](Implementation_Summary.md) | Current implementation and risk summary |
 

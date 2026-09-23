@@ -68,4 +68,4 @@ The in-app Settings flow calls `deleteAccount`. Compliance validation must confi
 - Test Firestore rules and Functions with emulators/private tests.
 - Verify App Check and API-key restrictions in Firebase/Google Cloud consoles.
 - Review CodeQL, Dependabot, npm audit, Flutter/Dart advisories, and App Store privacy disclosures.
-- Keep [PUBLIC_REPO_HARDENING.md](PUBLIC_REPO_HARDENING.md) and [SOLUTION_HARDENING_MATRIX.md](SOLUTION_HARDENING_MATRIX.md) current.
+- Keep [PUBLIC_REPO_HARDENING.md](PUBLIC_REPO_HARDENING.md) current.

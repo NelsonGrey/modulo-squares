@@ -21,14 +21,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // These tutorials support the Google Play launch, so the local capture
-  // target deliberately renders Android's Google/email sign-in choices even
-  // when an iOS Simulator is used as the recording device.
-  debugDefaultTargetPlatformOverride = TargetPlatform.android;
+  // These tutorials support the Google Play launch by default, so the local
+  // capture target renders Android's Google/email sign-in choices even when
+  // an iOS Simulator is used as the recording device. Set
+  // YOUTUBE_CAPTURE_PLATFORM=ios to render iOS/Apple sign-in choices instead
+  // for an iOS-targeted capture pass.
+  const requestedPlatform = String.fromEnvironment('YOUTUBE_CAPTURE_PLATFORM');
+  debugDefaultTargetPlatformOverride =
+      requestedPlatform == 'ios' ? TargetPlatform.iOS : TargetPlatform.android;
 
   final preferences = await SharedPreferences.getInstance();
   await preferences.setInt('fallingMode.highScore', 401);
-  await preferences.setBool('fallingMode.visualCuesEnabled', true);
   await preferences.remove('leaderboardTabIndex');
 
   if (!getIt.isRegistered<PurchaseService>()) {
@@ -242,7 +245,10 @@ class _CaptureButton extends StatelessWidget {
 class YouTubeCaptureGameEngine extends FallingModuloGameEngine {
   YouTubeCaptureGameEngine() : super(random: Random(20260813));
 
-  static const _values = <int>[18, 16, 15, 14, 12, 9, 8, 10];
+  // Every value stays >= 10 to match the real game's floor on the falling
+  // number's range (FallingModuloGameEngine.numberRangeForLevel) -- captured
+  // media should never show a value gameplay itself can no longer produce.
+  static const _values = <int>[18, 16, 15, 14, 12, 19, 28, 10];
   var _index = 0;
 
   int _nextValue() => _values[_index++ % _values.length];
@@ -250,14 +256,11 @@ class YouTubeCaptureGameEngine extends FallingModuloGameEngine {
   @override
   FallingModuloGameState createInitialState({
     int startingLevel = 1,
-    bool visualCuesEnabled = true,
+    GameDifficulty difficulty = GameDifficulty.normal,
   }) {
     _index = 0;
     return super
-        .createInitialState(
-          startingLevel: startingLevel,
-          visualCuesEnabled: visualCuesEnabled,
-        )
+        .createInitialState(startingLevel: startingLevel, difficulty: difficulty)
         .copyWith(currentFallingValue: _nextValue());
   }
 
