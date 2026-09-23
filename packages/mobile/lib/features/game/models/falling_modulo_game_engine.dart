@@ -1,5 +1,13 @@
 import 'dart:math';
 
+/// Controls the falling tile's speed curve. All three share the same decay
+/// shape (`base * 0.96^(level-1)`, floored) and differ only in `base`/floor —
+/// see [FallingModuloGameEngine.dropIntervalForLevel]. Normal is numerically
+/// identical to the original single-curve design; Easy and Hard are
+/// sub-ranges carved out of that same already-tuned envelope, deliberately
+/// overlapping Normal rather than introducing new untested extremes.
+enum GameDifficulty { easy, normal, hard }
+
 class FallingModuloResolution {
   final bool success;
   final int fallingValue;
@@ -9,6 +17,8 @@ class FallingModuloResolution {
   final int scoreAfter;
   final int comboAfter;
   final bool leveledUp;
+  final bool isHighestBucket;
+  final int bonusScoreDelta;
 
   const FallingModuloResolution({
     required this.success,
@@ -19,6 +29,8 @@ class FallingModuloResolution {
     required this.scoreAfter,
     required this.comboAfter,
     required this.leveledUp,
+    this.isHighestBucket = false,
+    this.bonusScoreDelta = 0,
   });
 }
 
@@ -44,9 +56,9 @@ class FallingModuloGameState {
   final int numberRangeMin;
   final int numberRangeMax;
   final int dropIntervalMs;
-  final bool visualCuesEnabled;
   final int fillBalance;
   final int progressGridCellCount;
+  final GameDifficulty difficulty;
 
   const FallingModuloGameState({
     required this.level,
@@ -60,9 +72,9 @@ class FallingModuloGameState {
     required this.numberRangeMin,
     required this.numberRangeMax,
     required this.dropIntervalMs,
-    required this.visualCuesEnabled,
     this.fillBalance = 0,
     this.progressGridCellCount = 100,
+    this.difficulty = GameDifficulty.normal,
   });
 
   int get filledSquares {
@@ -80,8 +92,6 @@ class FallingModuloGameState {
     return 1.0;
   }
 
-  static const Object _unset = Object();
-
   FallingModuloGameState copyWith({
     int? level,
     int? score,
@@ -96,7 +106,7 @@ class FallingModuloGameState {
     int? dropIntervalMs,
     int? fillBalance,
     int? progressGridCellCount,
-    Object? visualCuesEnabled = _unset,
+    GameDifficulty? difficulty,
   }) {
     return FallingModuloGameState(
       level: level ?? this.level,
@@ -113,10 +123,7 @@ class FallingModuloGameState {
       fillBalance: fillBalance ?? this.fillBalance,
       progressGridCellCount:
           progressGridCellCount ?? this.progressGridCellCount,
-      visualCuesEnabled:
-          identical(visualCuesEnabled, _unset)
-              ? this.visualCuesEnabled
-              : visualCuesEnabled as bool,
+      difficulty: difficulty ?? this.difficulty,
     );
   }
 }
@@ -130,7 +137,7 @@ class FallingModuloGameEngine {
 
   FallingModuloGameState createInitialState({
     int startingLevel = 1,
-    bool visualCuesEnabled = true,
+    GameDifficulty difficulty = GameDifficulty.normal,
   }) {
     final level = startingLevel < 1 ? 1 : startingLevel;
     final range = numberRangeForLevel(level);
@@ -146,10 +153,10 @@ class FallingModuloGameEngine {
       targetTilesPerLevel: targetTilesForLevel(level),
       numberRangeMin: range.min,
       numberRangeMax: range.max,
-      dropIntervalMs: dropIntervalForLevel(level),
-      visualCuesEnabled: visualCuesEnabled,
+      dropIntervalMs: dropIntervalForLevel(level, difficulty: difficulty),
       fillBalance: 0,
       progressGridCellCount: 100,
+      difficulty: difficulty,
     );
   }
 
@@ -163,20 +170,23 @@ class FallingModuloGameEngine {
     return state.copyWith(currentLane: state.currentLane + 1);
   }
 
-  List<int> divisibleBucketIndexes(FallingModuloGameState state) {
-    if (!state.visualCuesEnabled) {
-      return const <int>[];
+  /// The largest bucket value (1-9) that evenly divides [fallingValue].
+  /// Always returns at least `1`, since bucket 1 divides every value.
+  int highestDivisorFor(int fallingValue) {
+    for (var b = laneCount - 1; b >= 1; b--) {
+      if (fallingValue % b == 0) return b;
     }
+    return 1; // unreachable — 1 always divides.
+  }
 
-    final result = <int>[];
-    for (var i = 0; i < state.bucketValues.length; i++) {
-      final bucketValue = state.bucketValues[i];
-      // Skip dead bucket (value 0) — no divisibility hint applies.
-      if (bucketValue > 0 && state.currentFallingValue % bucketValue == 0) {
-        result.add(i);
-      }
-    }
-    return result;
+  /// The lane index currently holding the highest-divisor bucket for
+  /// [state]'s falling value. Used only by the expert auto-demo (store-capture
+  /// media) to target the best lane — real gameplay never surfaces this in
+  /// advance, so the player has to work it out themselves.
+  int? highestDivisorBucketIndex(FallingModuloGameState state) {
+    final highest = highestDivisorFor(state.currentFallingValue);
+    final lane = state.bucketValues.indexOf(highest);
+    return lane < 0 ? null : lane;
   }
 
   FallingModuloResolveResult resolveCurrentTile(FallingModuloGameState state) {
@@ -186,29 +196,45 @@ class FallingModuloGameEngine {
 
     final int remainder;
     final bool success;
-    final int scoreDelta;
+    final int baseScoreDelta;
+    var bonusScoreDelta = 0;
+    var isHighestBucket = false;
 
     if (isDead) {
       // Dead bucket: deduct the tile value from score, no divisibility applies.
       remainder = 0;
       success = false;
-      scoreDelta = -state.currentFallingValue;
+      baseScoreDelta = -state.currentFallingValue;
     } else {
       remainder = state.currentFallingValue % bucketValue;
       success = remainder == 0;
       if (success) {
-        scoreDelta =
+        baseScoreDelta =
             bucketValue == 1 ? 0 : state.currentFallingValue * bucketValue;
+        final highestDivisor = highestDivisorFor(state.currentFallingValue);
+        isHighestBucket = bucketValue == highestDivisor;
+        if (isHighestBucket) {
+          // Doubling the base delta rewards the skill of finding the best
+          // bucket. The one exception is when 1 is itself the highest
+          // divisor (the falling value is coprime to every other bucket) --
+          // its base delta is always 0, so doubling it would pay nothing for
+          // correctly identifying the only valid move in the round.
+          bonusScoreDelta =
+              bucketValue == 1 ? state.currentFallingValue : baseScoreDelta;
+        }
       } else {
-        scoreDelta = -(state.currentFallingValue * bucketValue * remainder);
+        baseScoreDelta = -(state.currentFallingValue * bucketValue * remainder);
       }
     }
 
+    final scoreDelta = baseScoreDelta + bonusScoreDelta;
     final scoreAfter = max(0, state.score + scoreDelta);
     final comboAfter = success ? state.combo + 1 : 0;
     var nextFillBalance = isDead
         ? state.fillBalance - 1
-        : (success ? state.fillBalance + 1 : state.fillBalance - remainder);
+        : (success
+            ? state.fillBalance + (isHighestBucket ? 2 : 1)
+            : state.fillBalance - remainder);
 
     var nextLevel = state.level;
     var nextResolvedCount = state.tilesResolvedInLevel + 1;
@@ -224,7 +250,10 @@ class FallingModuloGameEngine {
       nextResolvedCount = 0;
       nextFillBalance = 0;
       nextTargetTiles = targetTilesForLevel(nextLevel);
-      nextDropInterval = dropIntervalForLevel(nextLevel);
+      nextDropInterval = dropIntervalForLevel(
+        nextLevel,
+        difficulty: state.difficulty,
+      );
       final range = numberRangeForLevel(nextLevel);
       nextRangeMin = range.min;
       nextRangeMax = range.max;
@@ -255,6 +284,8 @@ class FallingModuloGameEngine {
       scoreAfter: scoreAfter,
       comboAfter: comboAfter,
       leveledUp: leveledUp,
+      isHighestBucket: isHighestBucket,
+      bonusScoreDelta: bonusScoreDelta,
     );
 
     return FallingModuloResolveResult(state: nextState, resolution: resolution);
@@ -267,13 +298,40 @@ class FallingModuloGameEngine {
 
   static ({int min, int max}) numberRangeForLevel(int level) {
     final safeLevel = level < 1 ? 1 : level;
-    return (min: 5 + safeLevel, max: 15 + (3 * safeLevel));
+    // Floored at 10: the falling number must always read as a genuine
+    // multi-step division problem, not a single digit a player can solve by
+    // memorized multiplication tables alone. The unfloored `5 + safeLevel`
+    // dips as low as 6 at level 1 -- this only raises the floor for early
+    // levels (it's already >=10 from level 5 on); `max` is untouched.
+    final min = max(10, 5 + safeLevel);
+    return (min: min, max: 15 + (3 * safeLevel));
   }
 
-  static int dropIntervalForLevel(int level) {
+  /// Every tier shares the same `0.96` per-level decay — the shape that was
+  /// already validated through painful manual tuning — and differs only in
+  /// its starting speed (`base`) and floor, both chosen from inside that same
+  /// proven [1200, 6000] envelope. Normal reproduces the original single
+  /// curve exactly; Easy and Hard are overlapping sub-ranges of it.
+  static int dropIntervalForLevel(
+    int level, {
+    GameDifficulty difficulty = GameDifficulty.normal,
+  }) {
     final safeLevel = level < 1 ? 1 : level;
-    final scaled = 6000 * pow(0.96, safeLevel - 1);
-    return max(1200, scaled.floor());
+    final int base;
+    final int floor;
+    switch (difficulty) {
+      case GameDifficulty.easy:
+        base = 6000;
+        floor = 2600;
+      case GameDifficulty.normal:
+        base = 6000;
+        floor = 1200;
+      case GameDifficulty.hard:
+        base = 4200;
+        floor = 1200;
+    }
+    final scaled = base * pow(0.96, safeLevel - 1);
+    return max(floor, scaled.floor());
   }
 
   List<int> _randomizedBuckets() {

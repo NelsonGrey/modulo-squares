@@ -65,7 +65,7 @@ bundle exec fastlane --version  # From packages/mobile
 ```
 
 - [ ] Flutter 3.44.2 confirmed (match active CI)
-- [ ] Node 20+ confirmed
+- [ ] Node 24 confirmed (`.nvmrc`, matches CI)
 - [ ] Firebase CLI authenticated (`firebase login` → verify correct Google account)
 - [ ] Fastlane available in `packages/mobile` (`bundle install` run if not)
 
@@ -1016,7 +1016,7 @@ Based on D7 retention data:
 | iOS signing guide | `docs/Ios_Signing.md` |
 | Security guide | `docs/Security.md` |
 | Analytics events | `docs/Analytics.md` |
-| Hardening matrix | `docs/SOLUTION_HARDENING_MATRIX.md` |
+| Hardening guide | `docs/PUBLIC_REPO_HARDENING.md` |
 
 ---
 

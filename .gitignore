@@ -148,6 +148,12 @@ packages/mobile/config/*/ios/GoogleService-Info.plist
 packages/mobile/android/app/service-account-key.json
 packages/mobile/ios/service-account-key.json
 **/*service-account-key.json
+**/*firebase-adminsdk*.json
+**/*play-key.json
+**/*.mobileprovision
+
+# Local secrets staging folder (Firebase admin keys, Play/ASC credentials, provisioning profiles)
+/json/
 
 # Flutter
 .dart_tool/

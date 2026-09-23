@@ -1,1 +1,6 @@
-Welcome to Modulo Squares. Guide falling numbers into divisible buckets, build combos, fill the grid, and chase your best score.
+New in 1.0.1:
+• Choose your look: four color themes in Settings → Appearance (Deep Ocean, Arcade Neon, Warm Sunset, Candy Pop)
+• Improved text contrast on the in-game stats
+• The game now pauses while Settings or the Leaderboard is open
+• Fixed a crash when opening Settings
+• Fixed left/right moves sometimes being ignored right after a new number appears

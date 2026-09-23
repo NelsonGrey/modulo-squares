@@ -8,6 +8,7 @@ import 'package:modulo_squares/core/di/service_locator.dart';
 import 'package:modulo_squares/core/services/purchase_service.dart';
 import 'package:modulo_squares/features/game/falling_modulo_game_screen.dart';
 import 'package:modulo_squares/features/game/models/falling_modulo_game_engine.dart';
+import 'package:modulo_squares/features/game/models/game_theme.dart';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -40,6 +41,14 @@ Future<void> _expandSection(WidgetTester tester, String header) async {
   await tester.pumpAndSettle();
 }
 
+/// Reads the text of a keyed HUD value (see game_hud.dart's `Key`s) -- the
+/// HUD renders bare values inside icon chips/labels rather than
+/// "Label: value" pills, so plain `find.text` would collide with other
+/// on-screen numbers.
+String _hudValue(WidgetTester tester, String key) {
+  return tester.widget<Text>(find.byKey(Key(key))).data!;
+}
+
 // ── Setup / teardown ─────────────────────────────────────────────────────────
 
 void main() {
@@ -64,7 +73,8 @@ void main() {
     testWidgets('shows Level and Score labels on start', (tester) async {
       await _pumpGame(tester);
       expect(find.textContaining('Level'), findsWidgets);
-      expect(find.textContaining('Score'), findsWidgets);
+      // The score eyebrow label renders as "SCORE" (uppercase).
+      expect(find.textContaining('SCORE'), findsWidgets);
     });
 
     testWidgets('drop progress indicator starts at zero during spawn delay', (
@@ -72,7 +82,7 @@ void main() {
     ) async {
       await _pumpGame(tester);
       final indicator = tester.widget<LinearProgressIndicator>(
-        find.byType(LinearProgressIndicator),
+        find.byKey(const Key('drop-progress-indicator')),
       );
       expect(indicator.value, 0.0);
     });
@@ -81,7 +91,7 @@ void main() {
       tester,
     ) async {
       await _pumpGame(tester);
-      expect(find.text('Fall: Paused'), findsOneWidget);
+      expect(_hudValue(tester, 'hud-fall-value'), 'Paused');
       expect(find.text('Start Game'), findsOneWidget);
     });
 
@@ -121,22 +131,14 @@ void main() {
       }
 
       // Drain the score-burst label's own 700ms auto-clear timer so it can't
-      // still be pending when the test ends -- how many real-time moves land
-      // within the loop above (and thus the exact tick the last burst timer
-      // was scheduled on) is sensitive to how much CPU work runs per pump,
-      // since move cooldown gating uses wall-clock DateTime.now(), not the
-      // fake test clock.
+      // still be pending when the test ends.
       await tester.pump(const Duration(milliseconds: 700));
 
-      final comboLabel = tester
-          .widgetList<Text>(find.byType(Text))
-          .map((widget) => widget.data)
-          .whereType<String>()
-          .firstWhere((text) => text.startsWith('Combo: '));
-      final combo = int.parse(comboLabel.substring('Combo: '.length));
+      final combo = int.parse(_hudValue(tester, 'hud-combo-value'));
 
       expect(combo, greaterThanOrEqualTo(1));
-      expect(find.textContaining('Deficit:'), findsNothing);
+      // The Deficit chip is always present now, just reading 0 when clear.
+      expect(_hudValue(tester, 'hud-deficit-value'), '0');
     });
   });
 
@@ -162,6 +164,13 @@ void main() {
       await _openSettings(tester);
 
       expect(find.text('ACCOUNT'), findsOneWidget);
+    });
+
+    testWidgets('APPEARANCE section header is present', (tester) async {
+      await _pumpGame(tester);
+      await _openSettings(tester);
+
+      expect(find.text('APPEARANCE'), findsOneWidget);
     });
 
     testWidgets(
@@ -191,23 +200,6 @@ void main() {
   // ── Settings dialog — Gameplay section ───────────────────────────────────
 
   group('Settings dialog — Gameplay section', () {
-    testWidgets('Visual Cues switch is present', (tester) async {
-      await _pumpGame(tester);
-      await _openSettings(tester);
-
-      expect(find.text('Visual Cues'), findsOneWidget);
-    });
-
-    testWidgets('Visual Cues subtitle describes the feature', (tester) async {
-      await _pumpGame(tester);
-      await _openSettings(tester);
-
-      expect(
-        find.text('Highlight buckets that divide the current number evenly'),
-        findsOneWidget,
-      );
-    });
-
     testWidgets('Best Score label is present', (tester) async {
       await _pumpGame(tester);
       await _openSettings(tester);
@@ -227,10 +219,7 @@ void main() {
     testWidgets('Best Score reflects a saved high score from prefs', (
       tester,
     ) async {
-      SharedPreferences.setMockInitialValues({
-        'fallingMode.highScore': 42,
-        'fallingMode.visualCuesEnabled': true,
-      });
+      SharedPreferences.setMockInitialValues({'fallingMode.highScore': 42});
 
       await _pumpGame(tester);
       await tester.pump(); // allow initState async prefs load
@@ -239,22 +228,185 @@ void main() {
       expect(find.text('42'), findsWidgets);
     });
 
-    testWidgets('Visual Cues switch can be toggled inside the dialog', (
+    testWidgets('Difficulty control is present and defaults to Normal', (
       tester,
     ) async {
       await _pumpGame(tester);
       await _openSettings(tester);
 
-      final switchFinder = find.byType(Switch);
-      expect(switchFinder, findsOneWidget);
+      expect(find.text('Difficulty'), findsOneWidget);
+      final segmentedButton = tester.widget<SegmentedButton<GameDifficulty>>(
+        find.byType(SegmentedButton<GameDifficulty>),
+      );
+      expect(segmentedButton.selected, {GameDifficulty.normal});
+    });
 
-      final switchBefore = tester.widget<Switch>(switchFinder).value;
+    testWidgets('Difficulty selection can be changed inside the dialog', (
+      tester,
+    ) async {
+      await _pumpGame(tester);
+      await _openSettings(tester);
 
-      await tester.tap(switchFinder);
+      await tester.tap(find.text('Hard'));
       await tester.pump();
 
-      final switchAfter = tester.widget<Switch>(switchFinder).value;
-      expect(switchAfter, isNot(switchBefore));
+      final segmentedButton = tester.widget<SegmentedButton<GameDifficulty>>(
+        find.byType(SegmentedButton<GameDifficulty>),
+      );
+      expect(segmentedButton.selected, {GameDifficulty.hard});
+    });
+
+    testWidgets(
+      'Best Score reflects a score the demo already raised before Settings '
+      'opened, and stays put (not stale, not still climbing) across an '
+      'in-dialog rebuild',
+      (tester) async {
+        // Regression test: showGameSettingsDialog used to take a plain `int
+        // highScore` captured once when the dialog opened, which could go
+        // stale after a later in-dialog rebuild (e.g. changing Difficulty).
+        // It now takes a `getHighScore` getter read fresh on every rebuild.
+        //
+        // This no longer raises the score *behind* the open dialog -- opening
+        // Settings now pauses the game (see the dedicated pause test below),
+        // so the getter is instead exercised by rebuilding the dialog after
+        // the score was already raised, confirming it reads the current
+        // value rather than one snapshotted from an earlier build.
+        tester.view.physicalSize = _phoneSize;
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: FallingModuloGameScreen(
+              engine: FallingModuloGameEngine(random: Random(20260803)),
+              expertDemo: true,
+            ),
+          ),
+        );
+        await tester.pump();
+
+        // Let the expert demo play *before* Settings is open, long enough to
+        // land at least one scoring success and raise the high score above 0.
+        for (var step = 0; step < 120; step++) {
+          await tester.pump(const Duration(milliseconds: 50));
+        }
+
+        await _openSettings(tester);
+        expect(
+          find.descendant(
+            of: find.widgetWithText(ListTile, 'Best Score'),
+            matching: find.text('0'),
+          ),
+          findsNothing,
+        );
+        // The ListTile's own title Text('Best Score') is also a descendant
+        // alongside the trailing score Text, so byType(Text) alone matches
+        // both -- pick out the one that isn't the title.
+        String bestScoreValue() {
+          return tester
+              .widgetList<Text>(
+                find.descendant(
+                  of: find.widgetWithText(ListTile, 'Best Score'),
+                  matching: find.byType(Text),
+                ),
+              )
+              .map((t) => t.data)
+              .whereType<String>()
+              .firstWhere((data) => data != 'Best Score');
+        }
+
+        final scoreBeforeRebuild = bestScoreValue();
+
+        // The game is paused behind the dialog now, so waiting here should
+        // not change the score -- unlike the old captured-once bug, there is
+        // nothing left to go stale, but confirm score is stable regardless.
+        for (var step = 0; step < 40; step++) {
+          await tester.pump(const Duration(milliseconds: 50));
+        }
+
+        // Force the dialog's StatefulBuilder to rebuild via an in-dialog
+        // interaction, the same trigger the original bug report used.
+        await tester.tap(find.text('Hard'));
+        await tester.pump();
+
+        expect(bestScoreValue(), scoreBeforeRebuild);
+      },
+    );
+  });
+
+  // ── Settings dialog — Appearance section ─────────────────────────────────
+
+  group('Settings dialog — Appearance section', () {
+    testWidgets('theme picker defaults to Deep Ocean', (tester) async {
+      await _pumpGame(tester);
+      await _openSettings(tester);
+      await _expandSection(tester, 'APPEARANCE');
+
+      final deepOceanSwatch = find.byKey(const Key('theme-swatch-deepOcean'));
+      expect(deepOceanSwatch, findsOneWidget);
+      expect(
+        find.descendant(of: deepOceanSwatch, matching: find.byIcon(Icons.check)),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('selecting a palette and saving persists it across reopen', (
+      tester,
+    ) async {
+      await _pumpGame(tester);
+      await _openSettings(tester);
+      await _expandSection(tester, 'APPEARANCE');
+
+      await tester.tap(find.byKey(const Key('theme-swatch-arcadeNeon')));
+      await tester.pump();
+
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      // The app bar repaints in the new theme's colors immediately, without
+      // needing to reopen Settings.
+      final appBar = tester.widget<AppBar>(find.byType(AppBar));
+      expect(
+        appBar.backgroundColor,
+        gameThemePalettes[GameThemeId.arcadeNeon]!.appBarBg,
+      );
+
+      // Re-open — Arcade Neon should still be the checked swatch.
+      await _openSettings(tester);
+      await _expandSection(tester, 'APPEARANCE');
+
+      final arcadeNeonSwatch = find.byKey(
+        const Key('theme-swatch-arcadeNeon'),
+      );
+      expect(
+        find.descendant(
+          of: arcadeNeonSwatch,
+          matching: find.byIcon(Icons.check),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('Cancel does not persist a palette change', (tester) async {
+      await _pumpGame(tester);
+      await _openSettings(tester);
+      await _expandSection(tester, 'APPEARANCE');
+
+      await tester.tap(find.byKey(const Key('theme-swatch-candyPop')));
+      await tester.pump();
+
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+
+      // The app bar never left the default Deep Ocean colors.
+      final appBar = tester.widget<AppBar>(find.byType(AppBar));
+      expect(
+        appBar.backgroundColor,
+        gameThemePalettes[GameThemeId.deepOcean]!.appBarBg,
+      );
     });
   });
 
@@ -482,47 +634,47 @@ void main() {
       expect(find.text('Settings'), findsNothing);
     });
 
-    testWidgets('Save persists a Visual Cues toggle change', (tester) async {
-      // Start with visual cues ON (default).
+    testWidgets('Save persists a Difficulty change', (tester) async {
+      // Start with the default Normal difficulty.
       await _pumpGame(tester);
       await _openSettings(tester);
 
-      // Toggle the switch OFF.
-      await tester.tap(find.byType(Switch));
+      await tester.tap(find.text('Hard'));
       await tester.pump();
 
-      // Save.
       await tester.tap(find.text('Save'));
       await tester.pumpAndSettle();
 
-      // Re-open — the switch should now be OFF.
+      // Re-open — Hard should still be selected.
       await _openSettings(tester);
 
-      final switchWidget = tester.widget<Switch>(find.byType(Switch));
-      expect(switchWidget.value, isFalse);
+      final segmentedButton = tester.widget<SegmentedButton<GameDifficulty>>(
+        find.byType(SegmentedButton<GameDifficulty>),
+      );
+      expect(segmentedButton.selected, {GameDifficulty.hard});
     });
 
-    testWidgets('Cancel does not persist a Visual Cues toggle change', (
+    testWidgets('Cancel does not persist a Difficulty change', (
       tester,
     ) async {
-      // Start with visual cues ON (default).
       await _pumpGame(tester);
       await _openSettings(tester);
 
-      // Toggle switch OFF.
-      await tester.tap(find.byType(Switch));
+      await tester.tap(find.text('Hard'));
       await tester.pump();
 
-      // Cancel.
       await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
 
-      // Re-open — the switch should still be ON.
+      // Re-open — should still default to Normal.
       await _openSettings(tester);
 
-      final switchWidget = tester.widget<Switch>(find.byType(Switch));
-      expect(switchWidget.value, isTrue);
+      final segmentedButton = tester.widget<SegmentedButton<GameDifficulty>>(
+        find.byType(SegmentedButton<GameDifficulty>),
+      );
+      expect(segmentedButton.selected, {GameDifficulty.normal});
     });
+
   });
 
   // ── Pause overlay — New Game (with confirmation) ─────────────────────────
@@ -578,9 +730,11 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Start a new run?'), findsNothing);
-      // Still paused mid-run, not back at the pre-game overlay.
+      // Still paused mid-run, not back at the pre-game overlay. "Resume"
+      // only appears on the pause overlay -- disambiguates from the HUD's
+      // own Fall chip, which also reads "Paused" once stopped.
       expect(find.text('Start Game'), findsNothing);
-      expect(find.text('Paused'), findsOneWidget);
+      expect(find.text('Resume'), findsOneWidget);
     });
   });
 }

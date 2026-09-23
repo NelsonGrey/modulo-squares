@@ -8,8 +8,8 @@
 |---|---|
 | Flutter | `3.44.2` in CI |
 | Dart | `>=3.7.0 <4.0.0` from `pubspec.yaml` |
-| Node.js | `>=20`; `.nvmrc` pins `20.3.2` |
-| npm | compatible with Node 20 and lockfiles |
+| Node.js | `>=22.22.0` (`package.json` engines); `.nvmrc` pins `24`, matching CI |
+| npm | compatible with Node 24 and lockfiles |
 | Firebase CLI | install from root dev dependency or globally |
 | Ruby | `3.2.2` for mobile Fastlane |
 | Xcode/CocoaPods | required for iOS |
