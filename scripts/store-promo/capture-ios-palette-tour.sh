@@ -2,7 +2,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 DEVICE="${PROMO_IOS_SIMULATOR_UDID:?Set PROMO_IOS_SIMULATOR_UDID}"
-OUTPUT="${PROMO_IOS_OUTPUT:-${ROOT}/media-library/_source/ios-refresh-2026-09-16}"
+OUTPUT="${PROMO_IOS_OUTPUT:-${ROOT}/media-library/_source/ios-refresh-$(date +%F)/captures}"
 RECORDER=""
 cleanup() {
   if [[ -n "$RECORDER" ]]; then
@@ -32,7 +32,9 @@ xcrun simctl io "$DEVICE" recordVideo --codec=h264 "$OUTPUT/palette-tour.partial
 RECORDER=$!
 sleep 1
 xcrun simctl launch "$DEVICE" com.modulosquares.app.ios > "$OUTPUT/palette-tour-launch.txt"
-sleep 40
+sleep 12
+xcrun simctl io "$DEVICE" screenshot "$OUTPUT/appearance-settings.png"
+sleep 28
 sleep 25
 kill -INT "$RECORDER"
 wait "$RECORDER"

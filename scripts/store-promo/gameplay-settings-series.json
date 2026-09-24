@@ -1,0 +1,35 @@
+{
+  "model": "gpt-4o-mini-tts",
+  "voice": "cedar",
+  "instructions": "Speak in a warm, relaxed, conversational American English voice, as if showing a friend a game on your phone. Natural phrasing and gentle variation in pitch. Clear but unhurried, about 145 words per minute. No announcer voice, exaggerated enthusiasm, sing-song cadence, or dramatic pauses. Read only the supplied words. Pronounce Modulo as MOD-yoo-loh.",
+  "disclosure": "Narration is AI-generated using OpenAI's Cedar voice.",
+  "segments": [
+    {
+      "id": "01-read-the-game",
+      "title": "Read the game at a glance",
+      "subtitle": "Updated status chips explain every run",
+      "source": "gameplay.mov",
+      "source_start": 3.0,
+      "accent": "#16A7B5",
+      "text": "The updated status chips make each run easier to read at a glance. Track your combo, difficulty, fall speed, movement boost, number range, and any point deficit. The icons stay consistent, while the values update as your score and combo grow. Every selectable color palette now keeps this small text at accessible contrast."
+    },
+    {
+      "id": "02-clean-landings",
+      "title": "Build a combo with clean landings",
+      "subtitle": "Find the strongest divisor for a bigger bonus",
+      "source": "gameplay.mov",
+      "source_start": 1.5,
+      "accent": "#FFD23D",
+      "text": "A number falls from the top. Guide it toward a bucket that divides it evenly, then drop. Choosing the highest available divisor earns a bigger bonus and fills more of the progress grid. Keep landing cleanly to build your combo. As the combo rises, the movement chip shows your speed boost, helping you react to the changing bucket order."
+    },
+    {
+      "id": "03-gameplay-settings",
+      "title": "Tune your next run",
+      "subtitle": "Difficulty and appearance are together in Settings",
+      "source": "settings-tour.mov",
+      "source_start": 4.5,
+      "accent": "#B388FF",
+      "text": "Open Settings to tune the game for your next run. Under Gameplay, choose Easy, Normal, or Hard. The selected difficulty is clearly highlighted and controls how quickly the falling number speeds up. Expand Appearance to choose a palette, then tap Save and Resume. Here, Arcade Neon applies immediately, and the difficulty chip confirms that Hard mode is active."
+    }
+  ]
+}
