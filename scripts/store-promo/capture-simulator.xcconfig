@@ -1,3 +1,11 @@
 // Capture-only override: Xcode 27 rejects old deployment targets in cached Pods.
 // Does not alter release project settings or the shipping minimum OS version.
 IPHONEOS_DEPLOYMENT_TARGET = 15.0
+
+// Capture runs on Apple silicon. Xcode 27 passes both simulator architectures
+// to Flutter's unpack step, which currently rejects the universal framework
+// even though lipo confirms that it contains both slices. Building the native
+// arm64 slice avoids that packaging bug and matches the booted simulator.
+ARCHS = arm64
+ONLY_ACTIVE_ARCH = YES
+EXCLUDED_ARCHS[sdk=iphonesimulator*] = x86_64

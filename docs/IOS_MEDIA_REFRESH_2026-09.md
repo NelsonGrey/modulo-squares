@@ -2,10 +2,12 @@
 
 ## Status
 
-Preparation only. No fresh screenshots, recordings, or narration have been
-produced. Xcode currently refuses developer commands until the updated license
-is accepted. Existing media remains intact. New capture code has not yet been
-validated in Simulator.
+September 23: five native 1320×2868 iPhone screenshots were captured, visually
+reviewed, and exported as opaque sRGB PNGs. Four 23-second palette gameplay
+sources and a 66-second Settings/Appearance tour were also captured. The
+36-second Cedar-narrated pilot was rendered in landscape and vertical layouts
+with captions. It remains review evidence until the owner approves the voice,
+script, and pacing. Existing media remains intact.
 
 ## App Store capture set
 
@@ -16,7 +18,7 @@ Add a screenshot of the actual appearance picker and one clear gameplay/rules
 screen after visual review. Target a native supported large iPhone size; do not
 stretch smaller captures. Export RGB PNGs without alpha.
 
-Apple specifications checked September 16, 2026:
+Apple specifications checked September 23, 2026:
 https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications
 Accepted 6.9-inch portrait sizes include 1260×2736, 1290×2796, and 1320×2868.
 Apple permits one to ten screenshots. Check supported iPad requirements if the
@@ -29,9 +31,13 @@ PROMO_IOS_SIMULATOR_UDID=<udid> bash scripts/store-promo/capture-ios-palettes.sh
 ```
 
 The script saves four native screenshots and four short gameplay sources under
-`media-library/02-source/ios-refresh-2026-09-16/`. These are review sources, not
+`media-library/_source/ios-refresh-YYYY-MM-DD/captures/`. These are review sources, not
 upload-ready exports. The capture uses local deterministic gameplay and does
 not prove live account, purchase, or leaderboard behavior.
+
+The reviewed App Store exports are in
+`media-library/05-store-listings/apple/screenshots/iphone-6.9/refresh-2026-09-23/`.
+They preserve the simulator's native 1320×2868 dimensions and contain no alpha.
 
 ## Feature video sequence
 
@@ -51,14 +57,24 @@ of a successful live authentication transaction. Leaderboard footage needs a
 working separately verified session; the local store capture has a placeholder
 that must never appear in final media.
 
-## Appearance pilot narration draft
+## Appearance pilot narration
 
-“Want a different look for your next run? Open Settings and choose an appearance.
-Deep Ocean gives you a dark blue board. Arcade Neon brings in brighter color.
-Warm Sunset gives the game a softer, warmer look. And Candy Pop adds a playful
-burst of color. Your choice changes the look of the board and controls, while
-the game stays familiar. Pick your favorite, return to the board, and keep
-those clean landings coming.”
+The generation script and exact text are in
+`scripts/store-promo/appearance-pilot.json`. Six WAV segments and per-segment
+provenance are under
+`media-library/_source/ios-refresh-2026-09-23/narration/`. The voice is OpenAI
+Cedar, generated with `gpt-4o-mini-tts`; it is not a human recording.
+The generated speech was transcribed for text verification; subjective voice
+quality and final picture pacing remain part of the pilot review.
+
+The review masters are in
+`media-library/_hold/review-evidence/appearance-pilot-2026-09-23/`. Both are
+H.264/yuv420p at 30 fps with 48 kHz stereo AAC, measured at -16.3 LUFS. No
+freeze events longer than 1.5 seconds were detected. They are deliberately not
+in an upload-facing directory until pilot approval.
+
+See [the feature scripts](IOS_FEATURE_VIDEO_SCRIPTS.md) for the seven-episode
+series, including the current highest-divisor bonus.
 
 Sync each palette name to its visible picker selection and moving gameplay.
 Confirm the exact visible settings labels before recording the final script.
