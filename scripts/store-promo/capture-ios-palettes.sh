@@ -3,7 +3,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 DEVICE="${PROMO_IOS_SIMULATOR_UDID:?Set PROMO_IOS_SIMULATOR_UDID to a booted iPhone simulator UDID}"
-OUTPUT="${PROMO_IOS_OUTPUT:-${ROOT}/media-library/_source/ios-refresh-2026-09-16}"
+OUTPUT="${PROMO_IOS_OUTPUT:-${ROOT}/media-library/_source/ios-refresh-$(date +%F)/captures}"
 RECORDER=""
 cleanup() {
   if [[ -n "$RECORDER" ]]; then

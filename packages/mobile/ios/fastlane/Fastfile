@@ -252,9 +252,14 @@ platform :ios do
       skip_binary_upload: true,
       skip_metadata: false,
       skip_screenshots: false,
+      # A new version inherits the previous version's screenshots; replace
+      # them (all device sizes) so the listing matches this folder exactly.
+      overwrite_screenshots: true,
       force: true,
       metadata_path: File.expand_path("metadata", __dir__),
-      screenshots_path: File.expand_path("screenshots", __dir__)
+      screenshots_path: File.expand_path("screenshots", __dir__),
+      # See submit_to_app_store: precheck can't inspect IAPs via API key.
+      precheck_include_in_app_purchases: false
     )
 
     UI.success("✅ Metadata/screenshots pushed to App Store Connect (draft, not submitted)")
@@ -283,6 +288,7 @@ platform :ios do
       skip_binary_upload: true,
       skip_metadata: false,
       skip_screenshots: false,
+      overwrite_screenshots: true,
       metadata_path: File.expand_path("metadata", __dir__),
       screenshots_path: File.expand_path("screenshots", __dir__),
       # precheck can't inspect In-App Purchase metadata when authenticated
