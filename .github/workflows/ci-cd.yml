@@ -80,6 +80,18 @@ jobs:
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
 
+      # setup-flutter ran `flutter pub get`. If that rewrote the committed
+      # lockfile, it was resolved outside this Flutter SDK's pins (e.g. a
+      # Dependabot bump dragging meta/vector_math/test_api past them) and
+      # every build is silently re-resolving. Fail so it gets fixed.
+      - name: 🔒 Verify pubspec.lock matches Flutter SDK resolution
+        run: |
+          if ! git diff --exit-code -- pubspec.lock; then
+            echo "::error file=packages/mobile/pubspec.lock::pubspec.lock is out of sync with Flutter ${{ env.FLUTTER_VERSION }}. Run 'flutter pub get' in packages/mobile with that SDK and commit the result."
+            exit 1
+          fi
+        working-directory: packages/mobile
+
       - name: 🔧 Flutter Analyze
         run: flutter analyze
         working-directory: packages/mobile
