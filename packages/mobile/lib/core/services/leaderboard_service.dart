@@ -18,7 +18,6 @@ class LeaderboardService {
 
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static final FirebaseFunctions _functions = FirebaseFunctions.instance;
-  static final Map<String, ({String id, int expiresAt})> _scoreSessions = {};
   static final CollectionReference _scoresCollection = _firestore.collection(
     'modulo_leaderboard',
   );
@@ -86,18 +85,14 @@ class LeaderboardService {
     return _isFirebaseReady && FirebaseAuth.instance.currentUser != null;
   }
 
+  // Score sessions are consumed server-side on first use (anti-cheat:
+  // one submission per session), so a fresh one must be issued for every
+  // submission call rather than cached and reused across calls.
   static Future<String> _getScoreSessionId({
     required String mode,
     int? challengeId,
     int? weekId,
   }) async {
-    final key = '$mode:${challengeId ?? 0}:${weekId ?? 0}';
-    final now = DateTime.now().millisecondsSinceEpoch;
-    final cached = _scoreSessions[key];
-    if (cached != null && cached.expiresAt > now + 5000) {
-      return cached.id;
-    }
-
     final payload = <String, dynamic>{'mode': mode};
     if (challengeId != null) payload['challengeId'] = challengeId;
     if (weekId != null) payload['weekId'] = weekId;
@@ -109,13 +104,11 @@ class LeaderboardService {
       (response.data as Map?) ?? <String, dynamic>{},
     );
     final sessionId = (data['sessionId'] as String?)?.trim();
-    final expiresAt = (data['expiresAt'] as num?)?.toInt() ?? 0;
 
     if (sessionId == null || sessionId.isEmpty) {
       throw StateError('Failed to obtain score session');
     }
 
-    _scoreSessions[key] = (id: sessionId, expiresAt: expiresAt);
     return sessionId;
   }
 

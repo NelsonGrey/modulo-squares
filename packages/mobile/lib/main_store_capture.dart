@@ -17,6 +17,7 @@ Future<void> main() async {
 
   final preferences = await SharedPreferences.getInstance();
   await preferences.setInt('fallingMode.highScore', 401);
+  await preferences.setString('fallingMode.difficulty', 'normal');
 
   const requestedTheme = String.fromEnvironment('STORE_CAPTURE_THEME');
   if (requestedTheme.isNotEmpty) {
