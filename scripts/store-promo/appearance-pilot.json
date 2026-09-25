@@ -1,0 +1,15 @@
+{
+  "title": "Make Modulo Squares your own",
+  "model": "gpt-4o-mini-tts",
+  "voice": "cedar",
+  "instructions": "Speak in a warm, relaxed, conversational American English voice, as if showing a friend a game on your phone. Natural phrasing and gentle variation in pitch. Clear but unhurried, about 145 words per minute. No announcer voice, exaggerated enthusiasm, sing-song cadence, or dramatic pauses. Read only the supplied words. Pronounce Modulo as MOD-yoo-loh.",
+  "disclosure": "Narration is AI-generated using OpenAI's Cedar voice.",
+  "segments": [
+    {"id": "01-intro", "text": "Want a different look for your next run? In Modulo Squares, open Settings, then Appearance. Choose a palette and tap Save."},
+    {"id": "02-ocean", "text": "Deep Ocean gives you a dark blue board with cool, clear accents."},
+    {"id": "03-neon", "text": "For something brighter, try Arcade Neon."},
+    {"id": "04-sunset", "text": "Warm Sunset brings a softer, warmer feel to the board."},
+    {"id": "05-candy", "text": "Or switch to Candy Pop for a playful burst of color."},
+    {"id": "06-close", "text": "The colors change, but the challenge stays the same. Find a divisor, line up your number, and make a clean landing."}
+  ]
+}
