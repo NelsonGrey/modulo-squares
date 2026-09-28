@@ -4,6 +4,75 @@ Modulo Squares is a falling-number arcade puzzle built with Flutter and Firebase
 
 The repository contains the mobile app, the public React website, shared Firebase utilities, Firestore rules, release automation, and project documentation. Server-side Cloud Functions live in a separate private companion repository and are checked out by CI only when Functions are deployed.
 
+## Demo
+
+### Architecture
+
+```mermaid
+flowchart TB
+    subgraph Client["packages/mobile (Flutter)"]
+        Main["main.dart — Firebase init, App Check,\nservice locator (GetIt)"]
+        AuthGate["AuthGate — auth state + gamertag gate"]
+        Login["LoginScreen\nfeatures/auth/login_screen.dart"]
+        Game["GameScreen -> FallingModuloGameScreen\nfeatures/game/game_screen.dart"]
+        Engine["FallingModuloGameEngine\nfeatures/game/models/falling_modulo_game_engine.dart"]
+        Services["core/services:\nAdService, PurchaseService, AnalyticsService,\nCacheService, GamertagService, ConsentService"]
+    end
+
+    subgraph Platform["Platform-specific sign-in (deliberate split)"]
+        AppleAuth["Sign in with Apple\n(iOS only)"]
+        GoogleAuth["Google Sign-In\n(Android only)"]
+        EmailAuth["Email/password\n(both platforms)"]
+    end
+
+    subgraph Firebase["Firebase (per-env: dev / staging / prod)"]
+        FBAuth["Firebase Auth"]
+        Firestore["Firestore\nusers, user_profiles, game_stats,\ngamertags, leaderboards"]
+        Functions["Callable Functions\n(private modulo-squares-functions repo)\nleaderboards, purchases, entitlements"]
+        AppCheck["App Check\n(App Attest / Play Integrity)"]
+        Crashlytics["Crashlytics + Analytics"]
+    end
+
+    subgraph Web["packages/web (React 19 / Vite)"]
+        Leaderboard["/leaderboard route\n(public Firestore reads)"]
+    end
+
+    Main --> AuthGate --> Login
+    Login --> AppleAuth & GoogleAuth & EmailAuth
+    AppleAuth & GoogleAuth & EmailAuth --> FBAuth
+    AuthGate --> Game
+    Game --> Engine
+    Main --> Services
+    Services --> Functions
+    Main --> AppCheck
+    Main --> Crashlytics
+    FBAuth --> Firestore
+    Firestore --> Leaderboard
+    Functions --> Firestore
+```
+
+Client writes are limited to each signed-in user's own `users`, `user_profiles`, and `game_stats` documents plus a one-time `gamertags` claim (`packages/firestore-rules/firestore.rules`); leaderboards, purchases, and entitlements are server-authoritative through callable Functions in the private companion repo.
+
+### Gameplay walkthrough
+
+The tile-resolution arithmetic below is entirely client-side; this walks through the actual resolution logic in `FallingModuloGameEngine.resolveCurrentTile` (`packages/mobile/lib/features/game/models/falling_modulo_game_engine.dart`). Submitting a new high score is a separate step — `FallingModuloGameScreen._handleTileResolved` then calls `LeaderboardService.submitScore`, which invokes the `startScoreSession` and `submitScore` callable Functions (with App Check attestation) in the private companion repo.
+
+1. A tile carrying value `F` spawns in the center lane of 10 lanes and begins falling after a 500 ms pause.
+2. Ten buckets line the bottom, shuffled at game start: `1`-`9` (scoring) plus one dead bucket `0`.
+3. The player taps the Left or Right control to move the tile into a bucket `B` before it lands (180 ms move cooldown, down to 138 ms at combo 8+, from the `1.30x` speed multiplier).
+4. On landing, `highestDivisorFor(F)` computes `H`, the largest bucket value 1-9 that divides `F` evenly.
+5. Scoring, from `resolveCurrentTile`:
+   - `B == H` and `H != 1` → best possible catch: `scoreDelta = 2 * (F * B)`, fill `+2`, combo `+1`, gold "★ BONUS!" burst.
+   - `H == 1` (F coprime to every other bucket) and `B == 1` → flat bonus `scoreDelta = F`, fill `+2`, combo `+1`.
+   - `F % B == 0`, `B != H`, and `B > 1` → valid but not optimal: `scoreDelta = F * B`, fill `+1`, combo `+1`.
+   - `B == 1` and `B != H` (bucket 1 isn't the highest divisor) → valid catch but no reward: `scoreDelta = 0`, fill `+1`, combo `+1`.
+   - `B == 0` (dead bucket) → `scoreDelta = -F`, fill `-1`, combo resets to `0`.
+   - Otherwise (`F % B != 0`) → `scoreDelta = -(F * B * remainder)`, fill drops by `remainder`, combo resets to `0`.
+6. Score is clamped at zero (`max(0, state.score + scoreDelta)`); the 100-cell progress grid fills toward a level-up, and combo streaks raise the horizontal move speed multiplier up to `1.30x` at combo 8+.
+7. At level-up the falling number range scales up and the drop interval shrinks toward its floor (`dropIntervalForLevel`, `0.96^(level-1)` decay per `GameDifficulty`), and buckets reshuffle.
+
+Buckets carry no pre-drop hint of which are valid or optimal — the player has to work out the divisibility live. See `docs/Game_Mechanics.md` for the full rule table and `test/models/falling_modulo_game_engine_test.dart` for executable examples of every branch above.
+
 ## Current status
 
 - Mobile version: `1.0.0+2`
