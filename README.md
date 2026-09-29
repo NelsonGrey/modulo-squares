@@ -1,5 +1,22 @@
 # Modulo Squares
 
+[![CI](https://github.com/NelsonGrey/modulo-squares/actions/workflows/ci-cd.yml/badge.svg?branch=develop)](https://github.com/NelsonGrey/modulo-squares/actions/workflows/ci-cd.yml) [![License](https://img.shields.io/badge/license-proprietary-lightgrey.svg)](https://github.com/NelsonGrey/modulo-squares/blob/develop/LICENSE)
+
+## Contents
+
+- [Demo](#demo)
+  - [Architecture](#architecture)
+  - [Gameplay walkthrough](#gameplay-walkthrough)
+- [Status](#status)
+- [Repository Structure](#repository-structure)
+- [Product behavior](#product-behavior)
+- [Web application](#web-application)
+- [Local setup](#local-setup)
+- [Build and validation](#build-and-validation)
+- [CI/CD](#cicd)
+- [Firebase environments](#firebase-environments)
+- [Documentation](#documentation)
+
 Modulo Squares is a falling-number arcade puzzle built with Flutter and Firebase. Guide each number into one of ten divisor buckets before it lands, build combos, fill the progress grid, and chase a persistent local high score.
 
 The repository contains the mobile app, the public React website, shared Firebase utilities, Firestore rules, release automation, and project documentation. Server-side Cloud Functions live in a separate private companion repository and are checked out by CI only when Functions are deployed.
@@ -73,7 +90,7 @@ The tile-resolution arithmetic below is entirely client-side; this walks through
 
 Buckets carry no pre-drop hint of which are valid or optimal — the player has to work out the divisibility live. See `docs/Game_Mechanics.md` for the full rule table and `test/models/falling_modulo_game_engine_test.dart` for executable examples of every branch above.
 
-## Current status
+## Status
 
 - Mobile version: `1.0.0+2`
 - Primary mobile platforms: iOS and Android; iOS is the current release focus
@@ -85,7 +102,7 @@ Buckets carry no pre-drop hint of which are valid or optimal — the player has 
 
 See [Current State](docs/Current_State.md), [Documentation Index](docs/Documentation_Index.md), and [Go-Live Runbook](docs/GO_LIVE_RUNBOOK.md).
 
-## Repository layout
+## Repository Structure
 
 ```text
 .
@@ -218,7 +235,3 @@ Firestore client writes are limited to each signed-in user's `users`, `user_prof
 ## Documentation
 
 Start at [docs/Documentation_Index.md](docs/Documentation_Index.md). It labels each document as current, operational reference, planning, or historical so that old implementation proposals are not mistaken for live behavior.
-
-## License
-
-See [LICENSE](LICENSE).
