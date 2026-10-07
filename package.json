@@ -25,10 +25,7 @@
     "format": "cd packages/firebase-utils && npm run format",
     "check": "cd packages/web && npx tsc --noEmit && cd ../firebase-utils && npm run check",
     "clean": "cd packages/mobile && flutter clean && rm -rf build/ && cd ../firebase-utils && npm run clean",
-    "install:all": "npm install && cd packages/firebase-utils && npm install",
-    "config:dev": "./scripts/switch-mobile-configs.sh dev",
-    "config:staging": "./scripts/switch-mobile-configs.sh staging",
-    "config:prod": "./scripts/switch-mobile-configs.sh prod"
+    "install:all": "npm install && cd packages/firebase-utils && npm install"
   },
   "dependencies": {
     "express": "^5.3.0"

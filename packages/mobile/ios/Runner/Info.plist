@@ -22,17 +22,6 @@
 	<string>$(FLUTTER_BUILD_NAME)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
-	<key>CFBundleURLTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>com.googleusercontent.apps.253948321735-aosgg8vgj3i7gp0413lbj0jclih2p0qm</string>
-			</array>
-		</dict>
-	</array>
 	<key>CFBundleVersion</key>
 	<string>20260624184430</string>
 	<key>GADApplicationIdentifier</key>
@@ -50,7 +39,7 @@
 		<string>_flutter._tcp</string>
 	</array>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>This app requires local network access for Firebase services and multiplayer features.</string>
+	<string>Used by development tooling (debugging and hot reload). Not used in release builds.</string>
 	<key>NSUserTrackingUsageDescription</key>
 	<string>This identifier is used to deliver better ads and help keep the game free for everyone.</string>
 	<key>SKAdNetworkItems</key>

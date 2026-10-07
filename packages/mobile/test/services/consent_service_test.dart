@@ -50,10 +50,13 @@ void main() {
       expect(result, false);
     });
 
-    test('getAttStatusDescription returns appropriate message for non-iOS', () async {
-      final result = await consentService.getAttStatusDescription();
-      expect(result, 'Not applicable on this platform');
-    });
+    test(
+      'getAttStatusDescription returns appropriate message for non-iOS',
+      () async {
+        final result = await consentService.getAttStatusDescription();
+        expect(result, 'Not applicable on this platform');
+      },
+    );
 
     test('ATT methods handle platform detection correctly', () async {
       // On test platform (likely not iOS), methods should return expected values
@@ -120,10 +123,13 @@ void main() {
       await expectLater(() => consentService.configure(), returnsNormally);
     });
 
-    test('requestTrackingAuthorization handles exceptions gracefully', () async {
-      final result = await consentService.requestTrackingAuthorization();
-      expect(result, isA<bool>());
-    });
+    test(
+      'requestTrackingAuthorization handles exceptions gracefully',
+      () async {
+        final result = await consentService.requestTrackingAuthorization();
+        expect(result, isA<bool>());
+      },
+    );
 
     test('getAttStatusDescription handles exceptions gracefully', () async {
       final result = await consentService.getAttStatusDescription();
@@ -168,9 +174,15 @@ void main() {
     });
 
     test('ATT methods work on all platforms without throwing', () async {
-      await expectLater(() => consentService.requestTrackingAuthorization(), returnsNormally);
+      await expectLater(
+        () => consentService.requestTrackingAuthorization(),
+        returnsNormally,
+      );
 
-      await expectLater(() => consentService.getAttStatusDescription(), returnsNormally);
+      await expectLater(
+        () => consentService.getAttStatusDescription(),
+        returnsNormally,
+      );
     });
   });
 
@@ -208,7 +220,11 @@ void main() {
   group('ConsentService - Edge Cases', () {
     test('handles rapid configuration calls', () async {
       // Call configure in quick succession
-      await Future.wait([consentService.configure(), consentService.configure(), consentService.configure()]);
+      await Future.wait([
+        consentService.configure(),
+        consentService.configure(),
+        consentService.configure(),
+      ]);
 
       expect(consentService.isPersonalized, false);
       expect(consentService.attAuthorized, false);

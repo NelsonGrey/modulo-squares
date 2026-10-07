@@ -1,14 +1,10 @@
 import 'dart:async';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:modulo_squares/core/di/service_locator.dart';
 import 'package:modulo_squares/core/services/ad_service.dart';
-import 'package:modulo_squares/core/services/gamertag_service.dart';
-import 'package:modulo_squares/core/services/leaderboard_service.dart';
 import 'package:modulo_squares/core/services/purchase_service.dart';
 import 'package:modulo_squares/features/game/controllers/falling_game_loop_controller.dart';
-import 'package:modulo_squares/features/game/leaderboard_screen.dart';
 import 'package:modulo_squares/features/game/models/falling_modulo_game_engine.dart';
 import 'package:modulo_squares/features/game/models/game_theme.dart';
 import 'package:modulo_squares/features/game/widgets/game_board.dart';
@@ -17,6 +13,9 @@ import 'package:modulo_squares/features/game/widgets/game_settings_screen.dart';
 import 'package:modulo_squares/features/game/widgets/how_to_play_sheet.dart';
 import 'package:modulo_squares/features/game/widgets/pause_overlay.dart';
 import 'package:modulo_squares/features/game/widgets/pre_game_overlay.dart';
+import 'package:modulo_squares/gamecenter/game_center_ids.dart';
+import 'package:modulo_squares/gamecenter/game_center_services.dart';
+import 'package:modulo_squares/gamecenter/game_center_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// The falling-mode game screen: a thin composition root over
@@ -25,9 +24,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// [GameBoard], [PreGameOverlay], [PauseOverlay]).
 ///
 /// This class owns exactly what the controller deliberately doesn't:
-/// BuildContext-dependent side effects of a resolved tile (leaderboard
-/// submission, the level-complete ad/snackbar), navigation (Settings,
-/// Leaderboard, confirmation dialogs), player identity, theme, and
+/// BuildContext-dependent side effects of a resolved tile (Game Center score
+/// and achievement reporting, the level-complete ad/snackbar), navigation
+/// (Settings, the Game Center leaderboard, confirmation dialogs), theme, and
 /// preference persistence. See [FallingGameLoopController]'s doc comment
 /// for why that split exists.
 class FallingModuloGameScreen extends StatefulWidget {
@@ -35,8 +34,7 @@ class FallingModuloGameScreen extends StatefulWidget {
     super.key,
     this.engine,
     this.expertDemo = false,
-    this.playerNameOverride,
-    this.leaderboardBuilder,
+    this.gameCenter,
   });
 
   /// Optional deterministic engine used by tests and local store-media capture.
@@ -48,17 +46,18 @@ class FallingModuloGameScreen extends StatefulWidget {
   /// capture entry point when STORE_CAPTURE_EXPERT_DEMO is defined.
   final bool expertDemo;
 
-  /// Local media/test hooks. Production entry points leave these null and use
-  /// the authenticated player's gamertag plus the live leaderboard screen.
-  final String? playerNameOverride;
-  final WidgetBuilder? leaderboardBuilder;
+  /// Game Center wiring. Production leaves this null and uses the registered
+  /// [GameCenterServices]; tests and the local media-capture entry point inject
+  /// a fake so nothing talks to the real Game Center.
+  final GameCenterServices? gameCenter;
 
   @override
   State<FallingModuloGameScreen> createState() =>
       _FallingModuloGameScreenState();
 }
 
-class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
+class _FallingModuloGameScreenState extends State<FallingModuloGameScreen>
+    with WidgetsBindingObserver {
   static const Duration _expertDemoTick = Duration(milliseconds: 16);
   static const String _highScorePrefKey = 'fallingMode.highScore';
   static const String _difficultyPrefKey = 'fallingMode.difficulty';
@@ -67,7 +66,8 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
   late final FallingGameLoopController _controller;
   Timer? _expertDemoTimer;
   Timer? _expertDemoStartTimer;
-  String? _playerName;
+  int _lastSubmittedScore = 0;
+  final Set<String> _unlockedAchievements = {};
   GameThemeId _themeId = GameThemeId.deepOcean;
 
   GameThemePalette get _theme => gameThemePalettes[_themeId]!;
@@ -78,6 +78,12 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
   PurchaseService? get _purchaseServiceOrNull =>
       getIt.isRegistered<PurchaseService>() ? getIt<PurchaseService>() : null;
 
+  GameCenterServices? get _gameCenterOrNull =>
+      widget.gameCenter ??
+      (getIt.isRegistered<GameCenterServices>()
+          ? getIt<GameCenterServices>()
+          : null);
+
   @override
   void initState() {
     super.initState();
@@ -86,8 +92,9 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
       onTileResolved: _handleTileResolved,
     );
     _controller.addListener(_onControllerChanged);
+    WidgetsBinding.instance.addObserver(this);
+    _gameCenterOrNull?.connection.addListener(_onGameCenterChanged);
     _loadPreferences();
-    _loadPlayerName();
 
     if (widget.expertDemo) {
       _expertDemoTimer = Timer.periodic(
@@ -128,24 +135,11 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
     );
   }
 
-  Future<void> _loadPlayerName() async {
-    if (widget.playerNameOverride != null) {
-      setState(() => _playerName = widget.playerNameOverride);
-      return;
-    }
-    try {
-      final uid = FirebaseAuth.instance.currentUser?.uid;
-      if (uid == null) return;
-      final tag = await GamertagService.getGamertag(uid);
-      if (!mounted) return;
-      setState(() => _playerName = tag);
-    } catch (_) {
-      // Firebase not initialized in test environment.
-    }
-  }
-
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _gameCenterOrNull?.connection.removeListener(_onGameCenterChanged);
+    _flushHighScore();
     _controller.removeListener(_onControllerChanged);
     _controller.dispose();
     _expertDemoTimer?.cancel();
@@ -185,43 +179,73 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
     }
   }
 
-  // The context-dependent side effects of a resolved tile: leaderboard
-  // submission, high-score persistence, and the level-complete ad/snackbar.
+  // The context-dependent side effects of a resolved tile: achievement
+  // unlocks, high-score persistence, and the level-complete ad/snackbar.
   // The controller reports *that* a tile resolved and how; everything here
   // needs BuildContext (ads, ScaffoldMessenger) or a service call the
   // controller has no business making itself.
   void _handleTileResolved(TileResolutionOutcome outcome) {
     _persistHighScore();
 
-    final playerName = _playerName;
-    // Never write to the live leaderboard from the local media-capture /
-    // test entry point: playerNameOverride is set only there, and
-    // production always leaves it null and uses the authenticated player's
-    // gamertag.
-    if (widget.playerNameOverride == null &&
-        outcome.isNewHighScore &&
-        playerName != null &&
-        playerName.isNotEmpty) {
-      unawaited(
-        LeaderboardService.submitScore(
-          context,
-          playerName,
-          _controller.state.score,
-        ),
-      );
-    }
+    _unlockAchievements();
 
     if (outcome.result.resolution.leveledUp) {
       // The engine only ever increments the level by exactly one per
       // resolve, so the level just completed is always the new level minus
       // one.
       final completedLevel = _controller.state.level - 1;
+      _flushHighScore();
       unawaited(
         _showInterstitialTransition(trigger: 'level_complete', onClosed: () {}),
       );
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Level $completedLevel complete!')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Level $completedLevel complete!')),
+      );
+    }
+  }
+
+  /// Pushes the best score to Game Center when it has improved. Called at
+  /// natural breakpoints (level complete, new run, leaving the screen, app
+  /// backgrounded, connecting) rather than on every landing, so a long run
+  /// makes a handful of submissions instead of hundreds. Game Center keeps
+  /// only the best score, and does nothing while the player isn't connected.
+  void _flushHighScore({bool force = false}) {
+    final best = _controller.highScore;
+    if (best <= 0 || (!force && best <= _lastSubmittedScore)) return;
+    final gameCenter = _gameCenterOrNull;
+    if (gameCenter == null || !gameCenter.connection.isConnected) return;
+    _lastSubmittedScore = best;
+    unawaited(gameCenter.progress.submitScore(best));
+  }
+
+  void _onGameCenterChanged() {
+    // The player just connected: post their existing best score.
+    if (_gameCenterOrNull?.connection.isConnected ?? false) {
+      _flushHighScore(force: true);
+    }
+  }
+
+  void _unlock(String id) {
+    if (!_unlockedAchievements.add(id)) return;
+    final gameCenter = _gameCenterOrNull;
+    if (gameCenter == null) return;
+    unawaited(gameCenter.progress.unlockAchievement(id));
+  }
+
+  void _unlockAchievements() {
+    final state = _controller.state;
+    if (state.level >= 2) _unlock(GameCenterIds.achievementFirstLevel);
+    if (state.level >= 5) _unlock(GameCenterIds.achievementLevel5);
+    if (state.level >= 10) _unlock(GameCenterIds.achievementLevel10);
+    if (state.score >= 1000) _unlock(GameCenterIds.achievementScore1000);
+    if (state.score >= 5000) _unlock(GameCenterIds.achievementScore5000);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      _flushHighScore();
     }
   }
 
@@ -261,7 +285,10 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
             ],
           ),
     );
-    if (confirmed == true) _controller.startNewRun();
+    if (confirmed == true) {
+      _flushHighScore();
+      _controller.startNewRun();
+    }
   }
 
   Future<void> _showInterstitialTransition({
@@ -282,19 +309,15 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
   }
 
   Future<void> _openLeaderboard() async {
-    // Settings and Leaderboard don't stop the game loop just by pushing a
-    // route/dialog on top of it -- unlike the dedicated Pause button,
-    // neither otherwise touches the controller's running state, so the drop
-    // timer, deficit, and score would otherwise keep advancing behind
-    // either screen.
+    // Opening Game Center doesn't stop the game loop by itself -- unlike the
+    // dedicated Pause button, it otherwise never touches the controller's
+    // running state, so the drop timer and score would keep advancing behind
+    // the native leaderboard.
     _controller.pause();
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder:
-            widget.leaderboardBuilder ??
-            (_) => LeaderboardScreen(playerName: _playerName ?? ''),
-      ),
-    );
+    _flushHighScore();
+    final gameCenter = _gameCenterOrNull;
+    if (gameCenter == null) return;
+    await openGameCenterLeaderboard(context, gameCenter);
   }
 
   Future<void> _openSettingsDialog() async {
@@ -308,10 +331,7 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
         _controller.setDifficulty(difficulty);
         _persistDifficulty(difficulty);
       },
-      onHighScoreReset: () {
-        if (mounted) _controller.resetHighScore();
-      },
-      highScorePrefKey: _highScorePrefKey,
+      gameCenter: _gameCenterOrNull,
       themeId: _themeId,
       onSaveTheme: (themeId) {
         setState(() => _themeId = themeId);

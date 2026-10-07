@@ -40,6 +40,10 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:mockito/mockito.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:modulo_squares/gamecenter/fake_game_center_progress_service.dart';
+import 'package:modulo_squares/gamecenter/fake_platform_game_auth_service.dart';
+import 'package:modulo_squares/gamecenter/game_center_connection.dart';
+import 'package:modulo_squares/gamecenter/game_center_services.dart';
 import 'package:modulo_squares/core/di/service_locator.dart';
 import 'package:modulo_squares/core/services/purchase_service.dart';
 import 'package:modulo_squares/features/game/falling_modulo_game_screen.dart';
@@ -166,9 +170,7 @@ Future<void> _expandSection(WidgetTester tester, String header) async {
 String _hudValue(WidgetTester tester, String key) {
   // skipOffstage: false -- the HUD stays readable while Settings is pushed
   // over the game.
-  return tester
-      .widget<Text>(find.byKey(Key(key), skipOffstage: false))
-      .data!;
+  return tester.widget<Text>(find.byKey(Key(key), skipOffstage: false)).data!;
 }
 
 void main() {
@@ -421,17 +423,13 @@ void main() {
 
         expect(
           tester
-              .widget<FilledButton>(
-                find.widgetWithText(FilledButton, 'Left'),
-              )
+              .widget<FilledButton>(find.widgetWithText(FilledButton, 'Left'))
               .onPressed,
           isNull,
         );
         expect(
           tester
-              .widget<FilledButton>(
-                find.widgetWithText(FilledButton, 'Right'),
-              )
+              .widget<FilledButton>(find.widgetWithText(FilledButton, 'Right'))
               .onPressed,
           isNull,
         );
@@ -461,9 +459,7 @@ void main() {
         expect(selectedBucketValueLabel(), '3');
         expect(
           tester
-              .widget<FilledButton>(
-                find.widgetWithText(FilledButton, 'Left'),
-              )
+              .widget<FilledButton>(find.widgetWithText(FilledButton, 'Left'))
               .onPressed,
           isNotNull,
         );
@@ -573,11 +569,11 @@ void main() {
         MaterialApp(
           home: FallingModuloGameScreen(
             engine: _ScriptedEngine(state),
-            // Stubbed out: the real LeaderboardScreen reaches Firestore in
-            // a static field initializer with no guard, which is fine in
-            // the real app (main.dart always initializes Firebase first)
-            // but not in this Firebase-less widget test.
-            leaderboardBuilder: (_) => const SizedBox.shrink(),
+            gameCenter: GameCenterServices(
+              auth: FakePlatformGameAuthService(),
+              backend: FakeGameCenterProgressService(),
+              connection: GameCenterConnection.connectedFake(),
+            ),
           ),
         ),
       );
@@ -595,6 +591,88 @@ void main() {
       await tester.pump();
 
       expect(_hudValue(tester, 'hud-fall-value'), 'Paused');
+    });
+  });
+
+  // ── Game Center reporting ────────────────────────────────────────────────
+
+  group('Game Center reporting', () {
+    testWidgets(
+      'opening the leaderboard posts the best score and shows Game Center',
+      (tester) async {
+        tester.view.physicalSize = _phoneSize;
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+        final progress = FakeGameCenterProgressService();
+        final state = _scriptedState(
+          bucketValues: const [2, 5, 0, 8, 3, 9, 1, 4, 6, 7],
+          fallingValue: 18,
+        );
+        await tester.pumpWidget(
+          MaterialApp(
+            home: FallingModuloGameScreen(
+              engine: _ScriptedEngine(state),
+              gameCenter: GameCenterServices(
+                auth: FakePlatformGameAuthService(),
+                backend: progress,
+                connection: GameCenterConnection.connectedFake(),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+        await _startAndClearSpawnDelay(tester);
+        await _drop(tester);
+        expect(_hudValue(tester, 'hud-score-value'), '324');
+        expect(progress.scores, isEmpty, reason: 'not posted on every landing');
+
+        await tester.tap(find.byTooltip('Leaderboard'));
+        await tester.pump();
+
+        expect(progress.scores, [324]);
+        expect(progress.leaderboardShown, 1);
+        await _settleBurstTimer(tester);
+      },
+    );
+
+    testWidgets('does not post a score while Game Center is not connected', (
+      tester,
+    ) async {
+      tester.view.physicalSize = _phoneSize;
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+      final progress = FakeGameCenterProgressService();
+      final state = _scriptedState(
+        bucketValues: const [2, 5, 0, 8, 3, 9, 1, 4, 6, 7],
+        fallingValue: 18,
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: FallingModuloGameScreen(
+            engine: _ScriptedEngine(state),
+            gameCenter: GameCenterServices(
+              auth: FakePlatformGameAuthService(),
+              backend: progress,
+              connection: GameCenterConnection.unsupportedFake(),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await _startAndClearSpawnDelay(tester);
+      await _drop(tester);
+
+      await tester.tap(find.byTooltip('Leaderboard'));
+      await tester.pump();
+
+      expect(progress.scores, isEmpty);
+      await _settleBurstTimer(tester);
     });
   });
 
@@ -769,26 +847,23 @@ void main() {
       purchaseService.dispose();
     });
 
-    testWidgets(
-      'tapping Remove Ads shows an error message when the store has no '
-      'matching product, and leaves entitlement unchanged',
-      (tester) async {
-        await _pumpApp(tester);
-        await _openSettings(tester);
-        await _expandSection(tester, 'Purchases');
+    testWidgets('tapping Remove Ads shows an error message when the store has no '
+        'matching product, and leaves entitlement unchanged', (tester) async {
+      await _pumpApp(tester);
+      await _openSettings(tester);
+      await _expandSection(tester, 'Purchases');
 
-        await tester.tap(find.textContaining('Remove Ads'));
-        await tester.pump();
-        await tester.pump();
+      await tester.tap(find.textContaining('Remove Ads'));
+      await tester.pump();
+      await tester.pump();
 
-        expect(
-          find.text(
-            'Unable to connect to the App Store. Please check your connection and try again.',
-          ),
-          findsOneWidget,
-        );
-        expect(purchaseService.adsRemoved, isFalse);
-      },
-    );
+      expect(
+        find.text(
+          'Unable to connect to the App Store. Please check your connection and try again.',
+        ),
+        findsOneWidget,
+      );
+      expect(purchaseService.adsRemoved, isFalse);
+    });
   });
 }

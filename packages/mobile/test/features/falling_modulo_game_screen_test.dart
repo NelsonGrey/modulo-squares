@@ -9,10 +9,23 @@ import 'package:modulo_squares/core/services/purchase_service.dart';
 import 'package:modulo_squares/features/game/falling_modulo_game_screen.dart';
 import 'package:modulo_squares/features/game/models/falling_modulo_game_engine.dart';
 import 'package:modulo_squares/features/game/models/game_theme.dart';
+import 'package:modulo_squares/gamecenter/fake_game_center_progress_service.dart';
+import 'package:modulo_squares/gamecenter/fake_platform_game_auth_service.dart';
+import 'package:modulo_squares/gamecenter/game_center_connection.dart';
+import 'package:modulo_squares/gamecenter/game_center_services.dart';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-Widget _buildApp() => const MaterialApp(home: FallingModuloGameScreen());
+late FakeGameCenterProgressService _progress;
+
+GameCenterServices _fakeGameCenter() => GameCenterServices(
+  auth: FakePlatformGameAuthService(),
+  backend: _progress,
+  connection: GameCenterConnection.connectedFake(),
+);
+
+Widget _buildApp() =>
+    MaterialApp(home: FallingModuloGameScreen(gameCenter: _fakeGameCenter()));
 
 const Size _phoneSize = Size(1080, 1920);
 
@@ -53,6 +66,7 @@ String _hudValue(WidgetTester tester, String key) {
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
+    _progress = FakeGameCenterProgressService();
   });
 
   tearDown(() async {
@@ -158,11 +172,22 @@ void main() {
       expect(find.text('Difficulty'), findsOneWidget);
     });
 
-    testWidgets('Account section header is present', (tester) async {
+    testWidgets('Game Center section header is present', (tester) async {
       await _pumpGame(tester);
       await _openSettings(tester);
 
-      expect(find.text('Account'), findsOneWidget);
+      expect(find.text('Game Center'), findsOneWidget);
+    });
+
+    testWidgets('has no account management (Game Center is the identity)', (
+      tester,
+    ) async {
+      await _pumpGame(tester);
+      await _openSettings(tester);
+
+      expect(find.text('Account'), findsNothing);
+      expect(find.text('Sign Out'), findsNothing);
+      expect(find.text('Delete Account'), findsNothing);
     });
 
     testWidgets('Appearance section header is present', (tester) async {
@@ -347,7 +372,10 @@ void main() {
       final deepOceanSwatch = find.byKey(const Key('theme-swatch-deepOcean'));
       expect(deepOceanSwatch, findsOneWidget);
       expect(
-        find.descendant(of: deepOceanSwatch, matching: find.byIcon(Icons.check)),
+        find.descendant(
+          of: deepOceanSwatch,
+          matching: find.byIcon(Icons.check),
+        ),
         findsOneWidget,
       );
     });
@@ -377,9 +405,7 @@ void main() {
       await _openSettings(tester);
       await _expandSection(tester, 'Appearance');
 
-      final arcadeNeonSwatch = find.byKey(
-        const Key('theme-swatch-arcadeNeon'),
-      );
+      final arcadeNeonSwatch = find.byKey(const Key('theme-swatch-arcadeNeon'));
       expect(
         find.descendant(
           of: arcadeNeonSwatch,
@@ -388,7 +414,6 @@ void main() {
         findsOneWidget,
       );
     });
-
   });
 
   // ── Settings page — Purchases section ──────────────────────────────────
@@ -428,9 +453,7 @@ void main() {
       expect(find.textContaining('Remove Ads'), findsOneWidget);
     });
 
-    testWidgets('Remove Ads button includes the product price', (
-      tester,
-    ) async {
+    testWidgets('Remove Ads button includes the product price', (tester) async {
       await _pumpGame(tester);
       await _openSettings(tester);
       await _expandSection(tester, 'Purchases');
@@ -466,7 +489,10 @@ void main() {
       await _expandSection(tester, 'Purchases');
 
       expect(find.text('Ad-free'), findsOneWidget);
-      expect(find.text('You will never see an ad in this game.'), findsOneWidget);
+      expect(
+        find.text('You will never see an ad in this game.'),
+        findsOneWidget,
+      );
       expect(find.textContaining('Remove Ads'), findsNothing);
     });
 
@@ -488,78 +514,62 @@ void main() {
     });
   });
 
-  // ── Settings page — Account section ────────────────────────────────────
+  // ── Settings page — Game Center section ───────────────────────────────
 
-  group('Settings page — Account section', () {
-    testWidgets('Sign Out option is always shown', (tester) async {
+  group('Settings page — Game Center section', () {
+    testWidgets('shows the connected player', (tester) async {
       await _pumpGame(tester);
       await _openSettings(tester);
-      await _expandSection(tester, 'Account');
+      await _expandSection(tester, 'Game Center');
 
-      expect(find.text('Sign Out'), findsOneWidget);
+      expect(find.text('Test Player'), findsOneWidget);
+      expect(find.text('Connected'), findsOneWidget);
     });
 
-    testWidgets('Delete Account option is always shown', (tester) async {
+    testWidgets('Leaderboard opens Game Center', (tester) async {
       await _pumpGame(tester);
       await _openSettings(tester);
-      await _expandSection(tester, 'Account');
+      await _expandSection(tester, 'Game Center');
 
-      expect(find.text('Delete Account'), findsOneWidget);
+      await tester.tap(find.text('Leaderboard'));
+      await tester.pump();
+
+      expect(_progress.leaderboardShown, 1);
     });
 
-    testWidgets('tapping Delete Account shows a confirmation dialog', (
-      tester,
-    ) async {
+    testWidgets('Achievements opens Game Center', (tester) async {
       await _pumpGame(tester);
       await _openSettings(tester);
-      await _expandSection(tester, 'Account');
+      await _expandSection(tester, 'Game Center');
 
-      await tester.tap(find.text('Delete Account'));
-      await tester.pumpAndSettle();
+      await tester.tap(find.text('Achievements'));
+      await tester.pump();
 
-      expect(find.text('Delete account?'), findsOneWidget);
-
-      await tester.tap(find.text('Cancel').last);
-      await tester.pumpAndSettle();
-
-      expect(find.text('Delete account?'), findsNothing);
+      expect(_progress.achievementsShown, 1);
     });
 
-    testWidgets(
-      'Link Account is not shown when Firebase is uninitialised (treats as non-guest)',
-      (tester) async {
-        // Firebase is not initialized in the test environment; the code catches
-        // the exception and sets isGuest = false, so Link Account stays hidden.
-        await _pumpGame(tester);
-        await _openSettings(tester);
-        await _expandSection(tester, 'Account');
-
-        expect(find.text('Link Account'), findsNothing);
-      },
-    );
-
-    testWidgets(
-      'Change Password is not shown when Firebase is uninitialised (treats as no password provider)',
-      (tester) async {
-        // Firebase is not initialized in the test environment; the code catches
-        // the exception and sets hasPasswordProvider = false, so Change
-        // Password stays hidden -- mirrors the Link Account case above.
-        await _pumpGame(tester);
-        await _openSettings(tester);
-        await _expandSection(tester, 'Account');
-
-        expect(find.text('Change Password'), findsNothing);
-      },
-    );
-
-    testWidgets('page does not show legacy Switch Mode action', (
-      tester,
-    ) async {
-      await _pumpGame(tester);
+    testWidgets('is hidden where Game Center is unsupported', (tester) async {
+      tester.view.physicalSize = _phoneSize;
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+      await tester.pumpWidget(
+        MaterialApp(
+          home: FallingModuloGameScreen(
+            gameCenter: GameCenterServices(
+              auth: FakePlatformGameAuthService(),
+              backend: _progress,
+              connection: GameCenterConnection.unsupportedFake(),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
       await _openSettings(tester);
-      await _expandSection(tester, 'Account');
 
-      expect(find.text('Switch Mode'), findsNothing);
+      expect(find.text('Game Center'), findsNothing);
     });
   });
 
@@ -604,7 +614,9 @@ void main() {
       expect(find.text('Settings'), findsNothing);
     });
 
-    testWidgets('a Difficulty change applies and persists across reopen', (tester) async {
+    testWidgets('a Difficulty change applies and persists across reopen', (
+      tester,
+    ) async {
       // Start with the default Normal difficulty.
       await _pumpGame(tester);
       await _openSettings(tester);
@@ -623,7 +635,6 @@ void main() {
       );
       expect(segmentedButton.selected, {GameDifficulty.hard});
     });
-
   });
 
   // ── Pause overlay — New Game (with confirmation) ─────────────────────────

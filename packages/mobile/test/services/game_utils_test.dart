@@ -3,12 +3,15 @@ import 'package:modulo_squares/core/services/game_utils.dart';
 
 void main() {
   group('GameUtils', () {
-    test('calculateMaxValue returns correct values for different difficulty levels', () {
-      expect(GameUtils.calculateMaxValue(1), 1000);
-      expect(GameUtils.calculateMaxValue(2), 2000);
-      expect(GameUtils.calculateMaxValue(5), 5000);
-      expect(GameUtils.calculateMaxValue(10), 10000);
-    });
+    test(
+      'calculateMaxValue returns correct values for different difficulty levels',
+      () {
+        expect(GameUtils.calculateMaxValue(1), 1000);
+        expect(GameUtils.calculateMaxValue(2), 2000);
+        expect(GameUtils.calculateMaxValue(5), 5000);
+        expect(GameUtils.calculateMaxValue(10), 10000);
+      },
+    );
 
     test('calculateMaxValue clamps minimum value', () {
       expect(GameUtils.calculateMaxValue(0), 1);

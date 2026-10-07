@@ -5,11 +5,15 @@ import 'package:modulo_squares/core/di/service_locator.dart';
 import 'package:modulo_squares/core/services/purchase_service.dart';
 import 'package:modulo_squares/features/game/falling_modulo_game_screen.dart';
 import 'package:modulo_squares/features/game/models/falling_modulo_game_engine.dart';
+import 'package:modulo_squares/gamecenter/fake_game_center_progress_service.dart';
+import 'package:modulo_squares/gamecenter/fake_platform_game_auth_service.dart';
+import 'package:modulo_squares/gamecenter/game_center_connection.dart';
+import 'package:modulo_squares/gamecenter/game_center_services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// A local-only entry point for deterministic App Store and Play Store media.
 ///
-/// It bypasses authentication, analytics, ads, and network initialization while
+/// It bypasses Game Center, ads, and network initialization while
 /// rendering the same production gameplay widget. The normal app entry point
 /// remains `main.dart`; release builds do not reference this file.
 Future<void> main() async {
@@ -46,33 +50,10 @@ class StoreCaptureApp extends StatelessWidget {
       home: FallingModuloGameScreen(
         engine: StoreCaptureGameEngine(),
         expertDemo: expertDemo,
-        leaderboardBuilder: (context) => const _StoreCaptureLeaderboardStub(),
-      ),
-    );
-  }
-}
-
-/// Stands in for the real [LeaderboardScreen] in this Firebase-less entry
-/// point. The real screen touches Firestore in a static field initializer
-/// with no guard (LeaderboardService._firestore), which throws the moment
-/// anything references it -- fine in the real app (main.dart always
-/// initializes Firebase first) but a crash here, since this entry point
-/// deliberately skips that.
-class _StoreCaptureLeaderboardStub extends StatelessWidget {
-  const _StoreCaptureLeaderboardStub();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Leaderboards')),
-      body: const Center(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Text(
-            'Leaderboards need a signed-in Firebase session and aren\'t '
-            'available from this local capture build.',
-            textAlign: TextAlign.center,
-          ),
+        gameCenter: GameCenterServices(
+          auth: FakePlatformGameAuthService(),
+          backend: FakeGameCenterProgressService(),
+          connection: GameCenterConnection.unsupportedFake(),
         ),
       ),
     );
@@ -122,7 +103,10 @@ class StoreCaptureGameEngine extends FallingModuloGameEngine {
   }) {
     _promoValueIndex = 0;
     return super
-        .createInitialState(startingLevel: startingLevel, difficulty: difficulty)
+        .createInitialState(
+          startingLevel: startingLevel,
+          difficulty: difficulty,
+        )
         .copyWith(currentFallingValue: _nextPromoValue());
   }
 

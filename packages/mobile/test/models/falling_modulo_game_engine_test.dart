@@ -328,71 +328,77 @@ void main() {
         expect(engine.highestDivisorFor(97), 1); // prime, coprime to 2-9
       });
 
-      test('landing on the unique highest divisor doubles score and adds +2 fill', () {
-        final engine = FallingModuloGameEngine();
-        // Falling value 10: divisors present are 1, 2, 5 -> highest is 5.
-        final state = stateFor(
-          bucketValues: const [1, 2, 5, 3, 4, 6, 7, 8, 9, 0],
-          currentLane: 2, // bucket value 5
-          currentFallingValue: 10,
-        );
-
-        final result = engine.resolveCurrentTile(state);
-        expect(result.resolution.success, isTrue);
-        expect(result.resolution.isHighestBucket, isTrue);
-        // Base delta 10 * 5 = 50, bonus doubles it to 100.
-        expect(result.resolution.bonusScoreDelta, 50);
-        expect(result.resolution.scoreDelta, 100);
-        expect(result.state.fillBalance, 2);
-      });
-
-      test('landing on a lower valid divisor is unchanged from today: no bonus, +1 fill', () {
-        final engine = FallingModuloGameEngine();
-        final state = stateFor(
-          bucketValues: const [1, 2, 5, 3, 4, 6, 7, 8, 9, 0],
-          currentLane: 1, // bucket value 2, not the highest (5)
-          currentFallingValue: 10,
-        );
-
-        final result = engine.resolveCurrentTile(state);
-        expect(result.resolution.success, isTrue);
-        expect(result.resolution.isHighestBucket, isFalse);
-        expect(result.resolution.bonusScoreDelta, 0);
-        expect(result.resolution.scoreDelta, 20); // 10 * 2, unchanged
-        expect(result.state.fillBalance, 1);
-      });
-
       test(
-        'when the highest divisor is 1 itself, landing on it awards a flat '
-        'bonus (not double of zero) plus +2 fill',
+        'landing on the unique highest divisor doubles score and adds +2 fill',
         () {
           final engine = FallingModuloGameEngine();
-          // 97 is prime and > 9, so no bucket 2-9 divides it -- only bucket 1
-          // is a valid, and thus the highest, divisor.
+          // Falling value 10: divisors present are 1, 2, 5 -> highest is 5.
           final state = stateFor(
-            bucketValues: const [1, 2, 3, 4, 5, 6, 7, 8, 9, 0],
-            currentLane: 0, // bucket value 1
-            currentFallingValue: 97,
+            bucketValues: const [1, 2, 5, 3, 4, 6, 7, 8, 9, 0],
+            currentLane: 2, // bucket value 5
+            currentFallingValue: 10,
           );
 
           final result = engine.resolveCurrentTile(state);
           expect(result.resolution.success, isTrue);
           expect(result.resolution.isHighestBucket, isTrue);
-          expect(result.resolution.bonusScoreDelta, 97);
-          expect(result.resolution.scoreDelta, 97);
+          // Base delta 10 * 5 = 50, bonus doubles it to 100.
+          expect(result.resolution.bonusScoreDelta, 50);
+          expect(result.resolution.scoreDelta, 100);
           expect(result.state.fillBalance, 2);
         },
       );
 
-      test('highestDivisorBucketIndex finds the lane holding the best bucket', () {
+      test(
+        'landing on a lower valid divisor is unchanged from today: no bonus, +1 fill',
+        () {
+          final engine = FallingModuloGameEngine();
+          final state = stateFor(
+            bucketValues: const [1, 2, 5, 3, 4, 6, 7, 8, 9, 0],
+            currentLane: 1, // bucket value 2, not the highest (5)
+            currentFallingValue: 10,
+          );
+
+          final result = engine.resolveCurrentTile(state);
+          expect(result.resolution.success, isTrue);
+          expect(result.resolution.isHighestBucket, isFalse);
+          expect(result.resolution.bonusScoreDelta, 0);
+          expect(result.resolution.scoreDelta, 20); // 10 * 2, unchanged
+          expect(result.state.fillBalance, 1);
+        },
+      );
+
+      test('when the highest divisor is 1 itself, landing on it awards a flat '
+          'bonus (not double of zero) plus +2 fill', () {
         final engine = FallingModuloGameEngine();
+        // 97 is prime and > 9, so no bucket 2-9 divides it -- only bucket 1
+        // is a valid, and thus the highest, divisor.
         final state = stateFor(
-          bucketValues: const [1, 2, 5, 3, 4, 6, 7, 8, 9, 0],
-          currentLane: 0,
-          currentFallingValue: 10,
+          bucketValues: const [1, 2, 3, 4, 5, 6, 7, 8, 9, 0],
+          currentLane: 0, // bucket value 1
+          currentFallingValue: 97,
         );
-        expect(engine.highestDivisorBucketIndex(state), 2);
+
+        final result = engine.resolveCurrentTile(state);
+        expect(result.resolution.success, isTrue);
+        expect(result.resolution.isHighestBucket, isTrue);
+        expect(result.resolution.bonusScoreDelta, 97);
+        expect(result.resolution.scoreDelta, 97);
+        expect(result.state.fillBalance, 2);
       });
+
+      test(
+        'highestDivisorBucketIndex finds the lane holding the best bucket',
+        () {
+          final engine = FallingModuloGameEngine();
+          final state = stateFor(
+            bucketValues: const [1, 2, 5, 3, 4, 6, 7, 8, 9, 0],
+            currentLane: 0,
+            currentFallingValue: 10,
+          );
+          expect(engine.highestDivisorBucketIndex(state), 2);
+        },
+      );
     });
 
     group('score burst text format', () {

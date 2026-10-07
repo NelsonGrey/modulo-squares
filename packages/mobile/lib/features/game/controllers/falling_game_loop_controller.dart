@@ -234,7 +234,10 @@ class FallingGameLoopController extends ChangeNotifier {
   /// constructor's own [initialHighScore]/[initialDifficulty] only cover the
   /// synchronous case, e.g. tests). Screen-only concern; SharedPreferences
   /// itself stays out of this controller.
-  void loadPersisted({required int highScore, required GameDifficulty difficulty}) {
+  void loadPersisted({
+    required int highScore,
+    required GameDifficulty difficulty,
+  }) {
     this.highScore = highScore;
     setDifficulty(difficulty);
   }

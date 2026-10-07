@@ -11,8 +11,12 @@ void main() {
   late AdService adService;
 
   setUp(() {
-    GetIt.I.registerSingleton<ConsentService>(ConsentService.createForTesting());
-    GetIt.I.registerSingleton<PurchaseService>(PurchaseService.createForTesting());
+    GetIt.I.registerSingleton<ConsentService>(
+      ConsentService.createForTesting(),
+    );
+    GetIt.I.registerSingleton<PurchaseService>(
+      PurchaseService.createForTesting(),
+    );
     adService = AdService.createForTesting();
   });
 
@@ -44,10 +48,7 @@ void main() {
 
     test('showInterstitial method exists and is callable', () async {
       // Test that the method exists and doesn't throw
-      await expectLater(
-        () => adService.showInterstitial(),
-        returnsNormally,
-      );
+      await expectLater(() => adService.showInterstitial(), returnsNormally);
     });
 
     test('showInterstitial with parameters works', () async {
@@ -64,9 +65,7 @@ void main() {
     test('showInterstitial callback is executed', () async {
       bool callbackExecuted = false;
 
-      await adService.showInterstitial(
-        onClosed: () => callbackExecuted = true,
-      );
+      await adService.showInterstitial(onClosed: () => callbackExecuted = true);
 
       // Since ads are not loaded in test environment, callback should be called immediately
       expect(callbackExecuted, true);

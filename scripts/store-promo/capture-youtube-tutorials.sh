@@ -90,18 +90,6 @@ send_keys() {
 OSA
 }
 
-account_actions() {
-  true
-}
-
-sign_in_actions() {
-  true
-}
-
-gamertag_actions() {
-  true
-}
-
 navigation_actions() {
   send_keys 1
   sleep 2
@@ -112,18 +100,9 @@ navigation_actions() {
   send_keys 1
 }
 
-PROMO_SCENES="${PROMO_YOUTUBE_SCENES:-account gamertag sign-in navigation gameplay}"
+PROMO_SCENES="${PROMO_YOUTUBE_SCENES:-navigation gameplay}"
 for scene in ${PROMO_SCENES}; do
   case "${scene}" in
-    account)
-      record_scene account account-raw.mov 4 account_actions
-      ;;
-    gamertag)
-      record_scene gamertag gamertag-raw.mov 3 gamertag_actions
-      ;;
-    sign-in)
-      record_scene sign-in sign-in-raw.mov 4 sign_in_actions
-      ;;
     navigation)
       record_scene navigation navigation-raw.mov 5 navigation_actions
       ;;

@@ -7,15 +7,25 @@ void main() {
     expect(libDir.existsSync(), isTrue, reason: 'lib/ directory must exist');
 
     // Guard against symbol reintroduction by a basic scan.
-    final forbiddenSymbols = <Pattern>[RegExp(r'\bclass\s+AppStrings\b'), RegExp(r'AppStrings\.')];
+    final forbiddenSymbols = <Pattern>[
+      RegExp(r'\bclass\s+AppStrings\b'),
+      RegExp(r'AppStrings\.'),
+    ];
 
-    final dartFiles = libDir.listSync(recursive: true).whereType<File>().where((f) => f.path.endsWith('.dart'));
+    final dartFiles = libDir
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((f) => f.path.endsWith('.dart'));
 
     for (final file in dartFiles) {
       final content = await file.readAsString();
       for (final sym in forbiddenSymbols) {
         final has = sym.allMatches(content).isNotEmpty;
-        expect(has, isFalse, reason: 'Found legacy AppStrings usage in ${file.path}');
+        expect(
+          has,
+          isFalse,
+          reason: 'Found legacy AppStrings usage in ${file.path}',
+        );
       }
     }
   });
