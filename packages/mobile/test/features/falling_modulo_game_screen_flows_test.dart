@@ -155,7 +155,7 @@ Future<void> _openSettings(WidgetTester tester) async {
 }
 
 Future<void> _expandSection(WidgetTester tester, String header) async {
-  await tester.tap(find.text(header));
+  await tester.scrollUntilVisible(find.text(header), 200);
   await tester.pumpAndSettle();
 }
 
@@ -164,7 +164,11 @@ Future<void> _expandSection(WidgetTester tester, String header) async {
 /// "Label: value" pills, so plain `find.text` would collide with other
 /// on-screen numbers.
 String _hudValue(WidgetTester tester, String key) {
-  return tester.widget<Text>(find.byKey(Key(key))).data!;
+  // skipOffstage: false -- the HUD stays readable while Settings is pushed
+  // over the game.
+  return tester
+      .widget<Text>(find.byKey(Key(key), skipOffstage: false))
+      .data!;
 }
 
 void main() {
@@ -666,20 +670,20 @@ void main() {
       purchaseService.dispose();
     });
 
-    Future<void> tapUnlockPremium(WidgetTester tester) async {
+    Future<void> tapRemoveAds(WidgetTester tester) async {
       await _openSettings(tester);
-      await _expandSection(tester, 'PURCHASES');
-      await tester.tap(find.textContaining('Unlock Premium'));
+      await _expandSection(tester, 'Purchases');
+      await tester.tap(find.textContaining('Remove Ads'));
       await tester.pump();
       await tester.pump();
     }
 
     testWidgets(
-      'a completed purchase persists ad-removal and shows Ad-Free the next '
+      'a completed purchase persists ad-removal and shows Ad-free the next '
       'time Settings is opened',
       (tester) async {
         await _pumpApp(tester);
-        await tapUnlockPremium(tester);
+        await tapRemoveAds(tester);
 
         // The store confirms the purchase asynchronously via the stream —
         // this is how a real successful StoreKit/Play Billing purchase
@@ -693,16 +697,16 @@ void main() {
         await tester.pump();
         await tester.pump();
 
-        // The dialog captured `adsRemoved` once, at open time -- close and
+        // The page captured `adsRemoved` once, at open time -- close and
         // reopen it to prove the purchase actually persisted rather than
         // just checking the service's in-memory flag directly.
-        await tester.tap(find.text('Cancel'));
+        await tester.pageBack();
         await tester.pumpAndSettle();
         await _openSettings(tester);
-        await _expandSection(tester, 'PURCHASES');
+        await _expandSection(tester, 'Purchases');
 
-        expect(find.text('Ad-Free'), findsOneWidget);
-        expect(find.textContaining('Unlock Premium'), findsNothing);
+        expect(find.text('Ad-free'), findsOneWidget);
+        expect(find.textContaining('Remove Ads'), findsNothing);
         expect(purchaseService.adsRemoved, isTrue);
       },
     );
@@ -711,7 +715,7 @@ void main() {
       'a cancelled purchase leaves ad-removal entitlement unchanged',
       (tester) async {
         await _pumpApp(tester);
-        await tapUnlockPremium(tester);
+        await tapRemoveAds(tester);
 
         final mockPurchase = MockPurchaseDetails();
         when(mockPurchase.productID).thenReturn('remove_ads');
@@ -722,13 +726,13 @@ void main() {
         await tester.pump();
         await tester.pump();
 
-        await tester.tap(find.text('Cancel'));
+        await tester.pageBack();
         await tester.pumpAndSettle();
         await _openSettings(tester);
-        await _expandSection(tester, 'PURCHASES');
+        await _expandSection(tester, 'Purchases');
 
-        expect(find.text('Ads Enabled'), findsOneWidget);
-        expect(find.textContaining('Unlock Premium'), findsOneWidget);
+        expect(find.text('Ads on'), findsOneWidget);
+        expect(find.textContaining('Remove Ads'), findsOneWidget);
         expect(purchaseService.adsRemoved, isFalse);
       },
     );
@@ -766,14 +770,14 @@ void main() {
     });
 
     testWidgets(
-      'tapping Unlock Premium shows an error message when the store has no '
+      'tapping Remove Ads shows an error message when the store has no '
       'matching product, and leaves entitlement unchanged',
       (tester) async {
         await _pumpApp(tester);
         await _openSettings(tester);
-        await _expandSection(tester, 'PURCHASES');
+        await _expandSection(tester, 'Purchases');
 
-        await tester.tap(find.textContaining('Unlock Premium'));
+        await tester.tap(find.textContaining('Remove Ads'));
         await tester.pump();
         await tester.pump();
 

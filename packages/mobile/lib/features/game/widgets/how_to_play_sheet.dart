@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 /// (unthemed) reference explaining the rules in more depth than the
 /// pre-game overlay's four bullet points. Matches the pattern of the other
 /// top-level `showXxx(context)` helpers in this feature (see
-/// `showGameSettingsDialog`).
+/// `showGameSettings`).
 void showHowToPlaySheet(BuildContext context) {
   showModalBottomSheet<void>(
     context: context,

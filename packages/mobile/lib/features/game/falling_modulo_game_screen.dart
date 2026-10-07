@@ -13,7 +13,7 @@ import 'package:modulo_squares/features/game/models/falling_modulo_game_engine.d
 import 'package:modulo_squares/features/game/models/game_theme.dart';
 import 'package:modulo_squares/features/game/widgets/game_board.dart';
 import 'package:modulo_squares/features/game/widgets/game_hud.dart';
-import 'package:modulo_squares/features/game/widgets/game_settings_dialog.dart';
+import 'package:modulo_squares/features/game/widgets/game_settings_screen.dart';
 import 'package:modulo_squares/features/game/widgets/how_to_play_sheet.dart';
 import 'package:modulo_squares/features/game/widgets/pause_overlay.dart';
 import 'package:modulo_squares/features/game/widgets/pre_game_overlay.dart';
@@ -299,7 +299,7 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen> {
 
   Future<void> _openSettingsDialog() async {
     _controller.pause();
-    await showGameSettingsDialog(
+    await showGameSettings(
       context: context,
       difficulty: _controller.state.difficulty,
       getHighScore: () => _controller.highScore,
