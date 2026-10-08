@@ -13,7 +13,7 @@ import 'package:modulo_squares/features/game/widgets/game_settings_screen.dart';
 import 'package:modulo_squares/features/game/widgets/how_to_play_sheet.dart';
 import 'package:modulo_squares/features/game/widgets/pause_overlay.dart';
 import 'package:modulo_squares/features/game/widgets/pre_game_overlay.dart';
-import 'package:modulo_squares/gamecenter/game_center_ids.dart';
+import 'package:modulo_squares/gamecenter/achievement_tracker.dart';
 import 'package:modulo_squares/gamecenter/game_center_services.dart';
 import 'package:modulo_squares/gamecenter/game_center_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -67,7 +67,7 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen>
   Timer? _expertDemoTimer;
   Timer? _expertDemoStartTimer;
   int _lastSubmittedScore = 0;
-  final Set<String> _unlockedAchievements = {};
+  final AchievementTracker _achievements = AchievementTracker();
   GameThemeId _themeId = GameThemeId.deepOcean;
 
   GameThemePalette get _theme => gameThemePalettes[_themeId]!;
@@ -187,7 +187,7 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen>
   void _handleTileResolved(TileResolutionOutcome outcome) {
     _persistHighScore();
 
-    _unlockAchievements();
+    _unlockAchievements(outcome.result.resolution);
 
     if (outcome.result.resolution.leveledUp) {
       // The engine only ever increments the level by exactly one per
@@ -225,20 +225,13 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen>
     }
   }
 
-  void _unlock(String id) {
-    if (!_unlockedAchievements.add(id)) return;
+  void _unlockAchievements(FallingModuloResolution resolution) {
+    final earned = _achievements.onTileResolved(resolution, _controller.state);
     final gameCenter = _gameCenterOrNull;
     if (gameCenter == null) return;
-    unawaited(gameCenter.progress.unlockAchievement(id));
-  }
-
-  void _unlockAchievements() {
-    final state = _controller.state;
-    if (state.level >= 2) _unlock(GameCenterIds.achievementFirstLevel);
-    if (state.level >= 5) _unlock(GameCenterIds.achievementLevel5);
-    if (state.level >= 10) _unlock(GameCenterIds.achievementLevel10);
-    if (state.score >= 1000) _unlock(GameCenterIds.achievementScore1000);
-    if (state.score >= 5000) _unlock(GameCenterIds.achievementScore5000);
+    for (final id in earned) {
+      unawaited(gameCenter.progress.unlockAchievement(id));
+    }
   }
 
   @override
@@ -287,6 +280,7 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen>
     );
     if (confirmed == true) {
       _flushHighScore();
+      _achievements.startNewRun();
       _controller.startNewRun();
     }
   }

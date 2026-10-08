@@ -34,7 +34,7 @@ released and adopted.
 
 ## Cutover (when ready)
 
-1. **App Store Connect**: create the leaderboard + 5 achievements
+1. **App Store Connect**: create the leaderboard + 15 achievements
    (`docs/GAME_CENTER_SETUP.md`). Update Privacy Policy, Support and Marketing
    URLs to the nelsongrey.com pages. Update the App Privacy ("nutrition
    label") answers: no account data, no analytics/crash data, advertising

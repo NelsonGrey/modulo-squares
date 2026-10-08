@@ -25,16 +25,39 @@ Game Center keeps only the best score per player, so resubmitting is harmless.
 
 ## Achievements
 
-| ID | Name | Earned when |
-| --- | --- | --- |
-| `modulo_squares_first_level` | First Level | Complete level 1 (reach level 2) |
-| `modulo_squares_level_5` | Level 5 | Reach level 5 |
-| `modulo_squares_level_10` | Level 10 | Reach level 10 |
-| `modulo_squares_score_1000` | 1,000 Points | Score 1,000 in a run |
-| `modulo_squares_score_5000` | 5,000 Points | Score 5,000 in a run |
+Fifteen achievements, 335 points total (Game Center allows 100 achievements
+and 1,000 points). The rules live in
+`packages/mobile/lib/gamecenter/achievement_tracker.dart` and are unit-tested;
+the IDs are in `game_center_ids.dart`. Each needs a title, a pre-earned and an
+earned description, a 512x512 image and the point value. All are visible (not
+hidden) and none are repeatable.
 
-Each needs a title, pre-earned and earned descriptions, a 512x512 image, and a
-point value (keep the total at or under the 1000-point cap).
+| ID | Title | Description | Pts |
+| --- | --- | --- | --- |
+| `modulo_squares_first_clean` | Clean Division | Land a number in a bucket that divides it evenly. | 5 |
+| `modulo_squares_first_bonus` | Top Bucket | Land a number in the highest dividing bucket for a bonus. | 10 |
+| `modulo_squares_lucky_seven` | Lucky Seven | Land a number cleanly in the 7 bucket. | 10 |
+| `modulo_squares_first_level` | Level Up | Complete level 1. | 5 |
+| `modulo_squares_level_5` | Rising | Reach level 5. | 10 |
+| `modulo_squares_level_10` | Veteran | Reach level 10. | 25 |
+| `modulo_squares_level_20` | Modulo Master | Reach level 20. | 50 |
+| `modulo_squares_score_1000` | Four Digits | Score 1,000 points in a single run. | 10 |
+| `modulo_squares_score_5000` | High Roller | Score 5,000 points in a single run. | 25 |
+| `modulo_squares_score_25000` | Grand Total | Score 25,000 points in a single run. | 50 |
+| `modulo_squares_combo_5` | On a Roll | Chain 5 clean landings in a row. | 10 |
+| `modulo_squares_combo_10` | Hot Streak | Chain 10 clean landings in a row. | 25 |
+| `modulo_squares_combo_25` | Unstoppable | Chain 25 clean landings in a row. | 50 |
+| `modulo_squares_perfect_level` | Flawless | Complete a level without a single miss. | 25 |
+| `modulo_squares_hard_level_5` | Hard Mode | Reach level 5 on Hard difficulty. | 25 |
+
+Notes:
+- "Reach level N" and score achievements apply within a run; a new run does
+  not re-earn them, and earning one is permanent.
+- Achievements earned while the player is not connected to Game Center are
+  remembered on the device and granted the next time they connect.
+- Game Center shows score and level progress only for the achievement types
+  above; there are no percent-complete (incremental) achievements.
+- Art is not in the repo yet: 15 icons at 512x512 are still needed.
 
 ## Entitlement
 
@@ -52,7 +75,7 @@ Signed into a Game Center account in iOS Settings:
    posted from the previous run appears.
 3. Settings → Game Center shows the player's alias, Leaderboard and
    Achievements shortcuts, and Disconnect.
-4. Cracking level 2 pops the "First Level" banner.
+4. Completing level 1 pops the "Level Up" banner, and a first clean landing pops "Clean Division".
 5. With no Game Center account on the device, the leaderboard button shows
    "Game Center is unavailable..." and play is unaffected.
 6. Reviewers can play the whole game without connecting.
