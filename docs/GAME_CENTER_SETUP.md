@@ -56,7 +56,9 @@ Notes:
 - Achievements earned while the player is not connected to Game Center are
   remembered on the device and granted the next time they connect.
 - All are one-shot; none use percent-complete (incremental) progress.
-- Art is not in the repo yet: 15 icons at 512x512 are still needed.
+- Upload-ready art is in
+  `packages/mobile/assets/game_center/achievements/`: one 512x512 PNG named
+  for each achievement ID.
 
 ## Entitlement
 
