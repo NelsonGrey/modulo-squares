@@ -55,8 +55,7 @@ Notes:
   not re-earn them, and earning one is permanent.
 - Achievements earned while the player is not connected to Game Center are
   remembered on the device and granted the next time they connect.
-- Game Center shows score and level progress only for the achievement types
-  above; there are no percent-complete (incremental) achievements.
+- All are one-shot; none use percent-complete (incremental) progress.
 - Art is not in the repo yet: 15 icons at 512x512 are still needed.
 
 ## Entitlement
