@@ -38,7 +38,7 @@ dependencies:
   in_app_purchase: ^3.3.1
   firebase_app_check: ^0.4.8
   crypto: ^3.0.7
-  url_launcher: ^6.3.2
+  url_launcher: ^6.3.3
 
 dev_dependencies:
   flutter_test:
