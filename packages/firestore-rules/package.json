@@ -9,7 +9,7 @@
     "test:watch": "firebase emulators:exec --only firestore --project demo-modulo-squares-rules-test \"vitest\""
   },
   "devDependencies": {
-    "@firebase/rules-unit-testing": "^5.0.2",
+    "@firebase/rules-unit-testing": "^6.0.0",
     "@types/node": "^26.6.5",
     "firebase": "^12.19.0",
     "typescript": "^7.0.2",
