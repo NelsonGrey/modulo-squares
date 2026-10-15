@@ -31,12 +31,12 @@
     "config:prod": "./scripts/switch-mobile-configs.sh prod"
   },
   "dependencies": {
-    "express": "^5.2.1"
+    "express": "^5.3.0"
   },
   "devDependencies": {
     "firebase": "^12.19.0",
-    "firebase-tools": "^15.32.1",
-    "playwright": "^1.63.0"
+    "firebase-tools": "^15.33.0",
+    "playwright": "^1.64.0"
   },
   "overrides": {
     "@grpc/grpc-js": "1.14.4",
