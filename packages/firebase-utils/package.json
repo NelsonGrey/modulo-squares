@@ -24,7 +24,7 @@
     "clean": "rm -rf node_modules dist"
   },
   "dependencies": {
-    "firebase": "^12.19.0",
+    "firebase": "^13.0.0",
     "firebase-admin": "^14.5.0",
     "protobufjs": "^7.6.6"
   },
@@ -40,7 +40,7 @@
     "vitest": "^5.0.4"
   },
   "peerDependencies": {
-    "firebase": "^12.19.0"
+    "firebase": "^13.0.0"
   },
   "overrides": {
     "uuid": "^11.1.1",
