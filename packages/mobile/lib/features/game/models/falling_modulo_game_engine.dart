@@ -230,11 +230,12 @@ class FallingModuloGameEngine {
     final scoreDelta = baseScoreDelta + bonusScoreDelta;
     final scoreAfter = max(0, state.score + scoreDelta);
     final comboAfter = success ? state.combo + 1 : 0;
-    var nextFillBalance = isDead
-        ? state.fillBalance - 1
-        : (success
-            ? state.fillBalance + (isHighestBucket ? 2 : 1)
-            : state.fillBalance - remainder);
+    var nextFillBalance =
+        isDead
+            ? state.fillBalance - 1
+            : (success
+                ? state.fillBalance + (isHighestBucket ? 2 : 1)
+                : state.fillBalance - remainder);
 
     var nextLevel = state.level;
     var nextResolvedCount = state.tilesResolvedInLevel + 1;

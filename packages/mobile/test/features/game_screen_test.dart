@@ -28,9 +28,7 @@ void main() {
     expect(find.byType(Scaffold), findsOneWidget);
   });
 
-  testWidgets('GameScreen shows app title', (
-    WidgetTester tester,
-  ) async {
+  testWidgets('GameScreen shows app title', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() {

@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:modulo_squares/core/services/analytics_service.dart';
 import 'package:modulo_squares/core/services/consent_service.dart';
 import 'package:modulo_squares/core/services/purchase_service.dart';
 import 'package:modulo_squares/core/di/service_locator.dart';
@@ -34,9 +33,6 @@ class AdService {
   bool _isLoading = false;
   final bool _testMode;
 
-  // Get analytics service from dependency injection
-  AnalyticsService get _analyticsService => getIt<AnalyticsService>();
-
   // Get purchase service from dependency injection
   PurchaseService get _purchaseService => getIt<PurchaseService>();
 
@@ -52,7 +48,8 @@ class AdService {
 
   void loadInterstitial() {
     if (_testMode) return; // Skip ad loading in test mode
-    if (_purchaseService.adsRemoved) return; // Purchaser: don't request ads at all
+    // Purchaser: don't request ads at all
+    if (_purchaseService.adsRemoved) return;
 
     if (_isLoading || _interstitial != null) return;
     _isLoading = true;
@@ -115,33 +112,16 @@ class AdService {
     }
 
     ad.fullScreenContentCallback = FullScreenContentCallback(
-      onAdImpression: (ad) {
-        _analyticsService.logAdImpression(
-          format: 'interstitial',
-          trigger: trigger,
-          levelNum: levelNum,
-        );
-      },
       onAdDismissedFullScreenContent: (ad) {
         ad.dispose();
         _interstitial = null;
         loadInterstitial();
-        _analyticsService.logAdDismissed(
-          format: 'interstitial',
-          trigger: trigger,
-          levelNum: levelNum,
-        );
         completeOnce();
       },
       onAdFailedToShowFullScreenContent: (ad, error) {
         ad.dispose();
         _interstitial = null;
         loadInterstitial();
-        _analyticsService.logAdDismissed(
-          format: 'interstitial',
-          trigger: trigger,
-          levelNum: levelNum,
-        );
         ErrorHandler().logError('Ad show failed', error);
         completeOnce();
       },

@@ -16,18 +16,12 @@ class CacheEntry {
 
   /// Convert to JSON for storage
   Map<String, dynamic> toJson() {
-    return {
-      'data': data,
-      'timestamp': timestamp.toIso8601String(),
-    };
+    return {'data': data, 'timestamp': timestamp.toIso8601String()};
   }
 
   /// Create from JSON
   factory CacheEntry.fromJson(Map<String, dynamic> json) {
-    return CacheEntry(
-      json['data'],
-      DateTime.parse(json['timestamp']),
-    );
+    return CacheEntry(json['data'], DateTime.parse(json['timestamp']));
   }
 }
 
@@ -152,7 +146,8 @@ class CacheService {
       return {
         'leaderboard_cached': leaderboardCache != null,
         'game_assets_cached': gameAssetsCache != null,
-        'cache_size_bytes': (leaderboardCache?.length ?? 0) + (gameAssetsCache?.length ?? 0),
+        'cache_size_bytes':
+            (leaderboardCache?.length ?? 0) + (gameAssetsCache?.length ?? 0),
       };
     } catch (e) {
       ErrorHandler().logError('Get cache stats', e);

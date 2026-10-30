@@ -337,7 +337,10 @@ class _FallingTile extends StatelessWidget {
       alignment: Alignment.center,
       child: Text(
         '$value',
-        style: TextStyle(color: theme.fallingTileFg, fontWeight: FontWeight.bold),
+        style: TextStyle(
+          color: theme.fallingTileFg,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }

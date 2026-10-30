@@ -100,8 +100,7 @@ class GameHud extends StatelessWidget {
         key: const Key('hud-deficit-value'),
         icon: Icons.warning_amber_rounded,
         label: 'Deficit',
-        value:
-            state.deficitSquares > 0 ? '-${state.deficitSquares}' : '0',
+        value: state.deficitSquares > 0 ? '-${state.deficitSquares}' : '0',
         bg: theme.chipDeficit.bg,
         fg: theme.chipDeficit.fg,
       ),

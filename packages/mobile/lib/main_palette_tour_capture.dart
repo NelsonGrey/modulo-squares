@@ -49,12 +49,10 @@ Future<void> _tour() async {
     await _tap(
       (widget) => widget is IconButton && widget.tooltip == 'Settings',
     );
-    await _text('GAMEPLAY');
-    await _text('APPEARANCE');
     await _wait(1800);
     await _text(name);
     await _wait(1000);
-    await _text('Save');
+    await _tap((widget) => widget is BackButton);
     await _text('Resume');
     await _wait(6500);
   }
