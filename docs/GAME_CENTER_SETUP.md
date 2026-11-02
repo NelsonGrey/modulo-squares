@@ -28,27 +28,27 @@ Game Center keeps only the best score per player, so resubmitting is harmless.
 Fifteen achievements, 335 points total (Game Center allows 100 achievements
 and 1,000 points). The rules live in
 `packages/mobile/lib/gamecenter/achievement_tracker.dart` and are unit-tested;
-the IDs are in `game_center_ids.dart`. Each needs a title, a pre-earned and an
-earned description, a 512x512 image and the point value. All are visible (not
+the IDs are in `game_center_ids.dart`. Each needs a title, a pre-earned description (shown while locked: how to earn it) and an
+earned description (shown once unlocked: what the player did), a 512x512 image and the point value. All are visible (not
 hidden) and none are repeatable.
 
-| ID | Title | Description | Pts |
-| --- | --- | --- | --- |
-| `modulo_squares_first_clean` | Clean Division | Land a number in a bucket that divides it evenly. | 5 |
-| `modulo_squares_first_bonus` | Top Bucket | Land a number in the highest dividing bucket for a bonus. | 10 |
-| `modulo_squares_lucky_seven` | Lucky Seven | Land a number cleanly in the 7 bucket. | 10 |
-| `modulo_squares_first_level` | Level Up | Complete level 1. | 5 |
-| `modulo_squares_level_5` | Rising | Reach level 5. | 10 |
-| `modulo_squares_level_10` | Veteran | Reach level 10. | 25 |
-| `modulo_squares_level_20` | Modulo Master | Reach level 20. | 50 |
-| `modulo_squares_score_1000` | Four Digits | Score 1,000 points in a single run. | 10 |
-| `modulo_squares_score_5000` | High Roller | Score 5,000 points in a single run. | 25 |
-| `modulo_squares_score_25000` | Grand Total | Score 25,000 points in a single run. | 50 |
-| `modulo_squares_combo_5` | On a Roll | Chain 5 clean landings in a row. | 10 |
-| `modulo_squares_combo_10` | Hot Streak | Chain 10 clean landings in a row. | 25 |
-| `modulo_squares_combo_25` | Unstoppable | Chain 25 clean landings in a row. | 50 |
-| `modulo_squares_perfect_level` | Flawless | Complete a level without a single miss. | 25 |
-| `modulo_squares_hard_level_5` | Hard Mode | Reach level 5 on Hard difficulty. | 25 |
+| ID | Title | Pre-earned Description | Earned Description | Pts |
+| --- | --- | --- | --- | --- |
+| `modulo_squares_first_clean` | Clean Division | Land a number in a bucket that divides it evenly. | You landed a number in a bucket that divides it evenly. | 5 |
+| `modulo_squares_first_bonus` | Top Bucket | Land a number in the highest dividing bucket for a bonus. | You landed a number in the highest dividing bucket and earned a bonus. | 10 |
+| `modulo_squares_lucky_seven` | Lucky Seven | Land a number cleanly in the 7 bucket. | You landed a number cleanly in the 7 bucket. | 10 |
+| `modulo_squares_first_level` | Level Up | Complete level 1. | You completed level 1. | 5 |
+| `modulo_squares_level_5` | Rising | Reach level 5. | You reached level 5. | 10 |
+| `modulo_squares_level_10` | Veteran | Reach level 10. | You reached level 10. | 25 |
+| `modulo_squares_level_20` | Modulo Master | Reach level 20. | You reached level 20. | 50 |
+| `modulo_squares_score_1000` | Four Digits | Score 1,000 points in a single run. | You scored 1,000 points in a single run. | 10 |
+| `modulo_squares_score_5000` | High Roller | Score 5,000 points in a single run. | You scored 5,000 points in a single run. | 25 |
+| `modulo_squares_score_25000` | Grand Total | Score 25,000 points in a single run. | You scored 25,000 points in a single run. | 50 |
+| `modulo_squares_combo_5` | On a Roll | Chain 5 clean landings in a row. | You chained 5 clean landings in a row. | 10 |
+| `modulo_squares_combo_10` | Hot Streak | Chain 10 clean landings in a row. | You chained 10 clean landings in a row. | 25 |
+| `modulo_squares_combo_25` | Unstoppable | Chain 25 clean landings in a row. | You chained 25 clean landings in a row. | 50 |
+| `modulo_squares_perfect_level` | Flawless | Complete a level without a single miss. | You completed a level without a single miss. | 25 |
+| `modulo_squares_hard_level_5` | Hard Mode | Reach level 5 on Hard difficulty. | You reached level 5 on Hard difficulty. | 25 |
 
 Notes:
 - "Reach level N" and score achievements apply within a run; a new run does
