@@ -60,9 +60,12 @@ released and adopted.
    `setup-firebase` action, `firebase*.json`; shut down the three GCP projects
    (export anything needed first); remove the IAM condition auditor; close the
    related issues (modulo-squares #364–369, functions #12–14).
-8. **Docs sweep**: many `docs/*.md` still describe Firebase/auth/leaderboard
-   (Firebase_First_Standard, Database_Schema, Backend_Services_Guide,
-   Mobile_Config_Setup, Analytics, ...). Rewrite or delete.
+8. **Docs sweep** (partly done on the branch): README, Current_State,
+   System_Architecture and the index are rewritten; Firebase_First_Standard,
+   Database_Schema, Api_Documentation, Backend_Services_Guide and
+   Mobile_Config_Setup are deleted. Still describing the Firebase era:
+   Analytics, Security, Web_Frontend_Architecture, GO_LIVE_RUNBOOK,
+   Requirements/Product docs. Rewrite or delete these when decommissioning.
 
 ## Known trade-offs and follow-ups
 

@@ -1,114 +1,51 @@
 # System Architecture
 
-**Updated**: 2026-07-20
+**Updated**: 2026-11-02 (release 1.1.0, Game Center)
 
 ## System context
 
 ```text
-Native Flutter app --------------------+
-  Firebase Auth                        |
-  Firestore reads/owned writes         |--> Firebase projects (dev/staging/prod)
-  Callable Functions ------------------+      Auth, Firestore, Functions,
-  Analytics/Crashlytics/App Check      |      Analytics, Crashlytics, Hosting
-  AdMob + platform IAP                 |
-                                       |
-React website -------------------------+
-  public Firestore leaderboard reads   |
-  GTM/GA4 + AdSense under consent       |
+Flutter iOS app
+  Game engine (local)          best score kept on device (SharedPreferences)
+  lib/gamecenter/ ----------> Game Center: leaderboard + 15 achievements
+  AdMob + StoreKit             remove_ads entitlement from StoreKit result
+        |
+        '--> legal / support links --> nelsongrey.com/games/modulo-squares/
 
-GitHub Actions
-  builds Flutter and React
-  uploads iOS to TestFlight
-  deploys Hosting
-  checks out private Functions repo and deploys Functions
+GitHub Actions: analyze + test, build iOS, upload to TestFlight
 ```
 
-## Repository boundaries
-
-### Public repository
-
-- Flutter clients and platform projects
-- React website
-- Firestore rules
-- Firebase environment descriptors
-- shared Firebase utilities
-- build/release automation
-- public product and engineering documentation
-
-### Private companion repository
-
-Cloud Functions business logic is stored in `NelsonGrey/modulo-squares-functions`. It is checked out to ignored path `packages/functions` by CI or manually by an authorized developer. The public repository therefore exposes client contracts and deployment wiring, not server implementation details.
+There is no application server, database or account system.
 
 ## Mobile runtime
 
-Startup in `packages/mobile/lib/main.dart`:
+Startup in `packages/mobile/lib/main.dart` registers services with GetIt, initializes ads and purchases, then renders `GameScreen`, a thin boundary around `FallingModuloGameScreen`. On first run the game offers to connect to Game Center; the choice is stored and can be changed in Settings.
 
-1. Register services with GetIt.
-2. Initialize Firebase and guarded platform services.
-3. Attach Firebase Analytics navigation observation when Firebase is ready.
-4. Show a recovery screen if required Firebase initialization fails.
-5. Observe Firebase Auth state.
-6. Require a gamertag after authentication.
-7. Render the React-independent Flutter `WebsiteScreen` on Flutter web or `GameScreen` on native platforms.
+### Layers
 
-`GameScreen` is intentionally a thin boundary around `FallingModuloGameScreen`.
-
-### Mobile layers
-
-- `core/auth`: provider-specific authentication support and nonce generation.
-- `core/config`: generated Firebase options and AdMob IDs.
 - `core/di`: service registration.
-- `core/services`: ads, analytics, cache, consent, error handling, gamertags, leaderboard, and purchases.
-- `features/auth`: login/gamertag/profile UI and profile data/domain code.
-- `features/game`: active falling mode. The legacy board-clearing mode was confirmed dead and removed (2026-09-11).
-- `features/leaderboard`: leaderboard UI.
-- `features/website`: legacy Flutter web surface; not Firebase Hosting's current site.
+- `core/services`: ads, cache, consent, error handling and purchases.
+- `gamecenter/`: Game Center sign-in and connection state, gated leaderboard and achievement calls, the achievement rules tracker (unit-tested), IDs in `game_center_ids.dart`, and fakes for tests.
+- `features/game`: the falling mode, Settings page and pause overlay.
 - `shared`: reusable models and widgets.
 
-## Web runtime
+### Game Center behavior
 
-`packages/web` is the deployed Firebase Hosting application. React Router maps nine routes. Only the leaderboard route initializes Firestore data access; authentication is not part of the public React site.
+- The game reports the best score to leaderboard `modulo_squares_high_score` and unlocks achievements as the tracker detects them. Calls are no-ops when the player has not connected.
+- Game Center keeps only the best score per player, so resubmitting is harmless.
+- The leaderboard button opens Game Center's native UI.
+- A best score saved on the device by an older build is posted the first time the player connects.
 
-The consent bootstrap executes before GTM. Consent defaults to denied and can be restored from `ms_consent_v1`. The React banner updates Consent Mode and dispatches an event used by ad slots.
+## Security and privacy boundaries
 
-## Firebase data plane
+- No account data, analytics or crash data leave the device. AdMob uses the advertising identifier under App Tracking Transparency.
+- Entitlements are not server-validated; `remove_ads` is low-value and restorable with the same Apple ID.
+- Secrets used by CI (signing, App Store Connect) live in GitHub environments.
 
-- Authenticated client-owned data: `users`, `user_profiles`, `game_stats`.
-- Public read/server write: global, daily, and weekly leaderboards.
-- Owner read/server write: `purchases`, purchase transactions, and `entitlements`.
-- Authenticated claim index: `gamertags` can be created once; updates/deletes are denied by public rules.
+## Delivery
 
-Server-authoritative writes pass through callable Functions. Details are in [API Documentation](Api_Documentation.md) and [Database Schema](Database_Schema.md).
+`.github/workflows/ci-cd.yml` is the only active pipeline. `develop` runs analyze and tests, `staging` and `main` also upload to TestFlight, and App Store submission is a manual production-only step. Archived workflows under `.github/workflows/archive` are historical.
 
-## Environment model
+## Legacy
 
-| Branch | Environment | Firebase project | iOS delivery |
-|---|---|---|---|
-| `develop` | development | `modulo-squares-dev` | TestFlight deployable run |
-| `staging` | staging | `modulo-squares-staging` | TestFlight deployable run |
-| `main` | production | `modulo-squares-prod` | TestFlight plus optional manual review submission |
-
-Environment selection is controlled by the active GitHub workflow and `scripts/switch-mobile-configs.sh`.
-
-## Security boundaries
-
-- Firebase Auth identities gate owned records and callable Functions.
-- Firestore rules deny all client writes not explicitly allowed.
-- Leaderboard sessions and purchase validation are server-controlled.
-- App Check is initialized in the mobile client; enforcement is an external Firebase console setting.
-- Production secrets remain in GitHub environments/Secrets and local ignored files.
-- The private Functions checkout keeps server business logic out of the public repository.
-
-## Delivery architecture
-
-`.github/workflows/ci-cd.yml` is the only active full delivery pipeline. Archived workflow files are retained under `.github/workflows/archive` and must not be cited as current automation.
-
-The optional `install-ios-on-hades.yml` workflow uses a self-hosted Mac and connected iPhone. Normal CI, TestFlight, Hosting, and Functions deployment use GitHub-hosted runners.
-
-## Known architecture debt
-
-- Active and legacy game implementations coexist.
-- The Flutter `WebsiteScreen` contains placeholder behavior but is not the deployed site.
-- Root Functions scripts depend on an absent-by-default private checkout.
-- Android artifacts exist, but no Android job runs in active CI.
-- `packages/firebase-utils` is built and linted but not consumed by the Flutter client.
+Firebase Auth, Firestore, Cloud Functions and the React site served 1.0.x. They remain deployed only until 1.1.0 is adopted. See [GAME_CENTER_MIGRATION.md](GAME_CENTER_MIGRATION.md).

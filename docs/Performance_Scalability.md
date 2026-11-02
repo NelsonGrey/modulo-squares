@@ -767,6 +767,5 @@ artillery run load-test.yml
 ## Related Documentation
 
 - [System Architecture](System_Architecture.md)
-- [Database Schema](Database_Schema.md)
 - [CI/CD Setup](Ci_Cd_Setup.md)
 - [Go-Live Runbook](GO_LIVE_RUNBOOK.md)

@@ -1,6 +1,6 @@
 # Modulo Squares Documentation Index
 
-**Updated**: 2026-09-11
+**Updated**: 2026-11-02 (Game Center release 1.1.0)
 
 This index separates current implementation documentation from operational references, product plans, and historical records. The distinction matters because the repository retains several pre-launch automation proposals; the older board-clearing game mode was confirmed dead and removed (2026-09-11).
 
@@ -20,17 +20,16 @@ This index separates current implementation documentation from operational refer
 
 | Document | Scope |
 |---|---|
-| [API Documentation](Api_Documentation.md) | Callable Function contracts used by the public client |
-| [Database Schema](Database_Schema.md) | Firestore collections, ownership, and indexes |
 | [Flutter Architecture](Flutter_Architecture.md) | Mobile package structure; notes the removed legacy implementation |
-| [Web Frontend Architecture](Web_Frontend_Architecture.md) | React routes, Firebase reads, consent, SEO, and hosting |
+| [Web Frontend Architecture](Web_Frontend_Architecture.md) | Legacy modulosquares.com React site (retired after 1.1.0 adoption) |
 | [CI/CD Setup](Ci_Cd_Setup.md) | Active GitHub Actions workflow |
 | [Environment Setup](Environment_Setup.md) | Toolchain and local configuration |
 | [Security](Security.md) | Security principles and operational checks |
 | [Analytics](Analytics.md) | Mobile event taxonomy and measurement plan |
 | [SEO / SEM Audit](SEO_SEM_Audit.md) | Google tools, website SEO/SEM, and iOS ASO — findings and punch list |
 | [AdMob Setup](Admob_Setup.md) | Mobile ad configuration and consent |
-| [Mobile Config Setup](Mobile_Config_Setup.md) | Environment-specific native Firebase switching |
+| [Game Center Setup](GAME_CENTER_SETUP.md) | App Store Connect leaderboard and achievement records, device checklist |
+| [Game Center Migration](GAME_CENTER_MIGRATION.md) | Why and how the app left Firebase; cutover and decommission checklist |
 | [Public Repo Hardening](PUBLIC_REPO_HARDENING.md) | Public/private source boundary, abuse controls, and current hardening status snapshot |
 | [Code Quality Analysis](Code_Quality_Analysis.md) | Current audit findings and validation results |
 | [Implementation Summary](Implementation_Summary.md) | Current implementation and risk summary |
@@ -85,8 +84,6 @@ These are retained for decision history. Commands, filenames, statuses, and arch
 | [CI/CD Workstreams](Cicd_Workstreams.md) | Historical workstream tracking |
 | [Act Testing Guide](Act_Testing_Guide.md) | Local Actions emulation reference |
 | [Docker Auth Setup](Docker_Auth_Setup.md) | Runner/container tooling; not application delivery |
-| [Firebase-First Standard](Firebase_First_Standard.md) | Cross-project design standard, not current repo topology |
-| [Backend Services Guide](Backend_Services_Guide.md) | Broad Firebase examples; private Functions repo is authoritative |
 
 ## Other repository documentation
 
@@ -104,5 +101,6 @@ These are retained for decision history. Commands, filenames, statuses, and arch
 - Use repository-relative paths and name the authoritative code/config file.
 - Label console-derived status with a verification date.
 - Treat `.github/workflows/ci-cd.yml` as the active pipeline and `.github/workflows/archive/` as history.
-- Treat `packages/functions` as an optional private checkout, not tracked public source.
+- Treat `packages/functions`, `packages/web`, `packages/firestore-rules` and `packages/firebase-utils` as legacy 1.0.x infrastructure pending decommission.
+- Documents that describe Firebase accounts, gamertags, Firestore or the in-app leaderboard describe 1.0.x, not 1.1.0.
 - Update `Current_State.md` and `GO_LIVE_RUNBOOK.md` whenever gameplay, release, or deployment state changes.
