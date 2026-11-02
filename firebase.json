@@ -99,6 +99,68 @@
         "source": "**",
         "destination": "/index.html"
       }
+    ],
+    "redirects": [
+      {
+        "source": "/",
+        "destination": "https://nelsongrey.com/games/modulo-squares/",
+        "type": 301
+      },
+      {
+        "source": "/how-it-works",
+        "destination": "https://nelsongrey.com/games/modulo-squares/how-to-play",
+        "type": 301
+      },
+      {
+        "source": "/download",
+        "destination": "https://nelsongrey.com/games/modulo-squares/",
+        "type": 301
+      },
+      {
+        "source": "/pricing",
+        "destination": "https://nelsongrey.com/games/modulo-squares/",
+        "type": 301
+      },
+      {
+        "source": "/leaderboard",
+        "destination": "https://nelsongrey.com/games/modulo-squares/",
+        "type": 301
+      },
+      {
+        "source": "/strategy-guide",
+        "destination": "https://nelsongrey.com/games/modulo-squares/strategy-guide",
+        "type": 301
+      },
+      {
+        "source": "/modular-arithmetic-explained",
+        "destination": "https://nelsongrey.com/games/modulo-squares/modular-arithmetic-explained",
+        "type": 301
+      },
+      {
+        "source": "/privacy",
+        "destination": "https://nelsongrey.com/games/modulo-squares/privacy",
+        "type": 301
+      },
+      {
+        "source": "/terms",
+        "destination": "https://nelsongrey.com/games/modulo-squares/terms",
+        "type": 301
+      },
+      {
+        "source": "/cookies",
+        "destination": "https://nelsongrey.com/games/modulo-squares/cookies",
+        "type": 301
+      },
+      {
+        "source": "/support",
+        "destination": "https://nelsongrey.com/games/modulo-squares/support",
+        "type": 301
+      },
+      {
+        "regex": "^/[^.]*$",
+        "destination": "https://nelsongrey.com/games/modulo-squares/",
+        "type": 301
+      }
     ]
   }
 }
