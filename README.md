@@ -175,7 +175,7 @@ The active pipeline runs for pushes to `develop`, `staging`, and `main`, for pul
 - `deploy-web` / `deploy-functions`: legacy Firebase deployments for 1.0.x, removed at decommission
 - `deployment-summary`: consolidated result summary
 
-The manual `install-ios-on-hades.yml` workflow is the only intentional self-hosted path. Files under `.github/workflows/archive/` are historical and are not active pipelines.
+The manual `install-ios-on-hades.yml` workflow is the only intentional self-hosted path.
 
 ## Legacy Firebase environments
 

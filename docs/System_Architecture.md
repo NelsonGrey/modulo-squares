@@ -44,7 +44,7 @@ Startup in `packages/mobile/lib/main.dart` registers services with GetIt, initia
 
 ## Delivery
 
-`.github/workflows/ci-cd.yml` is the only active pipeline. `develop` runs analyze and tests, `staging` and `main` also upload to TestFlight, and App Store submission is a manual production-only step. Archived workflows under `.github/workflows/archive` are historical.
+`.github/workflows/ci-cd.yml` is the only active pipeline. `develop` runs analyze and tests, `staging` and `main` also upload to TestFlight, and App Store submission is a manual production-only step.
 
 ## Legacy
 

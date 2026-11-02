@@ -28,7 +28,6 @@ See [Environment Setup](Environment_Setup.md) for platform prerequisites.
 - Active gameplay is `GameScreen` -> `FallingModuloGameScreen`.
 - Firebase Hosting serves the React app in `packages/web`, not Flutter `WebsiteScreen`.
 - `.github/workflows/ci-cd.yml` is the active delivery workflow.
-- `.github/workflows/archive` contains inactive history.
 - Cloud Functions source is private and absent from a normal clone.
 - `Current_State.md` and `GO_LIVE_RUNBOOK.md` supersede status claims in older plans.
 
