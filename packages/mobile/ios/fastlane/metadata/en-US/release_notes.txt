@@ -1,5 +1,4 @@
 New in 1.1.0:
-• Game Center replaces Modulo Squares accounts: compete on the Game Center leaderboard and earn 15 achievements
-• No sign-in required; connecting to Game Center is optional
-• Settings is now a full-screen page
+• Game Center leaderboard and 15 achievements; connecting is optional
+• No account or sign-in needed to play
 • Existing Modulo Squares accounts are retired; your best score stays on your device and is posted to Game Center when you connect
