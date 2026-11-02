@@ -87,7 +87,7 @@ These are retained for decision history. Commands, filenames, statuses, and arch
 - Use exact filename casing in links; GitHub is case-sensitive.
 - Use repository-relative paths and name the authoritative code/config file.
 - Label console-derived status with a verification date.
-- Treat `.github/workflows/ci-cd.yml` as the active pipeline and `.github/workflows/archive/` as history.
+- Treat `.github/workflows/ci-cd.yml` as the active pipeline.
 - Treat `packages/functions`, `packages/web`, `packages/firestore-rules` and `packages/firebase-utils` as legacy 1.0.x infrastructure pending decommission.
 - Documents that describe Firebase accounts, gamertags, Firestore or the in-app leaderboard describe 1.0.x, not 1.1.0.
 - Update `Current_State.md` and `GO_LIVE_RUNBOOK.md` whenever gameplay, release, or deployment state changes.
