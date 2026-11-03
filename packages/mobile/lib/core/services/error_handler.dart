@@ -1,220 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart'
-    show kDebugMode, kIsWeb, kReleaseMode, debugPrint;
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:modulo_squares/l10n/app_localizations.dart';
 
-/// Thin seam over [FirebaseCrashlytics] so [ErrorHandler.logError] can be
-/// unit tested (operation/error/stackTrace/fatal forwarding, plus the
-/// Firebase-unavailable guard) without a real Firebase app being
-/// initialized in the test binary.
-abstract class CrashlyticsReporter {
-  Future<void> recordError(
-    dynamic error,
-    StackTrace? stackTrace, {
-    required String reason,
-    required bool fatal,
-  });
-}
-
-class _FirebaseCrashlyticsReporter implements CrashlyticsReporter {
-  const _FirebaseCrashlyticsReporter();
-
-  @override
-  Future<void> recordError(
-    dynamic error,
-    StackTrace? stackTrace, {
-    required String reason,
-    required bool fatal,
-  }) {
-    return FirebaseCrashlytics.instance.recordError(
-      error,
-      stackTrace,
-      reason: reason,
-      fatal: fatal,
-    );
-  }
-}
-
-/// Centralized error handling service for Firebase and network operations
+/// Centralized error handling for ads, purchases and network operations.
 class ErrorHandler {
   ErrorHandler._();
   static final ErrorHandler instance = ErrorHandler._();
 
   factory ErrorHandler() => instance;
-
-  /// The Crashlytics reporter used by [logError]. Overridable in tests via
-  /// [debugCrashlyticsReporter] to verify forwarding without a real
-  /// Firebase app.
-  static CrashlyticsReporter _crashlyticsReporter =
-      const _FirebaseCrashlyticsReporter();
-
-  /// Swaps the Crashlytics reporter for tests. Call
-  /// [resetCrashlyticsReporter] in `tearDown` to restore the default.
-  @visibleForTesting
-  static set debugCrashlyticsReporter(CrashlyticsReporter reporter) {
-    _crashlyticsReporter = reporter;
-  }
-
-  /// Restores the default (real Crashlytics) reporter after a test that
-  /// used [debugCrashlyticsReporter].
-  @visibleForTesting
-  static void resetCrashlyticsReporter() {
-    _crashlyticsReporter = const _FirebaseCrashlyticsReporter();
-  }
-
-  /// Handle Firebase initialization errors
-  void handleFirebaseInitError(dynamic error, StackTrace stackTrace) {
-    debugPrint('Firebase initialization failed: $error');
-    debugPrint('Stack trace: $stackTrace');
-    // In a production app, you might want to send this to a crash reporting service
-  }
-
-  /// Handle Firebase Auth errors with localization
-  String getAuthErrorMessage(dynamic error, BuildContext? context) {
-    final l10n = context != null ? AppLocalizations.of(context) : null;
-    if (l10n == null) {
-      return _getAuthErrorMessageEnglish(error);
-    }
-
-    if (error is FirebaseAuthException) {
-      switch (error.code) {
-        case 'user-disabled':
-          return l10n.authErrorUserDisabled;
-        case 'user-not-found':
-          return l10n.authErrorUserNotFound;
-        case 'wrong-password':
-          return l10n.authErrorWrongPassword;
-        case 'email-already-in-use':
-          return l10n.authErrorEmailAlreadyInUse;
-        case 'weak-password':
-          return l10n.authErrorWeakPassword;
-        case 'invalid-email':
-          return l10n.authErrorInvalidEmail;
-        case 'operation-not-allowed':
-          return l10n.authErrorOperationNotAllowed;
-        case 'too-many-requests':
-          return l10n.authErrorTooManyRequests;
-        case 'network-request-failed':
-          return l10n.authErrorNetworkRequestFailed;
-        default:
-          return l10n.authErrorUnexpected;
-      }
-    }
-    return l10n.authErrorUnexpected;
-  }
-
-  /// Fallback English error messages (for use before localization is initialized)
-  String _getAuthErrorMessageEnglish(dynamic error) {
-    if (error is FirebaseAuthException) {
-      switch (error.code) {
-        case 'user-disabled':
-          return 'This account has been disabled.';
-        case 'user-not-found':
-          return 'No account found with this email.';
-        case 'wrong-password':
-          return 'Incorrect password.';
-        case 'email-already-in-use':
-          return 'An account with this email already exists.';
-        case 'weak-password':
-          return 'Password is too weak.';
-        case 'invalid-email':
-          return 'Invalid email address.';
-        case 'operation-not-allowed':
-          return 'This sign-in method is not enabled.';
-        case 'too-many-requests':
-          return 'Too many failed attempts. Please try again later.';
-        case 'network-request-failed':
-          return 'Network error. Please check your connection.';
-        default:
-          return 'Authentication failed: ${error.message ?? error.code}';
-      }
-    }
-    return 'An unexpected authentication error occurred.';
-  }
-
-  /// Handle Firestore errors with localization
-  String getFirestoreErrorMessage(dynamic error, BuildContext? context) {
-    final l10n = context != null ? AppLocalizations.of(context) : null;
-    if (l10n == null) {
-      return _getFirestoreErrorMessageEnglish(error);
-    }
-
-    if (error is FirebaseException) {
-      switch (error.code) {
-        case 'permission-denied':
-          return l10n.firestoreErrorPermissionDenied;
-        case 'not-found':
-          return l10n.firestoreErrorNotFound;
-        case 'already-exists':
-          return l10n.firestoreErrorAlreadyExists;
-        case 'resource-exhausted':
-          return l10n.firestoreErrorResourceExhausted;
-        case 'failed-precondition':
-          return l10n.firestoreErrorFailedPrecondition;
-        case 'aborted':
-          return l10n.firestoreErrorAborted;
-        case 'out-of-range':
-          return l10n.firestoreErrorOutOfRange;
-        case 'unimplemented':
-          return l10n.firestoreErrorUnimplemented;
-        case 'internal':
-          return l10n.firestoreErrorInternal;
-        case 'unavailable':
-          return l10n.firestoreErrorUnavailable;
-        case 'data-loss':
-          return l10n.firestoreErrorDataLoss;
-        case 'unauthenticated':
-          return l10n.firestoreErrorUnauthenticated;
-        case 'deadline-exceeded':
-          return l10n.firestoreErrorDeadlineExceeded;
-        default:
-          return l10n.firestoreErrorUnexpected;
-      }
-    }
-    return l10n.firestoreErrorUnexpected;
-  }
-
-  /// Fallback English error messages for Firestore
-  String _getFirestoreErrorMessageEnglish(dynamic error) {
-    if (error is FirebaseException) {
-      switch (error.code) {
-        case 'permission-denied':
-          return 'You don\'t have permission to perform this action.';
-        case 'not-found':
-          return 'The requested data was not found.';
-        case 'already-exists':
-          return 'This data already exists.';
-        case 'resource-exhausted':
-          return 'Too many requests. Please try again later.';
-        case 'failed-precondition':
-          return 'Operation failed due to current state.';
-        case 'aborted':
-          return 'Operation was aborted.';
-        case 'out-of-range':
-          return 'Requested data is out of range.';
-        case 'unimplemented':
-          return 'This feature is not implemented yet.';
-        case 'internal':
-          return 'An internal error occurred.';
-        case 'unavailable':
-          return 'Service is currently unavailable.';
-        case 'data-loss':
-          return 'Data loss occurred.';
-        case 'unauthenticated':
-          return 'You must be signed in to perform this action.';
-        case 'deadline-exceeded':
-          return 'Request timed out. Please try again.';
-        default:
-          return 'Database error: ${error.message ?? error.code}';
-      }
-    }
-    return 'An unexpected database error occurred.';
-  }
 
   /// Handle AdMob errors
   String getAdErrorMessage(AdError error, BuildContext? context) {
@@ -374,44 +169,14 @@ class ErrorHandler {
     );
   }
 
-  /// Log error for debugging/monitoring
+  /// Log error for debugging. The app has no crash-reporting backend, so
+  /// this only prints in debug builds.
   void logError(String operation, dynamic error, [StackTrace? stackTrace]) {
     if (kDebugMode) {
-      // Only log to console in debug mode
       debugPrint('[$operation] Error: $error');
       if (stackTrace != null) {
         debugPrint('[$operation] Stack trace: $stackTrace');
       }
-    } else if (kReleaseMode && !kIsWeb) {
-      // Report to Crashlytics in release builds only (unsupported on web;
-      // deliberately excludes profile builds, which are also !kDebugMode,
-      // so perf-testing/profiling sessions don't pollute production
-      // Crashlytics issue counts).
-      recordCrashlyticsError(operation, error, stackTrace);
     }
-  }
-
-  /// Forwards [error] to Crashlytics, guarding against the
-  /// `[core/no-app]` exception that `FirebaseCrashlytics.instance` throws
-  /// when no default Firebase app was ever initialized (e.g. when
-  /// `initializeFirebaseApp()` returned false in `main()` and startup is
-  /// proceeding through the Firebase-recovery path). Exposed so tests can
-  /// verify the forwarded operation/error/stackTrace/fatal values and the
-  /// guard without needing [kReleaseMode] to be true in the test binary.
-  @visibleForTesting
-  void recordCrashlyticsError(
-    String operation,
-    dynamic error, [
-    StackTrace? stackTrace,
-  ]) {
-    if (Firebase.apps.isEmpty) {
-      return;
-    }
-    _crashlyticsReporter.recordError(
-      error,
-      stackTrace,
-      reason: operation,
-      fatal: false,
-    );
   }
 }

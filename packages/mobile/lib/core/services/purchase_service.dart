@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:modulo_squares/core/services/error_handler.dart';
@@ -53,8 +52,7 @@ class PurchaseService {
           testMode
               ? _TestInAppPurchase()
               : (inAppPurchase ?? InAppPurchase.instance),
-      _testMode = testMode,
-      _functions = (testMode || inAppPurchase != null) ? null : FirebaseFunctions.instance;
+      _testMode = testMode;
 
   static PurchaseService? _instance;
 
@@ -81,7 +79,6 @@ class PurchaseService {
 
   final InAppPurchase _inAppPurchase;
   final bool _testMode;
-  final FirebaseFunctions? _functions;
 
   // Method for testing to reset the singleton instance
   static void resetInstance() {
@@ -121,7 +118,6 @@ class PurchaseService {
 
     // Load saved purchase states
     await _loadPurchaseStates();
-    await _refreshEntitlementsFromServer();
 
     // Listen to purchase updates
     _subscription = _inAppPurchase.purchaseStream.listen(
@@ -178,49 +174,17 @@ class PurchaseService {
     }
   }
 
-  /// Complete a successful purchase
+  /// Complete a successful purchase. Ad removal is a one-time, non-consumable
+  /// purchase that the App Store itself confirms (and restores on any device
+  /// signed in to the same Apple ID), so the entitlement is granted locally.
   Future<void> _completePurchase(PurchaseDetails purchaseDetails) async {
-    final String productId = purchaseDetails.productID;
-
-    try {
-      if (_functions == null) {
-        // No Firebase available (test mode or DI testing): update state locally.
-        switch (productId) {
-          case _adRemovalProductId:
-            _adsRemoved = true;
-            await _savePurchaseState(_adRemovalPrefKey, true);
-            break;
-        }
-        _purchaseController.add(PurchaseResult.completed);
-        return;
-      }
-
-      final receipt = purchaseDetails.verificationData.serverVerificationData;
-      final transactionId = purchaseDetails.purchaseID ?? '';
-      final platform = _resolvePlatform();
-
-      final result = await _functions.httpsCallable('validatePurchase').call({
-        'productId': productId,
-        'purchaseToken': receipt,
-        'transactionId': transactionId,
-        'platform': platform,
-      });
-
-      final data = Map<String, dynamic>.from(
-        (result.data as Map?) ?? <String, dynamic>{},
-      );
-      final entitlements = Map<String, dynamic>.from(
-        (data['entitlements'] as Map?) ?? <String, dynamic>{},
-      );
-
-      _adsRemoved = entitlements['adsRemoved'] == true;
-      await _savePurchaseState(_adRemovalPrefKey, _adsRemoved);
-
-      _purchaseController.add(PurchaseResult.completed);
-    } catch (error) {
-      ErrorHandler().logError('Complete purchase validation', error);
-      _purchaseController.add(PurchaseResult.error);
+    switch (purchaseDetails.productID) {
+      case _adRemovalProductId:
+        _adsRemoved = true;
+        await _savePurchaseState(_adRemovalPrefKey, true);
+        break;
     }
+    _purchaseController.add(PurchaseResult.completed);
   }
 
   /// Initiate purchase for ad removal
@@ -235,7 +199,10 @@ class PurchaseService {
         .firstWhere((element) => element?.id == productId, orElse: () => null);
 
     if (product == null) {
-      ErrorHandler().logError('Purchase product', 'Product not found: $productId');
+      ErrorHandler().logError(
+        'Purchase product',
+        'Product not found: $productId',
+      );
       throw Exception(
         'Unable to connect to the App Store. '
         'Please check your connection and try again.',
@@ -249,39 +216,12 @@ class PurchaseService {
   /// Restore previous purchases
   Future<void> restorePurchases() async {
     await _inAppPurchase.restorePurchases();
-    await _refreshEntitlementsFromServer();
   }
 
   /// Load saved purchase states from SharedPreferences
   Future<void> _loadPurchaseStates() async {
     final prefs = await SharedPreferences.getInstance();
     _adsRemoved = prefs.getBool(_adRemovalPrefKey) ?? false;
-  }
-
-  Future<void> _refreshEntitlementsFromServer() async {
-    if (_functions == null) return;
-    try {
-      final result = await _functions.httpsCallable('getEntitlements').call();
-      final data = Map<String, dynamic>.from(
-        (result.data as Map?) ?? <String, dynamic>{},
-      );
-
-      _adsRemoved = data['adsRemoved'] == true;
-
-      await _savePurchaseState(_adRemovalPrefKey, _adsRemoved);
-    } catch (error) {
-      ErrorHandler().logError('Refresh entitlements', error);
-    }
-  }
-
-  String _resolvePlatform() {
-    final source = _inAppPurchase.toString().toLowerCase();
-    if (source.contains('storekit') ||
-        source.contains('ios') ||
-        source.contains('apple')) {
-      return 'ios';
-    }
-    return 'android';
   }
 
   /// Save purchase state to SharedPreferences
@@ -298,9 +238,10 @@ class PurchaseService {
     // firstWhere's orElse must return that exact runtime type, so cast down
     // to the base type first rather than constructing a ProductDetails
     // directly in orElse (which throws a type error on every real device).
-    final product = _products
-        .cast<ProductDetails?>()
-        .firstWhere((element) => element?.id == productId, orElse: () => null);
+    final product = _products.cast<ProductDetails?>().firstWhere(
+      (element) => element?.id == productId,
+      orElse: () => null,
+    );
     return product?.price ?? '\$2.99';
   }
 

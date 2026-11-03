@@ -69,7 +69,8 @@ class ConsentService {
   Future<void> _handleAppTrackingTransparency() async {
     try {
       // Check current tracking status
-      final TrackingStatus status = await AppTrackingTransparency.trackingAuthorizationStatus;
+      final TrackingStatus status =
+          await AppTrackingTransparency.trackingAuthorizationStatus;
 
       switch (status) {
         case TrackingStatus.authorized:
@@ -83,7 +84,8 @@ class ConsentService {
         case TrackingStatus.notDetermined:
           // Request permission
           await AppTrackingTransparency.requestTrackingAuthorization();
-          final TrackingStatus newStatus = await AppTrackingTransparency.trackingAuthorizationStatus;
+          final TrackingStatus newStatus =
+              await AppTrackingTransparency.trackingAuthorizationStatus;
           _attAuthorized = newStatus == TrackingStatus.authorized;
           break;
       }
@@ -203,7 +205,8 @@ class ConsentService {
     if (!Platform.isIOS) return 'Not applicable on this platform';
 
     try {
-      final TrackingStatus status = await AppTrackingTransparency.trackingAuthorizationStatus;
+      final TrackingStatus status =
+          await AppTrackingTransparency.trackingAuthorizationStatus;
       switch (status) {
         case TrackingStatus.authorized:
           return 'Authorized - Personalized ads enabled';

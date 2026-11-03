@@ -157,87 +157,81 @@ void main() {
   });
 
   group('movement cooldown resets with each new drop cycle', () {
-    test(
-      'a move right after a tile resolves succeeds immediately, not just '
-      'the very first move of the whole run',
-      () {
-        // Regression test: _resetDropClock() zeroed the elapsed drop clock
-        // on every resolve but didn't clear the last-accepted-move snapshot
-        // alongside it, so the cooldown check went negative the moment a new
-        // tile spawned -- silently blocking movement until the elapsed clock
-        // climbed back past a now-stale value from the *previous* tile's
-        // cycle. In practice this made Left/Right feel like they only
-        // worked "sometimes". Unlike the widget-level version of this test,
-        // there's no button-finding or color-matching here -- just the
-        // controller's own state.
-        fakeAsync((async) {
-          final state = _scriptedState(
-            bucketValues: const [1, 2, 4, 5, 3, 6, 7, 8, 9, 0],
-            fallingValue: 9,
-          );
-          final controller = FallingGameLoopController(
-            engine: _ScriptedEngine(state),
-          );
-          addTearDown(controller.dispose);
+    test('a move right after a tile resolves succeeds immediately, not just '
+        'the very first move of the whole run', () {
+      // Regression test: _resetDropClock() zeroed the elapsed drop clock
+      // on every resolve but didn't clear the last-accepted-move snapshot
+      // alongside it, so the cooldown check went negative the moment a new
+      // tile spawned -- silently blocking movement until the elapsed clock
+      // climbed back past a now-stale value from the *previous* tile's
+      // cycle. In practice this made Left/Right feel like they only
+      // worked "sometimes". Unlike the widget-level version of this test,
+      // there's no button-finding or color-matching here -- just the
+      // controller's own state.
+      fakeAsync((async) {
+        final state = _scriptedState(
+          bucketValues: const [1, 2, 4, 5, 3, 6, 7, 8, 9, 0],
+          fallingValue: 9,
+        );
+        final controller = FallingGameLoopController(
+          engine: _ScriptedEngine(state),
+        );
+        addTearDown(controller.dispose);
 
-          controller.toggleRunning();
-          // Clear the 500ms spawn delay so the elapsed drop clock starts
-          // advancing, matching a real player's first input timing.
-          async.elapse(const Duration(milliseconds: 550));
+        controller.toggleRunning();
+        // Clear the 500ms spawn delay so the elapsed drop clock starts
+        // advancing, matching a real player's first input timing.
+        async.elapse(const Duration(milliseconds: 550));
 
-          // First move of a fresh controller is never cooldown-throttled:
-          // lane 5 -> lane 6.
-          controller.moveRight();
-          expect(controller.state.currentLane, 6);
+        // First move of a fresh controller is never cooldown-throttled:
+        // lane 5 -> lane 6.
+        controller.moveRight();
+        expect(controller.state.currentLane, 6);
 
-          // Resolving starts a brand-new drop cycle (elapsed resets to
-          // zero). bucketValues don't reshuffle mid-level, so the lane
-          // itself doesn't move from this alone.
-          controller.resolveCurrentTile();
-          expect(controller.state.currentLane, 6);
+        // Resolving starts a brand-new drop cycle (elapsed resets to
+        // zero). bucketValues don't reshuffle mid-level, so the lane
+        // itself doesn't move from this alone.
+        controller.resolveCurrentTile();
+        expect(controller.state.currentLane, 6);
 
-          // The bug: this landed well within the *old* cooldown window
-          // relative to the stale last-move snapshot from the move above,
-          // so it used to be silently dropped. Lane 6 -> lane 7.
-          controller.moveRight();
-          expect(controller.state.currentLane, 7);
-        });
-      },
-    );
+        // The bug: this landed well within the *old* cooldown window
+        // relative to the stale last-move snapshot from the move above,
+        // so it used to be silently dropped. Lane 6 -> lane 7.
+        controller.moveRight();
+        expect(controller.state.currentLane, 7);
+      });
+    });
 
-    test(
-      'moving twice within the cooldown window inside the same drop cycle '
-      'is still throttled -- the fix only resets the reference point, it '
-      "doesn't remove the cooldown",
-      () {
-        fakeAsync((async) {
-          final state = _scriptedState(
-            bucketValues: const [1, 2, 4, 5, 3, 6, 7, 8, 9, 0],
-            fallingValue: 9,
-          );
-          final controller = FallingGameLoopController(
-            engine: _ScriptedEngine(state),
-          );
-          addTearDown(controller.dispose);
+    test('moving twice within the cooldown window inside the same drop cycle '
+        'is still throttled -- the fix only resets the reference point, it '
+        "doesn't remove the cooldown", () {
+      fakeAsync((async) {
+        final state = _scriptedState(
+          bucketValues: const [1, 2, 4, 5, 3, 6, 7, 8, 9, 0],
+          fallingValue: 9,
+        );
+        final controller = FallingGameLoopController(
+          engine: _ScriptedEngine(state),
+        );
+        addTearDown(controller.dispose);
 
-          controller.toggleRunning();
-          async.elapse(const Duration(milliseconds: 550));
+        controller.toggleRunning();
+        async.elapse(const Duration(milliseconds: 550));
 
-          controller.moveRight();
-          expect(controller.state.currentLane, 6);
+        controller.moveRight();
+        expect(controller.state.currentLane, 6);
 
-          // Immediately again, no time elapsed: still within the ~150-180ms
-          // cooldown for the default (1.0x) move speed.
-          controller.moveRight();
-          expect(controller.state.currentLane, 6);
+        // Immediately again, no time elapsed: still within the ~150-180ms
+        // cooldown for the default (1.0x) move speed.
+        controller.moveRight();
+        expect(controller.state.currentLane, 6);
 
-          // Past the cooldown, same drop cycle: now it goes through.
-          async.elapse(const Duration(milliseconds: 200));
-          controller.moveRight();
-          expect(controller.state.currentLane, 7);
-        });
-      },
-    );
+        // Past the cooldown, same drop cycle: now it goes through.
+        async.elapse(const Duration(milliseconds: 200));
+        controller.moveRight();
+        expect(controller.state.currentLane, 7);
+      });
+    });
   });
 
   group('resolveCurrentTile', () {

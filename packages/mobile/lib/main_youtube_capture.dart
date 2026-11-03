@@ -5,34 +5,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:modulo_squares/core/di/service_locator.dart';
 import 'package:modulo_squares/core/services/purchase_service.dart';
-import 'package:modulo_squares/features/auth/gamertag_screen.dart';
-import 'package:modulo_squares/features/auth/login_screen.dart';
 import 'package:modulo_squares/features/game/falling_modulo_game_screen.dart';
-import 'package:modulo_squares/features/game/leaderboard_screen.dart';
 import 'package:modulo_squares/features/game/models/falling_modulo_game_engine.dart';
+import 'package:modulo_squares/gamecenter/fake_game_center_progress_service.dart';
+import 'package:modulo_squares/gamecenter/fake_platform_game_auth_service.dart';
+import 'package:modulo_squares/gamecenter/game_center_connection.dart';
+import 'package:modulo_squares/gamecenter/game_center_services.dart';
 import 'package:modulo_squares/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Local-only entry point for repeatable YouTube tutorial recording.
 ///
 /// It renders production screens and game controls, but injected callbacks
-/// keep authentication, gamertag creation, analytics, ads, and network writes
-/// off. The release application continues to build from `main.dart`.
+/// keep Game Center, ads, and network access off. The release application continues to build from `main.dart`.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // These tutorials support the Google Play launch by default, so the local
-  // capture target renders Android's Google/email sign-in choices even when
-  // an iOS Simulator is used as the recording device. Set
-  // YOUTUBE_CAPTURE_PLATFORM=ios to render iOS/Apple sign-in choices instead
-  // for an iOS-targeted capture pass.
-  const requestedPlatform = String.fromEnvironment('YOUTUBE_CAPTURE_PLATFORM');
-  debugDefaultTargetPlatformOverride =
-      requestedPlatform == 'ios' ? TargetPlatform.iOS : TargetPlatform.android;
+  // The app is iOS-only (Game Center), so capture renders iOS styling.
+  debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
 
   final preferences = await SharedPreferences.getInstance();
   await preferences.setInt('fallingMode.highScore', 401);
-  await preferences.remove('leaderboardTabIndex');
 
   if (!getIt.isRegistered<PurchaseService>()) {
     getIt.registerLazySingleton<PurchaseService>(
@@ -63,7 +56,7 @@ class YouTubeCaptureApp extends StatelessWidget {
   }
 }
 
-enum _CaptureScene { menu, account, gamertag, signIn, navigation, gameplay }
+enum _CaptureScene { menu, navigation, gameplay }
 
 class _CaptureRoot extends StatefulWidget {
   const _CaptureRoot();
@@ -77,52 +70,15 @@ class _CaptureRootState extends State<_CaptureRoot> {
 
   void _show(_CaptureScene scene) => setState(() => _scene = scene);
 
-  Future<void> _simulateEmailAuthentication({
-    required String email,
-    required String password,
-    required bool createAccount,
-  }) async {
-    await Future<void>.delayed(const Duration(milliseconds: 700));
-  }
-
-  Widget _buildLogin({required bool accountCreation}) {
-    return LoginScreen(
-      initializeGoogleSignIn: false,
-      emailAuthenticationOverride: _simulateEmailAuthentication,
-      initialEmail: 'player@example.com',
-      // Placeholder only — emailAuthenticationOverride short-circuits auth, so
-      // this string is never used as a credential. Kept obviously non-secret.
-      initialPassword: 'not-a-real-password',
-      startWithCreateAccount: accountCreation,
-      openEmailDialogOnStart: true,
-      onAuthenticationComplete:
-          () => _show(
-            accountCreation ? _CaptureScene.gamertag : _CaptureScene.navigation,
-          ),
-    );
-  }
-
-  Widget _buildGamertag() {
-    return GamertagScreen(
-      isGuestOverride: false,
-      initialGamertag: 'MathPilot26',
-      isAvailableOverride: (_) async {
-        return true;
-      },
-      saveGamertagOverride: (_) async {
-        await Future<void>.delayed(const Duration(milliseconds: 650));
-      },
-      onGamertagSet: () => _show(_CaptureScene.navigation),
-    );
-  }
-
   Widget _buildGame({required bool expertDemo}) {
     return FallingModuloGameScreen(
       engine: YouTubeCaptureGameEngine(),
       expertDemo: expertDemo,
-      playerNameOverride: 'MathPilot26',
-      leaderboardBuilder:
-          (_) => const LeaderboardScreen(playerName: 'MathPilot26'),
+      gameCenter: GameCenterServices(
+        auth: FakePlatformGameAuthService(),
+        backend: FakeGameCenterProgressService(),
+        connection: GameCenterConnection.connectedFake(),
+      ),
     );
   }
 
@@ -131,9 +87,6 @@ class _CaptureRootState extends State<_CaptureRoot> {
     const requestedScene = String.fromEnvironment('YOUTUBE_CAPTURE_SCENE');
     if (_scene == _CaptureScene.menu && requestedScene.isNotEmpty) {
       _scene = switch (requestedScene) {
-        'account' => _CaptureScene.account,
-        'gamertag' => _CaptureScene.gamertag,
-        'sign-in' => _CaptureScene.signIn,
         'navigation' => _CaptureScene.navigation,
         'gameplay' => _CaptureScene.gameplay,
         _ => _CaptureScene.menu,
@@ -142,9 +95,6 @@ class _CaptureRootState extends State<_CaptureRoot> {
 
     return switch (_scene) {
       _CaptureScene.menu => _CaptureMenu(onSelected: _show),
-      _CaptureScene.account => _buildLogin(accountCreation: true),
-      _CaptureScene.gamertag => _buildGamertag(),
-      _CaptureScene.signIn => _buildLogin(accountCreation: false),
       _CaptureScene.navigation => _buildGame(expertDemo: false),
       _CaptureScene.gameplay => _buildGame(expertDemo: true),
     };
@@ -181,18 +131,6 @@ class _CaptureMenu extends StatelessWidget {
                 style: TextStyle(color: Colors.white54),
               ),
               const SizedBox(height: 44),
-              _CaptureButton(
-                label: 'Create Account + Gamertag',
-                icon: Icons.person_add_alt_1,
-                onPressed: () => onSelected(_CaptureScene.account),
-              ),
-              const SizedBox(height: 14),
-              _CaptureButton(
-                label: 'Sign In',
-                icon: Icons.login,
-                onPressed: () => onSelected(_CaptureScene.signIn),
-              ),
-              const SizedBox(height: 14),
               _CaptureButton(
                 label: 'Navigate the App',
                 icon: Icons.explore_outlined,
@@ -260,7 +198,10 @@ class YouTubeCaptureGameEngine extends FallingModuloGameEngine {
   }) {
     _index = 0;
     return super
-        .createInitialState(startingLevel: startingLevel, difficulty: difficulty)
+        .createInitialState(
+          startingLevel: startingLevel,
+          difficulty: difficulty,
+        )
         .copyWith(currentFallingValue: _nextValue());
   }
 

@@ -2,16 +2,6 @@ name: Install iOS on HADES Device
 
 on:
   workflow_dispatch:
-    inputs:
-      environment:
-        description: Firebase environment config
-        required: true
-        default: prod
-        type: choice
-        options:
-          - dev
-          - staging
-          - prod
 
 permissions:
   contents: read
@@ -31,9 +21,6 @@ jobs:
           flutter --version
           echo "Dart: $(dart --version)"
 
-      - name: Switch mobile configs
-        run: ./scripts/switch-mobile-configs.sh "${{ inputs.environment }}"
-
       - name: Flutter pub get
         working-directory: packages/mobile
         run: flutter pub get
@@ -50,6 +37,5 @@ jobs:
         if: always()
         run: |
           echo "## iOS Install on HADES" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Environment: ${{ inputs.environment }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Build mode: release" >> "$GITHUB_STEP_SUMMARY"
           echo "- Runner: $RUNNER_NAME" >> "$GITHUB_STEP_SUMMARY"

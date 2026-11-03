@@ -9,7 +9,6 @@
 - `packages/shared`: reserved shared package area; no implementation yet.
 - `packages/functions`: ignored location for the private companion Functions checkout; absent in a normal public clone.
 - `.github/workflows/ci-cd.yml`: active build, TestFlight, Hosting, and Functions pipeline.
-- `.github/workflows/archive`: inactive workflow history.
 - `scripts`: environment, signing, deployment, runner, and maintenance helpers.
 - `docs`: current references plus labeled planning/historical material.
 - `icons`: current master icon, proposals, previews, and archived assets.

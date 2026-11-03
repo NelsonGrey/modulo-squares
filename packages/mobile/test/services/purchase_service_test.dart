@@ -22,15 +22,24 @@ class TestInAppPurchase implements InAppPurchase {
   Stream<List<PurchaseDetails>> get purchaseStream => Stream.empty();
 
   @override
-  Future<ProductDetailsResponse> queryProductDetails(Set<String> identifiers) async {
-    return ProductDetailsResponse(productDetails: [], notFoundIDs: identifiers.toList());
+  Future<ProductDetailsResponse> queryProductDetails(
+    Set<String> identifiers,
+  ) async {
+    return ProductDetailsResponse(
+      productDetails: [],
+      notFoundIDs: identifiers.toList(),
+    );
   }
 
   @override
-  Future<bool> buyConsumable({required PurchaseParam purchaseParam, bool autoConsume = true}) async => true;
+  Future<bool> buyConsumable({
+    required PurchaseParam purchaseParam,
+    bool autoConsume = true,
+  }) async => true;
 
   @override
-  Future<bool> buyNonConsumable({required PurchaseParam purchaseParam}) async => true;
+  Future<bool> buyNonConsumable({required PurchaseParam purchaseParam}) async =>
+      true;
 
   @override
   Future<void> completePurchase(PurchaseDetails purchase) async {}
@@ -84,13 +93,20 @@ void main() {
       when(mockProduct.description).thenReturn('Remove ads from the game');
       when(mockProduct.price).thenReturn('\$0.99');
 
-      when(
-        mockInAppPurchase.queryProductDetails({'remove_ads'}),
-      ).thenAnswer((_) async => ProductDetailsResponse(productDetails: [mockProduct], notFoundIDs: [], error: null));
+      when(mockInAppPurchase.queryProductDetails({'remove_ads'})).thenAnswer(
+        (_) async => ProductDetailsResponse(
+          productDetails: [mockProduct],
+          notFoundIDs: [],
+          error: null,
+        ),
+      );
 
       // Mock purchase stream
-      final purchaseStreamController = StreamController<List<PurchaseDetails>>();
-      when(mockInAppPurchase.purchaseStream).thenAnswer((_) => purchaseStreamController.stream);
+      final purchaseStreamController =
+          StreamController<List<PurchaseDetails>>();
+      when(
+        mockInAppPurchase.purchaseStream,
+      ).thenAnswer((_) => purchaseStreamController.stream);
 
       await purchaseService.initialize();
 
@@ -116,12 +132,19 @@ void main() {
         (_) async => ProductDetailsResponse(
           productDetails: [],
           notFoundIDs: ['remove_ads'],
-          error: IAPError(source: 'test', code: 'test_error', message: 'Test error'),
+          error: IAPError(
+            source: 'test',
+            code: 'test_error',
+            message: 'Test error',
+          ),
         ),
       );
 
-      final purchaseStreamController = StreamController<List<PurchaseDetails>>();
-      when(mockInAppPurchase.purchaseStream).thenAnswer((_) => purchaseStreamController.stream);
+      final purchaseStreamController =
+          StreamController<List<PurchaseDetails>>();
+      when(
+        mockInAppPurchase.purchaseStream,
+      ).thenAnswer((_) => purchaseStreamController.stream);
 
       await purchaseService.initialize();
 
@@ -153,50 +176,52 @@ void main() {
       expect(price, isNotEmpty);
     });
 
-    test(
-      'getProductPrice falls back to default price when the loaded '
-      'products list holds a ProductDetails subclass (regression test for '
-      'the real-device crash: on iOS, in_app_purchase_storekit populates '
-      'this list with AppStoreProduct2Details, a ProductDetails subclass, '
-      'so the list\'s runtime element type is more specific than the '
-      'declared List<ProductDetails> — firstWhere\'s orElse must match '
-      'that runtime type or it throws a TypeError)',
-      () async {
-        when(mockInAppPurchase.isAvailable()).thenAnswer((_) async => true);
+    test('getProductPrice falls back to default price when the loaded '
+        'products list holds a ProductDetails subclass (regression test for '
+        'the real-device crash: on iOS, in_app_purchase_storekit populates '
+        'this list with AppStoreProduct2Details, a ProductDetails subclass, '
+        'so the list\'s runtime element type is more specific than the '
+        'declared List<ProductDetails> — firstWhere\'s orElse must match '
+        'that runtime type or it throws a TypeError)', () async {
+      when(mockInAppPurchase.isAvailable()).thenAnswer((_) async => true);
 
-        final mockProduct = MockProductDetails();
-        when(mockProduct.id).thenReturn('remove_ads');
-        when(mockProduct.title).thenReturn('Remove Ads');
-        when(mockProduct.description).thenReturn('Remove ads from the game');
-        when(mockProduct.price).thenReturn('\$0.99');
+      final mockProduct = MockProductDetails();
+      when(mockProduct.id).thenReturn('remove_ads');
+      when(mockProduct.title).thenReturn('Remove Ads');
+      when(mockProduct.description).thenReturn('Remove ads from the game');
+      when(mockProduct.price).thenReturn('\$0.99');
 
-        // Must be a List<MockProductDetails>, not a List<ProductDetails>,
-        // to reproduce the real bug: on a real device the list's runtime
-        // element type is a ProductDetails subclass (AppStoreProduct2Details),
-        // and a plain `[mockProduct]` literal here would get inferred as
-        // List<ProductDetails> from the surrounding parameter type instead,
-        // silently defeating the regression test.
-        final List<MockProductDetails> mockProducts = [mockProduct];
+      // Must be a List<MockProductDetails>, not a List<ProductDetails>,
+      // to reproduce the real bug: on a real device the list's runtime
+      // element type is a ProductDetails subclass (AppStoreProduct2Details),
+      // and a plain `[mockProduct]` literal here would get inferred as
+      // List<ProductDetails> from the surrounding parameter type instead,
+      // silently defeating the regression test.
+      final List<MockProductDetails> mockProducts = [mockProduct];
 
-        when(
-          mockInAppPurchase.queryProductDetails({'remove_ads'}),
-        ).thenAnswer(
-          (_) async => ProductDetailsResponse(productDetails: mockProducts, notFoundIDs: [], error: null),
-        );
+      when(mockInAppPurchase.queryProductDetails({'remove_ads'})).thenAnswer(
+        (_) async => ProductDetailsResponse(
+          productDetails: mockProducts,
+          notFoundIDs: [],
+          error: null,
+        ),
+      );
 
-        final purchaseStreamController = StreamController<List<PurchaseDetails>>();
-        when(mockInAppPurchase.purchaseStream).thenAnswer((_) => purchaseStreamController.stream);
+      final purchaseStreamController =
+          StreamController<List<PurchaseDetails>>();
+      when(
+        mockInAppPurchase.purchaseStream,
+      ).thenAnswer((_) => purchaseStreamController.stream);
 
-        await purchaseService.initialize();
+      await purchaseService.initialize();
 
-        // Product not in the list — exercises the orElse fallback path.
-        final price = purchaseService.getProductPrice('nonexistent_product');
+      // Product not in the list — exercises the orElse fallback path.
+      final price = purchaseService.getProductPrice('nonexistent_product');
 
-        expect(price, '\$2.99');
+      expect(price, '\$2.99');
 
-        await purchaseStreamController.close();
-      },
-    );
+      await purchaseStreamController.close();
+    });
   });
 
   group('PurchaseService - Purchase Flow', () {
@@ -209,15 +234,23 @@ void main() {
       final mockAdRemovalProduct = MockProductDetails();
       when(mockAdRemovalProduct.id).thenReturn('remove_ads');
       when(mockAdRemovalProduct.title).thenReturn('Remove Ads');
-      when(mockAdRemovalProduct.description).thenReturn('Remove ads from the game');
+      when(
+        mockAdRemovalProduct.description,
+      ).thenReturn('Remove ads from the game');
       when(mockAdRemovalProduct.price).thenReturn('\$0.99');
 
-      when(
-        mockInAppPurchase.queryProductDetails({'remove_ads'}),
-      ).thenAnswer((_) async => ProductDetailsResponse(productDetails: [mockAdRemovalProduct], notFoundIDs: [], error: null));
+      when(mockInAppPurchase.queryProductDetails({'remove_ads'})).thenAnswer(
+        (_) async => ProductDetailsResponse(
+          productDetails: [mockAdRemovalProduct],
+          notFoundIDs: [],
+          error: null,
+        ),
+      );
 
       purchaseStreamController = StreamController<List<PurchaseDetails>>();
-      when(mockInAppPurchase.purchaseStream).thenAnswer((_) => purchaseStreamController.stream);
+      when(
+        mockInAppPurchase.purchaseStream,
+      ).thenAnswer((_) => purchaseStreamController.stream);
 
       await purchaseService.initialize();
     });
@@ -227,11 +260,19 @@ void main() {
     });
 
     test('purchaseAdRemoval initiates purchase successfully', () async {
-      when(mockInAppPurchase.buyNonConsumable(purchaseParam: anyNamed('purchaseParam'))).thenAnswer((_) async => true);
+      when(
+        mockInAppPurchase.buyNonConsumable(
+          purchaseParam: anyNamed('purchaseParam'),
+        ),
+      ).thenAnswer((_) async => true);
 
       await purchaseService.purchaseAdRemoval();
 
-      verify(mockInAppPurchase.buyNonConsumable(purchaseParam: anyNamed('purchaseParam'))).called(1);
+      verify(
+        mockInAppPurchase.buyNonConsumable(
+          purchaseParam: anyNamed('purchaseParam'),
+        ),
+      ).called(1);
     });
 
     test('restorePurchases initiates restore flow', () async {
@@ -257,12 +298,18 @@ void main() {
       when(mockProduct.description).thenReturn('Remove ads from the game');
       when(mockProduct.price).thenReturn('\$0.99');
 
-      when(
-        mockInAppPurchase.queryProductDetails({'remove_ads'}),
-      ).thenAnswer((_) async => ProductDetailsResponse(productDetails: [mockProduct], notFoundIDs: [], error: null));
+      when(mockInAppPurchase.queryProductDetails({'remove_ads'})).thenAnswer(
+        (_) async => ProductDetailsResponse(
+          productDetails: [mockProduct],
+          notFoundIDs: [],
+          error: null,
+        ),
+      );
 
       purchaseStreamController = StreamController<List<PurchaseDetails>>();
-      when(mockInAppPurchase.purchaseStream).thenAnswer((_) => purchaseStreamController.stream);
+      when(
+        mockInAppPurchase.purchaseStream,
+      ).thenAnswer((_) => purchaseStreamController.stream);
 
       await purchaseService.initialize();
 
@@ -365,14 +412,19 @@ void main() {
 
       final response = await testIAP.queryProductDetails({'remove_ads'});
 
-      expect(response.productDetails.isEmpty, true); // Test implementation returns empty
+      expect(
+        response.productDetails.isEmpty,
+        true,
+      ); // Test implementation returns empty
       expect(response.notFoundIDs.isNotEmpty, true);
     });
 
     test('TestInAppPurchase simulates successful purchase', () async {
       final testIAP = TestInAppPurchase();
 
-      final result = await testIAP.buyNonConsumable(purchaseParam: PurchaseParam(productDetails: MockProductDetails()));
+      final result = await testIAP.buyNonConsumable(
+        purchaseParam: PurchaseParam(productDetails: MockProductDetails()),
+      );
 
       expect(result, true);
     });
@@ -387,7 +439,9 @@ void main() {
 
   group('PurchaseService - Error Handling', () {
     test('initialize throws exception when IAP check fails', () async {
-      when(mockInAppPurchase.isAvailable()).thenThrow(Exception('Test exception'));
+      when(
+        mockInAppPurchase.isAvailable(),
+      ).thenThrow(Exception('Test exception'));
 
       final service = PurchaseService(mockInAppPurchase);
 
@@ -398,12 +452,19 @@ void main() {
       // Setup with no products (simulates products not yet fetched)
       when(mockInAppPurchase.isAvailable()).thenAnswer((_) async => true);
 
-      when(
-        mockInAppPurchase.queryProductDetails({'remove_ads'}),
-      ).thenAnswer((_) async => ProductDetailsResponse(productDetails: [], notFoundIDs: ['remove_ads'], error: null));
+      when(mockInAppPurchase.queryProductDetails({'remove_ads'})).thenAnswer(
+        (_) async => ProductDetailsResponse(
+          productDetails: [],
+          notFoundIDs: ['remove_ads'],
+          error: null,
+        ),
+      );
 
-      final purchaseStreamController = StreamController<List<PurchaseDetails>>();
-      when(mockInAppPurchase.purchaseStream).thenAnswer((_) => purchaseStreamController.stream);
+      final purchaseStreamController =
+          StreamController<List<PurchaseDetails>>();
+      when(
+        mockInAppPurchase.purchaseStream,
+      ).thenAnswer((_) => purchaseStreamController.stream);
 
       final service = PurchaseService(mockInAppPurchase);
       await service.initialize();
@@ -417,12 +478,19 @@ void main() {
     test('dispose cleans up resources', () async {
       when(mockInAppPurchase.isAvailable()).thenAnswer((_) async => true);
 
-      when(
-        mockInAppPurchase.queryProductDetails({'remove_ads'}),
-      ).thenAnswer((_) async => ProductDetailsResponse(productDetails: [], notFoundIDs: ['remove_ads'], error: null));
+      when(mockInAppPurchase.queryProductDetails({'remove_ads'})).thenAnswer(
+        (_) async => ProductDetailsResponse(
+          productDetails: [],
+          notFoundIDs: ['remove_ads'],
+          error: null,
+        ),
+      );
 
-      final purchaseStreamController = StreamController<List<PurchaseDetails>>();
-      when(mockInAppPurchase.purchaseStream).thenAnswer((_) => purchaseStreamController.stream);
+      final purchaseStreamController =
+          StreamController<List<PurchaseDetails>>();
+      when(
+        mockInAppPurchase.purchaseStream,
+      ).thenAnswer((_) => purchaseStreamController.stream);
 
       final service = PurchaseService(mockInAppPurchase);
       await service.initialize();

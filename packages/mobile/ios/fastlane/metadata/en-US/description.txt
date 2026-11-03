@@ -18,8 +18,8 @@ FEATURES
 • Clear scoring, combo, speed, range, and progress feedback
 • Play free with short ads between levels
 • Optional one-time Unlock Premium purchase to remove ads
-• Sign in with Apple or email, or continue as a guest
-• Account deletion available in Settings
+• Optional Game Center leaderboard and 15 achievements
+• No account needed; your best score stays on your device
 
 Modulo Squares is made for puzzle fans, number-game players, and anyone who wants arithmetic practice to feel like an arcade challenge instead of a worksheet.
 

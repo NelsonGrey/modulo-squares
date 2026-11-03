@@ -91,7 +91,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authErrorWrongPassword => 'Incorrect password.';
 
   @override
-  String get authErrorEmailAlreadyInUse => 'An account with this email already exists.';
+  String get authErrorEmailAlreadyInUse =>
+      'An account with this email already exists.';
 
   @override
   String get authErrorWeakPassword => 'Password is too weak.';
@@ -100,19 +101,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authErrorInvalidEmail => 'Invalid email address.';
 
   @override
-  String get authErrorOperationNotAllowed => 'This sign-in method is not enabled.';
+  String get authErrorOperationNotAllowed =>
+      'This sign-in method is not enabled.';
 
   @override
-  String get authErrorTooManyRequests => 'Too many failed attempts. Please try again later.';
+  String get authErrorTooManyRequests =>
+      'Too many failed attempts. Please try again later.';
 
   @override
-  String get authErrorNetworkRequestFailed => 'Network error. Please check your connection.';
+  String get authErrorNetworkRequestFailed =>
+      'Network error. Please check your connection.';
 
   @override
   String get authErrorUnexpected => 'Authentication failed. Please try again.';
 
   @override
-  String get firestoreErrorPermissionDenied => 'You don\'t have permission to perform this action.';
+  String get firestoreErrorPermissionDenied =>
+      'You don\'t have permission to perform this action.';
 
   @override
   String get firestoreErrorNotFound => 'The requested data was not found.';
@@ -121,10 +126,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get firestoreErrorAlreadyExists => 'This data already exists.';
 
   @override
-  String get firestoreErrorResourceExhausted => 'Too many requests. Please try again later.';
+  String get firestoreErrorResourceExhausted =>
+      'Too many requests. Please try again later.';
 
   @override
-  String get firestoreErrorFailedPrecondition => 'Operation failed due to current state.';
+  String get firestoreErrorFailedPrecondition =>
+      'Operation failed due to current state.';
 
   @override
   String get firestoreErrorAborted => 'Operation was aborted.';
@@ -133,7 +140,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get firestoreErrorOutOfRange => 'Requested data is out of range.';
 
   @override
-  String get firestoreErrorUnimplemented => 'This feature is not implemented yet.';
+  String get firestoreErrorUnimplemented =>
+      'This feature is not implemented yet.';
 
   @override
   String get firestoreErrorInternal => 'An internal error occurred.';
@@ -145,13 +153,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get firestoreErrorDataLoss => 'Data loss occurred.';
 
   @override
-  String get firestoreErrorUnauthenticated => 'You must be signed in to perform this action.';
+  String get firestoreErrorUnauthenticated =>
+      'You must be signed in to perform this action.';
 
   @override
-  String get firestoreErrorDeadlineExceeded => 'Request timed out. Please try again.';
+  String get firestoreErrorDeadlineExceeded =>
+      'Request timed out. Please try again.';
 
   @override
-  String get firestoreErrorUnexpected => 'Database error occurred. Please try again.';
+  String get firestoreErrorUnexpected =>
+      'Database error occurred. Please try again.';
 
   @override
   String get admobErrorInternal => 'Ad service internal error.';
@@ -175,23 +186,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get purchaseErrorPaymentInvalid => 'Payment information is invalid.';
 
   @override
-  String get purchaseErrorClientInvalid => 'Client is not allowed to make purchases.';
+  String get purchaseErrorClientInvalid =>
+      'Client is not allowed to make purchases.';
 
   @override
-  String get purchaseErrorPaymentNotAllowed => 'Device is not allowed to make payments.';
+  String get purchaseErrorPaymentNotAllowed =>
+      'Device is not allowed to make payments.';
 
   @override
-  String get purchaseErrorProductNotAvailable => 'Product is not available for purchase.';
+  String get purchaseErrorProductNotAvailable =>
+      'Product is not available for purchase.';
 
   @override
   String get purchaseErrorProductInvalid => 'Product ID is invalid.';
 
   @override
-  String get purchaseErrorStoreProductNotAvailable => 'Product is not available in the store.';
+  String get purchaseErrorStoreProductNotAvailable =>
+      'Product is not available in the store.';
 
   @override
-  String get purchaseErrorUnexpected => 'Purchase error occurred. Please try again.';
+  String get purchaseErrorUnexpected =>
+      'Purchase error occurred. Please try again.';
 
   @override
-  String get networkErrorMessage => 'Network connection error. Please check your internet connection and try again.';
+  String get networkErrorMessage =>
+      'Network connection error. Please check your internet connection and try again.';
 }
