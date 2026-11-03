@@ -1,22 +1,83 @@
 # Modulo Squares
 
-Modulo Squares is a falling-number arcade puzzle built with Flutter and Firebase. Guide each number into one of ten divisor buckets before it lands, build combos, fill the progress grid, and chase a persistent local high score.
+[![CI](https://github.com/NelsonGrey/modulo-squares/actions/workflows/ci-cd.yml/badge.svg?branch=develop)](https://github.com/NelsonGrey/modulo-squares/actions/workflows/ci-cd.yml) [![License](https://img.shields.io/badge/license-proprietary-lightgrey.svg)](https://github.com/NelsonGrey/modulo-squares/blob/develop/LICENSE)
 
-The repository contains the mobile app, the public React website, shared Firebase utilities, Firestore rules, release automation, and project documentation. Server-side Cloud Functions live in a separate private companion repository and are checked out by CI only when Functions are deployed.
+## Contents
 
-## Current status
+- [Demo](#demo)
+  - [Architecture](#architecture)
+  - [Gameplay walkthrough](#gameplay-walkthrough)
+- [Status](#status)
+- [Repository Structure](#repository-structure)
+- [Product behavior](#product-behavior)
+- [Web application](#web-application-legacy)
+- [Local setup](#local-setup)
+- [Build and validation](#build-and-validation)
+- [CI/CD](#cicd)
+- [Documentation](#documentation)
 
-- Mobile version: `1.0.0+2`
-- Primary mobile platforms: iOS and Android; iOS is the current release focus
-- Public website: [modulosquares.com](https://modulosquares.com)
+Modulo Squares is a falling-number arcade puzzle for iOS built with Flutter, with Game Center for the leaderboard and achievements. Guide each number into one of ten divisor buckets before it lands, build combos, fill the progress grid, and chase a persistent local high score.
+
+The repository contains the mobile app, release automation, and project documentation. It also still holds the legacy Firebase backend and React site that serve the 1.0.x app; they are removed once 1.1.0 is adopted ([docs/GAME_CENTER_MIGRATION.md](docs/GAME_CENTER_MIGRATION.md)). The public website for the game now lives in the `nelson-grey` repo at nelsongrey.com/games/modulo-squares/.
+
+## Demo
+
+### Architecture
+
+```mermaid
+flowchart TB
+    subgraph Client["packages/mobile (Flutter, iOS)"]
+        Main["main.dart: service locator (GetIt), ads, purchases"]
+        Game["GameScreen -> FallingModuloGameScreen\nfeatures/game/game_screen.dart"]
+        Engine["FallingModuloGameEngine\nfeatures/game/models/falling_modulo_game_engine.dart"]
+        GC["lib/gamecenter/\nconnection, leaderboard, achievement tracker"]
+        Services["core/services:\nAdService, PurchaseService, CacheService, ConsentService"]
+    end
+
+    GameCenter["Game Center\nleaderboard + 15 achievements"]
+    Site["nelsongrey.com/games/modulo-squares/\nwebsite, privacy, support"]
+
+    Main --> Game --> Engine
+    Game --> GC --> GameCenter
+    Main --> Services
+    Game -. "legal links" .-> Site
+```
+
+There is no application backend. Identity, the leaderboard and achievements are Game Center; the best score is also stored on the device. See [docs/System_Architecture.md](docs/System_Architecture.md).
+
+### Gameplay walkthrough
+
+The tile-resolution arithmetic below is entirely client-side; this walks through the actual resolution logic in `FallingModuloGameEngine.resolveCurrentTile` (`packages/mobile/lib/features/game/models/falling_modulo_game_engine.dart`). Reporting a new best score is a separate step: the game screen passes it to the Game Center leaderboard when the player is connected.
+
+1. A tile carrying value `F` spawns in the center lane of 10 lanes and begins falling after a 500 ms pause.
+2. Ten buckets line the bottom, shuffled at game start: `1`-`9` (scoring) plus one dead bucket `0`.
+3. The player taps the Left or Right control to move the tile into a bucket `B` before it lands (180 ms move cooldown, down to 138 ms at combo 8+, from the `1.30x` speed multiplier).
+4. On landing, `highestDivisorFor(F)` computes `H`, the largest bucket value 1-9 that divides `F` evenly.
+5. Scoring, from `resolveCurrentTile`:
+   - `B == H` and `H != 1` → best possible catch: `scoreDelta = 2 * (F * B)`, fill `+2`, combo `+1`, gold "★ BONUS!" burst.
+   - `H == 1` (F coprime to every other bucket) and `B == 1` → flat bonus `scoreDelta = F`, fill `+2`, combo `+1`.
+   - `F % B == 0`, `B != H`, and `B > 1` → valid but not optimal: `scoreDelta = F * B`, fill `+1`, combo `+1`.
+   - `B == 1` and `B != H` (bucket 1 isn't the highest divisor) → valid catch but no reward: `scoreDelta = 0`, fill `+1`, combo `+1`.
+   - `B == 0` (dead bucket) → `scoreDelta = -F`, fill `-1`, combo resets to `0`.
+   - Otherwise (`F % B != 0`) → `scoreDelta = -(F * B * remainder)`, fill drops by `remainder`, combo resets to `0`.
+6. Score is clamped at zero (`max(0, state.score + scoreDelta)`); the 100-cell progress grid fills toward a level-up, and combo streaks raise the horizontal move speed multiplier up to `1.30x` at combo 8+.
+7. At level-up the falling number range scales up and the drop interval shrinks toward its floor (`dropIntervalForLevel`, `0.96^(level-1)` decay per `GameDifficulty`), and buckets reshuffle.
+
+Buckets carry no pre-drop hint of which are valid or optimal — the player has to work out the divisibility live. See `docs/Game_Mechanics.md` for the full rule table and `test/models/falling_modulo_game_engine_test.dart` for executable examples of every branch above.
+
+## Status
+
+- Mobile version: `1.1.0+1` (Game Center release; 1.0.1 is live on the App Store)
+- Platform: iOS only (Android shelved)
+- Public website: [nelsongrey.com/games/modulo-squares](https://nelsongrey.com/games/modulo-squares/) (modulosquares.com serves 1.0.x until retired)
 - Active branch workflow: `.github/workflows/ci-cd.yml`
 - Toolchain used by CI: Flutter `3.44.2`, Dart `>=3.7.0`, Node.js `24`
 - Current gameplay entry point: `GameScreen` -> `FallingModuloGameScreen`
-- App Store state: the last repository-confirmed state is a corrected production build on TestFlight awaiting manual App Store resubmission; verify App Store Connect before treating that status as current
+- App Store state: verify in App Store Connect; 1.1.0 is not yet submitted
 
 See [Current State](docs/Current_State.md), [Documentation Index](docs/Documentation_Index.md), and [Go-Live Runbook](docs/GO_LIVE_RUNBOOK.md).
 
-## Repository layout
+## Repository Structure
 
 ```text
 .
@@ -42,30 +103,21 @@ See [Current State](docs/Current_State.md), [Documentation Index](docs/Documenta
 
 ## Product behavior
 
-The native app requires Firebase initialization and authentication. Players sign in with Apple, Google, or email/password, choose a unique gamertag, and then enter falling-mode gameplay. The active game includes:
+The app needs no account. Players can optionally connect to Game Center (prompted on first run, changeable in Settings). The active game includes:
 
 - ten lanes containing shuffled buckets `1` through `9` plus one dead bucket `0`;
 - automatic falling with left/right controls and a 500 ms spawn pause;
 - a success when `fallingValue % bucketValue == 0`;
 - score, combo, high-score, level, and progress-grid feedback;
 - optional divisibility cues, persisted locally;
-- interstitial ads and a non-consumable `remove_ads` purchase;
-- global, daily, and weekly leaderboard infrastructure backed by callable Functions (the public React leaderboard reads it, but current falling gameplay does not submit or open it);
-- sign-out, account linking, purchase restoration, and permanent account deletion.
+- a Game Center leaderboard and 15 achievements (`docs/GAME_CENTER_SETUP.md`);
+- interstitial ads and a non-consumable `remove_ads` purchase with Restore Purchases.
 
 The older board-clearing implementation (`GameBoard`, `GameProvider`, `InstructionsScreen`, grid widgets, and their dedicated tests) was confirmed unreachable from `GameScreen` and removed as dead code (2026-09-11).
 
-## Web application
+## Web application (legacy)
 
-`packages/web` is a React 19, TypeScript, Vite 8, and Tailwind CSS 4 site. It provides:
-
-- `/`, `/how-it-works`, `/download`, and `/pricing` marketing routes;
-- a live Firestore-backed `/leaderboard` route;
-- `/privacy`, `/terms`, `/cookies`, and `/support` policy/support routes;
-- route-level metadata, `robots.txt`, and `sitemap.xml`;
-- Google Tag Manager/GA4 and Google AdSense under consent controls.
-
-The Flutter web target still exists for compatibility, but Firebase Hosting deploys the React build from `packages/web/dist`.
+`packages/web` is the React site behind modulosquares.com. It only serves 1.0.x players and is retired after 1.1.0 adoption; the game's current pages are in the `nelson-grey` repo.
 
 ## Local setup
 
@@ -73,9 +125,7 @@ Prerequisites:
 
 - Flutter `3.44.2` recommended; Dart SDK `>=3.7.0 <4.0.0`
 - Node.js `24` (`.nvmrc` pins `24`, matching CI)
-- Firebase CLI
 - Xcode and CocoaPods for iOS work
-- Android Studio/JDK for Android work
 - Ruby `3.2.2` for the mobile Fastlane setup
 
 ```bash
@@ -90,14 +140,6 @@ npm run dev:web
 ```
 
 The root `install:all` command installs root and Firebase utility dependencies. Flutter dependencies must be fetched separately.
-
-Environment-specific native Firebase files are already represented by `.dev`, `.staging`, and `.prod` variants. Switch them with:
-
-```bash
-npm run config:dev
-npm run config:staging
-npm run config:prod
-```
 
 ## Build and validation
 
@@ -130,26 +172,15 @@ The active pipeline runs for pushes to `develop`, `staging`, and `main`, for pul
 - `build-web`: React production build on Ubuntu
 - `build-ios`: TestFlight build/upload on macOS for deployable `staging` and `main` runs
 - `submit-app-store`: manual production-only App Store submission gate
-- `deploy-web`: Firebase Hosting deployment
-- `deploy-functions`: private Functions checkout and Firebase deployment
+- `deploy-web` / `deploy-functions`: legacy Firebase deployments for 1.0.x, removed at decommission
 - `deployment-summary`: consolidated result summary
 
-The manual `install-ios-on-hades.yml` workflow is the only intentional self-hosted path. Files under `.github/workflows/archive/` are historical and are not active pipelines.
+The manual `install-ios-on-hades.yml` workflow is the only intentional self-hosted path.
 
-## Firebase environments
+## Legacy Firebase environments
 
-| Environment | Project | Branch |
-|---|---|---|
-| Development | `modulo-squares-dev` | `develop` |
-| Staging | `modulo-squares-staging` | `staging` |
-| Production | `modulo-squares-prod` | `main` |
-
-Firestore client writes are limited to each signed-in user's `users`, `user_profiles`, and `game_stats` documents plus initial gamertag claims. Leaderboards, purchases, and entitlements are server-authoritative.
+Dev, staging and prod Firebase projects (`modulo-squares-dev|staging|prod`) still back the 1.0.x app and are decommissioned per [docs/GAME_CENTER_MIGRATION.md](docs/GAME_CENTER_MIGRATION.md).
 
 ## Documentation
 
 Start at [docs/Documentation_Index.md](docs/Documentation_Index.md). It labels each document as current, operational reference, planning, or historical so that old implementation proposals are not mistaken for live behavior.
-
-## License
-
-See [LICENSE](LICENSE).

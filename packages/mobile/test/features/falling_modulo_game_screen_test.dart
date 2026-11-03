@@ -9,10 +9,23 @@ import 'package:modulo_squares/core/services/purchase_service.dart';
 import 'package:modulo_squares/features/game/falling_modulo_game_screen.dart';
 import 'package:modulo_squares/features/game/models/falling_modulo_game_engine.dart';
 import 'package:modulo_squares/features/game/models/game_theme.dart';
+import 'package:modulo_squares/gamecenter/fake_game_center_progress_service.dart';
+import 'package:modulo_squares/gamecenter/fake_platform_game_auth_service.dart';
+import 'package:modulo_squares/gamecenter/game_center_connection.dart';
+import 'package:modulo_squares/gamecenter/game_center_services.dart';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-Widget _buildApp() => const MaterialApp(home: FallingModuloGameScreen());
+late FakeGameCenterProgressService _progress;
+
+GameCenterServices _fakeGameCenter() => GameCenterServices(
+  auth: FakePlatformGameAuthService(),
+  backend: _progress,
+  connection: GameCenterConnection.connectedFake(),
+);
+
+Widget _buildApp() =>
+    MaterialApp(home: FallingModuloGameScreen(gameCenter: _fakeGameCenter()));
 
 const Size _phoneSize = Size(1080, 1920);
 
@@ -28,16 +41,15 @@ Future<void> _pumpGame(WidgetTester tester) async {
   await tester.pump();
 }
 
-/// Open the settings dialog and settle.
+/// Open the settings page and settle.
 Future<void> _openSettings(WidgetTester tester) async {
   await tester.tap(find.byTooltip('Settings'));
   await tester.pumpAndSettle();
 }
 
-/// Expand a collapsed Settings section (Gameplay starts expanded; the rest
-/// don't) by tapping its header.
+/// Scroll a Settings section into view by its header.
 Future<void> _expandSection(WidgetTester tester, String header) async {
-  await tester.tap(find.text(header));
+  await tester.scrollUntilVisible(find.text(header), 200);
   await tester.pumpAndSettle();
 }
 
@@ -54,6 +66,7 @@ String _hudValue(WidgetTester tester, String key) {
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
+    _progress = FakeGameCenterProgressService();
   });
 
   tearDown(() async {
@@ -142,49 +155,60 @@ void main() {
     });
   });
 
-  // ── Settings dialog — section headers ────────────────────────────────────
+  // ── Settings page — section headers ────────────────────────────────────
 
-  group('Settings dialog — section headers', () {
-    testWidgets('dialog title reads Settings', (tester) async {
+  group('Settings page — section headers', () {
+    testWidgets('page title reads Settings', (tester) async {
       await _pumpGame(tester);
       await _openSettings(tester);
 
       expect(find.text('Settings'), findsOneWidget);
     });
 
-    testWidgets('GAMEPLAY section header is present', (tester) async {
+    testWidgets('Difficulty section header is present', (tester) async {
       await _pumpGame(tester);
       await _openSettings(tester);
 
-      expect(find.text('GAMEPLAY'), findsOneWidget);
+      expect(find.text('Difficulty'), findsOneWidget);
     });
 
-    testWidgets('ACCOUNT section header is present', (tester) async {
+    testWidgets('Game Center section header is present', (tester) async {
       await _pumpGame(tester);
       await _openSettings(tester);
 
-      expect(find.text('ACCOUNT'), findsOneWidget);
+      expect(find.text('Game Center'), findsOneWidget);
     });
 
-    testWidgets('APPEARANCE section header is present', (tester) async {
+    testWidgets('has no account management (Game Center is the identity)', (
+      tester,
+    ) async {
       await _pumpGame(tester);
       await _openSettings(tester);
 
-      expect(find.text('APPEARANCE'), findsOneWidget);
+      expect(find.text('Account'), findsNothing);
+      expect(find.text('Sign Out'), findsNothing);
+      expect(find.text('Delete Account'), findsNothing);
+    });
+
+    testWidgets('Appearance section header is present', (tester) async {
+      await _pumpGame(tester);
+      await _openSettings(tester);
+
+      expect(find.text('Appearance'), findsOneWidget);
     });
 
     testWidgets(
-      'PURCHASES section header is absent when no purchase service is registered',
+      'Purchases section header is absent when no purchase service is registered',
       (tester) async {
         await _pumpGame(tester);
         await _openSettings(tester);
 
-        expect(find.text('PURCHASES'), findsNothing);
+        expect(find.text('Purchases'), findsNothing);
       },
     );
 
     testWidgets(
-      'PURCHASES section header appears when purchase service is registered',
+      'Purchases section header appears when purchase service is registered',
       (tester) async {
         getIt.registerLazySingleton<PurchaseService>(
           () => PurchaseService.createForTesting(),
@@ -192,14 +216,14 @@ void main() {
         await _pumpGame(tester);
         await _openSettings(tester);
 
-        expect(find.text('PURCHASES'), findsOneWidget);
+        expect(find.text('Purchases'), findsOneWidget);
       },
     );
   });
 
-  // ── Settings dialog — Gameplay section ───────────────────────────────────
+  // ── Settings page — Difficulty section ───────────────────────────────────
 
-  group('Settings dialog — Gameplay section', () {
+  group('Settings page — Difficulty section', () {
     testWidgets('Best Score label is present', (tester) async {
       await _pumpGame(tester);
       await _openSettings(tester);
@@ -241,7 +265,7 @@ void main() {
       expect(segmentedButton.selected, {GameDifficulty.normal});
     });
 
-    testWidgets('Difficulty selection can be changed inside the dialog', (
+    testWidgets('Difficulty selection can be changed on the page', (
       tester,
     ) async {
       await _pumpGame(tester);
@@ -261,7 +285,7 @@ void main() {
       'opened, and stays put (not stale, not still climbing) across an '
       'in-dialog rebuild',
       (tester) async {
-        // Regression test: showGameSettingsDialog used to take a plain `int
+        // Regression test: the settings page used to take a plain `int
         // highScore` captured once when the dialog opened, which could go
         // stale after a later in-dialog rebuild (e.g. changing Difficulty).
         // It now takes a `getHighScore` getter read fresh on every rebuild.
@@ -337,33 +361,36 @@ void main() {
     );
   });
 
-  // ── Settings dialog — Appearance section ─────────────────────────────────
+  // ── Settings page — Appearance section ─────────────────────────────────
 
-  group('Settings dialog — Appearance section', () {
+  group('Settings page — Appearance section', () {
     testWidgets('theme picker defaults to Deep Ocean', (tester) async {
       await _pumpGame(tester);
       await _openSettings(tester);
-      await _expandSection(tester, 'APPEARANCE');
+      await _expandSection(tester, 'Appearance');
 
       final deepOceanSwatch = find.byKey(const Key('theme-swatch-deepOcean'));
       expect(deepOceanSwatch, findsOneWidget);
       expect(
-        find.descendant(of: deepOceanSwatch, matching: find.byIcon(Icons.check)),
+        find.descendant(
+          of: deepOceanSwatch,
+          matching: find.byIcon(Icons.check),
+        ),
         findsOneWidget,
       );
     });
 
-    testWidgets('selecting a palette and saving persists it across reopen', (
+    testWidgets('selecting a palette applies it and persists across reopen', (
       tester,
     ) async {
       await _pumpGame(tester);
       await _openSettings(tester);
-      await _expandSection(tester, 'APPEARANCE');
+      await _expandSection(tester, 'Appearance');
 
       await tester.tap(find.byKey(const Key('theme-swatch-arcadeNeon')));
       await tester.pump();
 
-      await tester.tap(find.text('Save'));
+      await tester.pageBack();
       await tester.pumpAndSettle();
 
       // The app bar repaints in the new theme's colors immediately, without
@@ -376,11 +403,9 @@ void main() {
 
       // Re-open — Arcade Neon should still be the checked swatch.
       await _openSettings(tester);
-      await _expandSection(tester, 'APPEARANCE');
+      await _expandSection(tester, 'Appearance');
 
-      final arcadeNeonSwatch = find.byKey(
-        const Key('theme-swatch-arcadeNeon'),
-      );
+      final arcadeNeonSwatch = find.byKey(const Key('theme-swatch-arcadeNeon'));
       expect(
         find.descendant(
           of: arcadeNeonSwatch,
@@ -389,30 +414,11 @@ void main() {
         findsOneWidget,
       );
     });
-
-    testWidgets('Cancel does not persist a palette change', (tester) async {
-      await _pumpGame(tester);
-      await _openSettings(tester);
-      await _expandSection(tester, 'APPEARANCE');
-
-      await tester.tap(find.byKey(const Key('theme-swatch-candyPop')));
-      await tester.pump();
-
-      await tester.tap(find.text('Cancel'));
-      await tester.pumpAndSettle();
-
-      // The app bar never left the default Deep Ocean colors.
-      final appBar = tester.widget<AppBar>(find.byType(AppBar));
-      expect(
-        appBar.backgroundColor,
-        gameThemePalettes[GameThemeId.deepOcean]!.appBarBg,
-      );
-    });
   });
 
-  // ── Settings dialog — Purchases section ──────────────────────────────────
+  // ── Settings page — Purchases section ──────────────────────────────────
 
-  group('Settings dialog — Purchases section (service available)', () {
+  group('Settings page — Purchases section (service available)', () {
     setUp(() {
       getIt.registerLazySingleton<PurchaseService>(
         () => PurchaseService.createForTesting(),
@@ -422,9 +428,9 @@ void main() {
     testWidgets('shows "Ads Enabled" when ads are not removed', (tester) async {
       await _pumpGame(tester);
       await _openSettings(tester);
-      await _expandSection(tester, 'PURCHASES');
+      await _expandSection(tester, 'Purchases');
 
-      expect(find.text('Ads Enabled'), findsOneWidget);
+      expect(find.text('Ads on'), findsOneWidget);
     });
 
     testWidgets('shows subtitle about ads playing between levels', (
@@ -432,27 +438,25 @@ void main() {
     ) async {
       await _pumpGame(tester);
       await _openSettings(tester);
-      await _expandSection(tester, 'PURCHASES');
+      await _expandSection(tester, 'Purchases');
 
-      expect(find.text('Short ads play between levels'), findsOneWidget);
+      expect(find.text('Short ads play between levels.'), findsOneWidget);
     });
 
-    testWidgets('Unlock Premium button is shown when ads are not removed', (
+    testWidgets('Remove Ads button is shown when ads are not removed', (
       tester,
     ) async {
       await _pumpGame(tester);
       await _openSettings(tester);
-      await _expandSection(tester, 'PURCHASES');
+      await _expandSection(tester, 'Purchases');
 
-      expect(find.textContaining('Unlock Premium'), findsOneWidget);
+      expect(find.textContaining('Remove Ads'), findsOneWidget);
     });
 
-    testWidgets('Unlock Premium button includes the product price', (
-      tester,
-    ) async {
+    testWidgets('Remove Ads button includes the product price', (tester) async {
       await _pumpGame(tester);
       await _openSettings(tester);
-      await _expandSection(tester, 'PURCHASES');
+      await _expandSection(tester, 'Purchases');
 
       // The purchase service returns $2.99 as a fallback price when no store
       // product is loaded (test environment has no App Store connection).
@@ -462,12 +466,12 @@ void main() {
     testWidgets('Restore Purchases button is always shown', (tester) async {
       await _pumpGame(tester);
       await _openSettings(tester);
-      await _expandSection(tester, 'PURCHASES');
+      await _expandSection(tester, 'Purchases');
 
       expect(find.text('Restore Purchases'), findsOneWidget);
     });
 
-    testWidgets('shows "Ad-Free" and hides Unlock Premium when ads are removed', (
+    testWidgets('shows "Ad-Free" and hides Remove Ads when ads are removed', (
       tester,
     ) async {
       // Simulate ads already removed via prefs (PurchaseService.createForTesting
@@ -482,11 +486,14 @@ void main() {
 
       await _pumpGame(tester);
       await _openSettings(tester);
-      await _expandSection(tester, 'PURCHASES');
+      await _expandSection(tester, 'Purchases');
 
-      expect(find.text('Ad-Free'), findsOneWidget);
-      expect(find.text('Enjoy the game without interruptions'), findsOneWidget);
-      expect(find.textContaining('Unlock Premium'), findsNothing);
+      expect(find.text('Ad-free'), findsOneWidget);
+      expect(
+        find.text('You will never see an ad in this game.'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Remove Ads'), findsNothing);
     });
 
     testWidgets('Restore Purchases button shown even when ads are removed', (
@@ -501,140 +508,115 @@ void main() {
 
       await _pumpGame(tester);
       await _openSettings(tester);
-      await _expandSection(tester, 'PURCHASES');
+      await _expandSection(tester, 'Purchases');
 
       expect(find.text('Restore Purchases'), findsOneWidget);
     });
   });
 
-  // ── Settings dialog — Account section ────────────────────────────────────
+  // ── Settings page — Game Center section ───────────────────────────────
 
-  group('Settings dialog — Account section', () {
-    testWidgets('Sign Out option is always shown', (tester) async {
+  group('Settings page — Game Center section', () {
+    testWidgets('shows the connected player', (tester) async {
       await _pumpGame(tester);
       await _openSettings(tester);
-      await _expandSection(tester, 'ACCOUNT');
+      await _expandSection(tester, 'Game Center');
 
-      expect(find.text('Sign Out'), findsOneWidget);
+      expect(find.text('Test Player'), findsOneWidget);
+      expect(find.text('Connected'), findsOneWidget);
     });
 
-    testWidgets('Delete Account option is always shown', (tester) async {
+    testWidgets('Leaderboard opens Game Center', (tester) async {
       await _pumpGame(tester);
       await _openSettings(tester);
-      await _expandSection(tester, 'ACCOUNT');
+      await _expandSection(tester, 'Game Center');
 
-      expect(find.text('Delete Account'), findsOneWidget);
+      await tester.tap(find.text('Leaderboard'));
+      await tester.pump();
+
+      expect(_progress.leaderboardShown, 1);
     });
 
-    testWidgets('tapping Delete Account shows a confirmation dialog', (
-      tester,
-    ) async {
+    testWidgets('Achievements opens Game Center', (tester) async {
       await _pumpGame(tester);
       await _openSettings(tester);
-      await _expandSection(tester, 'ACCOUNT');
+      await _expandSection(tester, 'Game Center');
 
-      await tester.tap(find.text('Delete Account'));
-      await tester.pumpAndSettle();
+      await tester.tap(find.text('Achievements'));
+      await tester.pump();
 
-      expect(find.text('Delete account?'), findsOneWidget);
-
-      await tester.tap(find.text('Cancel').last);
-      await tester.pumpAndSettle();
-
-      expect(find.text('Delete account?'), findsNothing);
+      expect(_progress.achievementsShown, 1);
     });
 
-    testWidgets(
-      'Link Account is not shown when Firebase is uninitialised (treats as non-guest)',
-      (tester) async {
-        // Firebase is not initialized in the test environment; the code catches
-        // the exception and sets isGuest = false, so Link Account stays hidden.
-        await _pumpGame(tester);
-        await _openSettings(tester);
-        await _expandSection(tester, 'ACCOUNT');
-
-        expect(find.text('Link Account'), findsNothing);
-      },
-    );
-
-    testWidgets(
-      'Change Password is not shown when Firebase is uninitialised (treats as no password provider)',
-      (tester) async {
-        // Firebase is not initialized in the test environment; the code catches
-        // the exception and sets hasPasswordProvider = false, so Change
-        // Password stays hidden -- mirrors the Link Account case above.
-        await _pumpGame(tester);
-        await _openSettings(tester);
-        await _expandSection(tester, 'ACCOUNT');
-
-        expect(find.text('Change Password'), findsNothing);
-      },
-    );
-
-    testWidgets('dialog does not show legacy Switch Mode action', (
-      tester,
-    ) async {
-      await _pumpGame(tester);
+    testWidgets('is hidden where Game Center is unsupported', (tester) async {
+      tester.view.physicalSize = _phoneSize;
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+      await tester.pumpWidget(
+        MaterialApp(
+          home: FallingModuloGameScreen(
+            gameCenter: GameCenterServices(
+              auth: FakePlatformGameAuthService(),
+              backend: _progress,
+              connection: GameCenterConnection.unsupportedFake(),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
       await _openSettings(tester);
-      await _expandSection(tester, 'ACCOUNT');
 
-      expect(find.text('Switch Mode'), findsNothing);
+      expect(find.text('Game Center'), findsNothing);
     });
   });
 
-  // ── Settings dialog — Legal & Support section ─────────────────────────────
+  // ── Settings page — Legal section ─────────────────────────────
 
-  group('Settings dialog — Legal & Support section', () {
+  group('Settings page — Legal section', () {
     testWidgets('Privacy Policy option is shown', (tester) async {
       await _pumpGame(tester);
       await _openSettings(tester);
-      await _expandSection(tester, 'LEGAL & SUPPORT');
+      await _expandSection(tester, 'Legal');
 
       expect(find.text('Privacy Policy'), findsOneWidget);
     });
 
-    testWidgets('Terms of Service option is shown', (tester) async {
+    testWidgets('Terms of Use option is shown', (tester) async {
       await _pumpGame(tester);
       await _openSettings(tester);
-      await _expandSection(tester, 'LEGAL & SUPPORT');
+      await _expandSection(tester, 'Legal');
 
-      expect(find.text('Terms of Service'), findsOneWidget);
+      expect(find.text('Terms of Use'), findsOneWidget);
     });
 
     testWidgets('Support option is shown', (tester) async {
       await _pumpGame(tester);
       await _openSettings(tester);
-      await _expandSection(tester, 'LEGAL & SUPPORT');
+      await _expandSection(tester, 'Legal');
 
       expect(find.text('Support'), findsOneWidget);
     });
   });
 
-  // ── Settings dialog — Action buttons ─────────────────────────────────────
+  // ── Settings page — Action buttons ─────────────────────────────────────
 
-  group('Settings dialog — actions', () {
-    testWidgets('Cancel button closes the dialog', (tester) async {
+  group('Settings page — navigation', () {
+    testWidgets('the back button closes Settings', (tester) async {
       await _pumpGame(tester);
       await _openSettings(tester);
 
-      expect(find.text('Cancel'), findsOneWidget);
-      await tester.tap(find.text('Cancel'));
+      await tester.pageBack();
       await tester.pumpAndSettle();
 
       expect(find.text('Settings'), findsNothing);
     });
 
-    testWidgets('Save button closes the dialog', (tester) async {
-      await _pumpGame(tester);
-      await _openSettings(tester);
-
-      await tester.tap(find.text('Save'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Settings'), findsNothing);
-    });
-
-    testWidgets('Save persists a Difficulty change', (tester) async {
+    testWidgets('a Difficulty change applies and persists across reopen', (
+      tester,
+    ) async {
       // Start with the default Normal difficulty.
       await _pumpGame(tester);
       await _openSettings(tester);
@@ -642,7 +624,7 @@ void main() {
       await tester.tap(find.text('Hard'));
       await tester.pump();
 
-      await tester.tap(find.text('Save'));
+      await tester.pageBack();
       await tester.pumpAndSettle();
 
       // Re-open — Hard should still be selected.
@@ -653,28 +635,6 @@ void main() {
       );
       expect(segmentedButton.selected, {GameDifficulty.hard});
     });
-
-    testWidgets('Cancel does not persist a Difficulty change', (
-      tester,
-    ) async {
-      await _pumpGame(tester);
-      await _openSettings(tester);
-
-      await tester.tap(find.text('Hard'));
-      await tester.pump();
-
-      await tester.tap(find.text('Cancel'));
-      await tester.pumpAndSettle();
-
-      // Re-open — should still default to Normal.
-      await _openSettings(tester);
-
-      final segmentedButton = tester.widget<SegmentedButton<GameDifficulty>>(
-        find.byType(SegmentedButton<GameDifficulty>),
-      );
-      expect(segmentedButton.selected, {GameDifficulty.normal});
-    });
-
   });
 
   // ── Pause overlay — New Game (with confirmation) ─────────────────────────

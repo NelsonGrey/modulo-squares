@@ -41,13 +41,15 @@ void main() {
 
     test('returns null for expired cache', () async {
       final testData = [
-        {'name': 'Player1', 'score': 100}
+        {'name': 'Player1', 'score': 100},
       ];
 
       await cacheService.cacheLeaderboardData(testData);
 
       // Wait for cache to expire (using very short max age)
-      final cachedData = cacheService.getCachedLeaderboardData(maxAge: Duration.zero);
+      final cachedData = cacheService.getCachedLeaderboardData(
+        maxAge: Duration.zero,
+      );
 
       expect(cachedData, isNull);
     });
@@ -70,7 +72,7 @@ void main() {
 
     test('clears leaderboard cache', () async {
       final testData = [
-        {'name': 'Player1', 'score': 100}
+        {'name': 'Player1', 'score': 100},
       ];
 
       await cacheService.cacheLeaderboardData(testData);
@@ -82,7 +84,7 @@ void main() {
 
     test('clears all caches', () async {
       final leaderboardData = [
-        {'name': 'Player1', 'score': 100}
+        {'name': 'Player1', 'score': 100},
       ];
       final gameAssets = {'theme': 'dark'};
 

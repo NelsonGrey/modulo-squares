@@ -792,7 +792,7 @@ From the hardening matrix, all branches should be protected:
 ### 4.3 Dependabot and Security Scanning
 
 - [ ] Dependabot alerts reviewed and critical ones resolved
-- [ ] CodeQL workflow (`.github/workflows/codeql.yml`) running and green
+- [ ] CodeQL code scanning (default setup) running and green
 - [ ] No exposed secrets in secret scanning alerts
 
 **Validate**: GitHub → Security → no critical unresolved alerts.

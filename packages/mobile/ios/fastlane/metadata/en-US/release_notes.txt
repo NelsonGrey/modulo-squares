@@ -1,2 +1,4 @@
-New in 1.0.2:
-• Fixed an issue where beating your high score more than once in a single game could show a submission error
+New in 1.1.0:
+• Game Center leaderboard and 15 achievements; connecting is optional
+• No account or sign-in needed to play
+• Existing Modulo Squares accounts are retired; your best score stays on your device and is posted to Game Center when you connect
