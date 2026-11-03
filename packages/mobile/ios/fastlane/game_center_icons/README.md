@@ -1,11 +1,15 @@
-# Game Center Achievement Icons
+# Game Center achievement icons
 
-These 512×512 PNGs correspond one-to-one with the achievement IDs in
-`docs/GAME_CENTER_SETUP.md` and are intended for upload in App Store Connect.
+512×512 PNGs, one per achievement in `docs/GAME_CENTER_SETUP.md`, named
+`<achievement ID>.png`. The art follows the Modulo Squares app icon's frosted blue board, white tile,
+indigo, orange and green visual language. Each icon uses a distinct central
+metaphor and contains no achievement-title text. App Store Connect accepts
+512×512 up to 1024×1024, so these are valid as they are. They have no SVG
+source or generator.
 
-The art follows the Modulo Squares app icon's frosted blue board, white tile,
-indigo, orange, and green visual language. Each icon uses a distinct central
-metaphor and contains no achievement-title text.
+Upload each PNG on its achievement's page in App Store Connect → Features →
+Game Center (drag it onto the image field). There is no bulk-upload API; it is
+one at a time in the UI.
 
 | File | Achievement |
 | --- | --- |
@@ -24,3 +28,4 @@ metaphor and contains no achievement-title text.
 | `modulo_squares_combo_25.png` | Unstoppable |
 | `modulo_squares_perfect_level.png` | Flawless |
 | `modulo_squares_hard_level_5.png` | Hard Mode |
+| `leaderboard-1024.png` | Leaderboard image (1024×1024, no text); **not yet in the repo** |

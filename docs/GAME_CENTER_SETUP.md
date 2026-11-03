@@ -3,7 +3,8 @@
 The app reports to Game Center by **ID**; nothing is auto-created. These
 records must exist in App Store Connect with exactly these IDs
 (`packages/mobile/lib/gamecenter/game_center_ids.dart`) before a build that
-uses them ships. Mirrors `intercept-echo/docs/STORE_SETUP.md`.
+uses them ships. The same document, in the same shape, exists in Intercept
+Echo and Memory Survival.
 
 App Store Connect → app `com.modulosquares.app.ios` → Features → Game Center →
 enable Game Center, then create:
@@ -15,9 +16,13 @@ enable Game Center, then create:
 | Type | Classic |
 | ID | `modulo_squares_high_score` |
 | Reference name | High Score |
+| Name (shown to players) | High Score |
+| Description | Your best score in a single run. |
 | Score format | Integer |
+| Score format suffix | Singular `point`, plural `points` |
 | Sort | High to low |
 | Score range | 0 – 100000000 |
+| Image | `leaderboard-1024.png` (see Art) |
 
 The app submits the player's best score at natural breakpoints (level
 complete, new run, leaving the screen, backgrounding, and on first connect).
@@ -29,7 +34,7 @@ Fifteen achievements, 335 points total (Game Center allows 100 achievements
 and 1,000 points). The rules live in
 `packages/mobile/lib/gamecenter/achievement_tracker.dart` and are unit-tested;
 the IDs are in `game_center_ids.dart`. Each needs a title, a pre-earned description (shown while locked: how to earn it) and an
-earned description (shown once unlocked: what the player did), a 512x512 image and the point value. All are visible (not
+earned description (shown once unlocked: what the player did), an image and the point value. All are visible (not
 hidden) and none are repeatable.
 
 | ID | Title | Pre-earned Description | Earned Description | Pts |
@@ -56,9 +61,16 @@ Notes:
 - Achievements earned while the player is not connected to Game Center are
   remembered on the device and granted the next time they connect.
 - All are one-shot; none use percent-complete (incremental) progress.
-- Upload-ready art is in
-  `packages/mobile/assets/game_center/achievements/`: one 512x512 PNG named
-  for each achievement ID.
+
+## Art
+
+Upload-ready art is in `packages/mobile/ios/fastlane/game_center_icons/`: one
+512×512 PNG per achievement, named `<achievement ID>.png` (App Store Connect
+accepts 512×512 up to 1024×1024), plus the leaderboard image
+`leaderboard-1024.png`. That file was uploaded to App Store Connect but is not
+in the repository yet: copy it into this folder. See that folder's README. Upload each PNG
+on its achievement's page in App Store Connect (one at a time; there is no
+bulk upload).
 
 ## Entitlement
 
