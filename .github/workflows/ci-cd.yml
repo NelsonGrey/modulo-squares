@@ -73,7 +73,7 @@ jobs:
       should-deploy: ${{ needs.determine-environment.outputs.should-deploy }}
     steps:
       - name: 📥 Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: 🦋 Setup Flutter
         uses: ./.github/actions/setup-flutter
@@ -102,7 +102,7 @@ jobs:
         working-directory: packages/mobile
 
       - name: 📊 Upload Coverage Report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: flutter-coverage
           path: packages/mobile/coverage/lcov.info
@@ -115,7 +115,7 @@ jobs:
     needs: [determine-environment, quality-check]
     steps:
       - name: 📥 Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: 🟢 Setup Node.js
         uses: actions/setup-node@v7
@@ -230,7 +230,7 @@ jobs:
         working-directory: packages/web
 
       - name: 📤 Upload Build Artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: web-build
           path: packages/web/dist/
@@ -250,7 +250,7 @@ jobs:
       FASTLANE_TEAM_ID: ${{ secrets.FASTLANE_TEAM_ID }}
     steps:
       - name: 📥 Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: 🦋 Setup Flutter
         uses: ./.github/actions/setup-flutter
@@ -305,7 +305,7 @@ jobs:
       ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
     steps:
       - name: 📥 Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: 🦋 Setup Flutter
         uses: ./.github/actions/setup-flutter
@@ -346,7 +346,7 @@ jobs:
         working-directory: packages/mobile
 
       - name: 📤 Upload App Bundle Artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: app-release-bundle-${{ needs.determine-environment.outputs.environment }}
           path: packages/mobile/build/app/outputs/bundle/release/app-release.aab
@@ -363,10 +363,10 @@ jobs:
       GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
     steps:
       - name: 📥 Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: 📥 Download App Bundle Artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: app-release-bundle-production
           path: packages/mobile/build/app/outputs/bundle/release/
@@ -399,7 +399,7 @@ jobs:
       APP_STORE_CONNECT_KEY: ${{ secrets.APP_STORE_CONNECT_KEY }}
     steps:
       - name: 📥 Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: 💎 Install Fastlane Dependencies
         run: bundle install
@@ -419,10 +419,10 @@ jobs:
     environment: ${{ needs.determine-environment.outputs.environment }}
     steps:
       - name: 📥 Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: 📥 Download Web Build
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: web-build
           path: packages/web/dist/
@@ -466,14 +466,14 @@ jobs:
     environment: ${{ needs.determine-environment.outputs.environment }}
     steps:
       - name: 📥 Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # packages/functions lives in a separate private repo (business logic
       # shouldn't be world-readable on this public repo). It lands at the
       # exact path it used to occupy, so firebase*.json's "source":
       # "packages/functions" keeps working unchanged.
       - name: 📥 Checkout Functions (private companion repo)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: NelsonGrey/modulo-squares-functions
           token: ${{ secrets.FUNCTIONS_REPO_PAT }}
