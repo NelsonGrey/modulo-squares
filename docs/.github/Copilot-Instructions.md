@@ -8,7 +8,6 @@
 - Active native gameplay is `GameScreen` -> `FallingModuloGameScreen`.
 - `GameBoard`, `GameProvider`, grid widgets, and `InstructionsScreen` are legacy/reference code unless a task explicitly targets them.
 - Firebase Hosting deploys the React site in `packages/web`; Flutter `WebsiteScreen` is not the public site.
-- `.github/workflows/ci-cd.yml` is the active pipeline. Files under `.github/workflows/archive` are inactive.
 - Cloud Functions source is in private repo `NelsonGrey/modulo-squares-functions`; `packages/functions` is an ignored checkout path.
 
 ## Project map

@@ -1,68 +1,38 @@
+# Cost/noise balance: security updates are handled by Dependabot security
+# updates (repo setting) and arrive immediately for every manifest, including
+# the legacy Firebase packages. This file only governs routine version bumps,
+# which are monthly and grouped so each ecosystem produces at most one PR.
 version: 2
 updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
-    labels:
-      - "dependencies"
-      - "security"
-
-  - package-ecosystem: "npm"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
-    labels:
-      - "dependencies"
-      - "security"
-
-  - package-ecosystem: "npm"
-    directory: "/packages/functions"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
-    labels:
-      - "dependencies"
-      - "security"
-
-  - package-ecosystem: "npm"
-    directory: "/packages/web"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
-    labels:
-      - "dependencies"
-      - "security"
-
-  - package-ecosystem: "npm"
-    directory: "/packages/firebase-utils"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
-    labels:
-      - "dependencies"
-      - "security"
+      interval: "monthly"
+    open-pull-requests-limit: 2
+    labels: ["dependencies"]
+    groups:
+      actions:
+        patterns: ["*"]
 
   - package-ecosystem: "pub"
     directory: "/packages/mobile"
     schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
-    labels:
-      - "dependencies"
-      - "security"
+      interval: "monthly"
+    open-pull-requests-limit: 3
+    labels: ["dependencies"]
+    groups:
+      pub-minor-patch:
+        update-types: ["minor", "patch"]
     ignore:
-      # All three are constrained by what Flutter 3.44.2's pinned SDK packages
+      # Constrained by what Flutter 3.44.2's pinned SDK packages
       # (flutter_localizations, flutter_test) allow. Bumping past these ranges
-      # breaks `flutter pub get` version solving — see packages/mobile/pubspec.yaml.
+      # breaks `flutter pub get` version solving; see packages/mobile/pubspec.yaml.
       # Revisit when the Flutter SDK is upgraded.
-      - dependency-name: "intl" # SDK pins intl 0.20.2 exactly (was PR #263)
+      - dependency-name: "intl" # SDK pins intl 0.20.2 exactly
         versions: [">=0.20.3"]
-      - dependency-name: "mockito" # 5.8.0+ needs meta ^1.18.3 (was PR #262)
+      - dependency-name: "mockito" # 5.8.0+ needs meta ^1.18.3
         versions: [">=5.8.0"]
-      - dependency-name: "build_runner" # 2.15.2+ needs meta ^1.18.3 (was PR #261)
+      - dependency-name: "build_runner" # 2.15.2+ needs meta ^1.18.3
         versions: [">=2.15.2"]
-      - dependency-name: "google_mobile_ads" # 9.1.0 non-modular _Beta.h include breaks the iOS archive (was PR #268)
+      - dependency-name: "google_mobile_ads" # 9.1.0 non-modular _Beta.h include breaks the iOS archive
         versions: [">=9.1.0"]

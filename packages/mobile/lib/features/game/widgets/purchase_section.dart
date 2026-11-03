@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:modulo_squares/core/services/purchase_service.dart';
 import 'package:modulo_squares/features/game/widgets/settings_section.dart';
 
-/// The "Purchases" section of the settings dialog: remove_ads/premium status,
-/// the Unlock Premium purchase button (with its own error handling UI), and
+/// The "Purchases" section of the Settings page: remove_ads/premium status,
+/// the Remove Ads purchase button (with its own error handling UI), and
 /// Restore Purchases.
 ///
 /// This is presentation only — the actual `InAppPurchase` stream wiring
 /// (listening for purchase updates, verifying receipts, etc.) lives in
-/// [PurchaseService], which the settings dialog looks up once and hands to
+/// [PurchaseService], which the Settings page looks up once and hands to
 /// this widget. On a successful restore this widget reports the refreshed
-/// `adsRemoved` value back up via [onAdsRemovedChanged] so the dialog's local
+/// `adsRemoved` value back up via [onAdsRemovedChanged] so the page's local
 /// state (and this widget's own display) stays in sync.
 class PurchaseSection extends StatelessWidget {
   const PurchaseSection({
@@ -26,19 +26,18 @@ class PurchaseSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SettingsSection(
-      title: 'Purchases',
+    return Column(
       children: [
+        const SettingsSectionHeader('Purchases'),
         ListTile(
           leading: Icon(
             adsRemoved ? Icons.check_circle_outline : Icons.tv_off_outlined,
-            color: adsRemoved ? Colors.green : Colors.orange,
           ),
-          title: Text(adsRemoved ? 'Ad-Free' : 'Ads Enabled'),
+          title: Text(adsRemoved ? 'Ad-free' : 'Ads on'),
           subtitle: Text(
             adsRemoved
-                ? 'Enjoy the game without interruptions'
-                : 'Short ads play between levels',
+                ? 'You will never see an ad in this game.'
+                : 'Short ads play between levels.',
           ),
         ),
         if (!adsRemoved)
@@ -63,7 +62,7 @@ class PurchaseSection extends StatelessWidget {
                 }
               },
               child: Text(
-                'Unlock Premium  —  '
+                'Remove Ads — '
                 '${purchaseService.getProductPrice('remove_ads')}',
               ),
             ),

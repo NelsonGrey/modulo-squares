@@ -75,10 +75,9 @@ The Android platform project and signing helpers are tracked, but the active pip
 
 ## Other workflows
 
-- `codeql.yml`: CodeQL scanning.
+- CodeQL runs through GitHub code scanning default setup (no workflow file).
 - `dependabot-auto-merge.yml`: patch/minor Dependabot approval and auto-merge logic.
 - `install-ios-on-hades.yml`: manual build/install on a connected device via self-hosted Mac.
-- `.github/workflows/archive/*`: inactive historical workflows.
 
 ## Local approximation
 
