@@ -52,7 +52,7 @@ Welcome to Modulo Squares. Guide falling numbers into divisible buckets, build c
 3. `Build Combos. Fill the Grid.` — active gameplay with score burst and progress
 4. `Pause Anytime. Chase Your Best.` — paused run with score visible
 5. `Hints When You Want Them` — How to Play or visual-cues state
-6. `Play Free. Remove Ads Once.` — current Purchases settings state
+6. `Tune the Game To Your Style` — Settings dialog (no price or "free" wording: Apple 2.3.7)
 
 ## In-App Purchase
 

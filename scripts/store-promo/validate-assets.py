@@ -101,7 +101,7 @@ APPLE_SCREENSHOTS = (
     "03-build-combos-1320x2868.png",
     "04-chase-your-best-1320x2868.png",
     "05-learn-the-rules-1320x2868.png",
-    "06-remove-ads-1320x2868.png",
+    "06-customize-settings-1320x2868.png",
 )
 GOOGLE_SCREENSHOTS = (
     "01-drop-numbers-1080x1920.png",
@@ -120,7 +120,7 @@ APPLE_SCREENSHOT_CAPTURES = (
     "03-score-combo.png",
     "04-paused.png",
     "05-how-to-play.png",
-    "07-purchases.png",
+    "06-settings.png",
 )
 GOOGLE_SCREENSHOT_CAPTURES = (
     "01-active-gameplay.png",

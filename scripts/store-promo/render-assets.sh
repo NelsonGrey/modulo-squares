@@ -76,7 +76,7 @@ PROMO_SHOTS=(
   "03-build-combos|03-build-combos|03-score-combo.png|Build%20Combos.%0AFill%20the%20Grid.|03-score-combo.png|Build%20Combos.%0AFill%20the%20Grid."
   "04-chase-your-best|04-keep-the-run-going|04-paused.png|Pause%20Anytime.%0AChase%20Your%20Best.|04-paused.png|Pause%20Anytime.%0AKeep%20the%20Run%20Going."
   "05-learn-the-rules|05-learn-the-rules|05-how-to-play.png|Learn%20the%20Rules%0Ain%20Seconds|05-how-to-play.png|Learn%20the%20Rules%0Ain%20Seconds"
-  "06-remove-ads|06-customize-settings|07-purchases.png|Play%20Free.%0ARemove%20Ads%20Once.|06-settings.png|Tune%20the%20Game%0ATo%20Your%20Style"
+  "06-customize-settings|06-customize-settings|06-settings.png|Tune%20the%20Game%0ATo%20Your%20Style|06-settings.png|Tune%20the%20Game%0ATo%20Your%20Style"
 )
 
 PROMO_APPLE_SOURCE="../../packages/mobile/assets/store/promo-kit-2026-08/sources/captures/iphone-6.9"
