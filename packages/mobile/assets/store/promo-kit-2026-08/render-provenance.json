@@ -22,6 +22,10 @@
     "kit:sources/captures/iphone-6.9/05-how-to-play.png": "b0c8c1259ef199a5df8bc01039133e7b72c8d45e44e79b33e1856c1a2b0fcb9f",
     "repo:scripts/store-promo/render.html": "ef249d6fe01cf134f22c775d2e74872effb6a6dea56ba226578f9a591438cc50"
   },
+  "apple/screenshots/iphone-6.9/06-customize-settings-1320x2868.png": {
+    "kit:sources/captures/iphone-6.9/06-settings.png": "766f1d23ba65b2e598224b5be2b38c72fec0292f187611ca7890fd827ec6a9ac",
+    "repo:scripts/store-promo/render.html": "ef249d6fe01cf134f22c775d2e74872effb6a6dea56ba226578f9a591438cc50"
+  },
   "apple/screenshots/iphone-6.9/06-remove-ads-1320x2868.png": {
     "kit:sources/captures/iphone-6.9/07-purchases.png": "dffd1bdd753829a669c814ef5f951d4def60583030482e3343514730143bcf5e",
     "repo:scripts/store-promo/render.html": "ef249d6fe01cf134f22c775d2e74872effb6a6dea56ba226578f9a591438cc50"
