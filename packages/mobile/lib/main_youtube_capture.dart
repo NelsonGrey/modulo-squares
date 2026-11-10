@@ -12,6 +12,7 @@ import 'package:modulo_squares/gamecenter/fake_platform_game_auth_service.dart';
 import 'package:modulo_squares/gamecenter/game_center_connection.dart';
 import 'package:modulo_squares/gamecenter/game_center_services.dart';
 import 'package:modulo_squares/l10n/app_localizations.dart';
+import 'package:modulo_squares/review/app_review_prompt.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Local-only entry point for repeatable YouTube tutorial recording.
@@ -79,6 +80,7 @@ class _CaptureRootState extends State<_CaptureRoot> {
         backend: FakeGameCenterProgressService(),
         connection: GameCenterConnection.connectedFake(),
       ),
+      reviewPrompt: AppReviewPrompt.disabled(),
     );
   }
 

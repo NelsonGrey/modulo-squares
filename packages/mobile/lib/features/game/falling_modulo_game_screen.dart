@@ -16,6 +16,8 @@ import 'package:modulo_squares/features/game/widgets/pre_game_overlay.dart';
 import 'package:modulo_squares/gamecenter/achievement_tracker.dart';
 import 'package:modulo_squares/gamecenter/game_center_services.dart';
 import 'package:modulo_squares/gamecenter/game_center_ui.dart';
+import 'package:modulo_squares/review/app_review_prompt.dart';
+import 'package:modulo_squares/review/store_kit_review_requester.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// The falling-mode game screen: a thin composition root over
@@ -25,7 +27,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 ///
 /// This class owns exactly what the controller deliberately doesn't:
 /// BuildContext-dependent side effects of a resolved tile (Game Center score
-/// and achievement reporting, the level-complete ad/snackbar), navigation
+/// and achievement reporting, the level-complete review prompt, ad, and
+/// snackbar), navigation
 /// (Settings, the Game Center leaderboard, confirmation dialogs), theme, and
 /// preference persistence. See [FallingGameLoopController]'s doc comment
 /// for why that split exists.
@@ -35,6 +38,7 @@ class FallingModuloGameScreen extends StatefulWidget {
     this.engine,
     this.expertDemo = false,
     this.gameCenter,
+    this.reviewPrompt,
   });
 
   /// Optional deterministic engine used by tests and local store-media capture.
@@ -50,6 +54,11 @@ class FallingModuloGameScreen extends StatefulWidget {
   /// [GameCenterServices]; tests and the local media-capture entry point inject
   /// a fake so nothing talks to the real Game Center.
   final GameCenterServices? gameCenter;
+
+  /// System review prompt. Production leaves this null and builds one after
+  /// preferences load. Tests inject a prompt backed by a fake requester.
+  /// Local media capture passes [AppReviewPrompt.disabled].
+  final AppReviewPrompt? reviewPrompt;
 
   @override
   State<FallingModuloGameScreen> createState() =>
@@ -68,6 +77,7 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen>
   Timer? _expertDemoStartTimer;
   int _lastSubmittedScore = 0;
   final AchievementTracker _achievements = AchievementTracker();
+  AppReviewPrompt? _reviewPrompt;
   GameThemeId _themeId = GameThemeId.deepOcean;
 
   GameThemePalette get _theme => gameThemePalettes[_themeId]!;
@@ -94,6 +104,7 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen>
     _controller.addListener(_onControllerChanged);
     WidgetsBinding.instance.addObserver(this);
     _gameCenterOrNull?.connection.addListener(_onGameCenterChanged);
+    _reviewPrompt = widget.reviewPrompt;
     _loadPreferences();
 
     if (widget.expertDemo) {
@@ -115,6 +126,14 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen>
     final highScore = prefs.getInt(_highScorePrefKey) ?? 0;
     final difficulty = _difficultyFromName(prefs.getString(_difficultyPrefKey));
     final themeId = _themeIdFromName(prefs.getString(_themePrefKey));
+    final prompt =
+        widget.reviewPrompt ??
+        AppReviewPrompt(
+          requester: const StoreKitReviewRequester(),
+          preferences: prefs,
+        );
+    prompt.rememberLaunchHighScore(highScore);
+    _reviewPrompt = prompt;
 
     if (!mounted) return;
     _controller.loadPersisted(highScore: highScore, difficulty: difficulty);
@@ -180,14 +199,27 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen>
   }
 
   // The context-dependent side effects of a resolved tile: achievement
-  // unlocks, high-score persistence, and the level-complete ad/snackbar.
-  // The controller reports *that* a tile resolved and how; everything here
-  // needs BuildContext (ads, ScaffoldMessenger) or a service call the
-  // controller has no business making itself.
+  // unlocks, high-score persistence, the review prompt, and the
+  // level-complete ad/snackbar. The controller reports *that* a tile
+  // resolved and how; everything here needs BuildContext (ads,
+  // ScaffoldMessenger) or a service call the controller has no business
+  // making itself.
   void _handleTileResolved(TileResolutionOutcome outcome) {
     _persistHighScore();
 
-    _unlockAchievements(outcome.result.resolution);
+    final earned = _unlockAchievements(outcome.result.resolution);
+    // Arming is synchronous. The StoreKit call waits for the level-complete
+    // break below, after the interstitial, so it never covers a falling tile
+    // and never runs from launch or a timer. expertDemo is the local capture
+    // driver; a recording must not raise the system dialog.
+    final reviewNote =
+        widget.expertDemo
+            ? null
+            : _reviewPrompt?.noteResolvedTile(
+              isNewHighScore: outcome.isNewHighScore,
+              highScore: _controller.highScore,
+              newlyEarnedAchievementIds: earned,
+            );
 
     if (outcome.result.resolution.leveledUp) {
       // The engine only ever increments the level by exactly one per
@@ -196,12 +228,19 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen>
       final completedLevel = _controller.state.level - 1;
       _flushHighScore();
       unawaited(
-        _showInterstitialTransition(trigger: 'level_complete', onClosed: () {}),
+        _showInterstitialTransition(
+          trigger: 'level_complete',
+          onClosed: () {
+            if (!mounted || widget.expertDemo) return;
+            unawaited(_reviewPrompt?.maybeRequestReview() ?? Future.value());
+          },
+        ),
       );
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Level $completedLevel complete!')),
       );
     }
+    if (reviewNote != null) unawaited(reviewNote);
   }
 
   /// Pushes the best score to Game Center when it has improved. Called at
@@ -225,13 +264,14 @@ class _FallingModuloGameScreenState extends State<FallingModuloGameScreen>
     }
   }
 
-  void _unlockAchievements(FallingModuloResolution resolution) {
+  List<String> _unlockAchievements(FallingModuloResolution resolution) {
     final earned = _achievements.onTileResolved(resolution, _controller.state);
     final gameCenter = _gameCenterOrNull;
-    if (gameCenter == null) return;
+    if (gameCenter == null) return earned;
     for (final id in earned) {
       unawaited(gameCenter.progress.unlockAchievement(id));
     }
+    return earned;
   }
 
   @override
