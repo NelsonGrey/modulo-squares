@@ -99,6 +99,83 @@
         "source": "**",
         "destination": "/index.html"
       }
+    ],
+    "redirects": [
+      {
+        "regex": "^/$",
+        "destination": "https://nelsongrey.com/games/modulo-squares",
+        "type": 301
+      },
+      {
+        "regex": "^/how-it-works(\\.html)?/?$",
+        "destination": "https://nelsongrey.com/games/modulo-squares/how-to-play",
+        "type": 301
+      },
+      {
+        "regex": "^/download(\\.html)?/?$",
+        "destination": "https://nelsongrey.com/games/modulo-squares",
+        "type": 301
+      },
+      {
+        "regex": "^/pricing(\\.html)?/?$",
+        "destination": "https://nelsongrey.com/games/modulo-squares",
+        "type": 301
+      },
+      {
+        "regex": "^/leaderboard(\\.html)?/?$",
+        "destination": "https://nelsongrey.com/games/modulo-squares",
+        "type": 301
+      },
+      {
+        "regex": "^/strategy-guide(\\.html)?/?$",
+        "destination": "https://nelsongrey.com/games/modulo-squares/strategy-guide",
+        "type": 301
+      },
+      {
+        "regex": "^/modular-arithmetic-explained(\\.html)?/?$",
+        "destination": "https://nelsongrey.com/games/modulo-squares/modular-arithmetic-explained",
+        "type": 301
+      },
+      {
+        "regex": "^/privacy(\\.html)?/?$",
+        "destination": "https://nelsongrey.com/games/modulo-squares/privacy",
+        "type": 301
+      },
+      {
+        "regex": "^/terms(\\.html)?/?$",
+        "destination": "https://nelsongrey.com/games/modulo-squares/terms",
+        "type": 301
+      },
+      {
+        "regex": "^/cookies(\\.html)?/?$",
+        "destination": "https://nelsongrey.com/games/modulo-squares/cookies",
+        "type": 301
+      },
+      {
+        "regex": "^/support(\\.html)?/?$",
+        "destination": "https://nelsongrey.com/games/modulo-squares/support",
+        "type": 301
+      },
+      {
+        "regex": "^/how-to-play(\\.html)?/?$",
+        "destination": "https://nelsongrey.com/games/modulo-squares/how-to-play",
+        "type": 301
+      },
+      {
+        "regex": "^/about(\\.html)?/?$",
+        "destination": "https://nelsongrey.com/games/modulo-squares/about",
+        "type": 301
+      },
+      {
+        "regex": "^/privacy-policy(\\.html)?/?$",
+        "destination": "https://nelsongrey.com/games/modulo-squares/privacy-policy",
+        "type": 301
+      },
+      {
+        "regex": "^/index\\.html/?$",
+        "destination": "https://nelsongrey.com/games/modulo-squares",
+        "type": 301
+      }
     ]
   }
 }

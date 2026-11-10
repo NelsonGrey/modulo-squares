@@ -31,6 +31,10 @@ dependencies:
   app_tracking_transparency: ^2.0.7
   in_app_purchase: ^3.3.1
   url_launcher: ^6.3.3
+  # iOS system review prompt. The plugin calls SKStoreReviewController
+  # requestReview(in:) on iOS 15 and AppStore.requestReview(in:) on iOS 16+.
+  # The app only invokes requestReview, and only on iOS.
+  in_app_review: ^2.0.12
 
 dev_dependencies:
   flutter_test:

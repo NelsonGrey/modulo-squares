@@ -9,6 +9,7 @@ import 'package:modulo_squares/gamecenter/fake_game_center_progress_service.dart
 import 'package:modulo_squares/gamecenter/fake_platform_game_auth_service.dart';
 import 'package:modulo_squares/gamecenter/game_center_connection.dart';
 import 'package:modulo_squares/gamecenter/game_center_services.dart';
+import 'package:modulo_squares/review/app_review_prompt.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// A local-only entry point for deterministic App Store and Play Store media.
@@ -55,6 +56,7 @@ class StoreCaptureApp extends StatelessWidget {
           backend: FakeGameCenterProgressService(),
           connection: GameCenterConnection.unsupportedFake(),
         ),
+        reviewPrompt: AppReviewPrompt.disabled(),
       ),
     );
   }

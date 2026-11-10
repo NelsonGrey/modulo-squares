@@ -18,7 +18,7 @@
 
 Modulo Squares is a falling-number arcade puzzle for iOS built with Flutter, with Game Center for the leaderboard and achievements. Guide each number into one of ten divisor buckets before it lands, build combos, fill the progress grid, and chase a persistent local high score.
 
-The repository contains the mobile app, release automation, and project documentation. It also still holds the legacy Firebase backend and React site that serve the 1.0.x app; they are removed once 1.1.0 is adopted ([docs/GAME_CENTER_MIGRATION.md](docs/GAME_CENTER_MIGRATION.md)). The public website for the game now lives in the `nelson-grey` repo at nelsongrey.com/games/modulo-squares/.
+The repository contains the mobile app, release automation, and project documentation. It also still holds the legacy Firebase backend and React site from the 1.0.x app; they come out when that version is retired ([docs/GAME_CENTER_MIGRATION.md](docs/GAME_CENTER_MIGRATION.md)). The public website is [https://nelsongrey.com/games/modulo-squares](https://nelsongrey.com/games/modulo-squares).
 
 ## Demo
 
@@ -35,7 +35,7 @@ flowchart TB
     end
 
     GameCenter["Game Center\nleaderboard + 15 achievements"]
-    Site["nelsongrey.com/games/modulo-squares/\nwebsite, privacy, support"]
+    Site["nelsongrey.com/games/modulo-squares\nwebsite, privacy, support"]
 
     Main --> Game --> Engine
     Game --> GC --> GameCenter
@@ -67,13 +67,13 @@ Buckets carry no pre-drop hint of which are valid or optimal — the player has 
 
 ## Status
 
-- Mobile version: `1.1.0+1` (Game Center release; 1.0.1 is live on the App Store)
+- Mobile version: `1.1.0+1`
 - Platform: iOS only (Android shelved)
-- Public website: [nelsongrey.com/games/modulo-squares](https://nelsongrey.com/games/modulo-squares/) (modulosquares.com serves 1.0.x until retired)
+- Public website: [https://nelsongrey.com/games/modulo-squares](https://nelsongrey.com/games/modulo-squares)
 - Active branch workflow: `.github/workflows/ci-cd.yml`
 - Toolchain used by CI: Flutter `3.44.2`, Dart `>=3.7.0`, Node.js `24`
 - Current gameplay entry point: `GameScreen` -> `FallingModuloGameScreen`
-- App Store state: verify in App Store Connect; 1.1.0 is not yet submitted
+- App Store: version 1.1.0 has been live since November 6, 2026 (bundle id `com.modulosquares.app.ios`), with Game Center leaderboards and 15 achievements
 
 See [Current State](docs/Current_State.md), [Documentation Index](docs/Documentation_Index.md), and [Go-Live Runbook](docs/GO_LIVE_RUNBOOK.md).
 
@@ -117,7 +117,7 @@ The older board-clearing implementation (`GameBoard`, `GameProvider`, `Instructi
 
 ## Web application (legacy)
 
-`packages/web` is the React site behind modulosquares.com. It only serves 1.0.x players and is retired after 1.1.0 adoption; the game's current pages are in the `nelson-grey` repo.
+`packages/web` is the retired 1.0.x React site. The public website is [https://nelsongrey.com/games/modulo-squares](https://nelsongrey.com/games/modulo-squares), in the `nelson-grey` repo.
 
 ## Local setup
 
