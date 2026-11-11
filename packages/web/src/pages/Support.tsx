@@ -30,7 +30,7 @@ const Support: React.FC = () => {
       const body = encodeURIComponent(
         `Name: ${name}\nEmail: ${email}\nTopic: ${topic}\n\n${message}`
       );
-      window.location.href = `mailto:support@modulosquares.com?subject=${subject}&body=${body}`;
+      window.location.href = `mailto:support@nelsongrey.com?subject=${subject}&body=${body}`;
       setStatus('sent');
     } catch {
       setStatus('error');
@@ -50,8 +50,8 @@ const Support: React.FC = () => {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Support</h1>
           <p className="text-gray-500 mb-10">
             We typically respond within 24 hours. You can also reach us directly at{' '}
-            <a href="mailto:support@modulosquares.com" className="text-primary-600 hover:underline">
-              support@modulosquares.com
+            <a href="mailto:support@nelsongrey.com" className="text-primary-600 hover:underline">
+              support@nelsongrey.com
             </a>
             .
           </p>
@@ -73,8 +73,8 @@ const Support: React.FC = () => {
               If you signed in with email, Google, or Apple and can't access the app,
               select <strong>"Delete My Account &amp; Data"</strong> as the topic below,
               or email{' '}
-              <a href="mailto:support@modulosquares.com?subject=Delete%20My%20Account%20%26%20Data" className="text-primary-600 hover:underline">
-                support@modulosquares.com
+              <a href="mailto:support@nelsongrey.com?subject=Delete%20My%20Account%20%26%20Data" className="text-primary-600 hover:underline">
+                support@nelsongrey.com
               </a>{' '}
               from the address on your account, and we'll delete it manually within 30
               days.
@@ -177,8 +177,8 @@ const Support: React.FC = () => {
               {status === 'error' && (
                 <p className="text-sm text-red-600">
                   Something went wrong. Please email us directly at{' '}
-                  <a href="mailto:support@modulosquares.com" className="underline">
-                    support@modulosquares.com
+                  <a href="mailto:support@nelsongrey.com" className="underline">
+                    support@nelsongrey.com
                   </a>
                   .
                 </p>

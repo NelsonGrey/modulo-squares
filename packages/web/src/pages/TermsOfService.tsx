@@ -66,8 +66,8 @@ const TermsOfService: React.FC = () => {
               The App requires a Google or Apple account to play. You are responsible for
               maintaining the security of your account credentials. You must notify us immediately
               at{' '}
-              <a href="mailto:support@modulosquares.com" className="text-primary-600 hover:text-primary-700 underline">
-                support@modulosquares.com
+              <a href="mailto:support@nelsongrey.com" className="text-primary-600 hover:text-primary-700 underline">
+                support@nelsongrey.com
               </a>{' '}
               if you suspect unauthorized access to your account.
             </p>
@@ -181,8 +181,8 @@ const TermsOfService: React.FC = () => {
             </p>
             <div className="mt-3 text-gray-700">
               <p><strong>Email:</strong>{' '}
-                <a href="mailto:support@modulosquares.com" className="text-primary-600 hover:text-primary-700 underline">
-                  support@modulosquares.com
+                <a href="mailto:support@nelsongrey.com" className="text-primary-600 hover:text-primary-700 underline">
+                  support@nelsongrey.com
                 </a>
               </p>
             </div>
