@@ -162,8 +162,8 @@ const PrivacyPolicy: React.FC = () => {
               knowingly collect personal information from children under 13. If you are a parent
               or guardian and believe your child has provided us with personal information, please
               contact us at{' '}
-              <a href="mailto:support@modulosquares.com" className="text-primary-600 hover:text-primary-700 underline">
-                support@modulosquares.com
+              <a href="mailto:support@nelsongrey.com" className="text-primary-600 hover:text-primary-700 underline">
+                support@nelsongrey.com
               </a>{' '}
               and we will promptly delete any such information.
             </p>
@@ -184,8 +184,8 @@ const PrivacyPolicy: React.FC = () => {
             </ul>
             <p className="text-gray-700 leading-relaxed mt-3">
               To exercise any of these rights, email us at{' '}
-              <a href="mailto:support@modulosquares.com" className="text-primary-600 hover:text-primary-700 underline">
-                support@modulosquares.com
+              <a href="mailto:support@nelsongrey.com" className="text-primary-600 hover:text-primary-700 underline">
+                support@nelsongrey.com
               </a>.
               We will respond within 30 days.
             </p>
@@ -263,8 +263,8 @@ const PrivacyPolicy: React.FC = () => {
             </p>
             <div className="mt-3 text-gray-700">
               <p><strong>Email:</strong>{' '}
-                <a href="mailto:support@modulosquares.com" className="text-primary-600 hover:text-primary-700 underline">
-                  support@modulosquares.com
+                <a href="mailto:support@nelsongrey.com" className="text-primary-600 hover:text-primary-700 underline">
+                  support@nelsongrey.com
                 </a>
               </p>
             </div>

@@ -501,7 +501,7 @@ No manual intervention required for production deployments.
 ## 11. Support & Maintenance
 
 ### 11.1 Support Channels
-- **Email**: support@modulosquares.com
+- **Email**: support@nelsongrey.com
 - **FAQ**: In-app help screen
 - **Website**: modulosquares.com/help
 
