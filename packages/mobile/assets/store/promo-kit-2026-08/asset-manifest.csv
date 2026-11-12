@@ -6,7 +6,7 @@ Apple,iPhone screenshot 2,apple/screenshots/iphone-6.9/02-divide-evenly-1320x286
 Apple,iPhone screenshot 3,apple/screenshots/iphone-6.9/03-build-combos-1320x2868.png,image,1320,2868,PNG,sRGB,no,,,,,1347373,PASS,meets production rule
 Apple,iPhone screenshot 4,apple/screenshots/iphone-6.9/04-chase-your-best-1320x2868.png,image,1320,2868,PNG,sRGB,no,,,,,1240341,PASS,meets production rule
 Apple,iPhone screenshot 5,apple/screenshots/iphone-6.9/05-learn-the-rules-1320x2868.png,image,1320,2868,PNG,sRGB,no,,,,,1285259,PASS,meets production rule
-Apple,iPhone screenshot 6,apple/screenshots/iphone-6.9/06-remove-ads-1320x2868.png,image,1320,2868,PNG,sRGB,no,,,,,1187319,PASS,meets production rule
+Apple,iPhone screenshot 6,apple/screenshots/iphone-6.9/06-customize-settings-1320x2868.png,image,1320,2868,PNG,sRGB,no,,,,,1165357,PASS,meets production rule
 Google,Play Store icon,google/icon/play-store-icon-512x512.png,image,512,512,PNG,sRGB,yes,,,,,252003,PASS,meets production rule
 Google,Feature graphic,google/feature-graphic/feature-graphic-1024x500.png,image,1024,500,PNG,sRGB,no,,,,,237298,PASS,meets production rule
 Google,Phone screenshot 1,google/screenshots/phone/01-drop-numbers-1080x1920.png,image,1080,1920,PNG,sRGB,no,,,,,1047888,PASS,meets production rule
@@ -28,7 +28,7 @@ Google / YouTube,Gameplay tutorial,google/video/tutorials/04-how-to-play-1920x10
 Cross-platform,Social clip 1,cross-platform/video-clips/01-drop-and-decide-1080x1920.mp4,video,1080,1920,"mov,mp4,m4a,3gp,3g2,mj2",,,h264,yuv420p,30.000,5.500,449282,PASS,meets production rule
 Cross-platform,Social clip 2,cross-platform/video-clips/02-combo-and-progress-1080x1920.mp4,video,1080,1920,"mov,mp4,m4a,3gp,3g2,mj2",,,h264,yuv420p,30.000,5.500,436524,PASS,meets production rule
 Cross-platform,Social clip 3,cross-platform/video-clips/03-speed-and-streak-1080x1920.mp4,video,1080,1920,"mov,mp4,m4a,3gp,3g2,mj2",,,h264,yuv420p,30.000,5.500,385672,PASS,meets production rule
-Apple,English (U.S.) listing copy,copy/apple-en-US.md,text,,,Markdown,,,,,,,2956,PASS,present and non-empty
+Apple,English (U.S.) listing copy,copy/apple-en-US.md,text,,,Markdown,,,,,,,2981,PASS,present and non-empty
 Google,English (U.S.) listing copy,copy/google-en-US.md,text,,,Markdown,,,,,,,3219,PASS,present and non-empty
 Cross-platform,Campaign copy,copy/campaign-copy.md,text,,,Markdown,,,,,,,2534,PASS,present and non-empty
 Cross-platform,Video production script,copy/video-production-script.md,text,,,Markdown,,,,,,,1902,PASS,present and non-empty
